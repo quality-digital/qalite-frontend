@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '../../application/context/AuthContext';
 import { ProtectedRoute, RoleProtectedRoute } from '../../application/routes/ProtectedRoute';
 import { ThemeProvider } from '../context/ThemeContext';
+import { ToastProvider } from '../context/ToastContext';
 import { AdminDashboardPage } from '../pages/AdminDashboardPage';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
 import { ForgotPasswordPage } from '../pages/ForgotPasswordPage';
@@ -14,9 +15,10 @@ import { UserDashboardPage } from '../pages/UserDashboardPage';
 
 export const AppRoutes = () => (
   <ThemeProvider>
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
+    <ToastProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
@@ -33,8 +35,9 @@ export const AppRoutes = () => (
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ToastProvider>
   </ThemeProvider>
 );

@@ -2,14 +2,12 @@ import { FormEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useAuth } from '../../application/hooks/useAuth';
-import { Alert } from '../components/Alert';
+import { AuthLayout } from '../components/AuthLayout';
 import { Button } from '../components/Button';
-import { Layout } from '../components/Layout';
-import { Spinner } from '../components/Spinner';
 import { TextInput } from '../components/TextInput';
 
 export const ForgotPasswordPage = () => {
-  const { resetPassword, error, isLoading } = useAuth();
+  const { resetPassword, isLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [feedback, setFeedback] = useState<string | null>(null);
 
@@ -30,37 +28,39 @@ export const ForgotPasswordPage = () => {
     }
   };
 
-  const feedbackType = feedback?.startsWith('Verifique') ? 'success' : 'error';
-
   return (
-    <Layout>
-      <div className="mx-auto max-w-md rounded-2xl bg-surface p-10 shadow-xl">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-primary">Recuperar acesso</h1>
-          <p className="mt-2 text-sm text-muted">Enviaremos um link para redefinir sua senha.</p>
+    <AuthLayout
+      title="Recupere seu acesso"
+      subtitle="Informe o e-mail cadastrado para receber um link seguro de redefinição."
+      accentTitle="Sem surpresas"
+      accentDescription="Cuidamos de cada passo para que a redefinição seja simples e confiável."
+      accentItems={['Envio imediato do link de recuperação.', 'Mensagens claras para cada etapa.', 'Compatível com qualquer dispositivo.']}
+      footer={
+        <div className="auth-links">
+          <span>
+            Lembrou a senha? <Link to="/login">Voltar para login</Link>
+          </span>
         </div>
-        {feedback && <Alert type={feedbackType} message={feedback} />}
-        {error && <Alert type="error" message={error} />}
-        <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
-          <TextInput
-            id="email"
-            label="E-mail"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Enviando...' : 'Enviar link de recuperação'}
-          </Button>
-        </form>
-        {isLoading && <Spinner />}
-        <div className="mt-6 text-center text-sm text-muted">
-          <Link to="/login" className="text-link">
-            Voltar para login
-          </Link>
-        </div>
-      </div>
-    </Layout>
+      }
+    >
+      {feedback && (
+        <p className={`form-message ${feedback.startsWith('Verifique') ? 'form-message--success' : 'form-message--error'}`}>
+          {feedback}
+        </p>
+      )}
+      <form className="form-grid" onSubmit={handleSubmit}>
+        <TextInput
+          id="email"
+          label="E-mail"
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          required
+        />
+        <Button type="submit" isLoading={isLoading} loadingText="Enviando...">
+          Enviar link de recuperação
+        </Button>
+      </form>
+    </AuthLayout>
   );
 };

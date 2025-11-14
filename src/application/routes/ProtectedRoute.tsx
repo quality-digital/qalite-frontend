@@ -8,10 +8,10 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute = ({ redirectTo = '/login' }: ProtectedRouteProps) => {
-  const { user, isLoading } = useAuth();
+  const { user, isInitializing } = useAuth();
 
-  if (isLoading) {
-    return <div>Loading...</div>;
+  if (isInitializing) {
+    return <div className="route-loading">Carregando acesso...</div>;
   }
 
   if (!user) {
@@ -31,10 +31,10 @@ export const RoleProtectedRoute = ({
   fallback = '/403',
   redirectTo
 }: RoleProtectedRouteProps) => {
-  const { user, hasRole, isLoading } = useAuth();
+  const { user, hasRole, isInitializing } = useAuth();
 
-  if (isLoading) {
-    return <div>Loading...</div>;
+  if (isInitializing) {
+    return <div className="route-loading">Carregando acesso...</div>;
   }
 
   if (!user) {

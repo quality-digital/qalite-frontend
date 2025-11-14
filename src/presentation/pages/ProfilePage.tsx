@@ -2,21 +2,21 @@ import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 
 import { useAuth } from '../../application/hooks/useAuth';
 import { Alert } from '../components/Alert';
+import { BackButton } from '../components/BackButton';
 import { Button } from '../components/Button';
 import { Layout } from '../components/Layout';
-import { Spinner } from '../components/Spinner';
 import { TextInput } from '../components/TextInput';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { UserAvatar } from '../components/UserAvatar';
 
 const MAX_PHOTO_SIZE = 5 * 1024 * 1024; // 5MB
 
 export const ProfilePage = () => {
-  const { user, updateProfile, error, isLoading } = useAuth();
+  const { user, updateProfile, isLoading } = useAuth();
   const [displayName, setDisplayName] = useState('');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setDisplayName(user?.displayName ?? '');
@@ -52,7 +52,6 @@ export const ProfilePage = () => {
 
     setLocalError(null);
     setPhotoFile(file);
-    setSuccessMessage(null);
     setPhotoPreview((previous) => {
       if (previous && previous.startsWith('blob:')) {
         URL.revokeObjectURL(previous);
@@ -64,7 +63,6 @@ export const ProfilePage = () => {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLocalError(null);
-    setSuccessMessage(null);
 
     if (!displayName.trim()) {
       setLocalError('Informe um nome para continuar.');
@@ -73,7 +71,6 @@ export const ProfilePage = () => {
 
     try {
       await updateProfile({ displayName: displayName.trim(), photoFile });
-      setSuccessMessage('Perfil atualizado com sucesso!');
       setPhotoFile(null);
     } catch (err) {
       console.error(err);
@@ -82,16 +79,22 @@ export const ProfilePage = () => {
 
   return (
     <Layout>
-      <section className="card">
+      <section className="card profile-card">
+        <div className="profile-toolbar">
+          <BackButton label="Voltar" />
+          <div className="profile-theme">
+            <span>Modo de exibição</span>
+            <ThemeToggle />
+          </div>
+        </div>
+
         <span className="badge">Seu perfil</span>
         <h1 className="section-title">Atualize suas informações pessoais</h1>
         <p className="section-subtitle">
-          Personalize seu nome e imagem. Todas as alterações são sincronizadas com o Firebase em tempo real.
+          Ajuste nome e foto de perfil e veja as mudanças refletidas imediatamente em todos os seus acessos.
         </p>
 
         {localError && <Alert type="error" message={localError} />}
-        {error && <Alert type="error" message={error} />}
-        {successMessage && <Alert type="success" message={successMessage} />}
 
         <form className="profile-editor" onSubmit={handleSubmit}>
           <div className="profile-header">
@@ -122,11 +125,10 @@ export const ProfilePage = () => {
             disabled
           />
 
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Salvando...' : 'Salvar alterações'}
+          <Button type="submit" isLoading={isLoading} loadingText="Salvando...">
+            Salvar alterações
           </Button>
         </form>
-        {isLoading && <Spinner />}
       </section>
     </Layout>
   );
