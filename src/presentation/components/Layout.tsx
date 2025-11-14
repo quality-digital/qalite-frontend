@@ -2,9 +2,9 @@ import { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../../application/hooks/useAuth';
-import { ThemeToggle } from './ThemeToggle';
 import { Button } from './Button';
 import { UserAvatar } from './UserAvatar';
+import { LogoutIcon, UserIcon } from './icons';
 
 interface LayoutProps {
   children: ReactNode;
@@ -23,23 +23,26 @@ export const Layout = ({ children }: LayoutProps) => {
           <span className="app-brand-subtitle">Auth Experience</span>
         </Link>
         <nav className="header-actions">
-          <ThemeToggle />
           {user ? (
             <div className="header-user">
-              <div className="user-context">
-                <span className="user-greeting">Olá,</span>
-                <span className="user-name">{displayName}</span>
-                <span className="user-role">{user.role === 'admin' ? 'Administrador' : 'Usuário'}</span>
+              <div className="header-user-info">
+                <UserAvatar name={displayName} photoURL={user.photoURL} size="sm" />
+                <div className="user-context">
+                  <span className="user-greeting">Olá,</span>
+                  <span className="user-name">{displayName}</span>
+                  <span className="user-role">{user.role === 'admin' ? 'Administrador' : 'Usuário'}</span>
+                </div>
               </div>
-              <UserAvatar
-                name={displayName}
-                photoURL={user.photoURL}
-                size="sm"
-                onClick={() => navigate('/profile')}
-              />
-              <Button type="button" variant="ghost" onClick={() => void logout()}>
-                Sair
-              </Button>
+              <div className="header-user-actions">
+                <button type="button" className="header-profile" onClick={() => navigate('/profile')}>
+                  <UserIcon aria-hidden className="icon" />
+                  <span>Perfil</span>
+                </button>
+                <Button type="button" variant="ghost" onClick={() => void logout()}>
+                  <LogoutIcon aria-hidden className="icon" />
+                  Sair
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="header-auth">

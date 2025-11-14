@@ -1,6 +1,8 @@
 import { ButtonHTMLAttributes } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { ArrowLeftIcon } from './icons';
+
 interface BackButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   label?: string;
 }
@@ -20,7 +22,7 @@ export const BackButton = ({ label = 'Voltar', onClick, ...props }: BackButtonPr
       }}
       {...props}
     >
-      <span aria-hidden>←</span>
+      <ArrowLeftIcon aria-hidden className="icon" />
       {label}
     </button>
   );

@@ -8,6 +8,7 @@ import { Layout } from '../components/Layout';
 import { TextInput } from '../components/TextInput';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { UserAvatar } from '../components/UserAvatar';
+import { ThemeIcon } from '../components/icons';
 
 const MAX_PHOTO_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -83,6 +84,7 @@ export const ProfilePage = () => {
         <div className="profile-toolbar">
           <BackButton label="Voltar" />
           <div className="profile-theme">
+            <ThemeIcon aria-hidden className="icon" />
             <span>Modo de exibição</span>
             <ThemeToggle />
           </div>
