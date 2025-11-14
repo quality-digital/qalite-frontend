@@ -34,7 +34,6 @@ export const LoginPage = () => {
     <AuthLayout
       title="Entre na sua conta"
       subtitle="Gerencie dashboards e mantenha seu time sincronizado com segurança."
-      accentItems={['Acesso seguro com Firebase Authentication.', 'Tema claro e escuro automáticos.', 'Feedback instantâneo com toasts personalizados.']}
       footer={
         <div className="auth-links">
           <Link to="/forgot-password">Esqueci minha senha</Link>

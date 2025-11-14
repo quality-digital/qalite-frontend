@@ -32,9 +32,6 @@ export const ForgotPasswordPage = () => {
     <AuthLayout
       title="Recupere seu acesso"
       subtitle="Informe o e-mail cadastrado para receber um link seguro de redefinição."
-      accentTitle="Sem surpresas"
-      accentDescription="Cuidamos de cada passo para que a redefinição seja simples e confiável."
-      accentItems={['Envio imediato do link de recuperação.', 'Mensagens claras para cada etapa.', 'Compatível com qualquer dispositivo.']}
       footer={
         <div className="auth-links">
           <span>

@@ -56,8 +56,6 @@ export const RegisterPage = () => {
     <AuthLayout
       title="Crie sua conta"
       subtitle="Escolha um nome, defina uma senha forte e personalize sua experiência."
-      accentTitle="Uma plataforma feita para times modernos"
-      accentItems={['Perfis com upload de avatar.', 'Controle de acessos por papéis.', 'Interface otimizada para desktop e mobile.']}
       footer={
         <div className="auth-links">
           <span>
