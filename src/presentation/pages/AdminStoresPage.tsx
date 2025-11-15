@@ -34,6 +34,7 @@ export const AdminStoresPage = () => {
   const [isLoadingOrganizations, setIsLoadingOrganizations] = useState(true);
   const [isLoadingStores, setIsLoadingStores] = useState(false);
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
+  const [isOrganizationLocked, setIsOrganizationLocked] = useState(false);
   const [storeForm, setStoreForm] = useState<StoreForm>(initialStoreForm);
   const [currentStore, setCurrentStore] = useState<Store | null>(null);
   const [isSavingStore, setIsSavingStore] = useState(false);
@@ -46,13 +47,21 @@ export const AdminStoresPage = () => {
         const data = await organizationService.list();
         setOrganizations(data);
         const organizationFromParam = searchParams.get('organizationId');
-        if (organizationFromParam && data.some((item) => item.id === organizationFromParam)) {
+        const hasValidOrganizationParam = Boolean(
+          organizationFromParam && data.some((item) => item.id === organizationFromParam)
+        );
+
+        if (hasValidOrganizationParam && organizationFromParam) {
           setSelectedOrganizationId(organizationFromParam);
+          setIsOrganizationLocked(true);
           return;
         }
 
+        setIsOrganizationLocked(false);
         if (data.length > 0) {
           setSelectedOrganizationId(data[0].id);
+        } else {
+          setSelectedOrganizationId('');
         }
       } catch (error) {
         console.error(error);
@@ -202,23 +211,35 @@ export const AdminStoresPage = () => {
               &larr; Voltar
             </button>
             <span className="badge">Painel do administrador</span>
-            <h1 className="section-title">Lojas das organizações</h1>
+            <h1 className="section-title">
+              {selectedOrganization
+                ? `Lojas da organização ${selectedOrganization.name}`
+                : 'Lojas da organização'}
+            </h1>
             <p className="section-subtitle">
-              Escolha uma organização para visualizar e administrar suas lojas.
+              {isOrganizationLocked
+                ? 'Para trocar a organização, utilize o botão Voltar e selecione outra opção.'
+                : 'Escolha uma organização para visualizar e administrar suas lojas.'}
             </p>
           </div>
           <div className="page-actions">
-            <SelectInput
-              id="organization-selector"
-              label="Organização"
-              value={selectedOrganizationId}
-              onChange={(event) => setSelectedOrganizationId(event.target.value)}
-              options={organizations.map((organization) => ({
-                value: organization.id,
-                label: organization.name
-              }))}
-              disabled={isLoadingOrganizations || organizations.length === 0}
-            />
+            {isOrganizationLocked ? (
+              <div className="selected-organization-info">
+                <span className="badge">{selectedOrganization?.name ?? 'Organização selecionada'}</span>
+              </div>
+            ) : (
+              <SelectInput
+                id="organization-selector"
+                label="Organização"
+                value={selectedOrganizationId}
+                onChange={(event) => setSelectedOrganizationId(event.target.value)}
+                options={organizations.map((organization) => ({
+                  value: organization.id,
+                  label: organization.name
+                }))}
+                disabled={isLoadingOrganizations || organizations.length === 0}
+              />
+            )}
             <Button type="button" onClick={openCreateModal} disabled={!selectedOrganizationId}>
               Nova loja
             </Button>
@@ -257,6 +278,9 @@ export const AdminStoresPage = () => {
                   </span>
                 </p>
                 <div className="card-actions">
+                  <Button type="button" variant="secondary" onClick={() => navigate(`/stores/${store.id}`)}>
+                    Entrar na loja
+                  </Button>
                   <Button type="button" onClick={() => openEditModal(store)}>
                     Editar
                   </Button>
