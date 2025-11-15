@@ -556,6 +556,12 @@ a.text-link:hover {
   opacity: 0.7;
 }
 
+.field-textarea {
+  min-height: 7rem;
+  resize: vertical;
+  line-height: 1.5;
+}
+
 .form-grid {
   display: flex;
   flex-direction: column;
@@ -1100,6 +1106,202 @@ a.text-link:hover {
   min-height: 50vh;
   font-size: 0.95rem;
   color: var(--color-text-muted);
+}
+
+.organization-admin {
+  display: grid;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .organization-admin {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.organization-admin-list,
+.organization-admin-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.organization-admin-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .organization-admin-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.organization-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.organization-list-item {
+  border: 1px solid var(--color-border);
+  border-radius: 1.25rem;
+  background: var(--color-surface-alt);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-base);
+}
+
+.organization-list-item--active {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.organization-list-item-button {
+  all: unset;
+  display: block;
+  width: 100%;
+  cursor: pointer;
+  padding: 1rem 1.25rem;
+}
+
+.organization-list-item-button h3 {
+  margin: 0 0 0.35rem 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.organization-list-item-button span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.organization-list-item-button p {
+  margin: 0.75rem 0 0 0;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.organization-list-item-delete {
+  width: 100%;
+  border: none;
+  border-top: 1px solid var(--color-border);
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-danger);
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-base), color var(--transition-base);
+}
+
+.organization-list-item-delete:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.18);
+  color: #b91c1c;
+}
+
+.organization-list-item-delete:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.organization-members {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.organization-members h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.organization-members-form {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .organization-members-form {
+    grid-template-columns: 1fr auto;
+    align-items: end;
+  }
+}
+
+.member-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.member-list-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-surface-alt);
+  box-shadow: var(--shadow-sm);
+}
+
+.member-list-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.member-list-name {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.member-list-email {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  word-break: break-word;
+}
+
+.member-list-remove {
+  border: none;
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--color-danger);
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-base), color var(--transition-base), transform var(--transition-base);
+}
+
+.member-list-remove:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.2);
+  color: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.member-list-remove:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.organization-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .disabled\:cursor-not-allowed:disabled {

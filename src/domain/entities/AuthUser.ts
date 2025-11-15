@@ -8,6 +8,7 @@ export interface AuthUser {
   lastName: string;
   phoneNumber: string;
   role: Role;
+  organizationId?: string | null;
   accessToken?: string;
   photoURL?: string;
 }

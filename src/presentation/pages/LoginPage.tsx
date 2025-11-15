@@ -23,8 +23,19 @@ export const LoginPage = () => {
     }
 
     try {
-      await login(email, password);
-      navigate('/');
+      const authenticatedUser = await login(email, password);
+
+      if (authenticatedUser.role === 'admin') {
+        navigate('/admin', { replace: true });
+        return;
+      }
+
+      if (authenticatedUser.organizationId) {
+        navigate('/organization', { replace: true });
+        return;
+      }
+
+      navigate('/no-organization', { replace: true });
     } catch (err) {
       console.error(err);
     }

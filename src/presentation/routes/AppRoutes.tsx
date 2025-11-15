@@ -12,6 +12,8 @@ import { LoginPage } from '../pages/LoginPage';
 import { ProfilePage } from '../pages/ProfilePage';
 import { RegisterPage } from '../pages/RegisterPage';
 import { UserDashboardPage } from '../pages/UserDashboardPage';
+import { NoOrganizationPage } from '../pages/NoOrganizationPage';
+import { OrganizationDashboardPage } from '../pages/OrganizationDashboardPage';
 
 export const AppRoutes = () => (
   <ThemeProvider>
@@ -27,6 +29,8 @@ export const AppRoutes = () => (
 
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<UserDashboardPage />} />
+            <Route path="/organization" element={<OrganizationDashboardPage />} />
+            <Route path="/no-organization" element={<NoOrganizationPage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
 
