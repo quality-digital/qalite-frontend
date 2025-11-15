@@ -20,7 +20,7 @@ interface AuthContextValue {
   isLoading: boolean;
   isInitializing: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthUser>;
   register: (input: {
     email: string;
     password: string;
@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string): Promise<AuthUser> => {
     setIsLoading(true);
     setError(null);
     try {
@@ -70,6 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         type: 'success',
         message: `Bem-vindo de volta, ${logged.displayName.split(' ')[0] || 'usuário'}!`
       });
+      return logged;
     } catch (err) {
       const message = handleFirebaseError(err);
       throw new Error(message);

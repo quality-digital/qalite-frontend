@@ -45,6 +45,7 @@ export class FirebaseAuthRepository implements IAuthRepository {
       lastName,
       phoneNumber: '',
       photoURL: user.photoURL ?? null,
+      organizationId: null,
       isNew: true
     });
 
@@ -123,6 +124,7 @@ export class FirebaseAuthRepository implements IAuthRepository {
       lastName: trimmedLastName,
       phoneNumber: trimmedPhoneNumber,
       photoURL,
+      organizationId: currentProfile.organizationId ?? null,
       isNew: false
     });
 
@@ -139,6 +141,7 @@ export class FirebaseAuthRepository implements IAuthRepository {
       lastName?: string | null;
       phoneNumber?: string | null;
       photoURL?: string | null;
+      organizationId?: string | null;
     }
   ): AuthUser {
     const storedFirstName = (profile.firstName ?? '').trim();
@@ -163,6 +166,7 @@ export class FirebaseAuthRepository implements IAuthRepository {
       lastName: effectiveLastName,
       phoneNumber: effectivePhoneNumber,
       role: profile.role,
+      organizationId: profile.organizationId ?? null,
       photoURL: profile.photoURL ?? user.photoURL ?? undefined,
       accessToken: user.refreshToken
     };
@@ -177,6 +181,7 @@ export class FirebaseAuthRepository implements IAuthRepository {
       lastName: string;
       phoneNumber: string;
       photoURL?: string | null;
+      organizationId: string | null;
       isNew?: boolean;
     }
   ): Promise<void> {
@@ -191,6 +196,7 @@ export class FirebaseAuthRepository implements IAuthRepository {
         phoneNumber: profile.phoneNumber,
         role: profile.role,
         photoURL: profile.photoURL ?? null,
+        organizationId: profile.organizationId,
         ...(profile.isNew ? { createdAt: serverTimestamp() } : {}),
         updatedAt: serverTimestamp()
       },
@@ -207,6 +213,7 @@ export class FirebaseAuthRepository implements IAuthRepository {
     lastName?: string | null;
     phoneNumber?: string | null;
     photoURL?: string | null;
+    organizationId?: string | null;
   }> {
     const userDoc = doc(firebaseFirestore, USERS_COLLECTION, uid);
     const snapshot = await getDoc(userDoc);
@@ -219,7 +226,8 @@ export class FirebaseAuthRepository implements IAuthRepository {
         firstName: (data.firstName as string) ?? '',
         lastName: (data.lastName as string) ?? '',
         phoneNumber: (data.phoneNumber as string) ?? '',
-        photoURL: (data.photoURL as string | null) ?? null
+        photoURL: (data.photoURL as string | null) ?? null,
+        organizationId: (data.organizationId as string | null) ?? null
       };
     }
 
@@ -229,7 +237,8 @@ export class FirebaseAuthRepository implements IAuthRepository {
       firstName: '',
       lastName: '',
       phoneNumber: '',
-      photoURL: null
+      photoURL: null,
+      organizationId: null
     };
   }
 
