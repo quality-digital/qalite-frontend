@@ -7,6 +7,7 @@ import { useAuth } from '../../application/hooks/useAuth';
 import { useToast } from '../context/ToastContext';
 import { Layout } from '../components/Layout';
 import { UserAvatar } from '../components/UserAvatar';
+import { StoreManagementPanel } from '../components/StoreManagementPanel';
 
 export const OrganizationDashboardPage = () => {
   const navigate = useNavigate();
@@ -104,6 +105,15 @@ export const OrganizationDashboardPage = () => {
           )}
         </div>
       </section>
+
+      {!isLoading && organization && (
+        <StoreManagementPanel
+          organizationId={organization.id}
+          organizationName={organization.name}
+          canManageStores={user?.role === 'admin'}
+          canManageScenarios={Boolean(user)}
+        />
+      )}
     </Layout>
   );
 };

@@ -8,6 +8,7 @@ import { Button } from '../components/Button';
 import { TextInput } from '../components/TextInput';
 import { TextArea } from '../components/TextArea';
 import { UserAvatar } from '../components/UserAvatar';
+import { StoreManagementPanel } from '../components/StoreManagementPanel';
 
 export const AdminDashboardPage = () => {
   const { showToast } = useToast();
@@ -422,11 +423,11 @@ export const AdminDashboardPage = () => {
                   <p className="section-subtitle">
                     Nenhum usuário vinculado ainda. Adicione membros utilizando o e-mail cadastrado no QaLite.
                   </p>
-                ) : (
-                  <ul className="member-list">
-                    {selectedOrganization.members.map((member) => (
-                      <li key={member.uid} className="member-list-item">
-                        <UserAvatar
+            ) : (
+              <ul className="member-list">
+                {selectedOrganization.members.map((member) => (
+                  <li key={member.uid} className="member-list-item">
+                    <UserAvatar
                           name={member.displayName || member.email}
                           photoURL={member.photoURL ?? undefined}
                         />
@@ -447,6 +448,13 @@ export const AdminDashboardPage = () => {
                   </ul>
                 )}
               </div>
+
+              <StoreManagementPanel
+                organizationId={selectedOrganization.id}
+                organizationName={selectedOrganization.name}
+                canManageStores
+                canManageScenarios
+              />
             </>
           ) : (
             <div className="organization-empty">
