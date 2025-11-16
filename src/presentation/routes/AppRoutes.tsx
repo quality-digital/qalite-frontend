@@ -16,6 +16,7 @@ import { UserDashboardPage } from '../pages/UserDashboardPage';
 import { NoOrganizationPage } from '../pages/NoOrganizationPage';
 import { OrganizationDashboardPage } from '../pages/OrganizationDashboardPage';
 import { StoreSummaryPage } from '../pages/StoreSummaryPage';
+import { PaginaAmbiente } from '../pages/PaginaAmbiente';
 
 export const AppRoutes = () => (
   <ThemeProvider>
@@ -35,6 +36,7 @@ export const AppRoutes = () => (
               <Route path="/no-organization" element={<NoOrganizationPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/stores/:storeId" element={<StoreSummaryPage />} />
+              <Route path="/environments/:environmentId" element={<PaginaAmbiente />} />
             </Route>
 
             <Route element={<RoleProtectedRoute allowedRoles={['admin']} />}>

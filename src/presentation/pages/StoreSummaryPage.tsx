@@ -23,6 +23,7 @@ import {
   CRITICALITY_OPTIONS,
   getCriticalityClassName,
 } from '../constants/scenarioOptions';
+import { KanbanAmbientes } from '../components/environments/KanbanAmbientes';
 
 const emptyScenarioForm: StoreScenarioInput = {
   title: '',
@@ -1298,6 +1299,13 @@ export const StoreSummaryPage = () => {
           )}
         </div>
       </section>
+      {storeId && (
+        <section className="page-container">
+          <div className="card">
+            <KanbanAmbientes storeId={storeId} suites={suites} scenarios={scenarios} />
+          </div>
+        </section>
+      )}
     </Layout>
   );
 };
