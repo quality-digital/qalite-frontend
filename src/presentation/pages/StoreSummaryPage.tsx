@@ -587,7 +587,27 @@ export const StoreSummaryPage = () => {
                 </div>
               </div>
 
-              {store && canManageScenarios && (
+              <div className="scenario-view-toggle" aria-label="Alternar visualização">
+                <span>Visualizar</span>
+                <div className="scenario-view-toggle-buttons">
+                  <button
+                    type="button"
+                    className={viewMode === 'scenarios' ? 'is-active' : ''}
+                    onClick={() => setViewMode('scenarios')}
+                  >
+                    Massa de cenários
+                  </button>
+                  <button
+                    type="button"
+                    className={viewMode === 'suites' ? 'is-active' : ''}
+                    onClick={() => setViewMode('suites')}
+                  >
+                    Suítes de testes
+                  </button>
+                </div>
+              </div>
+
+              {store && canManageScenarios && viewMode === 'scenarios' && (
                 <form className="scenario-form" onSubmit={handleScenarioSubmit}>
                   <h3 className="form-title">
                     {editingScenarioId ? 'Editar cenário' : 'Novo cenário'}
@@ -725,25 +745,6 @@ export const StoreSummaryPage = () => {
                     {isScenarioTableCollapsed ? 'Maximizar tabela' : 'Minimizar tabela'}
                   </button>
                 )}
-              </div>
-              <div className="scenario-view-toggle" aria-label="Alternar visualização">
-                <span>Visualizar</span>
-                <div className="scenario-view-toggle-buttons">
-                  <button
-                    type="button"
-                    className={viewMode === 'scenarios' ? 'is-active' : ''}
-                    onClick={() => setViewMode('scenarios')}
-                  >
-                    Massa de cenários
-                  </button>
-                  <button
-                    type="button"
-                    className={viewMode === 'suites' ? 'is-active' : ''}
-                    onClick={() => setViewMode('suites')}
-                  >
-                    Suítes de testes
-                  </button>
-                </div>
               </div>
               <div className="scenario-table-wrapper">
                 {viewMode === 'scenarios' ? (
