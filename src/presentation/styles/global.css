@@ -2777,10 +2777,25 @@ a.text-link:hover {
   gap: 0.5rem;
 }
 
+.environment-present-users--inline {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .environment-present-users li {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.environment-present-users--inline li {
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem 0.35rem 0.35rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .environment-card-avatar {
@@ -2845,6 +2860,26 @@ a.text-link:hover {
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
+}
+
+.environment-present-users--inline img,
+.environment-present-users--inline .environment-card-avatar {
+  width: 32px;
+  height: 32px;
+}
+
+.environment-presence-inline {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.environment-presence-inline__label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
 }
 
 .environment-actions {

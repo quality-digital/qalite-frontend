@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { EnvironmentStatusError } from '../../application/errors/EnvironmentStatusError';
@@ -34,11 +34,35 @@ export const EnvironmentPage = () => {
   const isLocked = environment?.status === 'done';
   const isScenarioLocked = environment?.status !== 'in_progress';
 
-  const { presentUsers } = usePresentUsers({
+  const { presentUsers, isCurrentUserPresent, joinEnvironment } = usePresentUsers({
     environmentId: environment?.id ?? null,
     presentUsersIds: environment?.presentUsersIds ?? [],
     isLocked: Boolean(isLocked) || !hasEnteredEnvironment,
   });
+
+  const entryStorageKey = useMemo(() => {
+    if (!environment?.id || !user?.uid) {
+      return null;
+    }
+    return `environment-entry:${environment.id}:${user.uid}`;
+  }, [environment?.id, user?.uid]);
+
+  useEffect(() => {
+    if (!entryStorageKey || typeof window === 'undefined') {
+      return;
+    }
+
+    const storedEntry = window.localStorage.getItem(entryStorageKey);
+    if (storedEntry === 'true') {
+      setHasEnteredEnvironment(true);
+    }
+  }, [entryStorageKey]);
+
+  useEffect(() => {
+    if (isCurrentUserPresent && !hasEnteredEnvironment) {
+      setHasEnteredEnvironment(true);
+    }
+  }, [hasEnteredEnvironment, isCurrentUserPresent]);
 
   const { formattedTime } = useTimeTracking(
     environment?.timeTracking ?? null,
@@ -120,6 +144,20 @@ export const EnvironmentPage = () => {
     environmentService.exportAsMarkdown(environment);
   };
 
+  const handleEnterEnvironment = () => {
+    if (hasEnteredEnvironment || isLocked) {
+      return;
+    }
+
+    setHasEnteredEnvironment(true);
+
+    if (entryStorageKey && typeof window !== 'undefined') {
+      window.localStorage.setItem(entryStorageKey, 'true');
+    }
+
+    void joinEnvironment();
+  };
+
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const privateLink = environment ? `${origin}/environments/${environment.id}` : '';
   const publicLink = environment ? `${origin}/environments/${environment.id}/public` : '';
@@ -133,23 +171,37 @@ export const EnvironmentPage = () => {
               &larr; Voltar
             </button>
             <div className="environment-page__title">
-              {environment && (
-                <span className={`status-pill status-pill--${environment.status}`}>
-                  {STATUS_LABEL[environment.status]}
-                </span>
-              )}
               <h1 className="section-title">{environment?.identificador ?? 'Ambiente'}</h1>
               {environment && (
                 <p className="section-subtitle">
                   {environment.tipoAmbiente} · {environment.tipoTeste} · {suiteDescription}
                 </p>
               )}
+              {hasEnteredEnvironment && presentUsers.length > 0 && (
+                <div className="environment-presence-inline">
+                  <span className="environment-presence-inline__label">Usuários no ambiente</span>
+                  <ul className="environment-present-users environment-present-users--inline">
+                    {presentUsers.map((profile) => (
+                      <li key={profile.id}>
+                        {profile.photoURL ? (
+                          <img src={profile.photoURL} alt={profile.name} />
+                        ) : (
+                          <span className="environment-card-avatar environment-card-avatar--initials">
+                            {profile.name.charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                        <span>{profile.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
           {!isLoading && environment && (
             <div className="environment-actions">
               {!hasEnteredEnvironment ? (
-                <Button type="button" onClick={() => setHasEnteredEnvironment(true)}>
+                <Button type="button" onClick={handleEnterEnvironment}>
                   Entrar no ambiente
                 </Button>
               ) : (
@@ -280,30 +332,6 @@ export const EnvironmentPage = () => {
                       <p className="section-subtitle">
                         Ambiente concluído: compartilhamento bloqueado para novos acessos.
                       </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="environment-participants">
-                  <div>
-                    <h3>Usuários presentes</h3>
-                    {presentUsers.length === 0 ? (
-                      <p className="section-subtitle">Nenhum usuário neste ambiente agora.</p>
-                    ) : (
-                      <ul className="environment-present-users">
-                        {presentUsers.map((user) => (
-                          <li key={user.id}>
-                            {user.photoURL ? (
-                              <img src={user.photoURL} alt={user.name} />
-                            ) : (
-                              <span className="environment-card-avatar environment-card-avatar--initials">
-                                {user.name.charAt(0).toUpperCase()}
-                              </span>
-                            )}
-                            <span>{user.name}</span>
-                          </li>
-                        ))}
-                      </ul>
                     )}
                   </div>
                 </div>
