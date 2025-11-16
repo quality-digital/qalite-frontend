@@ -11,6 +11,9 @@ interface TextInputProps {
   disabled?: boolean;
   readOnly?: boolean;
   autoComplete?: string;
+  min?: number;
+  max?: number;
+  step?: number;
 }
 
 export const TextInput = ({
@@ -23,7 +26,10 @@ export const TextInput = ({
   placeholder,
   disabled = false,
   readOnly = false,
-  autoComplete
+  autoComplete,
+  min,
+  max,
+  step,
 }: TextInputProps) => (
   <label htmlFor={id} className="field">
     <span className="field-label">{label}</span>
@@ -38,6 +44,9 @@ export const TextInput = ({
       disabled={disabled}
       readOnly={readOnly}
       autoComplete={autoComplete}
+      min={min}
+      max={max}
+      step={step}
       className="field-input"
     />
   </label>

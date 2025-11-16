@@ -1,6 +1,7 @@
 import { doc, getDoc } from 'firebase/firestore';
 import type { DragEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import type { Environment, EnvironmentStatus } from '../../../domain/entities/Environment';
 import type { StoreScenario, StoreSuite } from '../../../domain/entities/Store';
@@ -14,8 +15,6 @@ import type { PresentUserProfile } from '../../hooks/usePresentUsers';
 import { Button } from '../Button';
 import { CardAmbiente } from './CardAmbiente';
 import { ModalCriarAmbiente } from './ModalCriarAmbiente';
-import { ModalEditarAmbiente } from './ModalEditarAmbiente';
-import { ModalExcluirAmbiente } from './ModalExcluirAmbiente';
 
 interface KanbanAmbientesProps {
   storeId: string;
@@ -31,12 +30,10 @@ const COLUMNS: { status: EnvironmentStatus; title: string; description: string }
 
 export const KanbanAmbientes = ({ storeId, suites, scenarios }: KanbanAmbientesProps) => {
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [selectedEnvironment, setSelectedEnvironment] = useState<Environment | null>(null);
   const [presentUsersMap, setPresentUsersMap] = useState<Record<string, PresentUserProfile>>({});
 
   useEffect(() => {
@@ -130,13 +127,13 @@ export const KanbanAmbientes = ({ storeId, suites, scenarios }: KanbanAmbientesP
 
     if (status === 'done') {
       const hasPending = Object.values(environment.scenarios ?? {}).some(
-        (scenario) => scenario.status !== 'concluido',
+        (scenario) => scenario.status === 'pendente',
       );
 
       if (hasPending) {
         showToast({
           type: 'error',
-          message: 'Finalize todos os cenários antes de concluir o ambiente.',
+          message: 'Existem cenários pendentes. Conclua-os antes de finalizar.',
         });
         return;
       }
@@ -166,14 +163,8 @@ export const KanbanAmbientes = ({ storeId, suites, scenarios }: KanbanAmbientesP
     }
   };
 
-  const openEditModal = (environment: Environment) => {
-    setSelectedEnvironment(environment);
-    setIsEditOpen(true);
-  };
-
-  const openDeleteModal = (environment: Environment) => {
-    setSelectedEnvironment(environment);
-    setIsDeleteOpen(true);
+  const handleOpenEnvironment = (environment: Environment) => {
+    navigate(`/environments/${environment.id}`);
   };
 
   return (
@@ -213,10 +204,9 @@ export const KanbanAmbientes = ({ storeId, suites, scenarios }: KanbanAmbientesP
                     presentUsers={environment.presentUsersIds
                       .map((id) => presentUsersMap[id])
                       .filter((user): user is PresentUserProfile => Boolean(user))}
-                    onEdit={openEditModal}
-                    onDelete={openDeleteModal}
                     draggable
                     onDragStart={handleDragStart}
+                    onOpen={handleOpenEnvironment}
                   />
                 ))
               )}
@@ -232,19 +222,6 @@ export const KanbanAmbientes = ({ storeId, suites, scenarios }: KanbanAmbientesP
         suites={suites}
         scenarios={scenarios}
         onCreated={() => showToast({ type: 'success', message: 'Ambiente criado com sucesso.' })}
-      />
-
-      <ModalEditarAmbiente
-        isOpen={isEditOpen}
-        onClose={() => setIsEditOpen(false)}
-        environment={selectedEnvironment}
-      />
-
-      <ModalExcluirAmbiente
-        isOpen={isDeleteOpen}
-        onClose={() => setIsDeleteOpen(false)}
-        environment={selectedEnvironment}
-        onDeleted={() => showToast({ type: 'success', message: 'Ambiente removido.' })}
       />
     </section>
   );

@@ -171,7 +171,7 @@ export const ModalEditarAmbiente = ({ isOpen, onClose, environment }: ModalEdita
           label="Bugs"
           type="number"
           min={0}
-          value={bugs}
+          value={String(bugs)}
           onChange={(event) => setBugs(Number(event.target.value))}
           disabled={isLocked}
         />

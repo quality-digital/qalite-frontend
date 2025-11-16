@@ -2,7 +2,10 @@ import { doc, getDoc } from 'firebase/firestore';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { firebaseFirestore } from '../../infra/firebase/firebaseConfig';
-import { updatePresentUsers } from '../../infra/firebase/environmentService';
+import {
+  addUserToEnvironment,
+  removeUserFromEnvironment,
+} from '../../infra/firebase/environmentService';
 import { useAuth } from './useAuth';
 
 export interface PresentUserProfile {
@@ -65,7 +68,11 @@ export const usePresentUsers = ({
       return;
     }
 
-    await updatePresentUsers(environmentId, user.uid, 'enter');
+    try {
+      await addUserToEnvironment(environmentId, user.uid);
+    } catch (error) {
+      console.error(error);
+    }
   }, [environmentId, isLocked, user?.uid]);
 
   const leaveEnvironment = useCallback(async () => {
@@ -73,7 +80,11 @@ export const usePresentUsers = ({
       return;
     }
 
-    await updatePresentUsers(environmentId, user.uid, 'leave');
+    try {
+      await removeUserFromEnvironment(environmentId, user.uid);
+    } catch (error) {
+      console.error(error);
+    }
   }, [environmentId, user?.uid]);
 
   useEffect(() => {
