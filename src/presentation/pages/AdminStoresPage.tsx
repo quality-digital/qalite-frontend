@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import type { Organization } from '../../domain/entities/Organization';
@@ -34,7 +34,6 @@ export const AdminStoresPage = () => {
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
   const [isOrganizationLocked, setIsOrganizationLocked] = useState(false);
   const [storeForm, setStoreForm] = useState<StoreForm>(initialStoreForm);
-  const [currentStore, setCurrentStore] = useState<Store | null>(null);
   const [isSavingStore, setIsSavingStore] = useState(false);
   const [storeError, setStoreError] = useState<string | null>(null);
 
@@ -105,14 +104,6 @@ export const AdminStoresPage = () => {
 
   const openCreateModal = () => {
     setStoreForm(initialStoreForm);
-    setCurrentStore(null);
-    setStoreError(null);
-    setIsStoreModalOpen(true);
-  };
-
-  const openEditModal = (store: Store) => {
-    setStoreForm({ name: store.name, site: store.site });
-    setCurrentStore(store);
     setStoreError(null);
     setIsStoreModalOpen(true);
   };
@@ -120,7 +111,6 @@ export const AdminStoresPage = () => {
   const closeStoreModal = () => {
     setIsStoreModalOpen(false);
     setStoreForm(initialStoreForm);
-    setCurrentStore(null);
     setStoreError(null);
   };
 
@@ -130,7 +120,6 @@ export const AdminStoresPage = () => {
 
     const trimmedName = storeForm.name.trim();
     const trimmedSite = storeForm.site.trim();
-    const stageValue = currentStore?.stage ?? '';
 
     if (!selectedOrganizationId) {
       setStoreError('Selecione uma organização antes de cadastrar a loja.');
@@ -142,23 +131,13 @@ export const AdminStoresPage = () => {
       return;
     }
 
+    if (!trimmedSite) {
+      setStoreError('Informe o site da loja.');
+      return;
+    }
+
     try {
       setIsSavingStore(true);
-
-      if (currentStore) {
-        const updated = await storeService.update(currentStore.id, {
-          name: trimmedName,
-          site: trimmedSite,
-          stage: stageValue,
-        });
-
-        setStores((previous) =>
-          previous.map((store) => (store.id === updated.id ? updated : store)),
-        );
-        showToast({ type: 'success', message: 'Loja atualizada com sucesso.' });
-        setCurrentStore(updated);
-        return;
-      }
 
       const created = await storeService.create({
         organizationId: selectedOrganizationId,
@@ -167,7 +146,7 @@ export const AdminStoresPage = () => {
         stage: '',
       });
 
-      setStores((previous) => [...previous, created]);
+      setStores((previous) => [...previous, created].sort((a, b) => a.name.localeCompare(b.name)));
       showToast({ type: 'success', message: 'Nova loja cadastrada.' });
       closeStoreModal();
     } catch (error) {
@@ -180,28 +159,10 @@ export const AdminStoresPage = () => {
     }
   };
 
-  const handleDeleteStore = async (storeId: string) => {
-    const store = stores.find((item) => item.id === storeId);
-    if (!store) {
-      return;
-    }
-
-    const confirmation = window.confirm(`Deseja remover a loja "${store.name}"?`);
-    if (!confirmation) {
-      return;
-    }
-
-    try {
-      setIsSavingStore(true);
-      await storeService.delete(storeId);
-      setStores((previous) => previous.filter((item) => item.id !== storeId));
-      showToast({ type: 'success', message: 'Loja removida com sucesso.' });
-    } catch (error) {
-      console.error(error);
-      const message = error instanceof Error ? error.message : 'Não foi possível remover a loja.';
-      showToast({ type: 'error', message });
-    } finally {
-      setIsSavingStore(false);
+  const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>, callback: () => void) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      callback();
     }
   };
 
@@ -266,37 +227,31 @@ export const AdminStoresPage = () => {
         ) : (
           <div className="dashboard-grid">
             {stores.map((store) => (
-              <div key={store.id} className="card">
+              <div
+                key={store.id}
+                className="card card-clickable"
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/stores/${store.id}`)}
+                onKeyDown={(event) =>
+                  handleCardKeyDown(event, () => navigate(`/stores/${store.id}`))
+                }
+              >
                 <div className="card-header">
-                  <h2 className="card-title">{store.name}</h2>
+                  <div>
+                    <h2 className="card-title">{store.name}</h2>
+                    <p className="card-subtitle">{selectedOrganization?.name ?? 'Organização'}</p>
+                  </div>
                   <span className="badge">{store.scenarioCount} cenários</span>
                 </div>
                 <p className="card-description">
                   <span>
                     <strong>Site:</strong> {store.site || 'Não informado'}
                   </span>
-                  <span>
-                    <strong>Organização:</strong> {selectedOrganization?.name ?? 'Desconhecida'}
-                  </span>
                 </p>
-                <div className="card-actions">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => navigate(`/stores/${store.id}`)}
-                  >
-                    Entrar na loja
-                  </Button>
-                  <Button type="button" onClick={() => openEditModal(store)}>
-                    Editar
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => void handleDeleteStore(store.id)}
-                  >
-                    Excluir
-                  </Button>
+                <div className="card-link-hint">
+                  <span>Abrir loja</span>
+                  <span aria-hidden>&rarr;</span>
                 </div>
               </div>
             ))}
@@ -307,7 +262,7 @@ export const AdminStoresPage = () => {
       <Modal
         isOpen={isStoreModalOpen}
         onClose={closeStoreModal}
-        title={currentStore ? 'Editar loja' : 'Nova loja'}
+        title="Nova loja"
         description="Informe os dados básicos da loja para disponibilizar os cenários."
       >
         {storeError && <p className="form-message form-message--error">{storeError}</p>}
@@ -333,7 +288,7 @@ export const AdminStoresPage = () => {
           />
           <div className="form-actions">
             <Button type="submit" isLoading={isSavingStore} loadingText="Salvando...">
-              {currentStore ? 'Salvar alterações' : 'Criar loja'}
+              Criar loja
             </Button>
             <Button
               type="button"

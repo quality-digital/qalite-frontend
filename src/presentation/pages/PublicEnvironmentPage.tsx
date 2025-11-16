@@ -39,6 +39,19 @@ export const PublicEnvironmentPage = () => {
     return { total: scenarios.length, concluded, pending, running };
   }, [environment]);
 
+  const progressPercentage = useMemo(() => {
+    if (scenarioStats.total === 0) {
+      return 0;
+    }
+
+    return Math.round((scenarioStats.concluded / scenarioStats.total) * 100);
+  }, [scenarioStats.concluded, scenarioStats.total]);
+
+  const progressLabel =
+    scenarioStats.total === 0
+      ? 'Nenhum cenário cadastrado ainda.'
+      : `${scenarioStats.concluded} de ${scenarioStats.total} concluídos`;
+
   if (isLoading) {
     return (
       <Layout>
@@ -78,20 +91,30 @@ export const PublicEnvironmentPage = () => {
         <div className="environment-summary-grid">
           <div className="summary-card summary-card--environment">
             <h3>Resumo do ambiente</h3>
-            <div className="summary-card__metrics">
+            <div className="summary-card__highlight" aria-live="polite">
               <div>
+                <span className="summary-card__highlight-label">Progresso geral</span>
+                <strong>{progressPercentage}%</strong>
+                <p>{progressLabel}</p>
+              </div>
+              <div className="summary-card__progress" aria-hidden>
+                <span style={{ width: `${progressPercentage}%` }} />
+              </div>
+            </div>
+            <div className="summary-card__metrics summary-card__metrics--pill">
+              <div className="summary-pill">
                 <span>Total de cenários</span>
                 <strong>{scenarioStats.total}</strong>
               </div>
-              <div>
+              <div className="summary-pill">
                 <span>Concluídos</span>
                 <strong>{scenarioStats.concluded}</strong>
               </div>
-              <div>
+              <div className="summary-pill">
                 <span>Em andamento</span>
                 <strong>{scenarioStats.running}</strong>
               </div>
-              <div>
+              <div className="summary-pill">
                 <span>Pendentes</span>
                 <strong>{scenarioStats.pending}</strong>
               </div>

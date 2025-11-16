@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, KeyboardEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import type { Organization, OrganizationMember } from '../../domain/entities/Organization';
@@ -24,6 +24,13 @@ export const AdminOrganizationsPage = () => {
   const [memberEmail, setMemberEmail] = useState('');
   const [isManagingMembers, setIsManagingMembers] = useState(false);
   const [memberError, setMemberError] = useState<string | null>(null);
+
+  const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>, callback: () => void) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      callback();
+    }
+  };
 
   useEffect(() => {
     const fetchOrganizations = async () => {
@@ -291,39 +298,47 @@ export const AdminOrganizationsPage = () => {
         ) : (
           <div className="dashboard-grid">
             {organizations.map((organization) => (
-              <div key={organization.id} className="card">
-                <div className="card-header">
-                  <h2 className="card-title">{organization.name}</h2>
+              <div
+                key={organization.id}
+                className="card card-clickable"
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/admin/organizations?organizationId=${organization.id}`)}
+                onKeyDown={(event) =>
+                  handleCardKeyDown(event, () =>
+                    navigate(`/admin/organizations?organizationId=${organization.id}`),
+                  )
+                }
+              >
+                <div className="organization-card-header">
+                  <div>
+                    <h2 className="card-title">{organization.name}</h2>
+                    <p className="card-subtitle">
+                      {organization.description ||
+                        'Organização sem descrição cadastrada até o momento.'}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openEditModal(organization);
+                    }}
+                    disabled={isSavingOrganization}
+                  >
+                    Gerenciar
+                  </Button>
+                </div>
+                <div className="organization-card-footer">
                   <span className="badge">
                     {organization.members.length} membro
                     {organization.members.length === 1 ? '' : 's'}
                   </span>
-                </div>
-                <p className="card-description">
-                  {organization.description ||
-                    'Organização sem descrição cadastrada até o momento.'}
-                </p>
-                <div className="card-actions">
-                  <Button type="button" onClick={() => openEditModal(organization)}>
-                    Editar
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() =>
-                      navigate(`/admin/organizations?organizationId=${organization.id}`)
-                    }
-                  >
-                    Ver lojas
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => void handleDeleteOrganization(organization.id)}
-                    disabled={isSavingOrganization}
-                  >
-                    Excluir
-                  </Button>
+                  <div className="card-link-hint">
+                    <span>Ver lojas</span>
+                    <span aria-hidden>&rarr;</span>
+                  </div>
                 </div>
               </div>
             ))}
@@ -376,6 +391,23 @@ export const AdminOrganizationsPage = () => {
             </Button>
           </div>
         </form>
+
+        {currentOrganization && (
+          <div className="modal-danger-zone">
+            <div>
+              <h4>Zona sensível</h4>
+              <p>Remova a organização e desvincule todos os usuários.</p>
+            </div>
+            <button
+              type="button"
+              className="link-danger"
+              onClick={() => void handleDeleteOrganization(currentOrganization.id)}
+              disabled={isSavingOrganization}
+            >
+              Excluir organização
+            </button>
+          </div>
+        )}
 
         {currentOrganization && (
           <div className="card bg-surface" style={{ padding: '1.5rem' }}>
