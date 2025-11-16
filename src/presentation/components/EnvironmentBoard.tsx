@@ -1,4 +1,12 @@
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
+import {
+  ChangeEvent,
+  FormEvent,
+  KeyboardEvent,
+  MouseEvent,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import type { StoreSuite } from '../../domain/entities/Store';
 import { Button } from './Button';
@@ -507,6 +515,47 @@ export const EnvironmentBoard = ({ storeName = 'Loja', suites }: EnvironmentBoar
   const activeEnvironmentSuiteName = (environment: Environment) =>
     suites.find((suite) => suite.id === environment.suiteId)?.name ?? 'Nenhuma';
 
+  const handleEnterEnvironment = (environment: Environment) => {
+    if (environment.status === 'done') {
+      showToast({ type: 'info', message: 'Ambientes concluídos não podem ser acessados.' });
+      return;
+    }
+
+    if (!environment.accessLink) {
+      showToast({ type: 'error', message: 'Nenhum link disponível para este ambiente.' });
+      return;
+    }
+
+    window.open(environment.accessLink, '_blank', 'noopener,noreferrer');
+  };
+
+  const isInteractiveTarget = (element: HTMLElement | null) =>
+    Boolean(element?.closest('button, a, select, input, textarea, label'));
+
+  const handleCardClick = (environment: Environment) => (event: MouseEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    if (isInteractiveTarget(target)) {
+      return;
+    }
+
+    handleEnterEnvironment(environment);
+  };
+
+  const handleCardKeyDown =
+    (environment: Environment) => (event: KeyboardEvent<HTMLDivElement>) => {
+      if (event.key !== 'Enter' && event.key !== ' ') {
+        return;
+      }
+
+      const target = event.target as HTMLElement;
+      if (isInteractiveTarget(target)) {
+        return;
+      }
+
+      event.preventDefault();
+      handleEnterEnvironment(environment);
+    };
+
   const renderScenarioSummary = (summary: EnvironmentScenarioSummary) => (
     <div className="environment-scenario-summary">
       <div>
@@ -569,7 +618,16 @@ export const EnvironmentBoard = ({ storeName = 'Loja', suites }: EnvironmentBoar
                   const duration = calculateEnvironmentDuration(environment, now);
                   const isLinkActive = environment.status !== 'done';
                   return (
-                    <div key={environment.id} className="environment-card">
+                    <div
+                      key={environment.id}
+                      className="environment-card"
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Entrar no ambiente ${environment.identifier}`}
+                      onClick={handleCardClick(environment)}
+                      onKeyDown={handleCardKeyDown(environment)}
+                      aria-disabled={environment.status === 'done'}
+                    >
                       <div className="environment-card-header">
                         <div>
                           <span className="environment-card-identifier">
