@@ -984,12 +984,111 @@ export const StoreSummaryPage = () => {
                   )
                 ) : (
                   <div
+                    ref={suiteListRef}
                     className={`suite-manager ${isViewingSuitesOnly ? 'suite-manager--suites-only' : ''}`}
                   >
-                    {!isViewingSuitesOnly && (
-                      <form className="suite-form" onSubmit={handleSuiteSubmit}>
-                        <div className="suite-form-grid">
-                          <div className="card suite-card suite-details-card">
+                    {isViewingSuitesOnly ? (
+                      <div className="suite-cards-view">
+                        <div className="suite-table-header">
+                          <span className="suite-preview-title">Suítes cadastradas</span>
+                          <button
+                            type="button"
+                            className="link-button"
+                            onClick={handleBackToSuiteForm}
+                          >
+                            Voltar para formulário
+                          </button>
+                        </div>
+                        {isLoadingSuites ? (
+                          <p className="section-subtitle">Carregando suítes de testes...</p>
+                        ) : suites.length === 0 ? (
+                          <p className="section-subtitle">
+                            Nenhuma suíte cadastrada ainda. Utilize o formulário para criar sua
+                            primeira seleção.
+                          </p>
+                        ) : (
+                          <div className="suite-cards-grid">
+                            {suites
+                              .slice()
+                              .sort((a, b) => a.name.localeCompare(b.name))
+                              .map((suite) => {
+                                const isActive = selectedSuitePreviewId === suite.id;
+                                return (
+                                  <button
+                                    key={suite.id}
+                                    type="button"
+                                    className={`suite-card-trigger ${isActive ? 'is-active' : ''}`}
+                                    onClick={() =>
+                                      setSelectedSuitePreviewId((previous) =>
+                                        previous === suite.id ? null : suite.id,
+                                      )
+                                    }
+                                  >
+                                    <span>{suite.name}</span>
+                                  </button>
+                                );
+                              })}
+                          </div>
+                        )}
+                        {!selectedSuitePreview ? (
+                          <p className="section-subtitle">
+                            Clique em um card para visualizar os cenários associados.
+                          </p>
+                        ) : selectedSuitePreviewEntries.length === 0 ? (
+                          <p className="section-subtitle">
+                            Esta suíte não possui cenários cadastrados ou alguns itens foram
+                            removidos.
+                          </p>
+                        ) : (
+                          <div className="suite-preview suite-preview--cards">
+                            <table className="suite-preview-table">
+                              <thead>
+                                <tr>
+                                  <th>Suíte</th>
+                                  <th>Cenário</th>
+                                  <th>Categoria</th>
+                                  <th>Automação</th>
+                                  <th>Criticidade</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {selectedSuitePreviewEntries.map(({ scenarioId, scenario }) => (
+                                  <tr key={`${selectedSuitePreview.id}-${scenarioId}`}>
+                                    <td>{selectedSuitePreview.name}</td>
+                                    <td>{scenario?.title ?? 'Cenário removido'}</td>
+                                    <td>{scenario?.category ?? 'N/A'}</td>
+                                    <td>{scenario?.automation ?? '-'}</td>
+                                    <td>{scenario?.criticality ?? '-'}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        <form className="suite-form" onSubmit={handleSuiteSubmit}>
+                          <div className="card suite-card suite-editor-card">
+                            <div className="suite-form-header-actions suite-editor-actions">
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={handleShowSuitesOnly}
+                              >
+                                Ir para cadastradas
+                              </Button>
+                              {editingSuiteId && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  onClick={handleCancelSuiteEdit}
+                                  disabled={isSavingSuite}
+                                >
+                                  Cancelar edição
+                                </Button>
+                              )}
+                            </div>
                             <div className="suite-form-header">
                               <div>
                                 <h3 className="form-title">
@@ -1001,25 +1100,6 @@ export const StoreSummaryPage = () => {
                                   Escolha quais cenários farão parte do grupo e utilize a seção de
                                   suítes cadastradas para validar a massa antes de salvar.
                                 </p>
-                              </div>
-                              <div className="suite-form-header-actions">
-                                <Button
-                                  type="button"
-                                  variant="secondary"
-                                  onClick={handleShowSuitesOnly}
-                                >
-                                  Ir para suítes cadastradas
-                                </Button>
-                                {editingSuiteId && (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    onClick={handleCancelSuiteEdit}
-                                    disabled={isSavingSuite}
-                                  >
-                                    Cancelar edição
-                                  </Button>
-                                )}
                               </div>
                             </div>
                             {suiteFormError && (
@@ -1041,8 +1121,6 @@ export const StoreSummaryPage = () => {
                                 required
                               />
                             </div>
-                          </div>
-                          <div className="card suite-card suite-scenarios-card">
                             <div className="suite-scenario-selector">
                               <div className="suite-scenario-selector-header">
                                 <p className="field-label">Seleção de cenários</p>
@@ -1118,6 +1196,8 @@ export const StoreSummaryPage = () => {
                                             <th>Categoria</th>
                                             <th>Automação</th>
                                             <th>Criticidade</th>
+                                            <th>Observação</th>
+                                            <th>BDD</th>
                                           </tr>
                                         </thead>
                                         <tbody>
@@ -1152,6 +1232,18 @@ export const StoreSummaryPage = () => {
                                                     {scenario.criticality}
                                                   </span>
                                                 </td>
+                                                <td className="scenario-observation">
+                                                  {scenario.observation}
+                                                </td>
+                                                <td className="scenario-bdd">
+                                                  <button
+                                                    type="button"
+                                                    className="scenario-copy-button"
+                                                    onClick={() => void handleCopyBdd(scenario.bdd)}
+                                                  >
+                                                    Copiar BDD
+                                                  </button>
+                                                </td>
                                               </tr>
                                             );
                                           })}
@@ -1163,147 +1255,141 @@ export const StoreSummaryPage = () => {
                               )}
                             </div>
                           </div>
+                          <div className="suite-form-actions">
+                            <Button
+                              type="submit"
+                              isLoading={isSavingSuite}
+                              loadingText="Salvando..."
+                            >
+                              {editingSuiteId ? 'Atualizar suíte' : 'Salvar suíte'}
+                            </Button>
+                          </div>
+                        </form>
+
+                        <div className="suite-preview">
+                          <div className="suite-preview-title-row">
+                            <h4 className="suite-preview-title">Suíte selecionada</h4>
+                            {selectedSuitePreview && (
+                              <button
+                                type="button"
+                                className="suite-preview-clear"
+                                onClick={() => setSelectedSuitePreviewId(null)}
+                              >
+                                Limpar seleção
+                              </button>
+                            )}
+                          </div>
+                          {!selectedSuitePreview ? (
+                            <p className="section-subtitle">
+                              Clique em uma suíte cadastrada para visualizar sua composição.
+                            </p>
+                          ) : selectedSuitePreviewEntries.length === 0 ? (
+                            <p className="section-subtitle">
+                              Esta suíte não possui cenários cadastrados ou alguns itens foram
+                              removidos.
+                            </p>
+                          ) : (
+                            <table className="suite-preview-table">
+                              <thead>
+                                <tr>
+                                  <th>Suíte</th>
+                                  <th>Cenário</th>
+                                  <th>Categoria</th>
+                                  <th>Automação</th>
+                                  <th>Criticidade</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {selectedSuitePreviewEntries.map(({ scenarioId, scenario }) => (
+                                  <tr key={`${selectedSuitePreview.id}-${scenarioId}`}>
+                                    <td>{selectedSuitePreview.name}</td>
+                                    <td>{scenario?.title ?? 'Cenário removido'}</td>
+                                    <td>{scenario?.category ?? 'N/A'}</td>
+                                    <td>{scenario?.automation ?? '-'}</td>
+                                    <td>{scenario?.criticality ?? '-'}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          )}
                         </div>
-                        <div className="suite-form-actions">
-                          <Button type="submit" isLoading={isSavingSuite} loadingText="Salvando...">
-                            {editingSuiteId ? 'Atualizar suíte' : 'Salvar suíte'}
-                          </Button>
+
+                        <div className="suite-table-wrapper">
+                          <div className="suite-table-header">
+                            <button
+                              type="button"
+                              className="suite-section-toggle"
+                              onClick={handleShowSuitesOnly}
+                            >
+                              <span className="suite-preview-title">Suítes cadastradas</span>
+                            </button>
+                          </div>
+                          {isLoadingSuites ? (
+                            <p className="section-subtitle">Carregando suítes de testes...</p>
+                          ) : suites.length === 0 ? (
+                            <p className="section-subtitle">
+                              Nenhuma suíte cadastrada ainda. Utilize o formulário ao lado para
+                              criar sua primeira seleção.
+                            </p>
+                          ) : (
+                            <ul className="suite-list">
+                              {suites
+                                .slice()
+                                .sort((a, b) => a.name.localeCompare(b.name))
+                                .map((suite) => {
+                                  const isActive = selectedSuitePreviewId === suite.id;
+                                  return (
+                                    <li key={suite.id}>
+                                      <button
+                                        type="button"
+                                        className={`suite-list-item ${isActive ? 'is-active' : ''}`}
+                                        onClick={() =>
+                                          setSelectedSuitePreviewId((previous) =>
+                                            previous === suite.id ? null : suite.id,
+                                          )
+                                        }
+                                      >
+                                        <div>
+                                          <p className="suite-list-name">{suite.name}</p>
+                                          <span className="suite-list-count">
+                                            {suite.scenarioIds.length} cenário
+                                            {suite.scenarioIds.length === 1 ? '' : 's'}
+                                          </span>
+                                        </div>
+                                      </button>
+                                      {canManageScenarios && (
+                                        <div className="suite-list-actions">
+                                          <button
+                                            type="button"
+                                            onClick={(event) => {
+                                              event.stopPropagation();
+                                              handleEditSuite(suite);
+                                            }}
+                                            disabled={isSavingSuite}
+                                          >
+                                            Editar
+                                          </button>
+                                          <button
+                                            type="button"
+                                            className="suite-delete"
+                                            onClick={(event) => {
+                                              event.stopPropagation();
+                                              void handleDeleteSuite(suite);
+                                            }}
+                                            disabled={isSavingSuite}
+                                          >
+                                            Excluir
+                                          </button>
+                                        </div>
+                                      )}
+                                    </li>
+                                  );
+                                })}
+                            </ul>
+                          )}
                         </div>
-                      </form>
+                      </>
                     )}
-
-                    <div className="suite-preview">
-                      <div className="suite-preview-title-row">
-                        <h4 className="suite-preview-title">Suíte selecionada</h4>
-                        {selectedSuitePreview && (
-                          <button
-                            type="button"
-                            className="suite-preview-clear"
-                            onClick={() => setSelectedSuitePreviewId(null)}
-                          >
-                            Limpar
-                          </button>
-                        )}
-                      </div>
-                      {!selectedSuitePreview ? (
-                        <p className="section-subtitle">
-                          Clique em uma suíte cadastrada para visualizar sua composição.
-                        </p>
-                      ) : selectedSuitePreviewEntries.length === 0 ? (
-                        <p className="section-subtitle">
-                          Esta suíte não possui cenários cadastrados ou alguns itens foram
-                          removidos.
-                        </p>
-                      ) : (
-                        <table className="suite-preview-table">
-                          <thead>
-                            <tr>
-                              <th>Suíte</th>
-                              <th>Cenário</th>
-                              <th>Categoria</th>
-                              <th>Automação</th>
-                              <th>Criticidade</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {selectedSuitePreviewEntries.map(({ scenarioId, scenario }) => (
-                              <tr key={`${selectedSuitePreview.id}-${scenarioId}`}>
-                                <td>{selectedSuitePreview.name}</td>
-                                <td>{scenario?.title ?? 'Cenário removido'}</td>
-                                <td>{scenario?.category ?? 'N/A'}</td>
-                                <td>{scenario?.automation ?? '-'}</td>
-                                <td>{scenario?.criticality ?? '-'}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      )}
-                    </div>
-
-                    <div className="suite-table-wrapper" ref={suiteListRef}>
-                      <div className="suite-table-header">
-                        <button
-                          type="button"
-                          className="suite-section-toggle"
-                          onClick={handleShowSuitesOnly}
-                          aria-pressed={isViewingSuitesOnly}
-                        >
-                          <span className="suite-preview-title">Suítes cadastradas</span>
-                        </button>
-                        {isViewingSuitesOnly && (
-                          <button
-                            type="button"
-                            className="link-button"
-                            onClick={handleBackToSuiteForm}
-                          >
-                            Voltar para formulário
-                          </button>
-                        )}
-                      </div>
-                      {isLoadingSuites ? (
-                        <p className="section-subtitle">Carregando suítes de testes...</p>
-                      ) : suites.length === 0 ? (
-                        <p className="section-subtitle">
-                          Nenhuma suíte cadastrada ainda. Utilize o formulário ao lado para criar
-                          sua primeira seleção.
-                        </p>
-                      ) : (
-                        <ul className="suite-list">
-                          {suites
-                            .slice()
-                            .sort((a, b) => a.name.localeCompare(b.name))
-                            .map((suite) => {
-                              const isActive = selectedSuitePreviewId === suite.id;
-                              return (
-                                <li key={suite.id}>
-                                  <button
-                                    type="button"
-                                    className={`suite-list-item ${isActive ? 'is-active' : ''}`}
-                                    onClick={() =>
-                                      setSelectedSuitePreviewId((previous) =>
-                                        previous === suite.id ? null : suite.id,
-                                      )
-                                    }
-                                  >
-                                    <div>
-                                      <p className="suite-list-name">{suite.name}</p>
-                                      <span className="suite-list-count">
-                                        {suite.scenarioIds.length} cenário
-                                        {suite.scenarioIds.length === 1 ? '' : 's'}
-                                      </span>
-                                    </div>
-                                  </button>
-                                  {canManageScenarios && (
-                                    <div className="suite-list-actions">
-                                      <button
-                                        type="button"
-                                        onClick={(event) => {
-                                          event.stopPropagation();
-                                          handleEditSuite(suite);
-                                        }}
-                                        disabled={isSavingSuite}
-                                      >
-                                        Editar
-                                      </button>
-                                      <button
-                                        type="button"
-                                        className="suite-delete"
-                                        onClick={(event) => {
-                                          event.stopPropagation();
-                                          void handleDeleteSuite(suite);
-                                        }}
-                                        disabled={isSavingSuite}
-                                      >
-                                        Excluir
-                                      </button>
-                                    </div>
-                                  )}
-                                </li>
-                              );
-                            })}
-                        </ul>
-                      )}
-                    </div>
                   </div>
                 )}
               </div>
