@@ -2679,23 +2679,31 @@ a.text-link:hover {
 }
 
 .environment-card-status-dot {
-  width: 14px;
-  height: 14px;
+  padding: 0.15rem 0.75rem;
   border-radius: 999px;
   flex-shrink: 0;
-  box-shadow: 0 0 0 6px rgba(15, 23, 42, 0.08);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .environment-card-status-dot--backlog {
   background: #e2e8f0;
+  color: var(--color-text-primary);
 }
 
 .environment-card-status-dot--in_progress {
-  background: #60a5fa;
+  background: #2563eb;
+  color: #fff;
 }
 
 .environment-card-status-dot--done {
-  background: #34d399;
+  background: #22c55e;
+  color: #fff;
 }
 
 .environment-card-minimal-info {

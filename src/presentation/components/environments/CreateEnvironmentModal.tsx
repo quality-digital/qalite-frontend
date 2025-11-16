@@ -71,7 +71,6 @@ export const CreateEnvironmentModal = ({
   const [tipoTeste, setTipoTeste] = useState('Funcional');
   const [suiteId, setSuiteId] = useState('');
   const [status, setStatus] = useState<EnvironmentStatus>('backlog');
-  const [bugs, setBugs] = useState(0);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -128,7 +127,7 @@ export const CreateEnvironmentModal = ({
         presentUsersIds: [],
         concludedBy: null,
         scenarios: scenarioMap,
-        bugs,
+        bugs: 0,
         totalCenarios,
         participants: [],
       });
@@ -207,15 +206,6 @@ export const CreateEnvironmentModal = ({
           onChange={(event) => setStatus(event.target.value as EnvironmentStatus)}
           options={STATUS_OPTIONS}
         />
-        <TextInput
-          id="bugs"
-          label="Bugs conhecidos"
-          type="number"
-          min={0}
-          value={String(bugs)}
-          onChange={(event) => setBugs(Number(event.target.value))}
-        />
-
         {selectedSuite && (
           <div className="environment-suite-preview">
             <p>

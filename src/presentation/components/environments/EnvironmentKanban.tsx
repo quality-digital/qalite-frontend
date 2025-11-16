@@ -9,6 +9,7 @@ import type { StoreScenario, StoreSuite } from '../../../domain/entities/Store';
 import { firebaseFirestore } from '../../../infra/firebase/firebaseConfig';
 import { environmentService } from '../../../main/factories/environmentServiceFactory';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../hooks/useAuth';
 import type { PresentUserProfile } from '../../hooks/usePresentUsers';
 import { Button } from '../Button';
 import { EnvironmentCard } from './EnvironmentCard';
@@ -33,6 +34,7 @@ export const EnvironmentKanban = ({ storeId, suites, scenarios }: EnvironmentKan
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [userProfilesMap, setUserProfilesMap] = useState<Record<string, PresentUserProfile>>({});
+  const { user } = useAuth();
 
   useEffect(() => {
     const unsubscribe = environmentService.observeAll({ storeId }, (list) => {
@@ -172,7 +174,11 @@ export const EnvironmentKanban = ({ storeId, suites, scenarios }: EnvironmentKan
     }
 
     try {
-      await environmentService.transitionStatus({ environment, targetStatus: status });
+      await environmentService.transitionStatus({
+        environment,
+        targetStatus: status,
+        currentUserId: user?.uid ?? null,
+      });
       showToast({ type: 'success', message: 'Status atualizado com sucesso.' });
     } catch (error) {
       if (error instanceof EnvironmentStatusError && error.code === 'PENDING_SCENARIOS') {

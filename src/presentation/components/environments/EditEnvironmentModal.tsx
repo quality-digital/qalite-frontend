@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 
 import type { Environment, EnvironmentStatus } from '../../../domain/entities/Environment';
 import { environmentService } from '../../../main/factories/environmentServiceFactory';
+import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../Button';
 import { Modal } from '../Modal';
 import { SelectInput } from '../SelectInput';
@@ -31,9 +32,9 @@ export const EditEnvironmentModal = ({
   const [tipoAmbiente, setTipoAmbiente] = useState('WS');
   const [tipoTeste, setTipoTeste] = useState('Funcional');
   const [status, setStatus] = useState<EnvironmentStatus>('backlog');
-  const [bugs, setBugs] = useState(0);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!environment) {
@@ -46,7 +47,6 @@ export const EditEnvironmentModal = ({
     setTipoAmbiente(environment.tipoAmbiente);
     setTipoTeste(environment.tipoTeste);
     setStatus(environment.status);
-    setBugs(environment.bugs);
   }, [environment]);
 
   const isLocked = environment?.status === 'done';
@@ -77,13 +77,13 @@ export const EditEnvironmentModal = ({
         jiraTask: jiraTask.trim(),
         tipoAmbiente,
         tipoTeste,
-        bugs,
       });
 
       if (environment.status !== status) {
         await environmentService.transitionStatus({
           environment,
           targetStatus: status,
+          currentUserId: user?.uid ?? null,
         });
       }
 
@@ -152,15 +152,6 @@ export const EditEnvironmentModal = ({
           value={status}
           onChange={(event) => setStatus(event.target.value as EnvironmentStatus)}
           options={STATUS_OPTIONS}
-          disabled={isLocked}
-        />
-        <TextInput
-          id="bugsEditar"
-          label="Bugs"
-          type="number"
-          min={0}
-          value={String(bugs)}
-          onChange={(event) => setBugs(Number(event.target.value))}
           disabled={isLocked}
         />
         <p className="environment-suite-preview">Cenários associados: {suiteSummary}</p>

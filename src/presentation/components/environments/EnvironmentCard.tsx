@@ -51,9 +51,9 @@ export const EnvironmentCard = ({
       <div className="environment-card-minimal-header">
         <span
           className={`environment-card-status-dot environment-card-status-dot--${environment.status}`}
-          aria-label={STATUS_LABEL[environment.status]}
-          title={STATUS_LABEL[environment.status]}
-        />
+        >
+          {STATUS_LABEL[environment.status]}
+        </span>
         <div className="environment-card-minimal-info">
           <span className="environment-card-identifier">{environment.identificador}</span>
           <span className="environment-card-type">{environment.tipoTeste}</span>
