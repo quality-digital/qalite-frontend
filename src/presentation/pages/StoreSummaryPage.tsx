@@ -107,6 +107,7 @@ export const StoreSummaryPage = () => {
       : `${selectedSuiteScenarioCount} cenário${selectedSuiteScenarioCount === 1 ? '' : 's'} selecionado${selectedSuiteScenarioCount === 1 ? '' : 's'}.`;
 
   const canManageScenarios = Boolean(user);
+  const canManageStoreSettings = user?.role === 'admin';
 
   const scenarioMap = useMemo(() => {
     const map = new Map<string, StoreScenario>();
@@ -256,7 +257,7 @@ export const StoreSummaryPage = () => {
   }, [scenarios.length]);
 
   const openStoreSettings = () => {
-    if (!store) {
+    if (!store || !canManageStoreSettings) {
       return;
     }
 
@@ -273,7 +274,7 @@ export const StoreSummaryPage = () => {
   const handleStoreSettingsSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!store) {
+    if (!store || !canManageStoreSettings) {
       return;
     }
 
@@ -313,7 +314,7 @@ export const StoreSummaryPage = () => {
   };
 
   const handleRemoveStore = async () => {
-    if (!store) {
+    if (!store || !canManageStoreSettings) {
       return;
     }
 
@@ -768,7 +769,7 @@ export const StoreSummaryPage = () => {
                 </p>
               )}
             </div>
-            {store && (
+            {store && canManageStoreSettings && (
               <div className="store-summary__actions">
                 <Button type="button" variant="secondary" onClick={openStoreSettings}>
                   Configurações da loja
