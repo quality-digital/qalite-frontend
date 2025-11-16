@@ -304,10 +304,7 @@ export const EnvironmentPage = () => {
 
             <div className="environment-evidence">
               <div className="environment-evidence__header">
-                <div>
-                  <h3 className="section-subtitle">Cenários e evidências</h3>
-                  <p>Atualize o status e faça upload das evidências aprovadas.</p>
-                </div>
+                <h3 className="section-title">Cenários e evidências</h3>
                 <a
                   href={`/environments/${environment.id}/public`}
                   className="link-button"

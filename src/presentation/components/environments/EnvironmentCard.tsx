@@ -5,7 +5,7 @@ import type { PresentUserProfile } from '../../hooks/usePresentUsers';
 
 interface EnvironmentCardProps {
   environment: Environment;
-  presentUsers: PresentUserProfile[];
+  participants: PresentUserProfile[];
   suiteName?: string | null;
   onOpen: (environment: Environment) => void;
   draggable?: boolean;
@@ -20,7 +20,7 @@ const STATUS_LABEL: Record<Environment['status'], string> = {
 
 export const EnvironmentCard = ({
   environment,
-  presentUsers,
+  participants,
   suiteName,
   onOpen,
   draggable = false,
@@ -28,7 +28,7 @@ export const EnvironmentCard = ({
 }: EnvironmentCardProps) => {
   const isLocked = environment.status === 'done';
   const displaySuiteName = suiteName ?? 'Suíte não informada';
-  const hasPresentUsers = presentUsers.length > 0;
+  const hasParticipants = participants.length > 0;
 
   const handleOpen = () => onOpen(environment);
 
@@ -62,9 +62,9 @@ export const EnvironmentCard = ({
       </div>
 
       <div className="environment-card-avatars" aria-label="Participantes">
-        {hasPresentUsers ? (
+        {hasParticipants ? (
           <ul className="environment-card-avatar-list">
-            {presentUsers.map((user) => (
+            {participants.map((user) => (
               <li key={user.id} title={user.name}>
                 {user.photoURL ? (
                   <img src={user.photoURL} alt={user.name} className="environment-card-avatar" />

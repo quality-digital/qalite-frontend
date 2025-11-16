@@ -20,10 +20,10 @@ interface EnvironmentKanbanProps {
   scenarios: StoreScenario[];
 }
 
-const COLUMNS: { status: EnvironmentStatus; title: string; description: string }[] = [
-  { status: 'backlog', title: 'Backlog', description: 'Ambientes aguardando execução.' },
-  { status: 'in_progress', title: 'Em andamento', description: 'Ambientes em execução.' },
-  { status: 'done', title: 'Concluído', description: 'Ambientes finalizados.' },
+const COLUMNS: { status: EnvironmentStatus; title: string }[] = [
+  { status: 'backlog', title: 'Backlog' },
+  { status: 'in_progress', title: 'Em andamento' },
+  { status: 'done', title: 'Concluído' },
 ];
 
 export const EnvironmentKanban = ({ storeId, suites, scenarios }: EnvironmentKanbanProps) => {
@@ -32,7 +32,7 @@ export const EnvironmentKanban = ({ storeId, suites, scenarios }: EnvironmentKan
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [presentUsersMap, setPresentUsersMap] = useState<Record<string, PresentUserProfile>>({});
+  const [userProfilesMap, setUserProfilesMap] = useState<Record<string, PresentUserProfile>>({});
 
   useEffect(() => {
     const unsubscribe = environmentService.observeAll({ storeId }, (list) => {
@@ -47,11 +47,12 @@ export const EnvironmentKanban = ({ storeId, suites, scenarios }: EnvironmentKan
     let isMounted = true;
     const ids = new Set<string>();
     environments.forEach((environment) => {
-      environment.presentUsersIds.forEach((id) => ids.add(id));
+      environment.presentUsersIds.filter((id) => Boolean(id)).forEach((id) => ids.add(id));
+      (environment.participants ?? []).filter((id) => Boolean(id)).forEach((id) => ids.add(id));
     });
 
     if (ids.size === 0) {
-      setPresentUsersMap({});
+      setUserProfilesMap({});
       return;
     }
 
@@ -74,7 +75,7 @@ export const EnvironmentKanban = ({ storeId, suites, scenarios }: EnvironmentKan
         entries.forEach((entry) => {
           nextMap[entry.id] = entry;
         });
-        setPresentUsersMap(nextMap);
+        setUserProfilesMap(nextMap);
       }
     };
 
@@ -194,10 +195,7 @@ export const EnvironmentKanban = ({ storeId, suites, scenarios }: EnvironmentKan
   return (
     <section className="environment-kanban">
       <header className="environment-kanban-header">
-        <div>
-          <h3 className="section-subtitle">Ambientes</h3>
-          <p>Gerencie os ambientes de teste desta loja.</p>
-        </div>
+        <h3 className="section-title">Ambientes</h3>
         <Button type="button" onClick={() => setIsCreateOpen(true)}>
           Criar ambiente
         </Button>
@@ -216,17 +214,21 @@ export const EnvironmentKanban = ({ storeId, suites, scenarios }: EnvironmentKan
             >
               <div className="environment-kanban-column-header">
                 <h4>{column.title}</h4>
-                <p>{column.description}</p>
               </div>
               {grouped[column.status].length === 0 ? (
-                <p className="section-subtitle">Nenhum ambiente nesta coluna.</p>
+                <p className="section-subtitle">Sem ambientes.</p>
               ) : (
                 grouped[column.status].map((environment) => (
                   <EnvironmentCard
                     key={environment.id}
                     environment={environment}
-                    presentUsers={environment.presentUsersIds
-                      .map((id) => presentUsersMap[id])
+                    participants={Array.from(
+                      new Set([
+                        ...(environment.participants ?? []),
+                        ...environment.presentUsersIds,
+                      ]),
+                    )
+                      .map((id) => userProfilesMap[id])
                       .filter((user): user is PresentUserProfile => Boolean(user))}
                     suiteName={suiteNameByEnvironment[environment.id]}
                     draggable
