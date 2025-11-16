@@ -1,7 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
-import { AuthProvider } from '../../application/context/AuthContext';
-import { ProtectedRoute, RoleProtectedRoute } from '../../application/routes/ProtectedRoute';
+import { AuthProvider } from '../context/AuthContext';
+import { ProtectedRoute, RoleProtectedRoute } from './ProtectedRoute';
 import { ThemeProvider } from '../context/ThemeContext';
 import { ToastProvider } from '../context/ToastContext';
 import { AdminOrganizationsPage } from '../pages/AdminOrganizationsPage';
@@ -23,26 +23,26 @@ export const AppRoutes = () => (
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/403" element={<ForbiddenPage />} />
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/403" element={<ForbiddenPage />} />
 
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<UserDashboardPage />} />
-            <Route path="/organization" element={<OrganizationDashboardPage />} />
-            <Route path="/no-organization" element={<NoOrganizationPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/stores/:storeId" element={<StoreSummaryPage />} />
-          </Route>
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<UserDashboardPage />} />
+              <Route path="/organization" element={<OrganizationDashboardPage />} />
+              <Route path="/no-organization" element={<NoOrganizationPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/stores/:storeId" element={<StoreSummaryPage />} />
+            </Route>
 
-          <Route element={<RoleProtectedRoute allowedRoles={['admin']} />}>
-            <Route path="/admin" element={<AdminOrganizationsPage />} />
-            <Route path="/admin/organizations" element={<AdminStoresPage />} />
-          </Route>
+            <Route element={<RoleProtectedRoute allowedRoles={['admin']} />}>
+              <Route path="/admin" element={<AdminOrganizationsPage />} />
+              <Route path="/admin/organizations" element={<AdminStoresPage />} />
+            </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

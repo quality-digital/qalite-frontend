@@ -1,6 +1,6 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 
-import { useAuth } from '../../application/hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 import { Alert } from '../components/Alert';
 import { BackButton } from '../components/BackButton';
 import { Button } from '../components/Button';
@@ -39,7 +39,7 @@ export const ProfilePage = () => {
         URL.revokeObjectURL(photoPreview);
       }
     },
-    [photoPreview]
+    [photoPreview],
   );
 
   const handlePhotoChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -88,7 +88,7 @@ export const ProfilePage = () => {
         firstName: trimmedFirstName,
         lastName: trimmedLastName,
         phoneNumber: trimmedPhoneNumber,
-        photoFile
+        photoFile,
       });
       setPhotoFile(null);
     } catch (err) {
@@ -113,7 +113,8 @@ export const ProfilePage = () => {
         <span className="badge">Seu perfil</span>
         <h1 className="section-title">Atualize suas informações pessoais</h1>
         <p className="section-subtitle">
-          Ajuste nome e foto de perfil e veja as mudanças refletidas imediatamente em todos os seus acessos.
+          Ajuste nome e foto de perfil e veja as mudanças refletidas imediatamente em todos os seus
+          acessos.
         </p>
 
         {localError && <Alert type="error" message={localError} />}
@@ -124,7 +125,12 @@ export const ProfilePage = () => {
             <label className="upload-label">
               <span>Foto de perfil</span>
               <span className="upload-trigger">Selecionar nova foto</span>
-              <input className="upload-input" type="file" accept="image/*" onChange={handlePhotoChange} />
+              <input
+                className="upload-input"
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+              />
               <span className="upload-hint">Formatos suportados: JPG, PNG ou WEBP (até 5MB).</span>
             </label>
           </div>

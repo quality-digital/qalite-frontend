@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 
 import type { Organization } from '../../domain/entities/Organization';
 import type { Store } from '../../domain/entities/Store';
-import { useAuth } from '../../application/hooks/useAuth';
-import { organizationService } from '../../application/services/OrganizationService';
-import { storeService } from '../../application/services/StoreService';
+import { useAuth } from '../hooks/useAuth';
+import { organizationService } from '../../main/factories/organizationServiceFactory';
+import { storeService } from '../../main/factories/storeServiceFactory';
 import { useToast } from '../context/ToastContext';
 import { Layout } from '../components/Layout';
 

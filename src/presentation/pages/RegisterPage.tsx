@@ -1,7 +1,7 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { useAuth } from '../../application/hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 import { AuthLayout } from '../components/AuthLayout';
 import { Button } from '../components/Button';
 import { TextInput } from '../components/TextInput';

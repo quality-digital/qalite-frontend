@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import type { Organization } from '../../domain/entities/Organization';
-import { organizationService } from '../../application/services/OrganizationService';
-import { useAuth } from '../../application/hooks/useAuth';
+import { organizationService } from '../../main/factories/organizationServiceFactory';
+import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
 import { Layout } from '../components/Layout';
 import { UserAvatar } from '../components/UserAvatar';
@@ -76,7 +76,8 @@ export const OrganizationDashboardPage = () => {
             <h2 className="text-xl font-semibold text-primary">Membros</h2>
             {!isLoading && (
               <span className="badge">
-                {organization?.members.length ?? 0} membro{(organization?.members.length ?? 0) === 1 ? '' : 's'}
+                {organization?.members.length ?? 0} membro
+                {(organization?.members.length ?? 0) === 1 ? '' : 's'}
               </span>
             )}
           </div>
@@ -85,8 +86,8 @@ export const OrganizationDashboardPage = () => {
 
           {!isLoading && (organization?.members.length ?? 0) === 0 && (
             <p className="section-subtitle">
-              Nenhum membro foi associado a esta organização ainda. Aguarde um administrador adicionar seu
-              time.
+              Nenhum membro foi associado a esta organização ainda. Aguarde um administrador
+              adicionar seu time.
             </p>
           )}
 
@@ -94,7 +95,10 @@ export const OrganizationDashboardPage = () => {
             <ul className="member-list">
               {organization?.members.map((member) => (
                 <li key={member.uid} className="member-list-item">
-                  <UserAvatar name={member.displayName || member.email} photoURL={member.photoURL ?? undefined} />
+                  <UserAvatar
+                    name={member.displayName || member.email}
+                    photoURL={member.photoURL ?? undefined}
+                  />
                   <div className="member-list-details">
                     <span className="member-list-name">{member.displayName || member.email}</span>
                     <span className="member-list-email">{member.email}</span>

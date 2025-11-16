@@ -2,7 +2,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 're
 
 import type { Store, StoreScenario, StoreScenarioInput } from '../../domain/entities/Store';
 import type { StoreExportPayload } from '../../application/services/StoreService';
-import { storeService } from '../../application/services/StoreService';
+import { storeService } from '../../main/factories/storeServiceFactory';
 import { useToast } from '../context/ToastContext';
 import { Button } from './Button';
 import { TextInput } from './TextInput';

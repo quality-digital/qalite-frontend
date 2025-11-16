@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import type { Organization, OrganizationMember } from '../../domain/entities/Organization';
-import { organizationService } from '../../application/services/OrganizationService';
+import { organizationService } from '../../main/factories/organizationServiceFactory';
 import { useToast } from '../context/ToastContext';
 import { Layout } from '../components/Layout';
 import { Button } from '../components/Button';
@@ -85,24 +85,28 @@ export const AdminOrganizationsPage = () => {
       if (currentOrganization) {
         const updated = await organizationService.update(currentOrganization.id, {
           name: trimmedName,
-          description: trimmedDescription
+          description: trimmedDescription,
         });
 
         setOrganizations((previous) =>
-          previous.map((organization) => (organization.id === updated.id ? updated : organization))
+          previous.map((organization) => (organization.id === updated.id ? updated : organization)),
         );
         setCurrentOrganization(updated);
         showToast({ type: 'success', message: 'Organização atualizada com sucesso.' });
         return;
       }
 
-      const created = await organizationService.create({ name: trimmedName, description: trimmedDescription });
+      const created = await organizationService.create({
+        name: trimmedName,
+        description: trimmedDescription,
+      });
       setOrganizations((previous) => [...previous, created]);
       showToast({ type: 'success', message: 'Nova organização criada.' });
       closeModal();
     } catch (error) {
       console.error(error);
-      const message = error instanceof Error ? error.message : 'Não foi possível salvar a organização.';
+      const message =
+        error instanceof Error ? error.message : 'Não foi possível salvar a organização.';
       setFormError(message);
       showToast({ type: 'error', message });
     } finally {
@@ -117,7 +121,7 @@ export const AdminOrganizationsPage = () => {
     }
 
     const confirmation = window.confirm(
-      `Deseja remover a organização "${organization.name}"? Os usuários serão desvinculados.`
+      `Deseja remover a organização "${organization.name}"? Os usuários serão desvinculados.`,
     );
 
     if (!confirmation) {
@@ -135,7 +139,8 @@ export const AdminOrganizationsPage = () => {
       }
     } catch (error) {
       console.error(error);
-      const message = error instanceof Error ? error.message : 'Não foi possível remover a organização.';
+      const message =
+        error instanceof Error ? error.message : 'Não foi possível remover a organização.';
       showToast({ type: 'error', message });
     } finally {
       setIsSavingOrganization(false);
@@ -160,7 +165,7 @@ export const AdminOrganizationsPage = () => {
       setIsManagingMembers(true);
       const member = await organizationService.addUser({
         organizationId: currentOrganization.id,
-        userEmail: trimmedEmail
+        userEmail: trimmedEmail,
       });
 
       setOrganizations((previous) =>
@@ -171,7 +176,9 @@ export const AdminOrganizationsPage = () => {
 
           const hasMember = organization.memberIds.includes(member.uid);
           const members = hasMember ? organization.members : [...organization.members, member];
-          const memberIds = hasMember ? organization.memberIds : [...organization.memberIds, member.uid];
+          const memberIds = hasMember
+            ? organization.memberIds
+            : [...organization.memberIds, member.uid];
 
           if (organization.id === currentOrganization.id) {
             setCurrentOrganization({ ...organization, members, memberIds });
@@ -180,16 +187,17 @@ export const AdminOrganizationsPage = () => {
           return {
             ...organization,
             members,
-            memberIds
+            memberIds,
           };
-        })
+        }),
       );
 
       setMemberEmail('');
       showToast({ type: 'success', message: 'Usuário adicionado à organização.' });
     } catch (error) {
       console.error(error);
-      const message = error instanceof Error ? error.message : 'Não foi possível adicionar o usuário.';
+      const message =
+        error instanceof Error ? error.message : 'Não foi possível adicionar o usuário.';
       setMemberError(message);
       showToast({ type: 'error', message });
     } finally {
@@ -203,7 +211,7 @@ export const AdminOrganizationsPage = () => {
     }
 
     const confirmation = window.confirm(
-      `Remover ${member.displayName || member.email} da organização ${currentOrganization.name}?`
+      `Remover ${member.displayName || member.email} da organização ${currentOrganization.name}?`,
     );
 
     if (!confirmation) {
@@ -214,7 +222,7 @@ export const AdminOrganizationsPage = () => {
       setIsManagingMembers(true);
       await organizationService.removeUser({
         organizationId: currentOrganization.id,
-        userId: member.uid
+        userId: member.uid,
       });
 
       setOrganizations((previous) =>
@@ -223,10 +231,10 @@ export const AdminOrganizationsPage = () => {
             ? {
                 ...organization,
                 members: organization.members.filter((item) => item.uid !== member.uid),
-                memberIds: organization.memberIds.filter((item) => item !== member.uid)
+                memberIds: organization.memberIds.filter((item) => item !== member.uid),
               }
-            : organization
-        )
+            : organization,
+        ),
       );
 
       setCurrentOrganization((previous) =>
@@ -234,15 +242,16 @@ export const AdminOrganizationsPage = () => {
           ? {
               ...previous,
               members: previous.members.filter((item) => item.uid !== member.uid),
-              memberIds: previous.memberIds.filter((item) => item !== member.uid)
+              memberIds: previous.memberIds.filter((item) => item !== member.uid),
             }
-          : previous
+          : previous,
       );
 
       showToast({ type: 'success', message: 'Usuário removido da organização.' });
     } catch (error) {
       console.error(error);
-      const message = error instanceof Error ? error.message : 'Não foi possível remover o usuário.';
+      const message =
+        error instanceof Error ? error.message : 'Não foi possível remover o usuário.';
       showToast({ type: 'error', message });
     } finally {
       setIsManagingMembers(false);
@@ -286,11 +295,13 @@ export const AdminOrganizationsPage = () => {
                 <div className="card-header">
                   <h2 className="card-title">{organization.name}</h2>
                   <span className="badge">
-                    {organization.members.length} membro{organization.members.length === 1 ? '' : 's'}
+                    {organization.members.length} membro
+                    {organization.members.length === 1 ? '' : 's'}
                   </span>
                 </div>
                 <p className="card-description">
-                  {organization.description || 'Organização sem descrição cadastrada até o momento.'}
+                  {organization.description ||
+                    'Organização sem descrição cadastrada até o momento.'}
                 </p>
                 <div className="card-actions">
                   <Button type="button" onClick={() => openEditModal(organization)}>
@@ -299,7 +310,9 @@ export const AdminOrganizationsPage = () => {
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={() => navigate(`/admin/organizations?organizationId=${organization.id}`)}
+                    onClick={() =>
+                      navigate(`/admin/organizations?organizationId=${organization.id}`)
+                    }
                   >
                     Ver lojas
                   </Button>
@@ -334,7 +347,9 @@ export const AdminOrganizationsPage = () => {
             id="organization-name"
             label="Nome da organização"
             value={organizationForm.name}
-            onChange={(event) => setOrganizationForm((previous) => ({ ...previous, name: event.target.value }))}
+            onChange={(event) =>
+              setOrganizationForm((previous) => ({ ...previous, name: event.target.value }))
+            }
             placeholder="Ex.: Squad de Onboarding"
             required
           />
@@ -351,7 +366,12 @@ export const AdminOrganizationsPage = () => {
             <Button type="submit" isLoading={isSavingOrganization} loadingText="Salvando...">
               {currentOrganization ? 'Salvar alterações' : 'Criar organização'}
             </Button>
-            <Button type="button" variant="ghost" onClick={closeModal} disabled={isSavingOrganization}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={closeModal}
+              disabled={isSavingOrganization}
+            >
               Cancelar
             </Button>
           </div>
@@ -362,7 +382,9 @@ export const AdminOrganizationsPage = () => {
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <h3 className="text-lg font-semibold text-primary">Membros vinculados</h3>
-                <p className="section-subtitle">Adicione usuários pelo e-mail cadastrado no QaLite.</p>
+                <p className="section-subtitle">
+                  Adicione usuários pelo e-mail cadastrado no QaLite.
+                </p>
               </div>
               <span className="badge">
                 {currentOrganization.members.length} membro
@@ -389,7 +411,8 @@ export const AdminOrganizationsPage = () => {
 
             {currentOrganization.members.length === 0 ? (
               <p className="section-subtitle">
-                Nenhum usuário vinculado ainda. Adicione membros utilizando o e-mail cadastrado no QaLite.
+                Nenhum usuário vinculado ainda. Adicione membros utilizando o e-mail cadastrado no
+                QaLite.
               </p>
             ) : (
               <ul className="member-list">

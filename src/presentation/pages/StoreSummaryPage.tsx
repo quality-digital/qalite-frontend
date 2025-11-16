@@ -9,9 +9,9 @@ import type {
   StoreSuite,
   StoreSuiteInput,
 } from '../../domain/entities/Store';
-import { organizationService } from '../../application/services/OrganizationService';
-import { storeService } from '../../application/services/StoreService';
-import { useAuth } from '../../application/hooks/useAuth';
+import { organizationService } from '../../main/factories/organizationServiceFactory';
+import { storeService } from '../../main/factories/storeServiceFactory';
+import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
 import { Layout } from '../components/Layout';
 import { Button } from '../components/Button';

@@ -29,7 +29,7 @@ interface RoleProtectedRouteProps extends ProtectedRouteProps {
 export const RoleProtectedRoute = ({
   allowedRoles,
   fallback = '/403',
-  redirectTo
+  redirectTo,
 }: RoleProtectedRouteProps) => {
   const { user, hasRole, isInitializing } = useAuth();
 

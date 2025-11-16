@@ -5,6 +5,11 @@ import type {
   StoreSuite,
   StoreSuiteInput,
 } from '../../domain/entities/Store';
+import type {
+  CreateStorePayload,
+  IStoreRepository,
+  UpdateStorePayload,
+} from '../../domain/repositories/StoreRepository';
 import { CreateStore } from '../../domain/usecases/CreateStore';
 import { CreateStoreScenario } from '../../domain/usecases/CreateStoreScenario';
 import { CreateStoreSuite } from '../../domain/usecases/CreateStoreSuite';
@@ -20,13 +25,6 @@ import { ReplaceStoreScenarios } from '../../domain/usecases/ReplaceStoreScenari
 import { UpdateStore } from '../../domain/usecases/UpdateStore';
 import { UpdateStoreScenario } from '../../domain/usecases/UpdateStoreScenario';
 import { UpdateStoreSuite } from '../../domain/usecases/UpdateStoreSuite';
-import type {
-  CreateStorePayload,
-  UpdateStorePayload,
-} from '../../domain/repositories/StoreRepository';
-import { FirebaseStoreRepository } from '../../infra/repositories/FirebaseStoreRepository';
-
-const storeRepository = new FirebaseStoreRepository();
 
 export interface StoreExportPayload {
   store: {
@@ -41,22 +39,41 @@ export interface StoreExportPayload {
 }
 
 export class StoreService {
-  private readonly listStoresByOrganization = new ListStoresByOrganization(storeRepository);
-  private readonly getStoreById = new GetStoreById(storeRepository);
-  private readonly createStoreUseCase = new CreateStore(storeRepository);
-  private readonly updateStoreUseCase = new UpdateStore(storeRepository);
-  private readonly deleteStoreUseCase = new DeleteStore(storeRepository);
+  private readonly listStoresByOrganization: ListStoresByOrganization;
+  private readonly getStoreById: GetStoreById;
+  private readonly createStoreUseCase: CreateStore;
+  private readonly updateStoreUseCase: UpdateStore;
+  private readonly deleteStoreUseCase: DeleteStore;
 
-  private readonly listScenariosUseCase = new ListStoreScenarios(storeRepository);
-  private readonly createScenarioUseCase = new CreateStoreScenario(storeRepository);
-  private readonly updateScenarioUseCase = new UpdateStoreScenario(storeRepository);
-  private readonly deleteScenarioUseCase = new DeleteStoreScenario(storeRepository);
-  private readonly replaceScenariosUseCase = new ReplaceStoreScenarios(storeRepository);
-  private readonly mergeScenariosUseCase = new MergeStoreScenarios(storeRepository);
-  private readonly listSuitesUseCase = new ListStoreSuites(storeRepository);
-  private readonly createSuiteUseCase = new CreateStoreSuite(storeRepository);
-  private readonly updateSuiteUseCase = new UpdateStoreSuite(storeRepository);
-  private readonly deleteSuiteUseCase = new DeleteStoreSuite(storeRepository);
+  private readonly listScenariosUseCase: ListStoreScenarios;
+  private readonly createScenarioUseCase: CreateStoreScenario;
+  private readonly updateScenarioUseCase: UpdateStoreScenario;
+  private readonly deleteScenarioUseCase: DeleteStoreScenario;
+  private readonly replaceScenariosUseCase: ReplaceStoreScenarios;
+  private readonly mergeScenariosUseCase: MergeStoreScenarios;
+  private readonly listSuitesUseCase: ListStoreSuites;
+  private readonly createSuiteUseCase: CreateStoreSuite;
+  private readonly updateSuiteUseCase: UpdateStoreSuite;
+  private readonly deleteSuiteUseCase: DeleteStoreSuite;
+
+  constructor(repository: IStoreRepository) {
+    this.listStoresByOrganization = new ListStoresByOrganization(repository);
+    this.getStoreById = new GetStoreById(repository);
+    this.createStoreUseCase = new CreateStore(repository);
+    this.updateStoreUseCase = new UpdateStore(repository);
+    this.deleteStoreUseCase = new DeleteStore(repository);
+
+    this.listScenariosUseCase = new ListStoreScenarios(repository);
+    this.createScenarioUseCase = new CreateStoreScenario(repository);
+    this.updateScenarioUseCase = new UpdateStoreScenario(repository);
+    this.deleteScenarioUseCase = new DeleteStoreScenario(repository);
+    this.replaceScenariosUseCase = new ReplaceStoreScenarios(repository);
+    this.mergeScenariosUseCase = new MergeStoreScenarios(repository);
+    this.listSuitesUseCase = new ListStoreSuites(repository);
+    this.createSuiteUseCase = new CreateStoreSuite(repository);
+    this.updateSuiteUseCase = new UpdateStoreSuite(repository);
+    this.deleteSuiteUseCase = new DeleteStoreSuite(repository);
+  }
 
   listByOrganization(organizationId: string): Promise<Store[]> {
     return this.listStoresByOrganization.execute(organizationId);
@@ -164,5 +181,3 @@ export class StoreService {
     };
   }
 }
-
-export const storeService = new StoreService();

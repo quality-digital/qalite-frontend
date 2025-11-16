@@ -1,25 +1,35 @@
-import { FirebaseAuthRepository } from '../../infra/repositories/FirebaseAuthRepository';
 import type { AuthUser } from '../../domain/entities/AuthUser';
 import type { Role } from '../../domain/entities/Role';
+import type {
+  IAuthRepository,
+  UpdateProfilePayload,
+} from '../../domain/repositories/AuthRepository';
 import { GetCurrentUser } from '../../domain/usecases/GetCurrentUser';
-import { LoginUser, LoginUserInput } from '../../domain/usecases/LoginUser';
+import { LoginUser, type LoginUserInput } from '../../domain/usecases/LoginUser';
 import { LogoutUser } from '../../domain/usecases/LogoutUser';
 import { ObserveAuthState } from '../../domain/usecases/ObserveAuthState';
-import { RegisterUser, RegisterUserInput } from '../../domain/usecases/RegisterUser';
-import { UpdateUserProfile } from '../../domain/usecases/UpdateUserProfile';
-import type { UpdateProfilePayload } from '../../domain/repositories/AuthRepository';
+import { RegisterUser, type RegisterUserInput } from '../../domain/usecases/RegisterUser';
 import { ResetPassword } from '../../domain/usecases/ResetPassword';
-
-const authRepository = new FirebaseAuthRepository();
+import { UpdateUserProfile } from '../../domain/usecases/UpdateUserProfile';
 
 export class AuthService {
-  private readonly registerUser = new RegisterUser(authRepository);
-  private readonly loginUser = new LoginUser(authRepository);
-  private readonly logoutUser = new LogoutUser(authRepository);
-  private readonly resetPassword = new ResetPassword(authRepository);
-  private readonly getCurrentUser = new GetCurrentUser(authRepository);
-  private readonly observeAuthState = new ObserveAuthState(authRepository);
-  private readonly updateUserProfile = new UpdateUserProfile(authRepository);
+  private readonly registerUser: RegisterUser;
+  private readonly loginUser: LoginUser;
+  private readonly logoutUser: LogoutUser;
+  private readonly resetPassword: ResetPassword;
+  private readonly getCurrentUser: GetCurrentUser;
+  private readonly observeAuthState: ObserveAuthState;
+  private readonly updateUserProfile: UpdateUserProfile;
+
+  constructor(authRepository: IAuthRepository) {
+    this.registerUser = new RegisterUser(authRepository);
+    this.loginUser = new LoginUser(authRepository);
+    this.logoutUser = new LogoutUser(authRepository);
+    this.resetPassword = new ResetPassword(authRepository);
+    this.getCurrentUser = new GetCurrentUser(authRepository);
+    this.observeAuthState = new ObserveAuthState(authRepository);
+    this.updateUserProfile = new UpdateUserProfile(authRepository);
+  }
 
   register(input: RegisterUserInput): Promise<AuthUser> {
     return this.registerUser.execute(input);
@@ -54,5 +64,3 @@ export class AuthService {
     return this.updateUserProfile.execute(input);
   }
 }
-
-export const authService = new AuthService();

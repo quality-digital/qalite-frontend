@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom';
 
-import { useAuth } from '../../application/hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 
 export const HomePage = () => {
   const { user, hasRole, isInitializing } = useAuth();

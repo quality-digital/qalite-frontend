@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { useAuth } from '../../application/hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 import { Button } from './Button';
 import { UserAvatar } from './UserAvatar';
 import { LogoutIcon, UserIcon } from './icons';
@@ -30,11 +30,17 @@ export const Layout = ({ children }: LayoutProps) => {
                 <div className="user-context">
                   <span className="user-greeting">Olá,</span>
                   <span className="user-name">{displayName}</span>
-                  <span className="user-role">{user.role === 'admin' ? 'Administrador' : 'Usuário'}</span>
+                  <span className="user-role">
+                    {user.role === 'admin' ? 'Administrador' : 'Usuário'}
+                  </span>
                 </div>
               </div>
               <div className="header-user-actions">
-                <button type="button" className="header-profile" onClick={() => navigate('/profile')}>
+                <button
+                  type="button"
+                  className="header-profile"
+                  onClick={() => navigate('/profile')}
+                >
                   <UserIcon aria-hidden className="icon" />
                   <span>Perfil</span>
                 </button>

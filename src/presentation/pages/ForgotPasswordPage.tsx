@@ -1,7 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { useAuth } from '../../application/hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
 import { AuthLayout } from '../components/AuthLayout';
 import { Button } from '../components/Button';
 import { TextInput } from '../components/TextInput';
@@ -41,7 +41,9 @@ export const ForgotPasswordPage = () => {
       }
     >
       {feedback && (
-        <p className={`form-message ${feedback.startsWith('Verifique') ? 'form-message--success' : 'form-message--error'}`}>
+        <p
+          className={`form-message ${feedback.startsWith('Verifique') ? 'form-message--success' : 'form-message--error'}`}
+        >
           {feedback}
         </p>
       )}
