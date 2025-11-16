@@ -1957,9 +1957,17 @@ a.text-link:hover {
   gap: 1.5rem;
 }
 
+.suite-manager--suites-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 @media (min-width: 960px) {
   .suite-manager {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .suite-manager--suites-only {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
   }
 }
 
@@ -2071,6 +2079,30 @@ a.text-link:hover {
   border-radius: var(--radius-md);
   padding: 1.25rem;
   background: var(--color-surface);
+}
+
+.suite-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.suite-section-toggle {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.suite-section-toggle .suite-preview-title {
+  margin-bottom: 0;
+}
+
+.suite-section-toggle:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .suite-preview-title-row {
