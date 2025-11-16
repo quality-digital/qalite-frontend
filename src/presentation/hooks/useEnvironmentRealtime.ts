@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import type { Environment } from '../../domain/entities/Environment';
-import { getEnvironmentByIdRealtime } from '../../infra/firebase/environmentService';
+import { environmentService } from '../../main/factories/environmentServiceFactory';
 
 export const useEnvironmentRealtime = (environmentId: string | null | undefined) => {
   const [environment, setEnvironment] = useState<Environment | null>(null);
@@ -16,7 +16,7 @@ export const useEnvironmentRealtime = (environmentId: string | null | undefined)
     }
 
     setIsLoading(true);
-    const unsubscribe = getEnvironmentByIdRealtime(environmentId, (data) => {
+    const unsubscribe = environmentService.observeEnvironment(environmentId, (data) => {
       setEnvironment(data);
       setIsLoading(false);
     });

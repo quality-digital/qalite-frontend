@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 
 import type { EnvironmentScenarioStatus } from '../../domain/entities/Environment';
-import { updateScenarioStatus, uploadEvidenceFile } from '../../infra/firebase/environmentService';
+import { environmentService } from '../../main/factories/environmentServiceFactory';
 
 export const useScenarioEvidence = (environmentId: string | null | undefined) => {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -14,7 +14,7 @@ export const useScenarioEvidence = (environmentId: string | null | undefined) =>
 
       setIsUpdating(true);
       try {
-        return await uploadEvidenceFile(environmentId, scenarioId, file);
+        return await environmentService.uploadScenarioEvidence(environmentId, scenarioId, file);
       } finally {
         setIsUpdating(false);
       }
@@ -30,7 +30,7 @@ export const useScenarioEvidence = (environmentId: string | null | undefined) =>
 
       setIsUpdating(true);
       try {
-        await updateScenarioStatus(environmentId, scenarioId, status);
+        await environmentService.updateScenarioStatus(environmentId, scenarioId, status);
       } finally {
         setIsUpdating(false);
       }

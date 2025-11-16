@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 
 import type { EnvironmentStatus } from '../../domain/entities/Environment';
 import { Layout } from '../components/Layout';
-import { TabelaEvidencias } from '../components/environments/TabelaEvidencias';
+import { EnvironmentEvidenceTable } from '../components/environments/EnvironmentEvidenceTable';
 import { useEnvironmentRealtime } from '../hooks/useEnvironmentRealtime';
 import { useTimeTracking } from '../hooks/useTimeTracking';
 import { useUserProfiles } from '../hooks/useUserProfiles';
@@ -14,7 +14,7 @@ const STATUS_LABEL: Record<EnvironmentStatus, string> = {
   done: 'Concluído',
 };
 
-export const PaginaAmbientePublica = () => {
+export const PublicEnvironmentPage = () => {
   const { environmentId } = useParams<{ environmentId: string }>();
   const { environment, isLoading } = useEnvironmentRealtime(environmentId);
   const participants = useUserProfiles(environment?.participants ?? []);
@@ -119,7 +119,7 @@ export const PaginaAmbientePublica = () => {
 
         <div className="environment-evidence">
           <h3 className="section-subtitle">Cenários e evidências</h3>
-          <TabelaEvidencias environment={environment} isLocked readOnly />
+          <EnvironmentEvidenceTable environment={environment} isLocked readOnly />
         </div>
       </section>
     </Layout>

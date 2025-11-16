@@ -2,10 +2,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { firebaseFirestore } from '../../infra/firebase/firebaseConfig';
-import {
-  addUserToEnvironment,
-  removeUserFromEnvironment,
-} from '../../infra/firebase/environmentService';
+import { environmentService } from '../../main/factories/environmentServiceFactory';
 import { useAuth } from './useAuth';
 
 export interface PresentUserProfile {
@@ -69,7 +66,7 @@ export const usePresentUsers = ({
     }
 
     try {
-      await addUserToEnvironment(environmentId, user.uid);
+      await environmentService.addUser(environmentId, user.uid);
     } catch (error) {
       console.error(error);
     }
@@ -81,7 +78,7 @@ export const usePresentUsers = ({
     }
 
     try {
-      await removeUserFromEnvironment(environmentId, user.uid);
+      await environmentService.removeUser(environmentId, user.uid);
     } catch (error) {
       console.error(error);
     }

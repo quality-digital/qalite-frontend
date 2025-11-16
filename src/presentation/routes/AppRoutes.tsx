@@ -16,8 +16,8 @@ import { UserDashboardPage } from '../pages/UserDashboardPage';
 import { NoOrganizationPage } from '../pages/NoOrganizationPage';
 import { OrganizationDashboardPage } from '../pages/OrganizationDashboardPage';
 import { StoreSummaryPage } from '../pages/StoreSummaryPage';
-import { PaginaAmbiente } from '../pages/PaginaAmbiente';
-import { PaginaAmbientePublica } from '../pages/PaginaAmbientePublica';
+import { EnvironmentPage } from '../pages/EnvironmentPage';
+import { PublicEnvironmentPage } from '../pages/PublicEnvironmentPage';
 
 export const AppRoutes = () => (
   <ThemeProvider>
@@ -30,7 +30,7 @@ export const AppRoutes = () => (
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/403" element={<ForbiddenPage />} />
-            <Route path="/environments/:environmentId/public" element={<PaginaAmbientePublica />} />
+            <Route path="/environments/:environmentId/public" element={<PublicEnvironmentPage />} />
 
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<UserDashboardPage />} />
@@ -38,7 +38,7 @@ export const AppRoutes = () => (
               <Route path="/no-organization" element={<NoOrganizationPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/stores/:storeId" element={<StoreSummaryPage />} />
-              <Route path="/environments/:environmentId" element={<PaginaAmbiente />} />
+              <Route path="/environments/:environmentId" element={<EnvironmentPage />} />
             </Route>
 
             <Route element={<RoleProtectedRoute allowedRoles={['admin']} />}>

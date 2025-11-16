@@ -1,12 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import { EnvironmentStatusError } from '../../application/errors/EnvironmentStatusError';
 import type { EnvironmentStatus } from '../../domain/entities/Environment';
-import {
-  exportEnvironmentAsMarkdown,
-  exportEnvironmentAsPDF,
-  updateEnvironment,
-} from '../../infra/firebase/environmentService';
+import { environmentService } from '../../main/factories/environmentServiceFactory';
 import { Layout } from '../components/Layout';
 import { Button } from '../components/Button';
 import { useToast } from '../context/ToastContext';
@@ -14,10 +11,11 @@ import { useEnvironmentRealtime } from '../hooks/useEnvironmentRealtime';
 import { usePresentUsers } from '../hooks/usePresentUsers';
 import { useTimeTracking } from '../hooks/useTimeTracking';
 import { useAuth } from '../hooks/useAuth';
-import { TabelaEvidencias } from '../components/environments/TabelaEvidencias';
-import { ModalEditarAmbiente } from '../components/environments/ModalEditarAmbiente';
-import { ModalExcluirAmbiente } from '../components/environments/ModalExcluirAmbiente';
+import { EnvironmentEvidenceTable } from '../components/environments/EnvironmentEvidenceTable';
+import { EditEnvironmentModal } from '../components/environments/EditEnvironmentModal';
+import { DeleteEnvironmentModal } from '../components/environments/DeleteEnvironmentModal';
 import { useUserProfiles } from '../hooks/useUserProfiles';
+import { copyToClipboard } from '../utils/clipboard';
 
 const STATUS_LABEL: Record<EnvironmentStatus, string> = {
   backlog: 'Backlog',
@@ -25,7 +23,7 @@ const STATUS_LABEL: Record<EnvironmentStatus, string> = {
   done: 'Concluído',
 };
 
-export const PaginaAmbiente = () => {
+export const EnvironmentPage = () => {
   const { environmentId } = useParams<{ environmentId: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -71,75 +69,38 @@ export const PaginaAmbiente = () => {
       return;
     }
 
-    if (target === 'done') {
-      const hasPending = Object.values(environment.scenarios ?? {}).some(
-        (scenario) => scenario.status === 'pendente',
-      );
+    try {
+      await environmentService.transitionStatus({
+        environment,
+        targetStatus: target,
+        currentUserId: user?.uid ?? null,
+      });
 
-      if (hasPending) {
+      showToast({
+        type: 'success',
+        message: target === 'done' ? 'Ambiente concluído.' : 'Status atualizado com sucesso.',
+      });
+    } catch (error) {
+      if (error instanceof EnvironmentStatusError && error.code === 'PENDING_SCENARIOS') {
         showToast({
           type: 'error',
           message: 'Existem cenários pendentes. Conclua-os antes de finalizar.',
         });
         return;
       }
-    }
 
-    const now = new Date().toISOString();
-    let timeTracking = environment.timeTracking;
-
-    if (target === 'backlog') {
-      timeTracking = { start: null, end: null, totalMs: 0 };
-    } else if (target === 'in_progress') {
-      timeTracking = { start: timeTracking.start ?? now, end: null, totalMs: timeTracking.totalMs };
-    } else if (target === 'done') {
-      const startTimestamp = timeTracking.start
-        ? new Date(timeTracking.start).getTime()
-        : Date.now();
-      const totalMs = timeTracking.totalMs + Math.max(0, Date.now() - startTimestamp);
-      const uniqueParticipants = Array.from(
-        new Set([...(environment.participants ?? []), ...(environment.presentUsersIds ?? [])]),
-      );
-      timeTracking = { start: timeTracking.start ?? now, end: now, totalMs };
-
-      try {
-        await updateEnvironment(environment.id, {
-          status: target,
-          timeTracking,
-          presentUsersIds: [],
-          concludedBy: user?.uid ?? null,
-          participants: uniqueParticipants,
-        });
-        showToast({ type: 'success', message: 'Ambiente concluído.' });
-        return;
-      } catch (error) {
-        console.error(error);
-        showToast({ type: 'error', message: 'Não foi possível atualizar o status.' });
-        return;
-      }
-    }
-
-    try {
-      await updateEnvironment(environment.id, { status: target, timeTracking });
-      showToast({ type: 'success', message: 'Status atualizado com sucesso.' });
-    } catch (error) {
       console.error(error);
       showToast({ type: 'error', message: 'Não foi possível atualizar o status.' });
     }
   };
 
   const handleCopyLink = async (url: string) => {
+    if (!url) {
+      return;
+    }
+
     try {
-      if (navigator.clipboard) {
-        await navigator.clipboard.writeText(url);
-      } else {
-        const textarea = document.createElement('textarea');
-        textarea.value = url;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-      }
+      await copyToClipboard(url);
       showToast({ type: 'success', message: 'Link copiado para a área de transferência.' });
     } catch (error) {
       console.error(error);
@@ -151,14 +112,14 @@ export const PaginaAmbiente = () => {
     if (!environment) {
       return;
     }
-    exportEnvironmentAsPDF(environment);
+    environmentService.exportAsPDF(environment);
   };
 
   const handleExportMarkdown = () => {
     if (!environment) {
       return;
     }
-    exportEnvironmentAsMarkdown(environment);
+    environmentService.exportAsMarkdown(environment);
   };
 
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -356,18 +317,21 @@ export const PaginaAmbiente = () => {
                   Abrir preview público ↗
                 </a>
               </div>
-              <TabelaEvidencias environment={environment} isLocked={Boolean(isScenarioLocked)} />
+              <EnvironmentEvidenceTable
+                environment={environment}
+                isLocked={Boolean(isScenarioLocked)}
+              />
             </div>
           </>
         )}
       </section>
 
-      <ModalEditarAmbiente
+      <EditEnvironmentModal
         isOpen={isEditOpen}
         onClose={() => setIsEditOpen(false)}
         environment={environment ?? null}
       />
-      <ModalExcluirAmbiente
+      <DeleteEnvironmentModal
         isOpen={isDeleteOpen}
         onClose={() => setIsDeleteOpen(false)}
         environment={environment ?? null}

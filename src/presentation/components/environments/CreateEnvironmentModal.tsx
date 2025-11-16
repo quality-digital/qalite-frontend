@@ -2,14 +2,14 @@ import { FormEvent, useMemo, useState } from 'react';
 
 import type { EnvironmentScenario, EnvironmentStatus } from '../../../domain/entities/Environment';
 import type { StoreScenario, StoreSuite } from '../../../domain/entities/Store';
-import { createEnvironment } from '../../../infra/firebase/environmentService';
+import { environmentService } from '../../../main/factories/environmentServiceFactory';
 import { Button } from '../Button';
 import { Modal } from '../Modal';
 import { SelectInput } from '../SelectInput';
 import { TextArea } from '../TextArea';
 import { TextInput } from '../TextInput';
 
-interface ModalCriarAmbienteProps {
+interface CreateEnvironmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   storeId: string;
@@ -56,14 +56,14 @@ const buildScenarioMap = (
   return scenarioMap;
 };
 
-export const ModalCriarAmbiente = ({
+export const CreateEnvironmentModal = ({
   isOpen,
   onClose,
   storeId,
   suites,
   scenarios,
   onCreated,
-}: ModalCriarAmbienteProps) => {
+}: CreateEnvironmentModalProps) => {
   const [identificador, setIdentificador] = useState('');
   const [urls, setUrls] = useState('');
   const [jiraTask, setJiraTask] = useState('');
@@ -114,7 +114,7 @@ export const ModalCriarAmbiente = ({
           ? { start: new Date().toISOString(), end: null, totalMs: 0 }
           : { start: null, end: null, totalMs: 0 };
 
-      await createEnvironment({
+      await environmentService.create({
         identificador: identificador.trim(),
         storeId,
         suiteId: selectedSuite?.id ?? null,

@@ -1,23 +1,23 @@
 import { useState } from 'react';
 
 import type { Environment } from '../../../domain/entities/Environment';
-import { deleteEnvironment } from '../../../infra/firebase/environmentService';
+import { environmentService } from '../../../main/factories/environmentServiceFactory';
 import { Button } from '../Button';
 import { Modal } from '../Modal';
 
-interface ModalExcluirAmbienteProps {
+interface DeleteEnvironmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   environment: Environment | null;
   onDeleted?: () => void;
 }
 
-export const ModalExcluirAmbiente = ({
+export const DeleteEnvironmentModal = ({
   isOpen,
   onClose,
   environment,
   onDeleted,
-}: ModalExcluirAmbienteProps) => {
+}: DeleteEnvironmentModalProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,7 +29,7 @@ export const ModalExcluirAmbiente = ({
     setError(null);
     setIsDeleting(true);
     try {
-      await deleteEnvironment(environment.id);
+      await environmentService.delete(environment.id);
       onDeleted?.();
       onClose();
     } catch (err) {

@@ -3,7 +3,7 @@ import type { ChangeEvent } from 'react';
 import type { Environment, EnvironmentScenarioStatus } from '../../../domain/entities/Environment';
 import { useScenarioEvidence } from '../../hooks/useScenarioEvidence';
 
-interface TabelaEvidenciasProps {
+interface EnvironmentEvidenceTableProps {
   environment: Environment;
   isLocked?: boolean;
   readOnly?: boolean;
@@ -17,7 +17,11 @@ const STATUS_OPTIONS: { value: EnvironmentScenarioStatus; label: string }[] = [
   { value: 'nao_se_aplica', label: 'Não se aplica' },
 ];
 
-export const TabelaEvidencias = ({ environment, isLocked, readOnly }: TabelaEvidenciasProps) => {
+export const EnvironmentEvidenceTable = ({
+  environment,
+  isLocked,
+  readOnly,
+}: EnvironmentEvidenceTableProps) => {
   const { isUpdating, handleEvidenceUpload, changeScenarioStatus } = useScenarioEvidence(
     environment.id,
   );

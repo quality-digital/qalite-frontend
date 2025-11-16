@@ -3,7 +3,7 @@ import type { DragEvent } from 'react';
 import type { Environment } from '../../../domain/entities/Environment';
 import type { PresentUserProfile } from '../../hooks/usePresentUsers';
 
-interface CardAmbienteProps {
+interface EnvironmentCardProps {
   environment: Environment;
   presentUsers: PresentUserProfile[];
   suiteName?: string | null;
@@ -18,14 +18,14 @@ const STATUS_LABEL: Record<Environment['status'], string> = {
   done: 'Concluído',
 };
 
-export const CardAmbiente = ({
+export const EnvironmentCard = ({
   environment,
   presentUsers,
   suiteName,
   onOpen,
   draggable = false,
   onDragStart,
-}: CardAmbienteProps) => {
+}: EnvironmentCardProps) => {
   const isLocked = environment.status === 'done';
   const displaySuiteName = suiteName ?? 'Suíte não informada';
   const hasPresentUsers = presentUsers.length > 0;

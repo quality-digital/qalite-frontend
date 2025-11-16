@@ -3,20 +3,18 @@ import type { DragEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { EnvironmentStatusError } from '../../../application/errors/EnvironmentStatusError';
 import type { Environment, EnvironmentStatus } from '../../../domain/entities/Environment';
 import type { StoreScenario, StoreSuite } from '../../../domain/entities/Store';
 import { firebaseFirestore } from '../../../infra/firebase/firebaseConfig';
-import {
-  getAllEnvironmentsRealtime,
-  updateEnvironment,
-} from '../../../infra/firebase/environmentService';
+import { environmentService } from '../../../main/factories/environmentServiceFactory';
 import { useToast } from '../../context/ToastContext';
 import type { PresentUserProfile } from '../../hooks/usePresentUsers';
 import { Button } from '../Button';
-import { CardAmbiente } from './CardAmbiente';
-import { ModalCriarAmbiente } from './ModalCriarAmbiente';
+import { EnvironmentCard } from './EnvironmentCard';
+import { CreateEnvironmentModal } from './CreateEnvironmentModal';
 
-interface KanbanAmbientesProps {
+interface EnvironmentKanbanProps {
   storeId: string;
   suites: StoreSuite[];
   scenarios: StoreScenario[];
@@ -28,7 +26,7 @@ const COLUMNS: { status: EnvironmentStatus; title: string; description: string }
   { status: 'done', title: 'Concluído', description: 'Ambientes finalizados.' },
 ];
 
-export const KanbanAmbientes = ({ storeId, suites, scenarios }: KanbanAmbientesProps) => {
+export const EnvironmentKanban = ({ storeId, suites, scenarios }: EnvironmentKanbanProps) => {
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [environments, setEnvironments] = useState<Environment[]>([]);
@@ -37,7 +35,7 @@ export const KanbanAmbientes = ({ storeId, suites, scenarios }: KanbanAmbientesP
   const [presentUsersMap, setPresentUsersMap] = useState<Record<string, PresentUserProfile>>({});
 
   useEffect(() => {
-    const unsubscribe = getAllEnvironmentsRealtime({ storeId }, (list) => {
+    const unsubscribe = environmentService.observeAll({ storeId }, (list) => {
       setEnvironments(list);
       setIsLoading(false);
     });
@@ -172,39 +170,18 @@ export const KanbanAmbientes = ({ storeId, suites, scenarios }: KanbanAmbientesP
       return;
     }
 
-    if (status === 'done') {
-      const hasPending = Object.values(environment.scenarios ?? {}).some(
-        (scenario) => scenario.status === 'pendente',
-      );
-
-      if (hasPending) {
+    try {
+      await environmentService.transitionStatus({ environment, targetStatus: status });
+      showToast({ type: 'success', message: 'Status atualizado com sucesso.' });
+    } catch (error) {
+      if (error instanceof EnvironmentStatusError && error.code === 'PENDING_SCENARIOS') {
         showToast({
           type: 'error',
           message: 'Existem cenários pendentes. Conclua-os antes de finalizar.',
         });
         return;
       }
-    }
 
-    const now = new Date().toISOString();
-    let timeTracking = environment.timeTracking;
-
-    if (status === 'backlog') {
-      timeTracking = { start: null, end: null, totalMs: 0 };
-    } else if (status === 'in_progress') {
-      timeTracking = { start: timeTracking.start ?? now, end: null, totalMs: timeTracking.totalMs };
-    } else if (status === 'done') {
-      const startTimestamp = timeTracking.start
-        ? new Date(timeTracking.start).getTime()
-        : Date.now();
-      const totalMs = timeTracking.totalMs + Math.max(0, Date.now() - startTimestamp);
-      timeTracking = { start: timeTracking.start ?? now, end: now, totalMs };
-    }
-
-    try {
-      await updateEnvironment(environment.id, { status, timeTracking });
-      showToast({ type: 'success', message: 'Status atualizado com sucesso.' });
-    } catch (error) {
       console.error(error);
       showToast({ type: 'error', message: 'Não foi possível atualizar o status.' });
     }
@@ -245,7 +222,7 @@ export const KanbanAmbientes = ({ storeId, suites, scenarios }: KanbanAmbientesP
                 <p className="section-subtitle">Nenhum ambiente nesta coluna.</p>
               ) : (
                 grouped[column.status].map((environment) => (
-                  <CardAmbiente
+                  <EnvironmentCard
                     key={environment.id}
                     environment={environment}
                     presentUsers={environment.presentUsersIds
@@ -263,7 +240,7 @@ export const KanbanAmbientes = ({ storeId, suites, scenarios }: KanbanAmbientesP
         </div>
       )}
 
-      <ModalCriarAmbiente
+      <CreateEnvironmentModal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         storeId={storeId}
