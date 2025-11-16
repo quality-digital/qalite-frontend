@@ -18,6 +18,7 @@ import { Button } from '../components/Button';
 import { TextInput } from '../components/TextInput';
 import { TextArea } from '../components/TextArea';
 import { SelectInput } from '../components/SelectInput';
+import { Modal } from '../components/Modal';
 import {
   AUTOMATION_OPTIONS,
   CRITICALITY_OPTIONS,
@@ -94,6 +95,11 @@ export const StoreSummaryPage = () => {
   const [selectedSuitePreviewId, setSelectedSuitePreviewId] = useState<string | null>(null);
   const [isViewingSuitesOnly, setIsViewingSuitesOnly] = useState(false);
   const suiteListRef = useRef<HTMLDivElement | null>(null);
+  const [isStoreSettingsOpen, setIsStoreSettingsOpen] = useState(false);
+  const [storeSettings, setStoreSettings] = useState({ name: '', site: '' });
+  const [storeSettingsError, setStoreSettingsError] = useState<string | null>(null);
+  const [isUpdatingStore, setIsUpdatingStore] = useState(false);
+  const [isDeletingStore, setIsDeletingStore] = useState(false);
   const selectedSuiteScenarioCount = suiteForm.scenarioIds.length;
   const suiteSelectionSummary =
     selectedSuiteScenarioCount === 0
@@ -248,6 +254,95 @@ export const StoreSummaryPage = () => {
       setIsScenarioTableCollapsed(false);
     }
   }, [scenarios.length]);
+
+  const openStoreSettings = () => {
+    if (!store) {
+      return;
+    }
+
+    setStoreSettings({ name: store.name, site: store.site });
+    setStoreSettingsError(null);
+    setIsStoreSettingsOpen(true);
+  };
+
+  const closeStoreSettings = () => {
+    setIsStoreSettingsOpen(false);
+    setStoreSettingsError(null);
+  };
+
+  const handleStoreSettingsSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!store) {
+      return;
+    }
+
+    const trimmedName = storeSettings.name.trim();
+    const trimmedSite = storeSettings.site.trim();
+
+    if (!trimmedName) {
+      setStoreSettingsError('Informe o nome da loja.');
+      return;
+    }
+
+    if (!trimmedSite) {
+      setStoreSettingsError('Informe o site da loja.');
+      return;
+    }
+
+    try {
+      setIsUpdatingStore(true);
+      const updated = await storeService.update(store.id, {
+        name: trimmedName,
+        site: trimmedSite,
+        stage: store.stage,
+      });
+
+      setStore(updated);
+      setStoreSettings({ name: updated.name, site: updated.site });
+      closeStoreSettings();
+      showToast({ type: 'success', message: 'Loja atualizada com sucesso.' });
+    } catch (error) {
+      console.error(error);
+      const message = error instanceof Error ? error.message : 'Não foi possível atualizar a loja.';
+      setStoreSettingsError(message);
+      showToast({ type: 'error', message });
+    } finally {
+      setIsUpdatingStore(false);
+    }
+  };
+
+  const handleRemoveStore = async () => {
+    if (!store) {
+      return;
+    }
+
+    const confirmation = window.confirm(
+      `Deseja remover a loja "${store.name}"? Esta ação não pode ser desfeita.`,
+    );
+
+    if (!confirmation) {
+      return;
+    }
+
+    try {
+      setIsDeletingStore(true);
+      await storeService.delete(store.id);
+      closeStoreSettings();
+      showToast({ type: 'success', message: 'Loja removida com sucesso.' });
+      const redirectTo =
+        user?.role === 'admin'
+          ? `/admin/organizations?organizationId=${store.organizationId}`
+          : '/dashboard';
+      navigate(redirectTo, { replace: true });
+    } catch (error) {
+      console.error(error);
+      const message = error instanceof Error ? error.message : 'Não foi possível remover a loja.';
+      showToast({ type: 'error', message });
+    } finally {
+      setIsDeletingStore(false);
+    }
+  };
 
   useEffect(() => {
     setCustomCategories([]);
@@ -651,645 +746,717 @@ export const StoreSummaryPage = () => {
   };
 
   return (
-    <Layout>
-      <section className="page-container">
-        <div className="page-header">
-          <div>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => navigate(user?.role === 'admin' ? '/admin' : '/dashboard')}
-            >
-              ← Voltar
-            </Button>
-            <h1 className="section-title">
-              {isLoadingStore ? 'Carregando loja...' : (store?.name ?? 'Loja')}
-            </h1>
+    <>
+      <Layout>
+        <section className="page-container">
+          <div className="page-header">
+            <div>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => navigate(user?.role === 'admin' ? '/admin' : '/dashboard')}
+              >
+                ← Voltar
+              </Button>
+              <h1 className="section-title">
+                {isLoadingStore ? 'Carregando loja...' : (store?.name ?? 'Loja')}
+              </h1>
+              {store && (
+                <p className="section-subtitle">
+                  {organization?.name ? `${organization.name} • ` : ''}
+                  {store.site || 'Site não informado'}
+                </p>
+              )}
+            </div>
             {store && (
-              <p className="section-subtitle">
-                {organization?.name ? `${organization.name} • ` : ''}
-                {store.site || 'Site não informado'}
-              </p>
+              <div className="store-summary__actions">
+                <Button type="button" variant="secondary" onClick={openStoreSettings}>
+                  Configurações da loja
+                </Button>
+              </div>
             )}
           </div>
-        </div>
 
-        <div className="card">
-          {isLoadingStore ? (
-            <p className="section-subtitle">Sincronizando dados da loja...</p>
-          ) : !store ? (
-            <p className="section-subtitle">Não foi possível encontrar os detalhes desta loja.</p>
-          ) : (
-            <div className="store-summary">
-              <div className="store-summary-meta">
-                <div>
-                  <span className="badge">Resumo</span>
-                  <h2 className="text-xl font-semibold text-primary">Informações gerais</h2>
-                </div>
-                <div className="store-summary-stats">
-                  <span>
-                    <strong>Cenários:</strong> {scenarios.length}
-                  </span>
-                  <span>
-                    <strong>Site:</strong> {store.site || 'Não informado'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="scenario-view-toggle" aria-label="Alternar visualização">
-                <span>Visualizar</span>
-                <div className="scenario-view-toggle-buttons">
-                  <button
-                    type="button"
-                    className={viewMode === 'scenarios' ? 'is-active' : ''}
-                    onClick={() => setViewMode('scenarios')}
-                  >
-                    Massa de cenários
-                  </button>
-                  <button
-                    type="button"
-                    className={viewMode === 'suites' ? 'is-active' : ''}
-                    onClick={() => setViewMode('suites')}
-                  >
-                    Suítes de testes
-                  </button>
-                </div>
-              </div>
-
-              {store && canManageScenarios && viewMode === 'scenarios' && (
-                <form className="scenario-form" onSubmit={handleScenarioSubmit}>
-                  <h3 className="form-title">
-                    {editingScenarioId ? 'Editar cenário' : 'Novo cenário'}
-                  </h3>
-                  {scenarioFormError && (
-                    <p className="form-message form-message--error">{scenarioFormError}</p>
-                  )}
-                  <TextInput
-                    id="scenario-title"
-                    label="Título"
-                    value={scenarioForm.title}
-                    onChange={handleScenarioFormChange('title')}
-                    required
-                  />
-                  <div className="scenario-form-grid">
-                    <SelectInput
-                      id="scenario-category"
-                      label="Categoria"
-                      value={scenarioForm.category}
-                      onChange={handleScenarioFormChange('category')}
-                      options={categorySelectOptions}
-                      required
-                    />
-                    <SelectInput
-                      id="scenario-automation"
-                      label="Automação"
-                      value={scenarioForm.automation}
-                      onChange={handleScenarioFormChange('automation')}
-                      options={automationSelectOptions}
-                      required
-                    />
-                    <SelectInput
-                      id="scenario-criticality"
-                      label="Criticidade"
-                      value={scenarioForm.criticality}
-                      onChange={handleScenarioFormChange('criticality')}
-                      options={criticalitySelectOptions}
-                      required
-                    />
+          <div className="card">
+            {isLoadingStore ? (
+              <p className="section-subtitle">Sincronizando dados da loja...</p>
+            ) : !store ? (
+              <p className="section-subtitle">Não foi possível encontrar os detalhes desta loja.</p>
+            ) : (
+              <div className="store-summary">
+                <div className="store-summary-meta">
+                  <div>
+                    <span className="badge">Resumo</span>
+                    <h2 className="text-xl font-semibold text-primary">Informações gerais</h2>
                   </div>
-                  <div className="category-manager">
-                    <div className="category-manager-header">
-                      <p className="field-label">Categorias disponíveis</p>
-                      <p className="category-manager-description">
-                        Utilize as categorias cadastradas anteriormente ou crie novas opções para
-                        manter a massa organizada.
-                      </p>
-                    </div>
-                    <div className="category-manager-actions">
-                      <input
-                        type="text"
-                        className="field-input"
-                        placeholder="Informe uma nova categoria"
-                        value={newCategoryName}
-                        onChange={(event) => {
-                          setNewCategoryName(event.target.value);
-                          setCategoryError(null);
-                        }}
+                  <div className="store-summary-stats">
+                    <span>
+                      <strong>Cenários:</strong> {scenarios.length}
+                    </span>
+                    <span>
+                      <strong>Site:</strong> {store.site || 'Não informado'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="scenario-view-toggle" aria-label="Alternar visualização">
+                  <span>Visualizar</span>
+                  <div className="scenario-view-toggle-buttons">
+                    <button
+                      type="button"
+                      className={viewMode === 'scenarios' ? 'is-active' : ''}
+                      onClick={() => setViewMode('scenarios')}
+                    >
+                      Massa de cenários
+                    </button>
+                    <button
+                      type="button"
+                      className={viewMode === 'suites' ? 'is-active' : ''}
+                      onClick={() => setViewMode('suites')}
+                    >
+                      Suítes de testes
+                    </button>
+                  </div>
+                </div>
+
+                {store && canManageScenarios && viewMode === 'scenarios' && (
+                  <form className="scenario-form" onSubmit={handleScenarioSubmit}>
+                    <h3 className="form-title">
+                      {editingScenarioId ? 'Editar cenário' : 'Novo cenário'}
+                    </h3>
+                    {scenarioFormError && (
+                      <p className="form-message form-message--error">{scenarioFormError}</p>
+                    )}
+                    <TextInput
+                      id="scenario-title"
+                      label="Título"
+                      value={scenarioForm.title}
+                      onChange={handleScenarioFormChange('title')}
+                      required
+                    />
+                    <div className="scenario-form-grid">
+                      <SelectInput
+                        id="scenario-category"
+                        label="Categoria"
+                        value={scenarioForm.category}
+                        onChange={handleScenarioFormChange('category')}
+                        options={categorySelectOptions}
+                        required
                       />
-                      <Button type="button" variant="secondary" onClick={handleAddCategory}>
-                        Adicionar categoria
-                      </Button>
+                      <SelectInput
+                        id="scenario-automation"
+                        label="Automação"
+                        value={scenarioForm.automation}
+                        onChange={handleScenarioFormChange('automation')}
+                        options={automationSelectOptions}
+                        required
+                      />
+                      <SelectInput
+                        id="scenario-criticality"
+                        label="Criticidade"
+                        value={scenarioForm.criticality}
+                        onChange={handleScenarioFormChange('criticality')}
+                        options={criticalitySelectOptions}
+                        required
+                      />
                     </div>
-                    {categoryError && (
-                      <p className="form-message form-message--error">{categoryError}</p>
-                    )}
-                    {availableCategories.length > 0 ? (
-                      <ul className="category-chip-list">
-                        {availableCategories.map((category) => (
-                          <li key={category} className="category-chip">
-                            <span>{category}</span>
-                            {!scenarioCategories.has(category) && (
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveCustomCategory(category)}
-                                className="category-chip-remove"
-                                aria-label={`Remover categoria ${category}`}
-                              >
-                                &times;
-                              </button>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="category-manager-empty">Nenhuma categoria cadastrada ainda.</p>
-                    )}
-                  </div>
-                  <TextArea
-                    id="scenario-observation"
-                    label="Observação"
-                    value={scenarioForm.observation}
-                    onChange={handleScenarioFormChange('observation')}
-                    required
-                  />
-                  <TextArea
-                    id="scenario-bdd"
-                    label="BDD"
-                    value={scenarioForm.bdd}
-                    onChange={handleScenarioFormChange('bdd')}
-                    required
-                  />
-                  <div className="scenario-form-actions">
-                    <Button type="submit" isLoading={isSavingScenario} loadingText="Salvando...">
-                      {editingScenarioId ? 'Atualizar cenário' : 'Adicionar cenário'}
-                    </Button>
-                    {editingScenarioId && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={handleCancelScenarioEdit}
-                        disabled={isSavingScenario}
-                      >
-                        Cancelar edição
-                      </Button>
-                    )}
-                  </div>
-                </form>
-              )}
-
-              <div className="scenario-table-header">
-                <div>
-                  <h3 className="section-subtitle">Massa de cenários e suítes de testes</h3>
-                  <p className="scenario-table-description">
-                    Monte agrupamentos customizados a partir dos cenários cadastrados e navegue
-                    entre as visualizações.
-                  </p>
-                </div>
-                {viewMode === 'scenarios' && scenarios.length > 0 && (
-                  <button
-                    type="button"
-                    className="scenario-table-toggle"
-                    onClick={() => setIsScenarioTableCollapsed((previous) => !previous)}
-                  >
-                    {isScenarioTableCollapsed ? 'Maximizar tabela' : 'Minimizar tabela'}
-                  </button>
-                )}
-              </div>
-              <div className="scenario-table-wrapper">
-                {viewMode === 'scenarios' ? (
-                  isScenarioTableCollapsed ? (
-                    <p className="section-subtitle">
-                      Tabela minimizada. Utilize o botão acima para visualizar os cenários
-                      novamente.
-                    </p>
-                  ) : isLoadingScenarios ? (
-                    <p className="section-subtitle">Carregando massa de cenários...</p>
-                  ) : scenarios.length === 0 ? (
-                    <p className="section-subtitle">
-                      {canManageScenarios
-                        ? 'Nenhum cenário cadastrado para esta loja ainda. Utilize o formulário acima para criar o primeiro.'
-                        : 'Nenhum cenário cadastrado para esta loja ainda. Solicite a um responsável a criação da massa de testes.'}
-                    </p>
-                  ) : (
-                    <>
-                      <div className="scenario-filter-bar">
+                    <div className="category-manager">
+                      <div className="category-manager-header">
+                        <p className="field-label">Categorias disponíveis</p>
+                        <p className="category-manager-description">
+                          Utilize as categorias cadastradas anteriormente ou crie novas opções para
+                          manter a massa organizada.
+                        </p>
+                      </div>
+                      <div className="category-manager-actions">
                         <input
                           type="text"
-                          className="scenario-filter-input"
-                          placeholder="Busque pelo título do cenário"
-                          value={scenarioFilters.search}
-                          onChange={handleScenarioFilterChange('search')}
-                          aria-label="Buscar cenários por título"
+                          className="field-input"
+                          placeholder="Informe uma nova categoria"
+                          value={newCategoryName}
+                          onChange={(event) => {
+                            setNewCategoryName(event.target.value);
+                            setCategoryError(null);
+                          }}
                         />
-                        <select
-                          className="scenario-filter-input"
-                          value={scenarioFilters.category}
-                          onChange={handleScenarioFilterChange('category')}
-                          aria-label="Filtrar por categoria"
-                        >
-                          {categoryFilterOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          className="scenario-filter-input"
-                          value={scenarioFilters.criticality}
-                          onChange={handleScenarioFilterChange('criticality')}
-                          aria-label="Filtrar por criticidade"
-                        >
-                          {criticalityFilterOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                        {(scenarioFilters.search ||
-                          scenarioFilters.category ||
-                          scenarioFilters.criticality) && (
-                          <button
-                            type="button"
-                            className="scenario-filter-clear"
-                            onClick={handleClearScenarioFilters}
-                          >
-                            Limpar filtros
-                          </button>
-                        )}
+                        <Button type="button" variant="secondary" onClick={handleAddCategory}>
+                          Adicionar categoria
+                        </Button>
                       </div>
-                      {filteredScenarios.length === 0 ? (
-                        <p className="section-subtitle">
-                          Nenhum cenário corresponde aos filtros aplicados.
-                        </p>
-                      ) : (
-                        <table className="scenario-table data-table">
-                          <thead>
-                            <tr>
-                              <th>Título</th>
-                              <th>Categoria</th>
-                              <th>Automação</th>
-                              <th>Criticidade</th>
-                              <th>Observação</th>
-                              <th>BDD</th>
-                              {canManageScenarios && <th>Ações</th>}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {filteredScenarios.map((scenario) => (
-                              <tr key={scenario.id}>
-                                <td>{scenario.title}</td>
-                                <td>{scenario.category}</td>
-                                <td>{scenario.automation}</td>
-                                <td>
-                                  <span
-                                    className={`criticality-badge ${getCriticalityClassName(scenario.criticality)}`}
-                                  >
-                                    {scenario.criticality}
-                                  </span>
-                                </td>
-                                <td className="scenario-observation">{scenario.observation}</td>
-                                <td className="scenario-bdd">
-                                  <button
-                                    type="button"
-                                    className="scenario-copy-button"
-                                    onClick={() => void handleCopyBdd(scenario.bdd)}
-                                  >
-                                    Copiar BDD
-                                  </button>
-                                </td>
-                                {canManageScenarios && (
-                                  <td className="scenario-actions">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleEditScenario(scenario)}
-                                      disabled={isSavingScenario}
-                                    >
-                                      Editar
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => void handleDeleteScenario(scenario)}
-                                      disabled={isSavingScenario}
-                                      className="scenario-delete"
-                                    >
-                                      Excluir
-                                    </button>
-                                  </td>
-                                )}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                      {categoryError && (
+                        <p className="form-message form-message--error">{categoryError}</p>
                       )}
-                    </>
-                  )
-                ) : (
-                  <div
-                    ref={suiteListRef}
-                    className={`suite-manager ${isViewingSuitesOnly ? 'suite-manager--suites-only' : ''}`}
-                  >
-                    {isViewingSuitesOnly ? (
-                      <div className="suite-cards-view">
-                        <div className="suite-table-header">
-                          <span className="suite-preview-title">Suítes cadastradas</span>
-                          <Button type="button" variant="ghost" onClick={handleBackToSuiteForm}>
-                            Voltar para formulário
-                          </Button>
-                        </div>
-                        {isLoadingSuites ? (
-                          <p className="section-subtitle">Carregando suítes de testes...</p>
-                        ) : suites.length === 0 ? (
-                          <p className="section-subtitle">
-                            Nenhuma suíte cadastrada ainda. Utilize o formulário para criar sua
-                            primeira seleção.
-                          </p>
-                        ) : (
-                          <div className="suite-cards-grid">
-                            {suites
-                              .slice()
-                              .sort((a, b) => a.name.localeCompare(b.name))
-                              .map((suite) => {
-                                const isActive = selectedSuitePreviewId === suite.id;
-                                return (
-                                  <button
-                                    key={suite.id}
-                                    type="button"
-                                    className={`suite-card-trigger ${isActive ? 'is-active' : ''}`}
-                                    onClick={() =>
-                                      setSelectedSuitePreviewId((previous) =>
-                                        previous === suite.id ? null : suite.id,
-                                      )
-                                    }
-                                  >
-                                    <span>{suite.name}</span>
-                                  </button>
-                                );
-                              })}
-                          </div>
-                        )}
-                        {!selectedSuitePreview ? (
-                          <p className="section-subtitle">
-                            Clique em um card para visualizar os cenários associados.
-                          </p>
-                        ) : selectedSuitePreviewEntries.length === 0 ? (
-                          <p className="section-subtitle">
-                            Esta suíte não possui cenários cadastrados ou alguns itens foram
-                            removidos.
-                          </p>
-                        ) : (
-                          <div className="suite-preview suite-preview--cards">
-                            <table className="suite-preview-table data-table">
-                              <thead>
-                                <tr>
-                                  <th>Cenário</th>
-                                  <th>Categoria</th>
-                                  <th>Automação</th>
-                                  <th>Criticidade</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {selectedSuitePreviewEntries.map(({ scenarioId, scenario }) => (
-                                  <tr key={`${selectedSuitePreview.id}-${scenarioId}`}>
-                                    <td>{scenario?.title ?? 'Cenário removido'}</td>
-                                    <td>{scenario?.category ?? 'N/A'}</td>
-                                    <td>{scenario?.automation ?? '-'}</td>
-                                    <td>{scenario?.criticality ?? '-'}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                        {selectedSuitePreview && canManageScenarios && (
-                          <div className="suite-preview-actions">
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              onClick={() => handleEditSuite(selectedSuitePreview)}
-                              disabled={isSavingSuite}
-                            >
-                              Editar suíte
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              onClick={() => void handleDeleteSuite(selectedSuitePreview)}
-                              disabled={isSavingSuite}
-                              className="suite-delete"
-                            >
-                              Excluir suíte
-                            </Button>
-                          </div>
-                        )}
-                      </div>
+                      {availableCategories.length > 0 ? (
+                        <ul className="category-chip-list">
+                          {availableCategories.map((category) => (
+                            <li key={category} className="category-chip">
+                              <span>{category}</span>
+                              {!scenarioCategories.has(category) && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveCustomCategory(category)}
+                                  className="category-chip-remove"
+                                  aria-label={`Remover categoria ${category}`}
+                                >
+                                  &times;
+                                </button>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="category-manager-empty">
+                          Nenhuma categoria cadastrada ainda.
+                        </p>
+                      )}
+                    </div>
+                    <TextArea
+                      id="scenario-observation"
+                      label="Observação"
+                      value={scenarioForm.observation}
+                      onChange={handleScenarioFormChange('observation')}
+                      required
+                    />
+                    <TextArea
+                      id="scenario-bdd"
+                      label="BDD"
+                      value={scenarioForm.bdd}
+                      onChange={handleScenarioFormChange('bdd')}
+                      required
+                    />
+                    <div className="scenario-form-actions">
+                      <Button type="submit" isLoading={isSavingScenario} loadingText="Salvando...">
+                        {editingScenarioId ? 'Atualizar cenário' : 'Adicionar cenário'}
+                      </Button>
+                      {editingScenarioId && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={handleCancelScenarioEdit}
+                          disabled={isSavingScenario}
+                        >
+                          Cancelar edição
+                        </Button>
+                      )}
+                    </div>
+                  </form>
+                )}
+
+                <div className="scenario-table-header">
+                  <div>
+                    <h3 className="section-subtitle">Massa de cenários e suítes de testes</h3>
+                    <p className="scenario-table-description">
+                      Monte agrupamentos customizados a partir dos cenários cadastrados e navegue
+                      entre as visualizações.
+                    </p>
+                  </div>
+                  {viewMode === 'scenarios' && scenarios.length > 0 && (
+                    <button
+                      type="button"
+                      className="scenario-table-toggle"
+                      onClick={() => setIsScenarioTableCollapsed((previous) => !previous)}
+                    >
+                      {isScenarioTableCollapsed ? 'Maximizar tabela' : 'Minimizar tabela'}
+                    </button>
+                  )}
+                </div>
+                <div className="scenario-table-wrapper">
+                  {viewMode === 'scenarios' ? (
+                    isScenarioTableCollapsed ? (
+                      <p className="section-subtitle">
+                        Tabela minimizada. Utilize o botão acima para visualizar os cenários
+                        novamente.
+                      </p>
+                    ) : isLoadingScenarios ? (
+                      <p className="section-subtitle">Carregando massa de cenários...</p>
+                    ) : scenarios.length === 0 ? (
+                      <p className="section-subtitle">
+                        {canManageScenarios
+                          ? 'Nenhum cenário cadastrado para esta loja ainda. Utilize o formulário acima para criar o primeiro.'
+                          : 'Nenhum cenário cadastrado para esta loja ainda. Solicite a um responsável a criação da massa de testes.'}
+                      </p>
                     ) : (
                       <>
-                        <div className="suite-form">
-                          <form
-                            className="card suite-card suite-editor-card"
-                            onSubmit={handleSuiteSubmit}
+                        <div className="scenario-filter-bar">
+                          <input
+                            type="text"
+                            className="scenario-filter-input"
+                            placeholder="Busque pelo título do cenário"
+                            value={scenarioFilters.search}
+                            onChange={handleScenarioFilterChange('search')}
+                            aria-label="Buscar cenários por título"
+                          />
+                          <select
+                            className="scenario-filter-input"
+                            value={scenarioFilters.category}
+                            onChange={handleScenarioFilterChange('category')}
+                            aria-label="Filtrar por categoria"
                           >
-                            <div className="suite-form-header-actions suite-editor-actions">
+                            {categoryFilterOptions.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                          <select
+                            className="scenario-filter-input"
+                            value={scenarioFilters.criticality}
+                            onChange={handleScenarioFilterChange('criticality')}
+                            aria-label="Filtrar por criticidade"
+                          >
+                            {criticalityFilterOptions.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                          {(scenarioFilters.search ||
+                            scenarioFilters.category ||
+                            scenarioFilters.criticality) && (
+                            <button
+                              type="button"
+                              className="scenario-filter-clear"
+                              onClick={handleClearScenarioFilters}
+                            >
+                              Limpar filtros
+                            </button>
+                          )}
+                        </div>
+                        {filteredScenarios.length === 0 ? (
+                          <p className="section-subtitle">
+                            Nenhum cenário corresponde aos filtros aplicados.
+                          </p>
+                        ) : (
+                          <table className="scenario-table data-table">
+                            <thead>
+                              <tr>
+                                <th>Título</th>
+                                <th>Categoria</th>
+                                <th>Automação</th>
+                                <th>Criticidade</th>
+                                <th>Observação</th>
+                                <th>BDD</th>
+                                {canManageScenarios && <th>Ações</th>}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {filteredScenarios.map((scenario) => (
+                                <tr key={scenario.id}>
+                                  <td>{scenario.title}</td>
+                                  <td>{scenario.category}</td>
+                                  <td>{scenario.automation}</td>
+                                  <td>
+                                    <span
+                                      className={`criticality-badge ${getCriticalityClassName(scenario.criticality)}`}
+                                    >
+                                      {scenario.criticality}
+                                    </span>
+                                  </td>
+                                  <td className="scenario-observation">{scenario.observation}</td>
+                                  <td className="scenario-bdd">
+                                    <button
+                                      type="button"
+                                      className="scenario-copy-button"
+                                      onClick={() => void handleCopyBdd(scenario.bdd)}
+                                    >
+                                      Copiar BDD
+                                    </button>
+                                  </td>
+                                  {canManageScenarios && (
+                                    <td className="scenario-actions">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleEditScenario(scenario)}
+                                        disabled={isSavingScenario}
+                                      >
+                                        Editar
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => void handleDeleteScenario(scenario)}
+                                        disabled={isSavingScenario}
+                                        className="scenario-delete"
+                                      >
+                                        Excluir
+                                      </button>
+                                    </td>
+                                  )}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
+                      </>
+                    )
+                  ) : (
+                    <div
+                      ref={suiteListRef}
+                      className={`suite-manager ${isViewingSuitesOnly ? 'suite-manager--suites-only' : ''}`}
+                    >
+                      {isViewingSuitesOnly ? (
+                        <div className="suite-cards-view">
+                          <div className="suite-table-header">
+                            <span className="suite-preview-title">Suítes cadastradas</span>
+                            <Button type="button" variant="ghost" onClick={handleBackToSuiteForm}>
+                              Voltar para formulário
+                            </Button>
+                          </div>
+                          {isLoadingSuites ? (
+                            <p className="section-subtitle">Carregando suítes de testes...</p>
+                          ) : suites.length === 0 ? (
+                            <p className="section-subtitle">
+                              Nenhuma suíte cadastrada ainda. Utilize o formulário para criar sua
+                              primeira seleção.
+                            </p>
+                          ) : (
+                            <div className="suite-cards-grid">
+                              {suites
+                                .slice()
+                                .sort((a, b) => a.name.localeCompare(b.name))
+                                .map((suite) => {
+                                  const isActive = selectedSuitePreviewId === suite.id;
+                                  return (
+                                    <button
+                                      key={suite.id}
+                                      type="button"
+                                      className={`suite-card-trigger ${isActive ? 'is-active' : ''}`}
+                                      onClick={() =>
+                                        setSelectedSuitePreviewId((previous) =>
+                                          previous === suite.id ? null : suite.id,
+                                        )
+                                      }
+                                    >
+                                      <span>{suite.name}</span>
+                                    </button>
+                                  );
+                                })}
+                            </div>
+                          )}
+                          {!selectedSuitePreview ? (
+                            <p className="section-subtitle">
+                              Clique em um card para visualizar os cenários associados.
+                            </p>
+                          ) : selectedSuitePreviewEntries.length === 0 ? (
+                            <p className="section-subtitle">
+                              Esta suíte não possui cenários cadastrados ou alguns itens foram
+                              removidos.
+                            </p>
+                          ) : (
+                            <div className="suite-preview suite-preview--cards">
+                              <table className="suite-preview-table data-table">
+                                <thead>
+                                  <tr>
+                                    <th>Cenário</th>
+                                    <th>Categoria</th>
+                                    <th>Automação</th>
+                                    <th>Criticidade</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {selectedSuitePreviewEntries.map(({ scenarioId, scenario }) => (
+                                    <tr key={`${selectedSuitePreview.id}-${scenarioId}`}>
+                                      <td>{scenario?.title ?? 'Cenário removido'}</td>
+                                      <td>{scenario?.category ?? 'N/A'}</td>
+                                      <td>{scenario?.automation ?? '-'}</td>
+                                      <td>{scenario?.criticality ?? '-'}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                          {selectedSuitePreview && canManageScenarios && (
+                            <div className="suite-preview-actions">
                               <Button
                                 type="button"
                                 variant="secondary"
-                                onClick={handleShowSuitesOnly}
+                                onClick={() => handleEditSuite(selectedSuitePreview)}
+                                disabled={isSavingSuite}
                               >
-                                Ir para cadastradas
+                                Editar suíte
                               </Button>
-                              {editingSuiteId && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => void handleDeleteSuite(selectedSuitePreview)}
+                                disabled={isSavingSuite}
+                                className="suite-delete"
+                              >
+                                Excluir suíte
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <>
+                          <div className="suite-form">
+                            <form
+                              className="card suite-card suite-editor-card"
+                              onSubmit={handleSuiteSubmit}
+                            >
+                              <div className="suite-form-header-actions suite-editor-actions">
                                 <Button
                                   type="button"
-                                  variant="ghost"
-                                  onClick={handleCancelSuiteEdit}
-                                  disabled={isSavingSuite}
+                                  variant="secondary"
+                                  onClick={handleShowSuitesOnly}
                                 >
-                                  Cancelar edição
+                                  Ir para cadastradas
                                 </Button>
+                                {editingSuiteId && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={handleCancelSuiteEdit}
+                                    disabled={isSavingSuite}
+                                  >
+                                    Cancelar edição
+                                  </Button>
+                                )}
+                              </div>
+                              <div className="suite-form-header">
+                                <div>
+                                  <h3 className="form-title">
+                                    {editingSuiteId
+                                      ? 'Editar suíte de testes'
+                                      : 'Nova suíte de testes'}
+                                  </h3>
+                                  <p className="suite-form-description">
+                                    Escolha quais cenários farão parte do grupo e utilize a seção de
+                                    suítes cadastradas para validar a massa antes de salvar.
+                                  </p>
+                                </div>
+                              </div>
+                              {suiteFormError && (
+                                <p className="form-message form-message--error">{suiteFormError}</p>
                               )}
-                            </div>
-                            <div className="suite-form-header">
-                              <div>
-                                <h3 className="form-title">
-                                  {editingSuiteId
-                                    ? 'Editar suíte de testes'
-                                    : 'Nova suíte de testes'}
-                                </h3>
-                                <p className="suite-form-description">
-                                  Escolha quais cenários farão parte do grupo e utilize a seção de
-                                  suítes cadastradas para validar a massa antes de salvar.
-                                </p>
+                              <div className="suite-basic-info">
+                                <TextInput
+                                  id="suite-name"
+                                  label="Nome da suíte"
+                                  value={suiteForm.name}
+                                  onChange={handleSuiteFormChange('name')}
+                                  required
+                                />
+                                <TextArea
+                                  id="suite-description"
+                                  label="Descrição"
+                                  value={suiteForm.description}
+                                  onChange={handleSuiteFormChange('description')}
+                                  required
+                                />
                               </div>
-                            </div>
-                            {suiteFormError && (
-                              <p className="form-message form-message--error">{suiteFormError}</p>
-                            )}
-                            <div className="suite-basic-info">
-                              <TextInput
-                                id="suite-name"
-                                label="Nome da suíte"
-                                value={suiteForm.name}
-                                onChange={handleSuiteFormChange('name')}
-                                required
-                              />
-                              <TextArea
-                                id="suite-description"
-                                label="Descrição"
-                                value={suiteForm.description}
-                                onChange={handleSuiteFormChange('description')}
-                                required
-                              />
-                            </div>
-                            <div className="suite-scenario-selector">
-                              <div className="suite-scenario-selector-header">
-                                <p className="field-label">Seleção de cenários</p>
-                                <p className="suite-scenario-selector-description">
-                                  {scenarios.length === 0
-                                    ? 'Cadastre cenários na seção acima para começar a criar suítes.'
-                                    : 'Marque abaixo os cenários que deverão compor esta suíte.'}
-                                </p>
-                              </div>
-                              <p className="suite-selection-summary">{suiteSelectionSummary}</p>
-                              {scenarios.length === 0 ? (
-                                <p className="category-manager-empty">
-                                  Nenhum cenário disponível para seleção no momento.
-                                </p>
-                              ) : (
-                                <>
-                                  <div className="scenario-filter-bar suite-scenario-filters">
-                                    <input
-                                      type="text"
-                                      className="scenario-filter-input"
-                                      placeholder="Busque pelo título do cenário"
-                                      value={suiteScenarioFilters.search}
-                                      onChange={handleSuiteScenarioFilterChange('search')}
-                                      aria-label="Buscar cenários por título"
-                                    />
-                                    <select
-                                      className="scenario-filter-input"
-                                      value={suiteScenarioFilters.category}
-                                      onChange={handleSuiteScenarioFilterChange('category')}
-                                      aria-label="Filtrar por categoria"
-                                    >
-                                      {categoryFilterOptions.map((option) => (
-                                        <option key={option.value} value={option.value}>
-                                          {option.label}
-                                        </option>
-                                      ))}
-                                    </select>
-                                    <select
-                                      className="scenario-filter-input"
-                                      value={suiteScenarioFilters.criticality}
-                                      onChange={handleSuiteScenarioFilterChange('criticality')}
-                                      aria-label="Filtrar por criticidade"
-                                    >
-                                      {criticalityFilterOptions.map((option) => (
-                                        <option key={option.value} value={option.value}>
-                                          {option.label}
-                                        </option>
-                                      ))}
-                                    </select>
-                                    {(suiteScenarioFilters.search ||
-                                      suiteScenarioFilters.category ||
-                                      suiteScenarioFilters.criticality) && (
-                                      <button
-                                        type="button"
-                                        className="scenario-filter-clear"
-                                        onClick={handleClearSuiteScenarioFilters}
+                              <div className="suite-scenario-selector">
+                                <div className="suite-scenario-selector-header">
+                                  <p className="field-label">Seleção de cenários</p>
+                                  <p className="suite-scenario-selector-description">
+                                    {scenarios.length === 0
+                                      ? 'Cadastre cenários na seção acima para começar a criar suítes.'
+                                      : 'Marque abaixo os cenários que deverão compor esta suíte.'}
+                                  </p>
+                                </div>
+                                <p className="suite-selection-summary">{suiteSelectionSummary}</p>
+                                {scenarios.length === 0 ? (
+                                  <p className="category-manager-empty">
+                                    Nenhum cenário disponível para seleção no momento.
+                                  </p>
+                                ) : (
+                                  <>
+                                    <div className="scenario-filter-bar suite-scenario-filters">
+                                      <input
+                                        type="text"
+                                        className="scenario-filter-input"
+                                        placeholder="Busque pelo título do cenário"
+                                        value={suiteScenarioFilters.search}
+                                        onChange={handleSuiteScenarioFilterChange('search')}
+                                        aria-label="Buscar cenários por título"
+                                      />
+                                      <select
+                                        className="scenario-filter-input"
+                                        value={suiteScenarioFilters.category}
+                                        onChange={handleSuiteScenarioFilterChange('category')}
+                                        aria-label="Filtrar por categoria"
                                       >
-                                        Limpar filtros
-                                      </button>
-                                    )}
-                                  </div>
-                                  {filteredSuiteScenarios.length === 0 ? (
-                                    <p className="category-manager-empty">
-                                      Nenhum cenário corresponde aos filtros aplicados.
-                                    </p>
-                                  ) : (
-                                    <div className="suite-scenario-table-wrapper">
-                                      <table className="scenario-table suite-scenario-table data-table">
-                                        <thead>
-                                          <tr>
-                                            <th className="suite-scenario-checkbox">Selecionar</th>
-                                            <th>Título</th>
-                                            <th>Categoria</th>
-                                            <th>Automação</th>
-                                            <th>Criticidade</th>
-                                            <th>Observação</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody>
-                                          {filteredSuiteScenarios.map((scenario) => {
-                                            const isSelected = suiteForm.scenarioIds.includes(
-                                              scenario.id,
-                                            );
-                                            return (
-                                              <tr
-                                                key={scenario.id}
-                                                className={isSelected ? 'is-selected' : ''}
-                                              >
-                                                <td className="suite-scenario-checkbox">
-                                                  <input
-                                                    type="checkbox"
-                                                    checked={isSelected}
-                                                    onChange={() =>
-                                                      handleSuiteScenarioToggle(scenario.id)
-                                                    }
-                                                    aria-label={`Selecionar cenário ${scenario.title}`}
-                                                  />
-                                                </td>
-                                                <td>{scenario.title}</td>
-                                                <td>{scenario.category}</td>
-                                                <td>{scenario.automation}</td>
-                                                <td>
-                                                  <span
-                                                    className={`criticality-badge ${getCriticalityClassName(
-                                                      scenario.criticality,
-                                                    )}`}
-                                                  >
-                                                    {scenario.criticality}
-                                                  </span>
-                                                </td>
-                                                <td className="scenario-observation">
-                                                  {scenario.observation}
-                                                </td>
-                                              </tr>
-                                            );
-                                          })}
-                                        </tbody>
-                                      </table>
+                                        {categoryFilterOptions.map((option) => (
+                                          <option key={option.value} value={option.value}>
+                                            {option.label}
+                                          </option>
+                                        ))}
+                                      </select>
+                                      <select
+                                        className="scenario-filter-input"
+                                        value={suiteScenarioFilters.criticality}
+                                        onChange={handleSuiteScenarioFilterChange('criticality')}
+                                        aria-label="Filtrar por criticidade"
+                                      >
+                                        {criticalityFilterOptions.map((option) => (
+                                          <option key={option.value} value={option.value}>
+                                            {option.label}
+                                          </option>
+                                        ))}
+                                      </select>
+                                      {(suiteScenarioFilters.search ||
+                                        suiteScenarioFilters.category ||
+                                        suiteScenarioFilters.criticality) && (
+                                        <button
+                                          type="button"
+                                          className="scenario-filter-clear"
+                                          onClick={handleClearSuiteScenarioFilters}
+                                        >
+                                          Limpar filtros
+                                        </button>
+                                      )}
                                     </div>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                            <div className="suite-form-actions">
-                              <Button
-                                type="submit"
-                                isLoading={isSavingSuite}
-                                loadingText="Salvando..."
-                              >
-                                {editingSuiteId ? 'Atualizar suíte' : 'Salvar suíte'}
-                              </Button>
-                            </div>
-                          </form>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
+                                    {filteredSuiteScenarios.length === 0 ? (
+                                      <p className="category-manager-empty">
+                                        Nenhum cenário corresponde aos filtros aplicados.
+                                      </p>
+                                    ) : (
+                                      <div className="suite-scenario-table-wrapper">
+                                        <table className="scenario-table suite-scenario-table data-table">
+                                          <thead>
+                                            <tr>
+                                              <th className="suite-scenario-checkbox">
+                                                Selecionar
+                                              </th>
+                                              <th>Título</th>
+                                              <th>Categoria</th>
+                                              <th>Automação</th>
+                                              <th>Criticidade</th>
+                                              <th>Observação</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {filteredSuiteScenarios.map((scenario) => {
+                                              const isSelected = suiteForm.scenarioIds.includes(
+                                                scenario.id,
+                                              );
+                                              return (
+                                                <tr
+                                                  key={scenario.id}
+                                                  className={isSelected ? 'is-selected' : ''}
+                                                >
+                                                  <td className="suite-scenario-checkbox">
+                                                    <input
+                                                      type="checkbox"
+                                                      checked={isSelected}
+                                                      onChange={() =>
+                                                        handleSuiteScenarioToggle(scenario.id)
+                                                      }
+                                                      aria-label={`Selecionar cenário ${scenario.title}`}
+                                                    />
+                                                  </td>
+                                                  <td>{scenario.title}</td>
+                                                  <td>{scenario.category}</td>
+                                                  <td>{scenario.automation}</td>
+                                                  <td>
+                                                    <span
+                                                      className={`criticality-badge ${getCriticalityClassName(
+                                                        scenario.criticality,
+                                                      )}`}
+                                                    >
+                                                      {scenario.criticality}
+                                                    </span>
+                                                  </td>
+                                                  <td className="scenario-observation">
+                                                    {scenario.observation}
+                                                  </td>
+                                                </tr>
+                                              );
+                                            })}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                              <div className="suite-form-actions">
+                                <Button
+                                  type="submit"
+                                  isLoading={isSavingSuite}
+                                  loadingText="Salvando..."
+                                >
+                                  {editingSuiteId ? 'Atualizar suíte' : 'Salvar suíte'}
+                                </Button>
+                              </div>
+                            </form>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      </section>
-      {storeId && (
-        <section className="page-container">
-          <div className="card">
-            <EnvironmentKanban storeId={storeId} suites={suites} scenarios={scenarios} />
+            )}
           </div>
         </section>
-      )}
-    </Layout>
+        {storeId && (
+          <section className="page-container">
+            <div className="card">
+              <EnvironmentKanban storeId={storeId} suites={suites} scenarios={scenarios} />
+            </div>
+          </section>
+        )}
+      </Layout>
+
+      <Modal
+        isOpen={isStoreSettingsOpen}
+        onClose={closeStoreSettings}
+        title="Configurações da loja"
+        description="Atualize o nome e o site apresentados para todos do time."
+      >
+        {storeSettingsError && (
+          <p className="form-message form-message--error">{storeSettingsError}</p>
+        )}
+        <form className="form-grid" onSubmit={handleStoreSettingsSubmit}>
+          <TextInput
+            id="store-settings-name"
+            label="Nome da loja"
+            value={storeSettings.name}
+            onChange={(event) =>
+              setStoreSettings((previous) => ({ ...previous, name: event.target.value }))
+            }
+            required
+          />
+          <TextInput
+            id="store-settings-site"
+            label="URL do site"
+            value={storeSettings.site}
+            onChange={(event) =>
+              setStoreSettings((previous) => ({ ...previous, site: event.target.value }))
+            }
+            required
+          />
+          <div className="form-actions">
+            <Button type="submit" isLoading={isUpdatingStore} loadingText="Salvando...">
+              Salvar alterações
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={closeStoreSettings}
+              disabled={isUpdatingStore}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </form>
+
+        <div className="modal-danger-zone">
+          <div>
+            <h4>Remover loja</h4>
+            <p>Excluirá os cenários e suítes vinculados.</p>
+          </div>
+          <button
+            type="button"
+            className="link-danger"
+            onClick={() => void handleRemoveStore()}
+            disabled={isDeletingStore}
+          >
+            Remover loja
+          </button>
+        </div>
+      </Modal>
+    </>
   );
 };

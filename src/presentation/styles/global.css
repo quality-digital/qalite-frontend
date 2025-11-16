@@ -460,6 +460,25 @@ a.text-link:hover {
   box-shadow: var(--shadow-lg);
 }
 
+.card-clickable {
+  cursor: pointer;
+  transition:
+    border-color var(--transition-base),
+    box-shadow var(--transition-base),
+    transform 0.25s ease;
+}
+
+.card-clickable:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-6px);
+}
+
+.card-clickable:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.4);
+  outline-offset: 4px;
+}
+
 .card-interactive {
   display: flex;
   flex-direction: column;
@@ -490,6 +509,12 @@ a.text-link:hover {
   color: var(--color-text-primary);
 }
 
+.card-subtitle {
+  margin: 0.2rem 0 0;
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+}
+
 .card-description {
   margin: 0;
   font-size: 0.95rem;
@@ -499,11 +524,40 @@ a.text-link:hover {
   gap: 0.5rem;
 }
 
+.card-link-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.card-link-hint span:last-child {
+  font-size: 1.35rem;
+}
+
 .card-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
   margin-top: 1.5rem;
+}
+
+.organization-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.organization-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.25rem;
 }
 
 .page-container {
@@ -516,6 +570,14 @@ a.text-link:hover {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .page-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
 }
 
 .page-actions {
@@ -632,6 +694,20 @@ a.text-link:hover {
   outline-offset: 2px;
 }
 
+.link-danger {
+  color: #b91c1c;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.link-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -698,10 +774,40 @@ a.text-link:hover {
   gap: 1rem;
 }
 
+.modal-danger-zone {
+  margin-top: 0.5rem;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.modal-danger-zone h4 {
+  margin: 0;
+  font-size: 1rem;
+  color: #b91c1c;
+}
+
+.modal-danger-zone p {
+  margin: 0.25rem 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
 .store-summary {
   display: flex;
   flex-direction: column;
   gap: 1.75rem;
+}
+
+.store-summary__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .store-summary-meta {
@@ -3064,6 +3170,25 @@ a.text-link:hover {
   gap: 0.5rem;
 }
 
+.summary-card__metrics--pill {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.summary-pill {
+  border: 1px solid var(--color-border);
+  border-radius: 0.85rem;
+  padding: 0.75rem;
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.summary-pill strong {
+  font-size: 1.35rem;
+}
+
 .summary-card__details {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -3136,6 +3261,51 @@ a.text-link:hover {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+.summary-card__highlight {
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  padding: 1rem;
+  background: var(--color-surface-alt);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.75rem;
+}
+
+.summary-card__highlight-label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+}
+
+.summary-card__highlight strong {
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+.summary-card__highlight p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.summary-card__progress {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.15);
+  overflow: hidden;
+}
+
+.summary-card__progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-primary);
+  transition: width 0.3s ease;
 }
 
 .summary-card__label {
