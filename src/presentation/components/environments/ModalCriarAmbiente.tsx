@@ -49,8 +49,7 @@ const buildScenarioMap = (
       categoria: match.category,
       criticidade: match.criticality,
       status: 'pendente',
-      evidenciaTexto: '',
-      evidenciaArquivoUrl: '',
+      evidenciaArquivoUrl: null,
     };
   });
 
@@ -117,7 +116,7 @@ export const ModalCriarAmbiente = ({
 
       await createEnvironment({
         identificador: identificador.trim(),
-        loja: storeId,
+        storeId,
         urls: urlsList,
         jiraTask: jiraTask.trim(),
         tipoAmbiente,
@@ -125,9 +124,11 @@ export const ModalCriarAmbiente = ({
         status,
         timeTracking,
         presentUsersIds: [],
+        concludedBy: null,
         scenarios: scenarioMap,
         bugs,
         totalCenarios,
+        participants: [],
       });
 
       onCreated?.();
@@ -209,7 +210,7 @@ export const ModalCriarAmbiente = ({
           label="Bugs conhecidos"
           type="number"
           min={0}
-          value={bugs}
+          value={String(bugs)}
           onChange={(event) => setBugs(Number(event.target.value))}
         />
 

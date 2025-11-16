@@ -17,6 +17,7 @@ import { NoOrganizationPage } from '../pages/NoOrganizationPage';
 import { OrganizationDashboardPage } from '../pages/OrganizationDashboardPage';
 import { StoreSummaryPage } from '../pages/StoreSummaryPage';
 import { PaginaAmbiente } from '../pages/PaginaAmbiente';
+import { PaginaAmbientePublica } from '../pages/PaginaAmbientePublica';
 
 export const AppRoutes = () => (
   <ThemeProvider>
@@ -29,6 +30,7 @@ export const AppRoutes = () => (
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/403" element={<ForbiddenPage />} />
+            <Route path="/environments/:environmentId/public" element={<PaginaAmbientePublica />} />
 
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<UserDashboardPage />} />

@@ -1,14 +1,18 @@
 export type EnvironmentStatus = 'backlog' | 'in_progress' | 'done';
 
-export type EnvironmentScenarioStatus = 'pendente' | 'em_andamento' | 'concluido';
+export type EnvironmentScenarioStatus =
+  | 'pendente'
+  | 'em_andamento'
+  | 'concluido'
+  | 'concluido_automatizado'
+  | 'nao_se_aplica';
 
 export interface EnvironmentScenario {
   titulo: string;
   categoria: string;
   criticidade: string;
   status: EnvironmentScenarioStatus;
-  evidenciaTexto: string;
-  evidenciaArquivoUrl: string;
+  evidenciaArquivoUrl: string | null;
 }
 
 export interface EnvironmentTimeTracking {
@@ -20,7 +24,7 @@ export interface EnvironmentTimeTracking {
 export interface Environment {
   id: string;
   identificador: string;
-  loja: string;
+  storeId: string;
   urls: string[];
   jiraTask: string;
   tipoAmbiente: string;
@@ -30,14 +34,16 @@ export interface Environment {
   updatedAt: string | null;
   timeTracking: EnvironmentTimeTracking;
   presentUsersIds: string[];
+  concludedBy: string | null;
   scenarios: Record<string, EnvironmentScenario>;
   bugs: number;
   totalCenarios: number;
+  participants: string[];
 }
 
 export interface CreateEnvironmentInput {
   identificador: string;
-  loja: string;
+  storeId: string;
   urls: string[];
   jiraTask: string;
   tipoAmbiente: string;
@@ -45,15 +51,16 @@ export interface CreateEnvironmentInput {
   status: EnvironmentStatus;
   timeTracking: EnvironmentTimeTracking;
   presentUsersIds: string[];
+  concludedBy: string | null;
   scenarios: Record<string, EnvironmentScenario>;
   bugs: number;
   totalCenarios: number;
+  participants: string[];
 }
 
 export type UpdateEnvironmentInput = Partial<Omit<Environment, 'id'>>;
 
 export interface EnvironmentScenarioUpdate {
   status?: EnvironmentScenarioStatus;
-  evidenciaTexto?: string;
-  evidenciaArquivoUrl?: string;
+  evidenciaArquivoUrl?: string | null;
 }
