@@ -23,6 +23,7 @@ import {
   CRITICALITY_OPTIONS,
   getCriticalityClassName,
 } from '../constants/scenarioOptions';
+import { EnvironmentBoard } from '../components/EnvironmentBoard';
 
 const emptyScenarioForm: StoreScenarioInput = {
   title: '',
@@ -1294,6 +1295,7 @@ export const StoreSummaryPage = () => {
                   </div>
                 )}
               </div>
+              <EnvironmentBoard storeName={store?.name ?? 'Loja'} suites={suites} />
             </div>
           )}
         </div>
