@@ -51,9 +51,6 @@ export const EnvironmentKanban = ({ storeId, suites, scenarios }: EnvironmentKan
     environments.forEach((environment) => {
       environment.presentUsersIds.filter((id) => Boolean(id)).forEach((id) => ids.add(id));
       (environment.participants ?? []).filter((id) => Boolean(id)).forEach((id) => ids.add(id));
-      if (environment.concludedBy) {
-        ids.add(environment.concludedBy);
-      }
     });
 
     if (ids.size === 0) {
@@ -239,9 +236,6 @@ export const EnvironmentKanban = ({ storeId, suites, scenarios }: EnvironmentKan
                     )
                       .map((id) => userProfilesMap[id])
                       .filter((user): user is PresentUserProfile => Boolean(user))}
-                    concludedBy={
-                      environment.concludedBy ? userProfilesMap[environment.concludedBy] : undefined
-                    }
                     suiteName={suiteNameByEnvironment[environment.id]}
                     draggable
                     onDragStart={handleDragStart}

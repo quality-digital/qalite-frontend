@@ -40,29 +40,34 @@ export const EnvironmentPage = () => {
     isLocked: Boolean(isLocked) || !hasEnteredEnvironment,
   });
 
-  const entryStorageKey = useMemo(() => {
-    if (!environment?.id || !user?.uid) {
-      return null;
-    }
-    return `environment-entry:${environment.id}:${user.uid}`;
-  }, [environment?.id, user?.uid]);
-
-  useEffect(() => {
-    if (!entryStorageKey || typeof window === 'undefined') {
-      return;
-    }
-
-    const storedEntry = window.localStorage.getItem(entryStorageKey);
-    if (storedEntry === 'true') {
-      setHasEnteredEnvironment(true);
-    }
-  }, [entryStorageKey]);
-
   useEffect(() => {
     if (isCurrentUserPresent && !hasEnteredEnvironment) {
       setHasEnteredEnvironment(true);
     }
   }, [hasEnteredEnvironment, isCurrentUserPresent]);
+
+  useEffect(() => {
+    if (!environment?.id || !user?.uid) {
+      setHasEnteredEnvironment(false);
+      return;
+    }
+
+    const hasPersistedEntry = environment.participants?.includes(user.uid) ?? false;
+    if (hasPersistedEntry && !hasEnteredEnvironment) {
+      setHasEnteredEnvironment(true);
+      return;
+    }
+
+    if (!hasPersistedEntry && !isCurrentUserPresent) {
+      setHasEnteredEnvironment(false);
+    }
+  }, [
+    environment?.id,
+    environment?.participants,
+    hasEnteredEnvironment,
+    isCurrentUserPresent,
+    user?.uid,
+  ]);
 
   const { formattedTime } = useTimeTracking(
     environment?.timeTracking ?? null,
@@ -150,10 +155,6 @@ export const EnvironmentPage = () => {
     }
 
     setHasEnteredEnvironment(true);
-
-    if (entryStorageKey && typeof window !== 'undefined') {
-      window.localStorage.setItem(entryStorageKey, 'true');
-    }
 
     void joinEnvironment();
   };
