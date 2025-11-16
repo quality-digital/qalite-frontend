@@ -1,4 +1,10 @@
-import type { Store, StoreScenario, StoreScenarioInput } from '../entities/Store';
+import type {
+  Store,
+  StoreScenario,
+  StoreScenarioInput,
+  StoreSuite,
+  StoreSuiteInput,
+} from '../entities/Store';
 
 export interface CreateStorePayload {
   organizationId: string;
@@ -19,6 +25,12 @@ export interface CreateStoreScenarioPayload extends StoreScenarioInput {
 
 export interface UpdateStoreScenarioPayload extends StoreScenarioInput {}
 
+export interface CreateStoreSuitePayload extends StoreSuiteInput {
+  storeId: string;
+}
+
+export interface UpdateStoreSuitePayload extends StoreSuiteInput {}
+
 export interface ImportScenariosResult {
   created: number;
   skipped: number;
@@ -34,9 +46,22 @@ export interface IStoreRepository {
 
   listScenarios(storeId: string): Promise<StoreScenario[]>;
   createScenario(payload: CreateStoreScenarioPayload): Promise<StoreScenario>;
-  updateScenario(storeId: string, scenarioId: string, payload: UpdateStoreScenarioPayload): Promise<StoreScenario>;
+  updateScenario(
+    storeId: string,
+    scenarioId: string,
+    payload: UpdateStoreScenarioPayload,
+  ): Promise<StoreScenario>;
   deleteScenario(storeId: string, scenarioId: string): Promise<void>;
 
   replaceScenarios(storeId: string, scenarios: StoreScenarioInput[]): Promise<StoreScenario[]>;
   mergeScenarios(storeId: string, scenarios: StoreScenarioInput[]): Promise<ImportScenariosResult>;
+
+  listSuites(storeId: string): Promise<StoreSuite[]>;
+  createSuite(payload: CreateStoreSuitePayload): Promise<StoreSuite>;
+  updateSuite(
+    storeId: string,
+    suiteId: string,
+    payload: UpdateStoreSuitePayload,
+  ): Promise<StoreSuite>;
+  deleteSuite(storeId: string, suiteId: string): Promise<void>;
 }

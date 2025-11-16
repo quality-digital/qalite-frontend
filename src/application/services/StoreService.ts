@@ -1,16 +1,29 @@
-import type { Store, StoreScenario, StoreScenarioInput } from '../../domain/entities/Store';
+import type {
+  Store,
+  StoreScenario,
+  StoreScenarioInput,
+  StoreSuite,
+  StoreSuiteInput,
+} from '../../domain/entities/Store';
 import { CreateStore } from '../../domain/usecases/CreateStore';
 import { CreateStoreScenario } from '../../domain/usecases/CreateStoreScenario';
+import { CreateStoreSuite } from '../../domain/usecases/CreateStoreSuite';
 import { DeleteStore } from '../../domain/usecases/DeleteStore';
 import { DeleteStoreScenario } from '../../domain/usecases/DeleteStoreScenario';
+import { DeleteStoreSuite } from '../../domain/usecases/DeleteStoreSuite';
 import { GetStoreById } from '../../domain/usecases/GetStoreById';
 import { ListStoreScenarios } from '../../domain/usecases/ListStoreScenarios';
+import { ListStoreSuites } from '../../domain/usecases/ListStoreSuites';
 import { ListStoresByOrganization } from '../../domain/usecases/ListStoresByOrganization';
 import { MergeStoreScenarios } from '../../domain/usecases/MergeStoreScenarios';
 import { ReplaceStoreScenarios } from '../../domain/usecases/ReplaceStoreScenarios';
 import { UpdateStore } from '../../domain/usecases/UpdateStore';
 import { UpdateStoreScenario } from '../../domain/usecases/UpdateStoreScenario';
-import type { CreateStorePayload, UpdateStorePayload } from '../../domain/repositories/StoreRepository';
+import { UpdateStoreSuite } from '../../domain/usecases/UpdateStoreSuite';
+import type {
+  CreateStorePayload,
+  UpdateStorePayload,
+} from '../../domain/repositories/StoreRepository';
 import { FirebaseStoreRepository } from '../../infra/repositories/FirebaseStoreRepository';
 
 const storeRepository = new FirebaseStoreRepository();
@@ -40,6 +53,10 @@ export class StoreService {
   private readonly deleteScenarioUseCase = new DeleteStoreScenario(storeRepository);
   private readonly replaceScenariosUseCase = new ReplaceStoreScenarios(storeRepository);
   private readonly mergeScenariosUseCase = new MergeStoreScenarios(storeRepository);
+  private readonly listSuitesUseCase = new ListStoreSuites(storeRepository);
+  private readonly createSuiteUseCase = new CreateStoreSuite(storeRepository);
+  private readonly updateSuiteUseCase = new UpdateStoreSuite(storeRepository);
+  private readonly deleteSuiteUseCase = new DeleteStoreSuite(storeRepository);
 
   listByOrganization(organizationId: string): Promise<Store[]> {
     return this.listStoresByOrganization.execute(organizationId);
@@ -72,13 +89,29 @@ export class StoreService {
   updateScenario(
     storeId: string,
     scenarioId: string,
-    payload: StoreScenarioInput
+    payload: StoreScenarioInput,
   ): Promise<StoreScenario> {
     return this.updateScenarioUseCase.execute(storeId, scenarioId, payload);
   }
 
   deleteScenario(storeId: string, scenarioId: string): Promise<void> {
     return this.deleteScenarioUseCase.execute(storeId, scenarioId);
+  }
+
+  listSuites(storeId: string): Promise<StoreSuite[]> {
+    return this.listSuitesUseCase.execute(storeId);
+  }
+
+  createSuite(payload: { storeId: string } & StoreSuiteInput): Promise<StoreSuite> {
+    return this.createSuiteUseCase.execute(payload);
+  }
+
+  updateSuite(storeId: string, suiteId: string, payload: StoreSuiteInput): Promise<StoreSuite> {
+    return this.updateSuiteUseCase.execute(storeId, suiteId, payload);
+  }
+
+  deleteSuite(storeId: string, suiteId: string): Promise<void> {
+    return this.deleteSuiteUseCase.execute(storeId, suiteId);
   }
 
   async exportStore(storeId: string): Promise<StoreExportPayload> {
@@ -95,17 +128,17 @@ export class StoreService {
         name: store.name,
         site: store.site,
         stage: store.stage,
-        scenarioCount: scenarios.length
+        scenarioCount: scenarios.length,
       },
       exportedAt: new Date().toISOString(),
-      scenarios
+      scenarios,
     };
   }
 
   async importScenarios(
     storeId: string,
     scenarios: StoreScenarioInput[],
-    strategy: 'replace' | 'merge'
+    strategy: 'replace' | 'merge',
   ): Promise<{
     scenarios: StoreScenario[];
     created: number;
@@ -118,7 +151,7 @@ export class StoreService {
         scenarios: replaced,
         created: replaced.length,
         skipped: 0,
-        strategy
+        strategy,
       };
     }
 
@@ -127,7 +160,7 @@ export class StoreService {
       scenarios: result.scenarios,
       created: result.created,
       skipped: result.skipped,
-      strategy
+      strategy,
     };
   }
 }

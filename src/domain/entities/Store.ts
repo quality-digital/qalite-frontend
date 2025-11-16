@@ -30,3 +30,19 @@ export interface StoreScenarioInput {
   observation: string;
   bdd: string;
 }
+
+export interface StoreSuite {
+  id: string;
+  storeId: string;
+  name: string;
+  description: string;
+  scenarioIds: string[];
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface StoreSuiteInput {
+  name: string;
+  description: string;
+  scenarioIds: string[];
+}
