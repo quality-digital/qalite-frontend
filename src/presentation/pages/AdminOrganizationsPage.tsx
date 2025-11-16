@@ -257,13 +257,10 @@ export const AdminOrganizationsPage = () => {
             <span className="badge">Painel do administrador</span>
             <h1 className="section-title">Organizações cadastradas</h1>
             <p className="section-subtitle">
-              Gerencie as organizações, atualize membros e direcione-as para o painel de lojas.
+              Gerencie as organizações e mantenha os membros atualizados em um só lugar.
             </p>
           </div>
           <div className="page-actions">
-            <Button type="button" variant="secondary" onClick={() => navigate('/admin/organizations')}>
-              Gerenciar lojas
-            </Button>
             <Button type="button" onClick={openCreateModal}>
               Nova organização
             </Button>
@@ -276,7 +273,7 @@ export const AdminOrganizationsPage = () => {
           <div className="dashboard-empty">
             <h2 className="text-xl font-semibold text-primary">Nenhuma organização cadastrada</h2>
             <p className="section-subtitle">
-              Utilize o botão acima para cadastrar a primeira organização e liberar o gerenciamento de lojas.
+              Utilize o botão acima para cadastrar a primeira organização.
             </p>
             <Button type="button" onClick={openCreateModal}>
               Nova organização
