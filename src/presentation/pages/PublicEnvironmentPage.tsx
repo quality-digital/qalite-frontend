@@ -25,6 +25,19 @@ export const PublicEnvironmentPage = () => {
 
   const urls = useMemo(() => environment?.urls ?? [], [environment?.urls]);
   const suiteDescription = environment?.suiteName ?? 'Suíte não informada';
+  const scenarioStats = useMemo(() => {
+    if (!environment) {
+      return { total: 0, concluded: 0, pending: 0, running: 0 };
+    }
+
+    const scenarios = Object.values(environment.scenarios ?? {});
+    const concluded = scenarios.filter((scenario) =>
+      ['concluido', 'concluido_automatizado', 'nao_se_aplica'].includes(scenario.status),
+    ).length;
+    const pending = scenarios.filter((scenario) => scenario.status === 'pendente').length;
+    const running = scenarios.filter((scenario) => scenario.status === 'em_andamento').length;
+    return { total: scenarios.length, concluded, pending, running };
+  }, [environment]);
 
   if (isLoading) {
     return (
@@ -63,36 +76,64 @@ export const PublicEnvironmentPage = () => {
         </div>
 
         <div className="environment-summary-grid">
-          <div className="summary-card">
-            <h3>Resumo</h3>
-            <p>
-              <strong>Status:</strong> {STATUS_LABEL[environment.status]}
-            </p>
-            <p>
-              <strong>Tempo total:</strong> {formattedTime}
-            </p>
-            <p>
-              <strong>Jira:</strong> {environment.jiraTask || 'Não informado'}
-            </p>
-            <p>
-              <strong>Suíte:</strong> {suiteDescription}
-            </p>
-          </div>
-          <div className="summary-card">
-            <h3>URLs monitoradas</h3>
-            {urls.length === 0 ? (
-              <p className="section-subtitle">Nenhuma URL adicionada.</p>
-            ) : (
-              <ul className="environment-url-list">
-                {urls.map((url) => (
-                  <li key={url}>
-                    <a href={url} target="_blank" rel="noreferrer">
-                      {url}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            )}
+          <div className="summary-card summary-card--environment">
+            <h3>Resumo do ambiente</h3>
+            <div className="summary-card__metrics">
+              <div>
+                <span>Total de cenários</span>
+                <strong>{scenarioStats.total}</strong>
+              </div>
+              <div>
+                <span>Concluídos</span>
+                <strong>{scenarioStats.concluded}</strong>
+              </div>
+              <div>
+                <span>Em andamento</span>
+                <strong>{scenarioStats.running}</strong>
+              </div>
+              <div>
+                <span>Pendentes</span>
+                <strong>{scenarioStats.pending}</strong>
+              </div>
+            </div>
+            <div className="summary-card__details">
+              <div className="summary-card__detail">
+                <span className="summary-card__detail-label">Status</span>
+                <strong className="summary-card__detail-value">
+                  {STATUS_LABEL[environment.status]}
+                </strong>
+              </div>
+              <div className="summary-card__detail">
+                <span className="summary-card__detail-label">Tempo total</span>
+                <strong className="summary-card__detail-value">{formattedTime}</strong>
+              </div>
+              <div className="summary-card__detail">
+                <span className="summary-card__detail-label">Jira</span>
+                <strong className="summary-card__detail-value">
+                  {environment.jiraTask || 'Não informado'}
+                </strong>
+              </div>
+              <div className="summary-card__detail">
+                <span className="summary-card__detail-label">Suíte</span>
+                <strong className="summary-card__detail-value">{suiteDescription}</strong>
+              </div>
+            </div>
+            <div className="summary-card__section">
+              <span className="summary-card__label">URLs monitoradas</span>
+              {urls.length === 0 ? (
+                <p className="summary-card__empty">Nenhuma URL adicionada.</p>
+              ) : (
+                <ul className="environment-url-list summary-card__urls-list">
+                  {urls.map((url) => (
+                    <li key={url}>
+                      <a href={url} target="_blank" rel="noreferrer">
+                        {url}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
           <div className="summary-card">
             <h3>Participantes</h3>
@@ -118,7 +159,9 @@ export const PublicEnvironmentPage = () => {
         </div>
 
         <div className="environment-evidence">
-          <h3 className="section-subtitle">Cenários e evidências</h3>
+          <div className="environment-evidence__header">
+            <h3 className="section-title">Cenários e evidências</h3>
+          </div>
           <EnvironmentEvidenceTable environment={environment} isLocked readOnly />
         </div>
       </section>

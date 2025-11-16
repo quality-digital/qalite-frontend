@@ -255,7 +255,7 @@ export const EnvironmentPage = () => {
             {hasEnteredEnvironment && (
               <>
                 <div className="environment-summary-grid">
-                  <div className="summary-card">
+                  <div className="summary-card summary-card--environment">
                     <h3>Resumo do ambiente</h3>
                     <div className="summary-card__metrics">
                       <div>
@@ -275,31 +275,38 @@ export const EnvironmentPage = () => {
                         <strong>{scenarioStats.pending}</strong>
                       </div>
                     </div>
-                    <p>
-                      <strong>Tempo total:</strong> {formattedTime}
-                    </p>
-                    <p>
-                      <strong>Jira:</strong> {environment.jiraTask || 'Não informado'}
-                    </p>
-                    <p>
-                      <strong>Suíte:</strong> {suiteDescription}
-                    </p>
-                  </div>
-                  <div className="summary-card">
-                    <h3>URLs monitoradas</h3>
-                    {urls.length === 0 ? (
-                      <p className="section-subtitle">Nenhuma URL adicionada.</p>
-                    ) : (
-                      <ul className="environment-url-list">
-                        {urls.map((url) => (
-                          <li key={url}>
-                            <a href={url} target="_blank" rel="noreferrer">
-                              {url}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                    <div className="summary-card__details">
+                      <div className="summary-card__detail">
+                        <span className="summary-card__detail-label">Tempo total</span>
+                        <strong className="summary-card__detail-value">{formattedTime}</strong>
+                      </div>
+                      <div className="summary-card__detail">
+                        <span className="summary-card__detail-label">Jira</span>
+                        <strong className="summary-card__detail-value">
+                          {environment.jiraTask || 'Não informado'}
+                        </strong>
+                      </div>
+                      <div className="summary-card__detail">
+                        <span className="summary-card__detail-label">Suíte</span>
+                        <strong className="summary-card__detail-value">{suiteDescription}</strong>
+                      </div>
+                    </div>
+                    <div className="summary-card__section">
+                      <span className="summary-card__label">URLs monitoradas</span>
+                      {urls.length === 0 ? (
+                        <p className="summary-card__empty">Nenhuma URL adicionada.</p>
+                      ) : (
+                        <ul className="environment-url-list summary-card__urls-list">
+                          {urls.map((url) => (
+                            <li key={url}>
+                              <a href={url} target="_blank" rel="noreferrer">
+                                {url}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   </div>
                   <div className="summary-card">
                     <h3>Compartilhamento e exportação</h3>
@@ -337,14 +344,6 @@ export const EnvironmentPage = () => {
                 <div className="environment-evidence">
                   <div className="environment-evidence__header">
                     <h3 className="section-title">Cenários e evidências</h3>
-                    <a
-                      href={`/environments/${environment.id}/public`}
-                      className="link-button"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Abrir preview público ↗
-                    </a>
                   </div>
                   <EnvironmentEvidenceTable
                     environment={environment}

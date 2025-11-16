@@ -2060,6 +2060,17 @@ a.text-link:hover {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  width: 100%;
+}
+
+.suite-form > .suite-card {
+  width: 100%;
+}
+
+@media (min-width: 960px) {
+  .suite-manager > .suite-form {
+    grid-column: 1 / -1;
+  }
 }
 
 .suite-form-grid {
@@ -2250,6 +2261,7 @@ a.text-link:hover {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  width: 100%;
 }
 
 .suite-cards-grid {
@@ -2291,6 +2303,7 @@ a.text-link:hover {
   padding: 0;
   border: none;
   background: transparent;
+  width: 100%;
 }
 
 .suite-table-header {
@@ -2350,6 +2363,34 @@ a.text-link:hover {
 .suite-preview-table,
 .suite-table {
   min-width: 480px;
+  width: 100%;
+}
+
+.suite-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.button.suite-delete {
+  color: var(--color-danger);
+  border-color: rgba(220, 38, 38, 0.35);
+  background: rgba(220, 38, 38, 0.08);
+  box-shadow: 0 10px 18px rgba(220, 38, 38, 0.12);
+}
+
+.button.suite-delete:hover:not(:disabled) {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+  background: rgba(220, 38, 38, 0.15);
+  box-shadow: 0 12px 22px rgba(220, 38, 38, 0.18);
+}
+
+.button.suite-delete:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px var(--color-ring),
+    0 12px 22px rgba(220, 38, 38, 0.18);
 }
 
 .suite-description {
@@ -2995,6 +3036,52 @@ a.text-link:hover {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
+}
+
+.summary-card__details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.summary-card__detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.summary-card__detail-label {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.summary-card__detail-value {
+  font-size: 1rem;
+}
+
+.summary-card__section {
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.summary-card__label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.summary-card__empty {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.summary-card__urls-list {
+  margin: 0;
 }
 
 .share-actions {

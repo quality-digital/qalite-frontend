@@ -655,13 +655,13 @@ export const StoreSummaryPage = () => {
       <section className="page-container">
         <div className="page-header">
           <div>
-            <button
+            <Button
               type="button"
-              className="link-button"
+              variant="ghost"
               onClick={() => navigate(user?.role === 'admin' ? '/admin' : '/dashboard')}
             >
-              &larr; Voltar
-            </button>
+              ← Voltar
+            </Button>
             <h1 className="section-title">
               {isLoadingStore ? 'Carregando loja...' : (store?.name ?? 'Loja')}
             </h1>
@@ -992,13 +992,9 @@ export const StoreSummaryPage = () => {
                       <div className="suite-cards-view">
                         <div className="suite-table-header">
                           <span className="suite-preview-title">Suítes cadastradas</span>
-                          <button
-                            type="button"
-                            className="link-button"
-                            onClick={handleBackToSuiteForm}
-                          >
+                          <Button type="button" variant="ghost" onClick={handleBackToSuiteForm}>
                             Voltar para formulário
-                          </button>
+                          </Button>
                         </div>
                         {isLoadingSuites ? (
                           <p className="section-subtitle">Carregando suítes de testes...</p>
@@ -1045,7 +1041,6 @@ export const StoreSummaryPage = () => {
                             <table className="suite-preview-table data-table">
                               <thead>
                                 <tr>
-                                  <th>Suíte</th>
                                   <th>Cenário</th>
                                   <th>Categoria</th>
                                   <th>Automação</th>
@@ -1055,7 +1050,6 @@ export const StoreSummaryPage = () => {
                               <tbody>
                                 {selectedSuitePreviewEntries.map(({ scenarioId, scenario }) => (
                                   <tr key={`${selectedSuitePreview.id}-${scenarioId}`}>
-                                    <td>{selectedSuitePreview.name}</td>
                                     <td>{scenario?.title ?? 'Cenário removido'}</td>
                                     <td>{scenario?.category ?? 'N/A'}</td>
                                     <td>{scenario?.automation ?? '-'}</td>
@@ -1222,7 +1216,6 @@ export const StoreSummaryPage = () => {
                                             <th>Automação</th>
                                             <th>Criticidade</th>
                                             <th>Observação</th>
-                                            <th>BDD</th>
                                           </tr>
                                         </thead>
                                         <tbody>
@@ -1259,15 +1252,6 @@ export const StoreSummaryPage = () => {
                                                 </td>
                                                 <td className="scenario-observation">
                                                   {scenario.observation}
-                                                </td>
-                                                <td className="scenario-bdd">
-                                                  <button
-                                                    type="button"
-                                                    className="scenario-copy-button"
-                                                    onClick={() => void handleCopyBdd(scenario.bdd)}
-                                                  >
-                                                    Copiar BDD
-                                                  </button>
                                                 </td>
                                               </tr>
                                             );
