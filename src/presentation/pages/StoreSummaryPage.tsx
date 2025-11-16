@@ -655,13 +655,13 @@ export const StoreSummaryPage = () => {
       <section className="page-container">
         <div className="page-header">
           <div>
-            <button
+            <Button
               type="button"
-              className="link-button"
+              variant="ghost"
               onClick={() => navigate(user?.role === 'admin' ? '/admin' : '/dashboard')}
             >
-              &larr; Voltar
-            </button>
+              ← Voltar
+            </Button>
             <h1 className="section-title">
               {isLoadingStore ? 'Carregando loja...' : (store?.name ?? 'Loja')}
             </h1>
@@ -992,13 +992,9 @@ export const StoreSummaryPage = () => {
                       <div className="suite-cards-view">
                         <div className="suite-table-header">
                           <span className="suite-preview-title">Suítes cadastradas</span>
-                          <button
-                            type="button"
-                            className="link-button"
-                            onClick={handleBackToSuiteForm}
-                          >
+                          <Button type="button" variant="ghost" onClick={handleBackToSuiteForm}>
                             Voltar para formulário
-                          </button>
+                          </Button>
                         </div>
                         {isLoadingSuites ? (
                           <p className="section-subtitle">Carregando suítes de testes...</p>
