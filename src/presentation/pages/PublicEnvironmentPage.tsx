@@ -11,13 +11,11 @@ import type {
 } from '../../domain/entities/Environment';
 import { Layout } from '../components/Layout';
 import { EnvironmentEvidenceTable } from '../components/environments/EnvironmentEvidenceTable';
-import { EnvironmentBugList } from '../components/environments/EnvironmentBugList';
 import { useEnvironmentRealtime } from '../hooks/useEnvironmentRealtime';
 import { useTimeTracking } from '../hooks/useTimeTracking';
 import { useUserProfiles } from '../hooks/useUserProfiles';
 import { useStoreOrganizationBranding } from '../hooks/useStoreOrganizationBranding';
 import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
-import { useEnvironmentBugs } from '../hooks/useEnvironmentBugs';
 
 const STATUS_LABEL: Record<EnvironmentStatus, string> = {
   backlog: 'Backlog',
@@ -42,7 +40,6 @@ export const PublicEnvironmentPage = () => {
     environment?.timeTracking ?? null,
     Boolean(environment?.status === 'in_progress'),
   );
-  const { bugs, isLoading: isLoadingBugs } = useEnvironmentBugs(environment?.id ?? null);
 
   const urls = useMemo(() => environment?.urls ?? [], [environment?.urls]);
   const suiteDescription = environment?.suiteName ?? 'Suíte não informada';
@@ -265,7 +262,7 @@ export const PublicEnvironmentPage = () => {
                 <ul className="environment-url-list summary-card__urls-list">
                   {urls.map((url) => (
                     <li key={url}>
-                      <a href={url} className="text-link" target="_blank" rel="noreferrer noopener">
+                      <a href={url} target="_blank" rel="noreferrer">
                         {url}
                       </a>
                     </li>
@@ -306,15 +303,6 @@ export const PublicEnvironmentPage = () => {
           </div>
           <EnvironmentEvidenceTable environment={environment} isLocked readOnly />
         </div>
-        <EnvironmentBugList
-          environment={environment}
-          bugs={bugs}
-          isLocked
-          isLoading={isLoadingBugs}
-          onCreate={() => {}}
-          onEdit={() => {}}
-          showActions={false}
-        />
       </section>
     </Layout>
   );

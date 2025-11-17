@@ -11,15 +11,14 @@ import type {
   EnvironmentStatus,
 } from '../../domain/entities/Environment';
 import { environmentService } from '../../main/factories/environmentServiceFactory';
-import { Button } from '../components/Button';
 import { Layout } from '../components/Layout';
+import { Button } from '../components/Button';
 import { useToast } from '../context/ToastContext';
 import { useEnvironmentRealtime } from '../hooks/useEnvironmentRealtime';
 import { usePresentUsers } from '../hooks/usePresentUsers';
 import { useTimeTracking } from '../hooks/useTimeTracking';
 import { useAuth } from '../hooks/useAuth';
 import { EnvironmentEvidenceTable } from '../components/environments/EnvironmentEvidenceTable';
-import { EnvironmentBugList } from '../components/environments/EnvironmentBugList';
 import { EditEnvironmentModal } from '../components/environments/EditEnvironmentModal';
 import { DeleteEnvironmentModal } from '../components/environments/DeleteEnvironmentModal';
 import { copyToClipboard } from '../utils/clipboard';
@@ -28,9 +27,6 @@ import { useOrganizationBranding } from '../context/OrganizationBrandingContext'
 import { PageLoader } from '../components/PageLoader';
 import { useUserProfiles } from '../hooks/useUserProfiles';
 import { getReadableUserName, getUserInitials } from '../utils/userDisplay';
-import { useEnvironmentBugs } from '../hooks/useEnvironmentBugs';
-import { EnvironmentBugModal } from '../components/environments/EnvironmentBugModal';
-import type { EnvironmentBug } from '../../domain/entities/EnvironmentBug';
 
 const STATUS_LABEL: Record<EnvironmentStatus, string> = {
   backlog: 'Backlog',
@@ -54,8 +50,6 @@ export const EnvironmentPage = () => {
   );
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [isBugModalOpen, setIsBugModalOpen] = useState(false);
-  const [editingBug, setEditingBug] = useState<EnvironmentBug | null>(null);
   const [hasEnteredEnvironment, setHasEnteredEnvironment] = useState(false);
   const isLocked = environment?.status === 'done';
   const isScenarioLocked = environment?.status !== 'in_progress' || !hasEnteredEnvironment;
@@ -69,7 +63,6 @@ export const EnvironmentPage = () => {
   });
   const { setActiveOrganization } = useOrganizationBranding();
   const participantProfiles = useUserProfiles(environment?.participants ?? []);
-  const { bugs, isLoading: isLoadingBugs } = useEnvironmentBugs(environment?.id ?? null);
 
   useEffect(() => {
     setActiveOrganization(environmentOrganization ?? null);
@@ -238,21 +231,6 @@ export const EnvironmentPage = () => {
       return;
     }
     environmentService.exportAsMarkdown(environment);
-  };
-
-  const openCreateBugModal = () => {
-    setEditingBug(null);
-    setIsBugModalOpen(true);
-  };
-
-  const handleEditBug = (bug: EnvironmentBug) => {
-    setEditingBug(bug);
-    setIsBugModalOpen(true);
-  };
-
-  const closeBugModal = () => {
-    setIsBugModalOpen(false);
-    setEditingBug(null);
   };
 
   const handleEnterEnvironment = () => {
@@ -475,7 +453,7 @@ export const EnvironmentPage = () => {
                 <ul className="environment-url-list summary-card__urls-list">
                   {urls.map((url) => (
                     <li key={url}>
-                      <a href={url} className="text-link" target="_blank" rel="noreferrer noopener">
+                      <a href={url} target="_blank" rel="noreferrer">
                         {url}
                       </a>
                     </li>
@@ -568,15 +546,6 @@ export const EnvironmentPage = () => {
             isLocked={Boolean(isScenarioLocked)}
           />
         </div>
-
-        <EnvironmentBugList
-          environment={environment}
-          bugs={bugs}
-          isLocked={Boolean(isInteractionLocked)}
-          isLoading={isLoadingBugs}
-          onCreate={openCreateBugModal}
-          onEdit={handleEditBug}
-        />
       </section>
 
       <EditEnvironmentModal
@@ -590,14 +559,6 @@ export const EnvironmentPage = () => {
         environment={environment ?? null}
         onDeleted={() => navigate(-1)}
       />
-      {environment && (
-        <EnvironmentBugModal
-          environment={environment}
-          isOpen={isBugModalOpen}
-          bug={editingBug}
-          onClose={closeBugModal}
-        />
-      )}
     </Layout>
   );
 };

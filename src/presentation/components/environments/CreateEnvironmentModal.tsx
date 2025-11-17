@@ -47,7 +47,6 @@ const buildScenarioMap = (
       statusMobile: 'pendente',
       statusDesktop: 'pendente',
       evidenciaArquivoUrl: null,
-      bugUrl: null,
     };
   });
 
