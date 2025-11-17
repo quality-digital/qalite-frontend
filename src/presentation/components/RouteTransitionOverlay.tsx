@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { PageLoader } from './PageLoader';
+import { ROUTE_TRANSITION_READY_EVENT } from './routeTransitionEvents';
 
 const ROUTE_MESSAGES: Array<{ pattern: RegExp; message: string }> = [
   { pattern: /^\/login/, message: 'Validando suas credenciais...' },
@@ -30,6 +31,9 @@ const getRouteMessage = (pathname: string) => {
 
 const MIN_VISIBLE_MS = 550;
 const FADE_OUT_MS = 220;
+const WAIT_FOR_READY_TIMEOUT_MS = 6000;
+
+const WAIT_FOR_READY_ROUTES: RegExp[] = [/^\/stores\//];
 
 export const RouteTransitionOverlay = () => {
   const location = useLocation();
@@ -38,15 +42,61 @@ export const RouteTransitionOverlay = () => {
   const [message, setMessage] = useState(() => getRouteMessage(location.pathname));
   const isFirstRender = useRef(true);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const waitForReadyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shouldWaitForReadyRef = useRef(false);
+
+  const clearHideTimer = useCallback(() => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+  }, []);
+
+  const clearWaitForReadyTimer = useCallback(() => {
+    if (waitForReadyTimerRef.current) {
+      clearTimeout(waitForReadyTimerRef.current);
+      waitForReadyTimerRef.current = null;
+    }
+  }, []);
+
+  const startFadeOutSequence = useCallback(() => {
+    clearHideTimer();
+
+    hideTimerRef.current = setTimeout(() => {
+      setIsFadingOut(true);
+
+      hideTimerRef.current = setTimeout(() => {
+        setIsRendering(false);
+        setIsFadingOut(false);
+      }, FADE_OUT_MS);
+    }, MIN_VISIBLE_MS);
+  }, [clearHideTimer]);
+
+  const handleRouteReady = useCallback(() => {
+    if (!shouldWaitForReadyRef.current) {
+      return;
+    }
+
+    shouldWaitForReadyRef.current = false;
+    clearWaitForReadyTimer();
+    startFadeOutSequence();
+  }, [clearWaitForReadyTimer, startFadeOutSequence]);
 
   useEffect(
     () => () => {
-      if (hideTimerRef.current) {
-        clearTimeout(hideTimerRef.current);
-      }
+      clearHideTimer();
+      clearWaitForReadyTimer();
     },
-    [],
+    [clearHideTimer, clearWaitForReadyTimer],
   );
+
+  useEffect(() => {
+    window.addEventListener(ROUTE_TRANSITION_READY_EVENT, handleRouteReady);
+
+    return () => {
+      window.removeEventListener(ROUTE_TRANSITION_READY_EVENT, handleRouteReady);
+    };
+  }, [handleRouteReady]);
 
   useEffect(() => {
     if (isFirstRender.current) {
@@ -57,20 +107,30 @@ export const RouteTransitionOverlay = () => {
     setMessage(getRouteMessage(location.pathname));
     setIsRendering(true);
     setIsFadingOut(false);
+    clearHideTimer();
+    clearWaitForReadyTimer();
 
-    if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
+    const shouldWaitForReady = WAIT_FOR_READY_ROUTES.some((pattern) =>
+      pattern.test(location.pathname),
+    );
+    shouldWaitForReadyRef.current = shouldWaitForReady;
+
+    if (shouldWaitForReady) {
+      waitForReadyTimerRef.current = setTimeout(() => {
+        shouldWaitForReadyRef.current = false;
+        startFadeOutSequence();
+      }, WAIT_FOR_READY_TIMEOUT_MS);
+    } else {
+      startFadeOutSequence();
     }
-
-    hideTimerRef.current = setTimeout(() => {
-      setIsFadingOut(true);
-
-      hideTimerRef.current = setTimeout(() => {
-        setIsRendering(false);
-        setIsFadingOut(false);
-      }, FADE_OUT_MS);
-    }, MIN_VISIBLE_MS);
-  }, [location.key, location.pathname, location.search]);
+  }, [
+    clearHideTimer,
+    clearWaitForReadyTimer,
+    location.key,
+    location.pathname,
+    location.search,
+    startFadeOutSequence,
+  ]);
 
   if (!isRendering) {
     return null;
