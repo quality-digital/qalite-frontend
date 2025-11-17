@@ -26,7 +26,6 @@ import {
   getCriticalityClassName,
 } from '../constants/scenarioOptions';
 import { EnvironmentKanban } from '../components/environments/EnvironmentKanban';
-import { signalRouteTransitionReady } from '../components/routeTransitionEvents';
 
 const emptyScenarioForm: StoreScenarioInput = {
   title: '',
@@ -247,7 +246,6 @@ export const StoreSummaryPage = () => {
       } finally {
         setIsLoadingStore(false);
         setIsLoadingScenarios(false);
-        signalRouteTransitionReady();
       }
     };
 
