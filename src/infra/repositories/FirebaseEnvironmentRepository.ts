@@ -301,7 +301,16 @@ export class FirebaseEnvironmentRepository implements IEnvironmentRepository {
         return;
       }
 
-      const presentUsers: string[] = snapshot.data()?.presentUsersIds ?? [];
+      const data = snapshot.data();
+      if (data?.status === 'done') {
+        throw new Error('Não é possível sair de um ambiente concluído.');
+      }
+
+      const presentUsers: string[] = data?.presentUsersIds ?? [];
+      if (!presentUsers.includes(userId)) {
+        return;
+      }
+
       transaction.update(environmentRef, {
         presentUsersIds: presentUsers.filter((id) => id !== userId),
         updatedAt: serverTimestamp(),

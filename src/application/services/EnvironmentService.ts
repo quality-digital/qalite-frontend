@@ -21,6 +21,7 @@ import type {
 } from '../../domain/repositories/EnvironmentRepository';
 import { EnvironmentStatusError } from '../errors/EnvironmentStatusError';
 import type { EnvironmentExporter } from '../ports/EnvironmentExporter';
+import type { UserSummary } from '../../domain/entities/UserSummary';
 
 interface TransitionEnvironmentStatusParams {
   environment: Environment;
@@ -166,7 +167,6 @@ export class EnvironmentService {
       const uniqueParticipants = Array.from(
         new Set([...(environment.participants ?? []), ...(environment.presentUsersIds ?? [])]),
       );
-      payload.presentUsersIds = [];
       payload.concludedBy = currentUserId ?? null;
       payload.participants = uniqueParticipants;
     }
@@ -174,12 +174,20 @@ export class EnvironmentService {
     await this.environmentRepository.update(environment.id, payload);
   }
 
-  exportAsPDF(environment: Environment, bugs?: EnvironmentBug[]): void {
-    this.environmentExporter.exportAsPDF(environment, bugs);
+  exportAsPDF(
+    environment: Environment,
+    bugs?: EnvironmentBug[],
+    participants?: UserSummary[],
+  ): void {
+    this.environmentExporter.exportAsPDF(environment, bugs, participants);
   }
 
-  copyAsMarkdown(environment: Environment, bugs?: EnvironmentBug[]): Promise<void> {
-    return this.environmentExporter.copyAsMarkdown(environment, bugs);
+  copyAsMarkdown(
+    environment: Environment,
+    bugs?: EnvironmentBug[],
+    participants?: UserSummary[],
+  ): Promise<void> {
+    return this.environmentExporter.copyAsMarkdown(environment, bugs, participants);
   }
 
   private computeNextTimeTracking(

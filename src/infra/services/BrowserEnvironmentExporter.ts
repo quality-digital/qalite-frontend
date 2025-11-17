@@ -2,6 +2,7 @@ import { getScenarioPlatformStatuses } from '../../domain/entities/Environment';
 import type { Environment } from '../../domain/entities/Environment';
 import type { EnvironmentBug } from '../../domain/entities/EnvironmentBug';
 import type { EnvironmentExporter } from '../../application/ports/EnvironmentExporter';
+import type { UserSummary } from '../../domain/entities/UserSummary';
 
 const BUG_STATUS_LABEL: Record<EnvironmentBug['status'], string> = {
   aberto: 'Aberto',
@@ -17,12 +18,36 @@ const getScenarioLabel = (environment: Environment, scenarioId: string | null) =
   return environment.scenarios?.[scenarioId]?.titulo ?? 'Cenário removido';
 };
 
+const normalizeParticipants = (
+  environment: Environment,
+  participantProfiles: UserSummary[] = [],
+) => {
+  const uniqueIds = Array.from(new Set(environment.participants ?? []));
+  const profileMap = new Map(participantProfiles.map((profile) => [profile.id, profile]));
+
+  return uniqueIds.map((id) => {
+    const profile = profileMap.get(id);
+    const displayName = profile?.displayName?.trim() || profile?.email || `Participante ${id}`;
+
+    return {
+      id,
+      name: displayName,
+      email: profile?.email ?? 'Não informado',
+    };
+  });
+};
+
 export class BrowserEnvironmentExporter implements EnvironmentExporter {
-  exportAsPDF(environment: Environment, bugs: EnvironmentBug[] = []): void {
+  exportAsPDF(
+    environment: Environment,
+    bugs: EnvironmentBug[] = [],
+    participantProfiles: UserSummary[] = [],
+  ): void {
     if (typeof window === 'undefined') {
       return;
     }
 
+    const normalizedParticipants = normalizeParticipants(environment, participantProfiles);
     const scenarioRows = Object.values(environment.scenarios ?? {})
       .map((scenario) => {
         const statuses = getScenarioPlatformStatuses(scenario);
@@ -42,6 +67,24 @@ export class BrowserEnvironmentExporter implements EnvironmentExporter {
       `;
       })
       .join('');
+
+    const participantRows =
+      normalizedParticipants.length > 0
+        ? normalizedParticipants
+            .map(
+              (participant) => `
+        <tr>
+          <td>${participant.name}</td>
+          <td>${participant.email}</td>
+        </tr>
+      `,
+            )
+            .join('')
+        : `
+        <tr>
+          <td colspan="2">Nenhum participante registrado.</td>
+        </tr>
+      `;
 
     const bugRows =
       bugs.length > 0
@@ -81,6 +124,16 @@ export class BrowserEnvironmentExporter implements EnvironmentExporter {
         ${environment.momento ? `<p>Momento: ${environment.momento}</p>` : ''}
         ${environment.release ? `<p>Release: ${environment.release}</p>` : ''}
         <p>Jira: ${environment.jiraTask || 'Não informado'}</p>
+        <h2>Participantes</h2>
+        <table class="participants-table">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Email</th>
+            </tr>
+          </thead>
+          <tbody>${participantRows}</tbody>
+        </table>
         <h2>Cenários</h2>
         <table>
           <thead>
@@ -122,11 +175,16 @@ export class BrowserEnvironmentExporter implements EnvironmentExporter {
     printWindow.print();
   }
 
-  async copyAsMarkdown(environment: Environment, bugs: EnvironmentBug[] = []): Promise<void> {
+  async copyAsMarkdown(
+    environment: Environment,
+    bugs: EnvironmentBug[] = [],
+    participantProfiles: UserSummary[] = [],
+  ): Promise<void> {
     if (typeof navigator === 'undefined' && typeof document === 'undefined') {
       return;
     }
 
+    const normalizedParticipants = normalizeParticipants(environment, participantProfiles);
     const scenarioLines = Object.entries(environment.scenarios ?? {})
       .map(([id, scenario]) => {
         const statuses = getScenarioPlatformStatuses(scenario);
@@ -147,8 +205,11 @@ export class BrowserEnvironmentExporter implements EnvironmentExporter {
       .join('\n');
 
     const urls = (environment.urls ?? []).map((url) => `  - ${url}`).join('\n');
-    const participants = (environment.participants ?? [])
-      .map((participant) => `- ${participant}`)
+    const participants = normalizedParticipants
+      .map((participant) => {
+        const email = participant.email !== 'Não informado' ? ` (${participant.email})` : '';
+        return `- **${participant.name}**${email} · ID: ${participant.id}`;
+      })
       .join('\n');
 
     const markdown = `# Ambiente ${environment.identificador}
