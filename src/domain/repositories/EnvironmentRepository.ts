@@ -1,6 +1,7 @@
 import type {
   CreateEnvironmentInput,
   Environment,
+  EnvironmentScenarioPlatform,
   EnvironmentScenarioStatus,
   UpdateEnvironmentInput,
 } from '../entities/Environment';
@@ -27,6 +28,7 @@ export interface IEnvironmentRepository {
     environmentId: string,
     scenarioId: string,
     status: EnvironmentScenarioStatus,
+    platform?: EnvironmentScenarioPlatform,
   ): Promise<void>;
   uploadScenarioEvidence(environmentId: string, scenarioId: string, file: File): Promise<string>;
 }

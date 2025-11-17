@@ -19,6 +19,7 @@ import type {
   CreateEnvironmentInput,
   Environment,
   EnvironmentScenario,
+  EnvironmentScenarioPlatform,
   EnvironmentScenarioStatus,
   EnvironmentStatus,
   UpdateEnvironmentInput,
@@ -87,11 +88,20 @@ const parseScenarioMap = (
     }
 
     const entry = value as Record<string, unknown>;
+    const defaultStatus = (entry.status ?? 'pendente') as EnvironmentScenarioStatus;
+    const mobileStatus = (entry.statusMobile ??
+      entry.mobileStatus ??
+      defaultStatus) as EnvironmentScenarioStatus;
+    const desktopStatus = (entry.statusDesktop ??
+      entry.desktopStatus ??
+      defaultStatus) as EnvironmentScenarioStatus;
     acc[id] = {
       titulo: getString(entry.titulo),
       categoria: getString(entry.categoria),
       criticidade: getString(entry.criticidade),
-      status: (entry.status ?? 'pendente') as EnvironmentScenarioStatus,
+      status: defaultStatus,
+      statusMobile: mobileStatus,
+      statusDesktop: desktopStatus,
       evidenciaArquivoUrl: getStringOrNull(entry.evidenciaArquivoUrl),
     };
     return acc;
@@ -278,7 +288,18 @@ export class FirebaseEnvironmentRepository implements IEnvironmentRepository {
     environmentId: string,
     scenarioId: string,
     status: EnvironmentScenarioStatus,
+    platform?: EnvironmentScenarioPlatform,
   ): Promise<void> => {
+    if (platform === 'mobile') {
+      await updateScenarioField(environmentId, scenarioId, { statusMobile: status });
+      return;
+    }
+
+    if (platform === 'desktop') {
+      await updateScenarioField(environmentId, scenarioId, { statusDesktop: status });
+      return;
+    }
+
     await updateScenarioField(environmentId, scenarioId, { status });
   };
 

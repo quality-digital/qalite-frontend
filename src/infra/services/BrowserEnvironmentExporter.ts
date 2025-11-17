@@ -1,3 +1,4 @@
+import { getScenarioPlatformStatuses } from '../../domain/entities/Environment';
 import type { Environment } from '../../domain/entities/Environment';
 import type { EnvironmentExporter } from '../../application/ports/EnvironmentExporter';
 
@@ -8,21 +9,23 @@ export class BrowserEnvironmentExporter implements EnvironmentExporter {
     }
 
     const scenarioRows = Object.values(environment.scenarios ?? {})
-      .map(
-        (scenario) => `
+      .map((scenario) => {
+        const statuses = getScenarioPlatformStatuses(scenario);
+        return `
         <tr>
           <td>${scenario.titulo}</td>
           <td>${scenario.categoria}</td>
           <td>${scenario.criticidade}</td>
-          <td>${scenario.status}</td>
+          <td>${statuses.mobile}</td>
+          <td>${statuses.desktop}</td>
           <td>${
             scenario.evidenciaArquivoUrl
               ? `<a href="${scenario.evidenciaArquivoUrl}">Arquivo</a>`
               : 'Sem evidência'
           }</td>
         </tr>
-      `,
-      )
+      `;
+      })
       .join('');
 
     const documentContent = `
@@ -48,7 +51,8 @@ export class BrowserEnvironmentExporter implements EnvironmentExporter {
               <th>Título</th>
               <th>Categoria</th>
               <th>Criticidade</th>
-              <th>Status</th>
+              <th>Status Mobile</th>
+              <th>Status Desktop</th>
               <th>Evidência</th>
             </tr>
           </thead>
@@ -75,12 +79,14 @@ export class BrowserEnvironmentExporter implements EnvironmentExporter {
     }
 
     const scenarioLines = Object.entries(environment.scenarios ?? {})
-      .map(
-        ([id, scenario]) =>
-          `- **${scenario.titulo}** (${scenario.categoria} | ${scenario.criticidade}) - ${
-            scenario.status
-          }${scenario.evidenciaArquivoUrl ? ` [evidência](${scenario.evidenciaArquivoUrl})` : ''} (ID: ${id})`,
-      )
+      .map(([id, scenario]) => {
+        const statuses = getScenarioPlatformStatuses(scenario);
+        return `- **${scenario.titulo}** (${scenario.categoria} | ${scenario.criticidade}) - Mobile: ${
+          statuses.mobile
+        } · Desktop: ${statuses.desktop}${
+          scenario.evidenciaArquivoUrl ? ` [evidência](${scenario.evidenciaArquivoUrl})` : ''
+        } (ID: ${id})`;
+      })
       .join('\n');
 
     const markdown = `# Ambiente ${environment.identificador}

@@ -1,6 +1,9 @@
 import { useCallback, useState } from 'react';
 
-import type { EnvironmentScenarioStatus } from '../../domain/entities/Environment';
+import type {
+  EnvironmentScenarioPlatform,
+  EnvironmentScenarioStatus,
+} from '../../domain/entities/Environment';
 import { environmentService } from '../../main/factories/environmentServiceFactory';
 
 export const useScenarioEvidence = (environmentId: string | null | undefined) => {
@@ -23,14 +26,18 @@ export const useScenarioEvidence = (environmentId: string | null | undefined) =>
   );
 
   const changeScenarioStatus = useCallback(
-    async (scenarioId: string, status: EnvironmentScenarioStatus) => {
+    async (
+      scenarioId: string,
+      status: EnvironmentScenarioStatus,
+      platform: EnvironmentScenarioPlatform,
+    ) => {
       if (!environmentId) {
         throw new Error('Ambiente inválido.');
       }
 
       setIsUpdating(true);
       try {
-        await environmentService.updateScenarioStatus(environmentId, scenarioId, status);
+        await environmentService.updateScenarioStatus(environmentId, scenarioId, status, platform);
       } finally {
         setIsUpdating(false);
       }

@@ -176,7 +176,7 @@ export const EnvironmentKanban = ({ storeId, suites, scenarios }: EnvironmentKan
       if (error instanceof EnvironmentStatusError && error.code === 'PENDING_SCENARIOS') {
         showToast({
           type: 'error',
-          message: 'Existem cenários pendentes. Conclua-os antes de finalizar.',
+          message: 'Existem cenários pendentes ou em andamento. Conclua-os antes de finalizar.',
         });
         return;
       }

@@ -2684,6 +2684,19 @@ a.text-link:hover {
     border-color var(--transition-base),
     background var(--transition-base),
     color var(--transition-base);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.suite-card-trigger__title {
+  font-weight: 600;
+}
+
+.suite-card-trigger__count {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
 }
 
 .suite-card-trigger.is-active {
@@ -3577,6 +3590,25 @@ a.text-link:hover {
   gap: 0.75rem;
 }
 
+.summary-card__platform-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.summary-card__platform-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.summary-card__platform-title {
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
 .summary-pill {
   border: 1px solid var(--color-border);
   border-radius: 0.85rem;
@@ -3602,6 +3634,13 @@ a.text-link:hover {
   font-size: 0.8rem;
   color: var(--color-text-secondary);
   font-style: italic;
+}
+
+.summary-card__detail-hint {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
 }
 
 .summary-card__detail {
@@ -3775,10 +3814,21 @@ a.text-link:hover {
   gap: 1rem;
 }
 
+.scenario-status-column {
+  min-width: 220px;
+}
+
 .scenario-status-cell {
   display: flex;
-  align-items: center;
-  justify-content: flex-start;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.scenario-status-cell label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
 }
 
 .scenario-evidence-cell {

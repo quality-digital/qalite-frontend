@@ -1,11 +1,14 @@
-import type {
-  CreateEnvironmentInput,
-  Environment,
-  EnvironmentScenario,
-  EnvironmentScenarioStatus,
-  EnvironmentStatus,
-  EnvironmentTimeTracking,
-  UpdateEnvironmentInput,
+import {
+  SCENARIO_COMPLETED_STATUSES,
+  getScenarioPlatformStatuses,
+  type CreateEnvironmentInput,
+  type Environment,
+  type EnvironmentScenario,
+  type EnvironmentScenarioPlatform,
+  type EnvironmentScenarioStatus,
+  type EnvironmentStatus,
+  type EnvironmentTimeTracking,
+  type UpdateEnvironmentInput,
 } from '../../domain/entities/Environment';
 import type {
   EnvironmentRealtimeFilters,
@@ -64,8 +67,14 @@ export class EnvironmentService {
     environmentId: string,
     scenarioId: string,
     status: EnvironmentScenarioStatus,
+    platform?: EnvironmentScenarioPlatform,
   ): Promise<void> {
-    return this.environmentRepository.updateScenarioStatus(environmentId, scenarioId, status);
+    return this.environmentRepository.updateScenarioStatus(
+      environmentId,
+      scenarioId,
+      status,
+      platform,
+    );
   }
 
   uploadScenarioEvidence(environmentId: string, scenarioId: string, file: File): Promise<string> {
@@ -86,14 +95,17 @@ export class EnvironmentService {
     }
 
     if (targetStatus === 'done') {
-      const hasPendingScenario = Object.values(environment.scenarios ?? {}).some(
-        (scenario) => scenario.status === 'pendente',
-      );
+      const hasIncompleteScenario = Object.values(environment.scenarios ?? {}).some((scenario) => {
+        const statuses = getScenarioPlatformStatuses(scenario);
+        return (
+          this.isIncompleteStatus(statuses.mobile) || this.isIncompleteStatus(statuses.desktop)
+        );
+      });
 
-      if (hasPendingScenario) {
+      if (hasIncompleteScenario) {
         throw new EnvironmentStatusError(
           'PENDING_SCENARIOS',
-          'There are pending scenarios that must be completed before finishing the environment.',
+          'There are pending or in-progress scenarios that must be completed before finishing the environment.',
         );
       }
     }
@@ -113,6 +125,8 @@ export class EnvironmentService {
             acc[scenarioId] = {
               ...scenario,
               status: 'em_andamento',
+              statusMobile: 'em_andamento',
+              statusDesktop: 'em_andamento',
             };
             return acc;
           },
@@ -164,5 +178,9 @@ export class EnvironmentService {
     }
 
     return current;
+  }
+
+  private isIncompleteStatus(status: EnvironmentScenarioStatus): boolean {
+    return !SCENARIO_COMPLETED_STATUSES.includes(status);
   }
 }

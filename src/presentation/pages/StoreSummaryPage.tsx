@@ -1532,7 +1532,13 @@ export const StoreSummaryPage = () => {
                                         )
                                       }
                                     >
-                                      <span>{suite.name}</span>
+                                      <span className="suite-card-trigger__title">
+                                        {suite.name}
+                                      </span>
+                                      <span className="suite-card-trigger__count">
+                                        {suite.scenarioIds.length} cenário
+                                        {suite.scenarioIds.length === 1 ? '' : 's'}
+                                      </span>
                                     </button>
                                   );
                                 })}

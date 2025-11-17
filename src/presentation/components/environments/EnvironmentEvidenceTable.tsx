@@ -1,6 +1,10 @@
 import { type ChangeEvent, useMemo, useState } from 'react';
 
-import type { Environment, EnvironmentScenarioStatus } from '../../../domain/entities/Environment';
+import type {
+  Environment,
+  EnvironmentScenarioPlatform,
+  EnvironmentScenarioStatus,
+} from '../../../domain/entities/Environment';
 import { useScenarioEvidence } from '../../hooks/useScenarioEvidence';
 import {
   ScenarioColumnSortControl,
@@ -21,6 +25,11 @@ const STATUS_OPTIONS: { value: EnvironmentScenarioStatus; label: string }[] = [
   { value: 'concluido_automatizado', label: 'Concluído automatizado' },
   { value: 'nao_se_aplica', label: 'Não se aplica' },
 ];
+
+const PLATFORM_LABEL: Record<EnvironmentScenarioPlatform, string> = {
+  mobile: 'Mobile',
+  desktop: 'Desktop',
+};
 
 export const EnvironmentEvidenceTable = ({
   environment,
@@ -72,12 +81,16 @@ export const EnvironmentEvidenceTable = ({
   }, [scenarioEntries, scenarioSort]);
   const isReadOnly = Boolean(isLocked || readOnly);
 
-  const handleStatusChange = async (scenarioId: string, status: EnvironmentScenarioStatus) => {
+  const handleStatusChange = async (
+    scenarioId: string,
+    platform: EnvironmentScenarioPlatform,
+    status: EnvironmentScenarioStatus,
+  ) => {
     if (isReadOnly) {
       return;
     }
 
-    await changeScenarioStatus(scenarioId, status);
+    await changeScenarioStatus(scenarioId, status, platform);
   };
 
   const handleFileChange = async (scenarioId: string, event: ChangeEvent<HTMLInputElement>) => {
@@ -116,7 +129,8 @@ export const EnvironmentEvidenceTable = ({
                 onChange={setScenarioSort}
               />
             </th>
-            <th>Status</th>
+            <th>Status Mobile</th>
+            <th>Status Desktop</th>
             <th>Evidência</th>
           </tr>
         </thead>
@@ -126,28 +140,40 @@ export const EnvironmentEvidenceTable = ({
               <td>{data.titulo}</td>
               <td>{data.categoria}</td>
               <td>{data.criticidade}</td>
-              <td>
-                <div className="scenario-status-cell">
-                  <select
-                    className={`scenario-status-select scenario-status-select--${data.status}`}
-                    value={data.status}
-                    disabled={isReadOnly}
-                    aria-label={`Status do cenário ${data.titulo}`}
-                    onChange={(event) =>
-                      handleStatusChange(
-                        scenarioId,
-                        event.target.value as EnvironmentScenarioStatus,
-                      )
-                    }
-                  >
-                    {STATUS_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </td>
+              {(['mobile', 'desktop'] as EnvironmentScenarioPlatform[]).map((platform) => {
+                const currentStatus =
+                  platform === 'mobile'
+                    ? (data.statusMobile ?? data.status)
+                    : (data.statusDesktop ?? data.status);
+                const selectId = `${scenarioId}-${platform}-status`;
+                return (
+                  <td key={selectId} className="scenario-status-column">
+                    <div className="scenario-status-cell">
+                      <label htmlFor={selectId}>{PLATFORM_LABEL[platform]}</label>
+                      <select
+                        id={selectId}
+                        className={`scenario-status-select scenario-status-select--${currentStatus}`}
+                        value={currentStatus}
+                        disabled={isReadOnly}
+                        aria-label={`Status ${PLATFORM_LABEL[platform]} do cenário ${data.titulo}`}
+                        onChange={(event) =>
+                          handleStatusChange(
+                            scenarioId,
+                            platform,
+                            event.target.value as EnvironmentScenarioStatus,
+                          )
+                        }
+                      >
+                        {STATUS_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </td>
+                );
+              })}
               <td>
                 <div className="scenario-evidence-cell">
                   {data.evidenciaArquivoUrl ? (

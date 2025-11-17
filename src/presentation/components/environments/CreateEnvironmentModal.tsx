@@ -49,6 +49,8 @@ const buildScenarioMap = (
       categoria: match.category,
       criticidade: match.criticality,
       status: 'pendente',
+      statusMobile: 'pendente',
+      statusDesktop: 'pendente',
       evidenciaArquivoUrl: null,
     };
   });

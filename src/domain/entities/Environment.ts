@@ -7,13 +7,30 @@ export type EnvironmentScenarioStatus =
   | 'concluido_automatizado'
   | 'nao_se_aplica';
 
+export type EnvironmentScenarioPlatform = 'mobile' | 'desktop';
+
 export interface EnvironmentScenario {
   titulo: string;
   categoria: string;
   criticidade: string;
   status: EnvironmentScenarioStatus;
+  statusMobile?: EnvironmentScenarioStatus;
+  statusDesktop?: EnvironmentScenarioStatus;
   evidenciaArquivoUrl: string | null;
 }
+
+export const SCENARIO_COMPLETED_STATUSES: EnvironmentScenarioStatus[] = [
+  'concluido',
+  'concluido_automatizado',
+  'nao_se_aplica',
+];
+
+export const getScenarioPlatformStatuses = (
+  scenario: EnvironmentScenario,
+): Record<EnvironmentScenarioPlatform, EnvironmentScenarioStatus> => ({
+  mobile: scenario.statusMobile ?? scenario.status,
+  desktop: scenario.statusDesktop ?? scenario.status,
+});
 
 export interface EnvironmentTimeTracking {
   start: string | null;
