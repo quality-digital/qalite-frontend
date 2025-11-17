@@ -518,9 +518,7 @@ export const AdminStoresPage = () => {
                       </span>
                       <div>
                         <h2 className="card-title">{store.name}</h2>
-                        <p className="card-subtitle">
-                          {selectedOrganization?.name ?? 'Organização'}
-                        </p>
+                        <p>{selectedOrganization?.name ?? 'Organização'}</p>
                       </div>
                     </div>
                     <span className="badge">{store.scenarioCount} cenários</span>

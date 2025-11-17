@@ -174,12 +174,12 @@ export class EnvironmentService {
     await this.environmentRepository.update(environment.id, payload);
   }
 
-  exportAsPDF(environment: Environment): void {
-    this.environmentExporter.exportAsPDF(environment);
+  exportAsPDF(environment: Environment, bugs?: EnvironmentBug[]): void {
+    this.environmentExporter.exportAsPDF(environment, bugs);
   }
 
-  exportAsMarkdown(environment: Environment): void {
-    this.environmentExporter.exportAsMarkdown(environment);
+  copyAsMarkdown(environment: Environment, bugs?: EnvironmentBug[]): Promise<void> {
+    return this.environmentExporter.copyAsMarkdown(environment, bugs);
   }
 
   private computeNextTimeTracking(

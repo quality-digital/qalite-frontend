@@ -58,15 +58,20 @@ export const EnvironmentPage = () => {
   const [editingBug, setEditingBug] = useState<EnvironmentBug | null>(null);
   const [defaultBugScenarioId, setDefaultBugScenarioId] = useState<string | null>(null);
   const [hasEnteredEnvironment, setHasEnteredEnvironment] = useState(false);
+  const [hasManuallyExitedEnvironment, setHasManuallyExitedEnvironment] = useState(false);
+  const [isJoiningEnvironment, setIsJoiningEnvironment] = useState(false);
+  const [isCopyingMarkdown, setIsCopyingMarkdown] = useState(false);
+  const [isLeavingEnvironment, setIsLeavingEnvironment] = useState(false);
   const isLocked = environment?.status === 'done';
   const isScenarioLocked = environment?.status !== 'in_progress' || !hasEnteredEnvironment;
   const isInteractionLocked = !hasEnteredEnvironment || Boolean(isLocked);
   const canCopyPublicLink = hasEnteredEnvironment;
 
-  const { isCurrentUserPresent, joinEnvironment } = usePresentUsers({
+  const { isCurrentUserPresent, joinEnvironment, leaveEnvironment } = usePresentUsers({
     environmentId: environment?.id ?? null,
     presentUsersIds: environment?.presentUsersIds ?? [],
-    isLocked: Boolean(isLocked) || !hasEnteredEnvironment,
+    isLocked: Boolean(isLocked),
+    shouldAutoJoin: hasEnteredEnvironment && !isLocked && !hasManuallyExitedEnvironment,
   });
   const { setActiveOrganization } = useOrganizationBranding();
   const participantProfiles = useUserProfiles(environment?.participants ?? []);
@@ -92,28 +97,32 @@ export const EnvironmentPage = () => {
   useEffect(() => {
     if (isCurrentUserPresent && !hasEnteredEnvironment) {
       setHasEnteredEnvironment(true);
+      setHasManuallyExitedEnvironment(false);
     }
   }, [hasEnteredEnvironment, isCurrentUserPresent]);
 
   useEffect(() => {
     if (!environment?.id || !user?.uid) {
       setHasEnteredEnvironment(false);
+      setHasManuallyExitedEnvironment(false);
       return;
     }
 
     const hasPersistedEntry = environment.participants?.includes(user.uid) ?? false;
-    if (hasPersistedEntry && !hasEnteredEnvironment) {
+    if (hasPersistedEntry && !hasEnteredEnvironment && !hasManuallyExitedEnvironment) {
       setHasEnteredEnvironment(true);
       return;
     }
 
     if (!hasPersistedEntry && !isCurrentUserPresent) {
       setHasEnteredEnvironment(false);
+      setHasManuallyExitedEnvironment(false);
     }
   }, [
     environment?.id,
     environment?.participants,
     hasEnteredEnvironment,
+    hasManuallyExitedEnvironment,
     isCurrentUserPresent,
     user?.uid,
   ]);
@@ -240,14 +249,25 @@ export const EnvironmentPage = () => {
     if (!environment) {
       return;
     }
-    environmentService.exportAsPDF(environment);
+    environmentService.exportAsPDF(environment, bugs);
   };
 
-  const handleExportMarkdown = () => {
+  const handleCopyMarkdown = async () => {
     if (!environment) {
       return;
     }
-    environmentService.exportAsMarkdown(environment);
+
+    setIsCopyingMarkdown(true);
+
+    try {
+      await environmentService.copyAsMarkdown(environment, bugs);
+      showToast({ type: 'success', message: 'Markdown copiado para a área de transferência.' });
+    } catch (error) {
+      console.error(error);
+      showToast({ type: 'error', message: 'Não foi possível copiar o Markdown.' });
+    } finally {
+      setIsCopyingMarkdown(false);
+    }
   };
 
   const openCreateBugModal = (scenarioId: string) => {
@@ -272,14 +292,43 @@ export const EnvironmentPage = () => {
     openCreateBugModal(scenarioId);
   };
 
-  const handleEnterEnvironment = () => {
-    if (hasEnteredEnvironment || isLocked) {
+  const handleEnterEnvironment = async () => {
+    if (hasEnteredEnvironment || isLocked || isJoiningEnvironment) {
       return;
     }
 
-    setHasEnteredEnvironment(true);
+    setIsJoiningEnvironment(true);
 
-    void joinEnvironment();
+    try {
+      await joinEnvironment();
+      setHasEnteredEnvironment(true);
+      setHasManuallyExitedEnvironment(false);
+    } catch (error) {
+      console.error(error);
+      showToast({ type: 'error', message: 'Não foi possível entrar no ambiente.' });
+    } finally {
+      setIsJoiningEnvironment(false);
+    }
+  };
+
+  const handleLeaveEnvironment = async () => {
+    if ((!hasEnteredEnvironment && !isCurrentUserPresent) || isLocked || isLeavingEnvironment) {
+      return;
+    }
+
+    setIsLeavingEnvironment(true);
+
+    try {
+      await leaveEnvironment();
+      setHasEnteredEnvironment(false);
+      setHasManuallyExitedEnvironment(true);
+      showToast({ type: 'success', message: 'Você saiu do ambiente.' });
+    } catch (error) {
+      console.error(error);
+      showToast({ type: 'error', message: 'Não foi possível sair do ambiente.' });
+    } finally {
+      setIsLeavingEnvironment(false);
+    }
   };
 
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -337,7 +386,12 @@ export const EnvironmentPage = () => {
           </div>
           <div className="environment-actions">
             {!hasEnteredEnvironment && !isLocked ? (
-              <Button type="button" onClick={handleEnterEnvironment}>
+              <Button
+                type="button"
+                onClick={handleEnterEnvironment}
+                isLoading={isJoiningEnvironment}
+                loadingText="Entrando..."
+              >
                 Entrar no ambiente
               </Button>
             ) : (
@@ -359,6 +413,16 @@ export const EnvironmentPage = () => {
                     </Button>
                     <Button type="button" variant="ghost" onClick={() => setIsDeleteOpen(true)}>
                       Excluir
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={handleLeaveEnvironment}
+                      disabled={!hasEnteredEnvironment && !isCurrentUserPresent}
+                      isLoading={isLeavingEnvironment}
+                      loadingText="Saindo..."
+                    >
+                      Sair do ambiente
                     </Button>
                   </>
                 )}
@@ -539,10 +603,12 @@ export const EnvironmentPage = () => {
               <Button
                 type="button"
                 variant="ghost"
-                onClick={handleExportMarkdown}
+                onClick={handleCopyMarkdown}
                 disabled={isInteractionLocked}
+                isLoading={isCopyingMarkdown}
+                loadingText="Copiando..."
               >
-                Exportar Markdown
+                Copiar Markdown
               </Button>
             </div>
             {isLocked && (

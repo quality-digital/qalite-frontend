@@ -558,12 +558,6 @@ a.text-link:hover {
   color: var(--color-text-primary);
 }
 
-.card-subtitle {
-  margin: 0.2rem 0 0;
-  font-size: 0.95rem;
-  color: var(--color-text-secondary);
-}
-
 .card-description {
   margin: 0;
   font-size: 0.95rem;
@@ -1027,6 +1021,17 @@ a.text-link:hover {
 
 .store-summary-stats strong {
   color: var(--color-text-primary);
+}
+
+.store-summary-stats a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.store-summary-stats a:hover,
+.store-summary-stats a:focus-visible {
+  text-decoration: none;
 }
 
 @media (min-width: 768px) {
@@ -2462,6 +2467,7 @@ a.text-link:hover {
   flex-direction: column;
   gap: 1.5rem;
   width: 100%;
+  padding: 0;
 }
 
 .suite-form > .suite-card {
@@ -2471,6 +2477,30 @@ a.text-link:hover {
 @media (min-width: 960px) {
   .suite-manager > .suite-form {
     grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 768px) {
+  .suite-form {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .suite-form {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .suite-form {
+    padding: 0.75rem;
+  }
+
+  .suite-form > .suite-card {
+    padding: 1.5rem;
   }
 }
 

@@ -165,6 +165,11 @@ export const EnvironmentKanban = ({ storeId, suites, scenarios }: EnvironmentKan
       return;
     }
 
+    if (status === 'backlog' && environment.status !== 'backlog') {
+      showToast({ type: 'info', message: 'Ambientes não podem retornar para o backlog.' });
+      return;
+    }
+
     try {
       await environmentService.transitionStatus({
         environment,

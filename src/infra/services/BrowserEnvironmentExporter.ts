@@ -1,9 +1,24 @@
 import { getScenarioPlatformStatuses } from '../../domain/entities/Environment';
 import type { Environment } from '../../domain/entities/Environment';
+import type { EnvironmentBug } from '../../domain/entities/EnvironmentBug';
 import type { EnvironmentExporter } from '../../application/ports/EnvironmentExporter';
 
+const BUG_STATUS_LABEL: Record<EnvironmentBug['status'], string> = {
+  aberto: 'Aberto',
+  em_andamento: 'Em andamento',
+  resolvido: 'Resolvido',
+};
+
+const getScenarioLabel = (environment: Environment, scenarioId: string | null) => {
+  if (!scenarioId) {
+    return 'Não vinculado';
+  }
+
+  return environment.scenarios?.[scenarioId]?.titulo ?? 'Cenário removido';
+};
+
 export class BrowserEnvironmentExporter implements EnvironmentExporter {
-  exportAsPDF(environment: Environment): void {
+  exportAsPDF(environment: Environment, bugs: EnvironmentBug[] = []): void {
     if (typeof window === 'undefined') {
       return;
     }
@@ -27,6 +42,26 @@ export class BrowserEnvironmentExporter implements EnvironmentExporter {
       `;
       })
       .join('');
+
+    const bugRows =
+      bugs.length > 0
+        ? bugs
+            .map(
+              (bug) => `
+        <tr>
+          <td>${bug.title}</td>
+          <td>${BUG_STATUS_LABEL[bug.status]}</td>
+          <td>${getScenarioLabel(environment, bug.scenarioId)}</td>
+          <td>${bug.description ?? 'Sem descrição'}</td>
+        </tr>
+      `,
+            )
+            .join('')
+        : `
+        <tr>
+          <td colspan="4">Nenhum bug registrado.</td>
+        </tr>
+      `;
 
     const documentContent = `
     <html>
@@ -60,6 +95,18 @@ export class BrowserEnvironmentExporter implements EnvironmentExporter {
           </thead>
           <tbody>${scenarioRows}</tbody>
         </table>
+        <h2>Bugs registrados</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Título</th>
+              <th>Status</th>
+              <th>Cenário</th>
+              <th>Descrição</th>
+            </tr>
+          </thead>
+          <tbody>${bugRows}</tbody>
+        </table>
       </body>
     </html>
   `;
@@ -75,8 +122,8 @@ export class BrowserEnvironmentExporter implements EnvironmentExporter {
     printWindow.print();
   }
 
-  exportAsMarkdown(environment: Environment): void {
-    if (typeof document === 'undefined') {
+  async copyAsMarkdown(environment: Environment, bugs: EnvironmentBug[] = []): Promise<void> {
+    if (typeof navigator === 'undefined' && typeof document === 'undefined') {
       return;
     }
 
@@ -91,30 +138,50 @@ export class BrowserEnvironmentExporter implements EnvironmentExporter {
       })
       .join('\n');
 
+    const bugLines = bugs
+      .map((bug) => {
+        const scenarioLabel = getScenarioLabel(environment, bug.scenarioId);
+        const description = bug.description ? ` — ${bug.description}` : '';
+        return `- **${bug.title}** (${BUG_STATUS_LABEL[bug.status]}) · Cenário: ${scenarioLabel}${description}`;
+      })
+      .join('\n');
+
+    const urls = (environment.urls ?? []).map((url) => `  - ${url}`).join('\n');
+    const participants = (environment.participants ?? [])
+      .map((participant) => `- ${participant}`)
+      .join('\n');
+
     const markdown = `# Ambiente ${environment.identificador}
 
 - Status: ${environment.status}
 - Tipo: ${environment.tipoAmbiente} · ${environment.tipoTeste}
-${environment.momento ? `- Momento: ${environment.momento}` : ''}
-${environment.release ? `- Release: ${environment.release}` : ''}
-- Jira: ${environment.jiraTask || 'Não informado'}
-- URLs:\n${environment.urls.map((url) => `  - ${url}`).join('\n') || '  - Nenhuma URL cadastrada'}
+${environment.momento ? `- Momento: ${environment.momento}\n` : ''}${
+      environment.release ? `- Release: ${environment.release}\n` : ''
+    }- Jira: ${environment.jiraTask || 'Não informado'}
+- URLs:\n${urls || '  - Nenhuma URL cadastrada'}
 
 ## Cenários
 ${scenarioLines || '- Nenhum cenário cadastrado'}
 
+## Bugs
+${bugLines || '- Nenhum bug registrado'}
+
 ## Participantes
-${environment.participants.map((id) => `- ${id}`).join('\n') || '- Nenhum participante registrado'}
+${participants || '- Nenhum participante registrado'}
 `;
 
-    const blob = new Blob([markdown], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `ambiente-${environment.identificador}.md`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(markdown);
+      return;
+    }
+
+    if (typeof document !== 'undefined') {
+      const textarea = document.createElement('textarea');
+      textarea.value = markdown;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
   }
 }

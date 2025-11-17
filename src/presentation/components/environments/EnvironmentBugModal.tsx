@@ -135,7 +135,12 @@ export const EnvironmentBugModal = ({
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            isLoading={isSubmitting}
+            loadingText="Salvando..."
+          >
             {bug ? 'Salvar alterações' : 'Registrar bug'}
           </Button>
         </div>
