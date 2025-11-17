@@ -1,8 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
-import type { Environment, EnvironmentStatus } from '../../../domain/entities/Environment';
+import type { Environment } from '../../../domain/entities/Environment';
 import { environmentService } from '../../../main/factories/environmentServiceFactory';
-import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../Button';
 import { Modal } from '../Modal';
 import { SelectInput } from '../SelectInput';
@@ -20,12 +19,6 @@ interface EditEnvironmentModalProps {
   environment: Environment | null;
 }
 
-const STATUS_OPTIONS: { value: EnvironmentStatus; label: string }[] = [
-  { value: 'backlog', label: 'Backlog' },
-  { value: 'in_progress', label: 'Em andamento' },
-  { value: 'done', label: 'Concluído' },
-];
-
 export const EditEnvironmentModal = ({
   isOpen,
   onClose,
@@ -38,10 +31,8 @@ export const EditEnvironmentModal = ({
   const [tipoTeste, setTipoTeste] = useState('Smoke-test');
   const [momento, setMomento] = useState('');
   const [release, setRelease] = useState('');
-  const [status, setStatus] = useState<EnvironmentStatus>('backlog');
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user } = useAuth();
 
   useEffect(() => {
     if (!environment) {
@@ -55,7 +46,6 @@ export const EditEnvironmentModal = ({
     setTipoTeste(environment.tipoTeste);
     setMomento(environment.momento ?? '');
     setRelease(environment.release ?? '');
-    setStatus(environment.status);
   }, [environment]);
 
   const isLocked = environment?.status === 'done';
@@ -126,14 +116,6 @@ export const EditEnvironmentModal = ({
         momento: momentoOptions.length > 0 ? momento : null,
         release: shouldDisplayReleaseField ? release.trim() : null,
       });
-
-      if (environment.status !== status) {
-        await environmentService.transitionStatus({
-          environment,
-          targetStatus: status,
-          currentUserId: user?.uid ?? null,
-        });
-      }
 
       onClose();
     } catch (error) {
@@ -214,14 +196,6 @@ export const EditEnvironmentModal = ({
             disabled={isLocked}
           />
         )}
-        <SelectInput
-          id="statusEditar"
-          label="Status"
-          value={status}
-          onChange={(event) => setStatus(event.target.value as EnvironmentStatus)}
-          options={STATUS_OPTIONS}
-          disabled={isLocked}
-        />
         <p className="environment-suite-preview">Cenários associados: {suiteSummary}</p>
         <Button
           type="submit"

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { environmentService } from '../../main/factories/environmentServiceFactory';
 import { useAuth } from './useAuth';
 
@@ -14,14 +14,16 @@ export const usePresentUsers = ({
   isLocked,
 }: UsePresentUsersParams) => {
   const { user } = useAuth();
+  const hasJoinedRef = useRef(false);
 
   const joinEnvironment = useCallback(async () => {
-    if (!environmentId || !user?.uid || isLocked) {
+    if (!environmentId || !user?.uid || isLocked || hasJoinedRef.current) {
       return;
     }
 
     try {
       await environmentService.addUser(environmentId, user.uid);
+      hasJoinedRef.current = true;
     } catch (error) {
       console.error(error);
     }
@@ -36,6 +38,8 @@ export const usePresentUsers = ({
       await environmentService.removeUser(environmentId, user.uid);
     } catch (error) {
       console.error(error);
+    } finally {
+      hasJoinedRef.current = false;
     }
   }, [environmentId, user?.uid]);
 
@@ -49,6 +53,15 @@ export const usePresentUsers = ({
       void leaveEnvironment();
     };
   }, [environmentId, isLocked, joinEnvironment, leaveEnvironment, user?.uid]);
+
+  useEffect(() => {
+    if (!user?.uid) {
+      hasJoinedRef.current = false;
+      return;
+    }
+
+    hasJoinedRef.current = presentUsersIds.includes(user.uid);
+  }, [presentUsersIds, user?.uid]);
 
   const isCurrentUserPresent = useMemo(
     () => (user?.uid ? presentUsersIds.includes(user.uid) : false),

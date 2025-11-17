@@ -62,6 +62,17 @@ const emptyScenarioFilters: ScenarioFilters = {
   criticality: '',
 };
 
+const normalizeStoreSite = (site?: string | null) => {
+  const trimmed = site?.trim();
+
+  if (!trimmed) {
+    return { label: 'Não informado', href: null };
+  }
+
+  const href = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  return { label: trimmed, href };
+};
+
 const filterScenarios = (list: StoreScenario[], filters: ScenarioFilters) => {
   const searchValue = filters.search.trim().toLowerCase();
   const filtered = list.filter((scenario) => {
@@ -118,6 +129,7 @@ export const StoreSummaryPage = () => {
   const [suitePreviewSort, setSuitePreviewSort] = useState<ScenarioSortConfig | null>(null);
   const [isViewingSuitesOnly, setIsViewingSuitesOnly] = useState(false);
   const suiteListRef = useRef<HTMLDivElement | null>(null);
+  const storeSiteInfo = useMemo(() => normalizeStoreSite(store?.site), [store?.site]);
   const [isStoreSettingsOpen, setIsStoreSettingsOpen] = useState(false);
   const [storeSettings, setStoreSettings] = useState({ name: '', site: '' });
   const [storeSettingsError, setStoreSettingsError] = useState<string | null>(null);
@@ -1097,7 +1109,14 @@ export const StoreSummaryPage = () => {
                       <strong>Cenários:</strong> {scenarios.length}
                     </span>
                     <span>
-                      <strong>Site:</strong> {store.site || 'Não informado'}
+                      <strong>Site:</strong>{' '}
+                      {storeSiteInfo.href ? (
+                        <a href={storeSiteInfo.href} target="_blank" rel="noreferrer noopener">
+                          {storeSiteInfo.label}
+                        </a>
+                      ) : (
+                        storeSiteInfo.label
+                      )}
                     </span>
                   </div>
                 </div>

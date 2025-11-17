@@ -60,12 +60,13 @@ export const EnvironmentPage = () => {
   const [hasEnteredEnvironment, setHasEnteredEnvironment] = useState(false);
   const [isJoiningEnvironment, setIsJoiningEnvironment] = useState(false);
   const [isCopyingMarkdown, setIsCopyingMarkdown] = useState(false);
+  const [isLeavingEnvironment, setIsLeavingEnvironment] = useState(false);
   const isLocked = environment?.status === 'done';
   const isScenarioLocked = environment?.status !== 'in_progress' || !hasEnteredEnvironment;
   const isInteractionLocked = !hasEnteredEnvironment || Boolean(isLocked);
   const canCopyPublicLink = hasEnteredEnvironment;
 
-  const { isCurrentUserPresent, joinEnvironment } = usePresentUsers({
+  const { isCurrentUserPresent, joinEnvironment, leaveEnvironment } = usePresentUsers({
     environmentId: environment?.id ?? null,
     presentUsersIds: environment?.presentUsersIds ?? [],
     isLocked: Boolean(isLocked) || !hasEnteredEnvironment,
@@ -304,6 +305,25 @@ export const EnvironmentPage = () => {
     }
   };
 
+  const handleLeaveEnvironment = async () => {
+    if (!hasEnteredEnvironment || isLocked || isLeavingEnvironment) {
+      return;
+    }
+
+    setIsLeavingEnvironment(true);
+
+    try {
+      await leaveEnvironment();
+      setHasEnteredEnvironment(false);
+      showToast({ type: 'success', message: 'Você saiu do ambiente.' });
+    } catch (error) {
+      console.error(error);
+      showToast({ type: 'error', message: 'Não foi possível sair do ambiente.' });
+    } finally {
+      setIsLeavingEnvironment(false);
+    }
+  };
+
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const privateLink = environment ? `${origin}/environments/${environment.id}` : '';
   const publicLink = environment ? `${origin}/environments/${environment.id}/public` : '';
@@ -375,9 +395,18 @@ export const EnvironmentPage = () => {
                   </Button>
                 )}
                 {environment.status === 'in_progress' && (
-                  <Button type="button" onClick={() => handleStatusTransition('done')}>
-                    Concluir ambiente
-                  </Button>
+                  <>
+                    <Button type="button" onClick={() => handleStatusTransition('done')}>
+                      Concluir ambiente
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => handleStatusTransition('backlog')}
+                    >
+                      Retornar ao backlog
+                    </Button>
+                  </>
                 )}
                 {environment.status !== 'done' && (
                   <>
@@ -386,6 +415,16 @@ export const EnvironmentPage = () => {
                     </Button>
                     <Button type="button" variant="ghost" onClick={() => setIsDeleteOpen(true)}>
                       Excluir
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={handleLeaveEnvironment}
+                      disabled={!hasEnteredEnvironment}
+                      isLoading={isLeavingEnvironment}
+                      loadingText="Saindo..."
+                    >
+                      Sair do ambiente
                     </Button>
                   </>
                 )}
