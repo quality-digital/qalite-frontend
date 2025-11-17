@@ -1,11 +1,11 @@
 import type { DragEvent } from 'react';
 
 import type { Environment } from '../../../domain/entities/Environment';
-import type { PresentUserProfile } from '../../hooks/usePresentUsers';
+import type { UserSummary } from '../../../domain/entities/UserSummary';
 
 interface EnvironmentCardProps {
   environment: Environment;
-  participants: PresentUserProfile[];
+  participants: UserSummary[];
   suiteName?: string | null;
   onOpen: (environment: Environment) => void;
   draggable?: boolean;
@@ -29,6 +29,17 @@ export const EnvironmentCard = ({
   const isLocked = environment.status === 'done';
   const displaySuiteName = suiteName ?? 'Suíte não informada';
   const hasParticipants = participants.length > 0;
+
+  const resolveDisplayName = (participant: UserSummary) =>
+    participant.displayName || participant.email || 'Usuário';
+
+  const resolveInitials = (name: string) =>
+    name
+      .split(' ')
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase())
+      .slice(0, 2)
+      .join('') || 'U';
 
   const handleOpen = () => onOpen(environment);
 
@@ -63,21 +74,30 @@ export const EnvironmentCard = ({
 
       <div className="environment-card-avatars" aria-label="Participantes">
         {hasParticipants ? (
-          <ul className="environment-card-avatar-list">
-            {participants.map((user) => (
-              <li key={user.id} title={user.name}>
-                {user.photoURL ? (
-                  <img src={user.photoURL} alt={user.name} className="environment-card-avatar" />
-                ) : (
-                  <span
-                    className="environment-card-avatar environment-card-avatar--initials"
-                    aria-hidden="true"
-                  >
-                    {user.name.charAt(0).toUpperCase()}
-                  </span>
-                )}
-              </li>
-            ))}
+          <ul className="environment-card-participant-list">
+            {participants.map((user) => {
+              const readableName = resolveDisplayName(user);
+              const initials = resolveInitials(readableName);
+              return (
+                <li key={user.id} className="environment-card-participant">
+                  {user.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt={readableName}
+                      className="environment-card-avatar"
+                    />
+                  ) : (
+                    <span
+                      className="environment-card-avatar environment-card-avatar--initials"
+                      aria-hidden="true"
+                    >
+                      {initials}
+                    </span>
+                  )}
+                  <span className="environment-card-participant-name">{readableName}</span>
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <span className="environment-card-avatars__placeholder">Sem participantes</span>

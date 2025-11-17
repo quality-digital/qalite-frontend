@@ -178,18 +178,21 @@ export const PublicEnvironmentPage = () => {
               <p className="section-subtitle">Nenhum participante registrado.</p>
             ) : (
               <ul className="environment-present-users">
-                {participants.map((participant) => (
-                  <li key={participant.id}>
-                    {participant.photoURL ? (
-                      <img src={participant.photoURL} alt={participant.name} />
-                    ) : (
-                      <span className="environment-card-avatar environment-card-avatar--initials">
-                        {participant.name.charAt(0).toUpperCase()}
-                      </span>
-                    )}
-                    <span>{participant.name}</span>
-                  </li>
-                ))}
+                {participants.map((participant) => {
+                  const readableName = participant.displayName || participant.email || 'Usuário';
+                  return (
+                    <li key={participant.id}>
+                      {participant.photoURL ? (
+                        <img src={participant.photoURL} alt={readableName} />
+                      ) : (
+                        <span className="environment-card-avatar environment-card-avatar--initials">
+                          {readableName.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                      <span>{readableName}</span>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>

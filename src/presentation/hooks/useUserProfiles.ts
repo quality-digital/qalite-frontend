@@ -1,11 +1,10 @@
-import { doc, getDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 
-import { firebaseFirestore } from '../../infra/firebase/firebaseConfig';
-import type { PresentUserProfile } from './usePresentUsers';
+import type { UserSummary } from '../../domain/entities/UserSummary';
+import { userService } from '../../main/factories/userServiceFactory';
 
 export const useUserProfiles = (userIds: string[]) => {
-  const [profiles, setProfiles] = useState<PresentUserProfile[]>([]);
+  const [profiles, setProfiles] = useState<UserSummary[]>([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -19,21 +18,13 @@ export const useUserProfiles = (userIds: string[]) => {
     }
 
     const fetchProfiles = async () => {
-      const entries = await Promise.all(
-        uniqueIds.map(async (userId) => {
-          const userRef = doc(firebaseFirestore, 'users', userId);
-          const snapshot = await getDoc(userRef);
-          const data = snapshot.data();
-          return {
-            id: userId,
-            name: data?.displayName ?? data?.email ?? 'Usuário',
-            photoURL: data?.photoURL ?? undefined,
-          } as PresentUserProfile;
-        }),
-      );
-
-      if (isMounted) {
-        setProfiles(entries);
+      try {
+        const summaries = await userService.getSummariesByIds(uniqueIds);
+        if (isMounted) {
+          setProfiles(summaries);
+        }
+      } catch (error) {
+        console.error('Failed to load user profiles', error);
       }
     };
 

@@ -210,18 +210,21 @@ export const EnvironmentPage = () => {
                 <div className="environment-presence-inline">
                   <span className="environment-presence-inline__label">Usuários no ambiente</span>
                   <ul className="environment-present-users environment-present-users--inline">
-                    {presentUsers.map((profile) => (
-                      <li key={profile.id}>
-                        {profile.photoURL ? (
-                          <img src={profile.photoURL} alt={profile.name} />
-                        ) : (
-                          <span className="environment-card-avatar environment-card-avatar--initials">
-                            {profile.name.charAt(0).toUpperCase()}
-                          </span>
-                        )}
-                        <span>{profile.name}</span>
-                      </li>
-                    ))}
+                    {presentUsers.map((profile) => {
+                      const readableName = profile.displayName || profile.email || 'Usuário';
+                      return (
+                        <li key={profile.id}>
+                          {profile.photoURL ? (
+                            <img src={profile.photoURL} alt={readableName} />
+                          ) : (
+                            <span className="environment-card-avatar environment-card-avatar--initials">
+                              {readableName.charAt(0).toUpperCase()}
+                            </span>
+                          )}
+                          <span>{readableName}</span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               )}

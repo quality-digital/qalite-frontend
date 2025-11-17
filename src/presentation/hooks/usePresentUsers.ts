@@ -1,15 +1,9 @@
-import { doc, getDoc } from 'firebase/firestore';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { firebaseFirestore } from '../../infra/firebase/firebaseConfig';
+import type { UserSummary } from '../../domain/entities/UserSummary';
 import { environmentService } from '../../main/factories/environmentServiceFactory';
+import { userService } from '../../main/factories/userServiceFactory';
 import { useAuth } from './useAuth';
-
-export interface PresentUserProfile {
-  id: string;
-  name: string;
-  photoURL?: string;
-}
 
 interface UsePresentUsersParams {
   environmentId: string | null | undefined;
@@ -23,7 +17,7 @@ export const usePresentUsers = ({
   isLocked,
 }: UsePresentUsersParams) => {
   const { user } = useAuth();
-  const [profiles, setProfiles] = useState<PresentUserProfile[]>([]);
+  const [profiles, setProfiles] = useState<UserSummary[]>([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -36,21 +30,13 @@ export const usePresentUsers = ({
         return;
       }
 
-      const entries = await Promise.all(
-        presentUsersIds.map(async (userId) => {
-          const userRef = doc(firebaseFirestore, 'users', userId);
-          const snapshot = await getDoc(userRef);
-          const data = snapshot.data();
-          return {
-            id: userId,
-            name: data?.displayName ?? data?.email ?? 'Usuário',
-            photoURL: data?.photoURL ?? undefined,
-          };
-        }),
-      );
-
-      if (isMounted) {
-        setProfiles(entries);
+      try {
+        const summaries = await userService.getSummariesByIds(presentUsersIds);
+        if (isMounted) {
+          setProfiles(summaries);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user profiles', error);
       }
     };
 
