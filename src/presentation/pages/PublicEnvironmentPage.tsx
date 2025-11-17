@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 
 import type { EnvironmentStatus } from '../../domain/entities/Environment';
@@ -7,6 +7,8 @@ import { EnvironmentEvidenceTable } from '../components/environments/Environment
 import { useEnvironmentRealtime } from '../hooks/useEnvironmentRealtime';
 import { useTimeTracking } from '../hooks/useTimeTracking';
 import { useUserProfiles } from '../hooks/useUserProfiles';
+import { useStoreOrganizationBranding } from '../hooks/useStoreOrganizationBranding';
+import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
 
 const STATUS_LABEL: Record<EnvironmentStatus, string> = {
   backlog: 'Backlog',
@@ -18,6 +20,10 @@ export const PublicEnvironmentPage = () => {
   const { environmentId } = useParams<{ environmentId: string }>();
   const { environment, isLoading } = useEnvironmentRealtime(environmentId);
   const participants = useUserProfiles(environment?.participants ?? []);
+  const { organization: environmentOrganization } = useStoreOrganizationBranding(
+    environment?.storeId ?? null,
+  );
+  const { setActiveOrganization } = useOrganizationBranding();
   const { formattedTime } = useTimeTracking(
     environment?.timeTracking ?? null,
     Boolean(environment?.status === 'in_progress'),
@@ -52,6 +58,14 @@ export const PublicEnvironmentPage = () => {
       ? 'Nenhum cenário cadastrado ainda.'
       : `${scenarioStats.concluded} de ${scenarioStats.total} concluídos`;
 
+  useEffect(() => {
+    setActiveOrganization(environmentOrganization ?? null);
+
+    return () => {
+      setActiveOrganization(null);
+    };
+  }, [environmentOrganization, setActiveOrganization]);
+
   if (isLoading) {
     return (
       <Layout>
@@ -81,6 +95,27 @@ export const PublicEnvironmentPage = () => {
             <span className={`status-pill status-pill--${environment.status}`}>
               {STATUS_LABEL[environment.status]}
             </span>
+            {environmentOrganization && (
+              <div className="environment-organization-branding">
+                {environmentOrganization.logoUrl ? (
+                  <img
+                    src={environmentOrganization.logoUrl}
+                    alt={`Logo da ${environmentOrganization.name}`}
+                    className="environment-organization-branding__logo"
+                  />
+                ) : (
+                  <span className="environment-organization-branding__placeholder" aria-hidden>
+                    {environmentOrganization.name?.charAt(0)?.toUpperCase() ?? '?'}
+                  </span>
+                )}
+                <div className="environment-organization-branding__details">
+                  <span className="environment-organization-branding__label">Organização</span>
+                  <strong className="environment-organization-branding__name">
+                    {environmentOrganization.name}
+                  </strong>
+                </div>
+              </div>
+            )}
             <h1 className="section-title">{environment.identificador}</h1>
             <p className="section-subtitle">
               {environment.tipoAmbiente} · {environment.tipoTeste} · {suiteDescription}

@@ -15,6 +15,8 @@ import { EnvironmentEvidenceTable } from '../components/environments/Environment
 import { EditEnvironmentModal } from '../components/environments/EditEnvironmentModal';
 import { DeleteEnvironmentModal } from '../components/environments/DeleteEnvironmentModal';
 import { copyToClipboard } from '../utils/clipboard';
+import { useStoreOrganizationBranding } from '../hooks/useStoreOrganizationBranding';
+import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
 
 const STATUS_LABEL: Record<EnvironmentStatus, string> = {
   backlog: 'Backlog',
@@ -28,6 +30,9 @@ export const EnvironmentPage = () => {
   const { showToast } = useToast();
   const { user } = useAuth();
   const { environment, isLoading } = useEnvironmentRealtime(environmentId);
+  const { organization: environmentOrganization } = useStoreOrganizationBranding(
+    environment?.storeId ?? null,
+  );
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [hasEnteredEnvironment, setHasEnteredEnvironment] = useState(false);
@@ -40,6 +45,15 @@ export const EnvironmentPage = () => {
     presentUsersIds: environment?.presentUsersIds ?? [],
     isLocked: Boolean(isLocked) || !hasEnteredEnvironment,
   });
+  const { setActiveOrganization } = useOrganizationBranding();
+
+  useEffect(() => {
+    setActiveOrganization(environmentOrganization ?? null);
+
+    return () => {
+      setActiveOrganization(null);
+    };
+  }, [environmentOrganization, setActiveOrganization]);
 
   useEffect(() => {
     if (isCurrentUserPresent && !hasEnteredEnvironment) {
@@ -186,6 +200,27 @@ export const EnvironmentPage = () => {
               &larr; Voltar
             </button>
             <div className="environment-page__title">
+              {environmentOrganization && (
+                <div className="environment-organization-branding">
+                  {environmentOrganization.logoUrl ? (
+                    <img
+                      src={environmentOrganization.logoUrl}
+                      alt={`Logo da ${environmentOrganization.name}`}
+                      className="environment-organization-branding__logo"
+                    />
+                  ) : (
+                    <span className="environment-organization-branding__placeholder" aria-hidden>
+                      {environmentOrganization.name?.charAt(0)?.toUpperCase() ?? '?'}
+                    </span>
+                  )}
+                  <div className="environment-organization-branding__details">
+                    <span className="environment-organization-branding__label">Organização</span>
+                    <strong className="environment-organization-branding__name">
+                      {environmentOrganization.name}
+                    </strong>
+                  </div>
+                </div>
+              )}
               <h1 className="section-title">{environment?.identificador ?? 'Ambiente'}</h1>
               {environment && (
                 <p className="section-subtitle">

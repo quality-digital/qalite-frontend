@@ -3093,6 +3093,55 @@ a.text-link:hover {
   gap: 0.25rem;
 }
 
+.environment-organization-branding {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.85rem 0.4rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
+  width: fit-content;
+  box-shadow: var(--shadow-sm);
+}
+
+.environment-organization-branding__logo,
+.environment-organization-branding__placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.environment-organization-branding__logo {
+  padding: 4px;
+}
+
+.environment-organization-branding__details {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.environment-organization-branding__label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+.environment-organization-branding__name {
+  font-size: 1rem;
+  color: var(--color-text-primary);
+}
+
 .environment-summary-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
