@@ -166,7 +166,6 @@ export class EnvironmentService {
       const uniqueParticipants = Array.from(
         new Set([...(environment.participants ?? []), ...(environment.presentUsersIds ?? [])]),
       );
-      payload.presentUsersIds = [];
       payload.concludedBy = currentUserId ?? null;
       payload.participants = uniqueParticipants;
     }

@@ -17,6 +17,9 @@ export const usePresentUsers = ({
 }: UsePresentUsersParams) => {
   const { user } = useAuth();
   const hasJoinedRef = useRef(false);
+  const isExitLockedRef = useRef(isLocked);
+
+  isExitLockedRef.current = isLocked;
 
   const joinEnvironment = useCallback(async () => {
     if (!environmentId || !user?.uid || isLocked || hasJoinedRef.current) {
@@ -33,17 +36,16 @@ export const usePresentUsers = ({
   }, [environmentId, isLocked, user?.uid]);
 
   const leaveEnvironment = useCallback(async () => {
-    if (!environmentId || !user?.uid) {
+    if (!environmentId || !user?.uid || isExitLockedRef.current) {
       return;
     }
 
     try {
       await environmentService.removeUser(environmentId, user.uid);
+      hasJoinedRef.current = false;
     } catch (error) {
       console.error(error);
       throw error;
-    } finally {
-      hasJoinedRef.current = false;
     }
   }, [environmentId, user?.uid]);
 
@@ -54,7 +56,7 @@ export const usePresentUsers = ({
 
     void joinEnvironment().catch(() => undefined);
     return () => {
-      if (hasJoinedRef.current) {
+      if (hasJoinedRef.current && !isExitLockedRef.current) {
         void leaveEnvironment().catch(() => undefined);
       }
     };

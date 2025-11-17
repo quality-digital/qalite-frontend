@@ -312,7 +312,7 @@ export const EnvironmentPage = () => {
   };
 
   const handleLeaveEnvironment = async () => {
-    if ((!hasEnteredEnvironment && !isCurrentUserPresent) || isLocked || isLeavingEnvironment) {
+    if (!isCurrentUserPresent || isLocked || isLeavingEnvironment) {
       return;
     }
 
@@ -418,7 +418,7 @@ export const EnvironmentPage = () => {
                       type="button"
                       variant="ghost"
                       onClick={handleLeaveEnvironment}
-                      disabled={!hasEnteredEnvironment && !isCurrentUserPresent}
+                      disabled={!isCurrentUserPresent}
                       isLoading={isLeavingEnvironment}
                       loadingText="Saindo..."
                     >
