@@ -11,6 +11,11 @@ import {
   type UpdateEnvironmentInput,
 } from '../../domain/entities/Environment';
 import type {
+  CreateEnvironmentBugInput,
+  EnvironmentBug,
+  UpdateEnvironmentBugInput,
+} from '../../domain/entities/EnvironmentBug';
+import type {
   EnvironmentRealtimeFilters,
   IEnvironmentRepository,
 } from '../../domain/repositories/EnvironmentRepository';
@@ -75,6 +80,26 @@ export class EnvironmentService {
       status,
       platform,
     );
+  }
+
+  observeBugs(environmentId: string, callback: (bugs: EnvironmentBug[]) => void): () => void {
+    return this.environmentRepository.observeBugs(environmentId, callback);
+  }
+
+  createBug(environmentId: string, payload: CreateEnvironmentBugInput): Promise<EnvironmentBug> {
+    return this.environmentRepository.createBug(environmentId, payload);
+  }
+
+  updateBug(
+    environmentId: string,
+    bugId: string,
+    payload: UpdateEnvironmentBugInput,
+  ): Promise<void> {
+    return this.environmentRepository.updateBug(environmentId, bugId, payload);
+  }
+
+  deleteBug(environmentId: string, bugId: string): Promise<void> {
+    return this.environmentRepository.deleteBug(environmentId, bugId);
   }
 
   uploadScenarioEvidence(environmentId: string, scenarioId: string, file: File): Promise<string> {

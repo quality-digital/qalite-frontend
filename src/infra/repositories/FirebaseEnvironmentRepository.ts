@@ -25,12 +25,20 @@ import type {
   UpdateEnvironmentInput,
 } from '../../domain/entities/Environment';
 import type {
+  CreateEnvironmentBugInput,
+  EnvironmentBug,
+  EnvironmentBugStatus,
+  UpdateEnvironmentBugInput,
+} from '../../domain/entities/EnvironmentBug';
+import type {
   EnvironmentRealtimeFilters,
   IEnvironmentRepository,
 } from '../../domain/repositories/EnvironmentRepository';
 import { firebaseFirestore, firebaseStorage } from '../firebase/firebaseConfig';
 
 const ENVIRONMENTS_COLLECTION = 'environments';
+const BUGS_SUBCOLLECTION = 'bugs';
+
 const ACCEPTED_EVIDENCE_TYPES = [
   'image/png',
   'image/jpeg',
@@ -109,6 +117,19 @@ const parseScenarioMap = (
     return acc;
   }, {});
 };
+
+const getBugCollection = (environmentId: string) =>
+  collection(firebaseFirestore, ENVIRONMENTS_COLLECTION, environmentId, BUGS_SUBCOLLECTION);
+
+const normalizeBug = (id: string, data: Record<string, unknown>): EnvironmentBug => ({
+  id,
+  scenarioId: getStringOrNull(data.scenarioId ?? data.scenario),
+  title: getString(data.title ?? data.titulo),
+  description: getStringOrNull(data.description ?? data.descricao),
+  status: (data.status ?? 'aberto') as EnvironmentBugStatus,
+  createdAt: parseTimestamp(data.createdAt as Timestamp | string | null | undefined),
+  updatedAt: parseTimestamp(data.updatedAt as Timestamp | string | null | undefined),
+});
 
 const normalizeEnvironment = (id: string, data: Record<string, unknown>): Environment => ({
   id,
@@ -322,5 +343,71 @@ export class FirebaseEnvironmentRepository implements IEnvironmentRepository {
     const url = await getDownloadURL(storageRef);
     await updateScenarioField(environmentId, scenarioId, { evidenciaArquivoUrl: url });
     return url;
+  };
+
+  observeBugs = (
+    environmentId: string,
+    callback: (bugs: EnvironmentBug[]) => void,
+  ): (() => void) => {
+    const bugsCollectionRef = getBugCollection(environmentId);
+    return onSnapshot(bugsCollectionRef, (snapshot) => {
+      const bugs = snapshot.docs
+        .map((docSnapshot) =>
+          normalizeBug(docSnapshot.id, (docSnapshot.data() ?? {}) as Record<string, unknown>),
+        )
+        .sort((first, second) => {
+          const firstDate = first.createdAt ? new Date(first.createdAt).getTime() : 0;
+          const secondDate = second.createdAt ? new Date(second.createdAt).getTime() : 0;
+          return secondDate - firstDate;
+        });
+
+      callback(bugs);
+    });
+  };
+
+  createBug = async (
+    environmentId: string,
+    payload: CreateEnvironmentBugInput,
+  ): Promise<EnvironmentBug> => {
+    const bugsCollectionRef = getBugCollection(environmentId);
+    const docRef = await addDoc(bugsCollectionRef, {
+      ...payload,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    const snapshot = await getDoc(docRef);
+    return normalizeBug(snapshot.id, (snapshot.data() ?? {}) as Record<string, unknown>);
+  };
+
+  updateBug = async (
+    environmentId: string,
+    bugId: string,
+    payload: UpdateEnvironmentBugInput,
+  ): Promise<void> => {
+    const bugRef = doc(
+      firebaseFirestore,
+      ENVIRONMENTS_COLLECTION,
+      environmentId,
+      BUGS_SUBCOLLECTION,
+      bugId,
+    );
+
+    await updateDoc(bugRef, {
+      ...payload,
+      updatedAt: serverTimestamp(),
+    });
+  };
+
+  deleteBug = async (environmentId: string, bugId: string): Promise<void> => {
+    const bugRef = doc(
+      firebaseFirestore,
+      ENVIRONMENTS_COLLECTION,
+      environmentId,
+      BUGS_SUBCOLLECTION,
+      bugId,
+    );
+
+    await deleteDoc(bugRef);
   };
 }
