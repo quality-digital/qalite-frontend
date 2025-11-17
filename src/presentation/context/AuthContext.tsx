@@ -21,11 +21,18 @@ interface AuthContextValue {
   isInitializing: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<AuthUser>;
-  register: (input: { email: string; password: string; displayName: string }) => Promise<void>;
+  register: (input: { email: string; password: string; displayName: string }) => Promise<AuthUser>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   hasRole: (roles: Role[]) => boolean;
-  updateProfile: (payload: UpdateProfilePayload) => Promise<void>;
+  updateProfile: (payload: UpdateProfilePayload) => Promise<AuthUser>;
+}
+
+type SuccessMessage<T> = string | null | ((result: T) => string | null);
+
+interface AuthActionOptions<T> {
+  onSuccess?: (result: T) => void;
+  successMessage?: SuccessMessage<T>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -37,18 +44,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
   const { showToast } = useToast();
 
-  const handleFirebaseError = useCallback(
-    (err: unknown) => {
-      const message = mapFirebaseError(err);
-      setError(message);
-      showToast({ type: 'error', message });
-      return message;
+  const runAuthAction = useCallback(
+    async <T,>(action: () => Promise<T>, options: AuthActionOptions<T> = {}): Promise<T> => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const result = await action();
+        options.onSuccess?.(result);
+
+        const successMessage =
+          typeof options.successMessage === 'function'
+            ? options.successMessage(result)
+            : options.successMessage;
+
+        if (successMessage) {
+          showToast({ type: 'success', message: successMessage });
+        }
+
+        return result;
+      } catch (err) {
+        const message = mapFirebaseError(err);
+        setError(message);
+        showToast({ type: 'error', message });
+        throw new Error(message);
+      } finally {
+        setIsLoading(false);
+      }
     },
     [showToast],
   );
 
   useEffect(() => {
-    const unsubscribe = authService.onAuthStateChanged(async (currentUser) => {
+    const unsubscribe = authService.onAuthStateChanged((currentUser) => {
       setUser(currentUser);
       setIsInitializing(false);
     });
@@ -57,104 +85,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = useCallback(
-    async (email: string, password: string): Promise<AuthUser> => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const logged = await authService.login({ email, password });
-        setUser(logged);
-        showToast({
-          type: 'success',
-          message: `Bem-vindo de volta, ${logged.displayName.split(' ')[0] || 'usuário'}!`,
-        });
-        return logged;
-      } catch (err) {
-        const message = handleFirebaseError(err);
-        throw new Error(message);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [handleFirebaseError, showToast],
+    (email: string, password: string) =>
+      runAuthAction(() => authService.login({ email, password }), {
+        onSuccess: (logged) => setUser(logged),
+        successMessage: (logged) =>
+          `Bem-vindo de volta, ${logged.displayName.split(' ')[0] || 'usuário'}!`,
+      }),
+    [runAuthAction],
   );
 
   const register = useCallback(
-    async (input: { email: string; password: string; displayName: string }) => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const registered = await authService.register(input);
-        setUser(registered);
-        showToast({
-          type: 'success',
-          message: 'Conta criada com sucesso! Personalize sua experiência a seguir.',
-        });
-      } catch (err) {
-        const message = handleFirebaseError(err);
-        throw new Error(message);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [handleFirebaseError, showToast],
+    (input: { email: string; password: string; displayName: string }) =>
+      runAuthAction(() => authService.register(input), {
+        onSuccess: (registered) => setUser(registered),
+        successMessage: 'Conta criada com sucesso! Personalize sua experiência a seguir.',
+      }),
+    [runAuthAction],
   );
 
-  const logout = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await authService.logout();
-      setUser(null);
-      showToast({ type: 'success', message: 'Você saiu com segurança.' });
-    } catch (err) {
-      const message = handleFirebaseError(err);
-      throw new Error(message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [handleFirebaseError, showToast]);
+  const logout = useCallback(
+    () =>
+      runAuthAction(() => authService.logout(), {
+        onSuccess: () => setUser(null),
+        successMessage: 'Você saiu com segurança.',
+      }),
+    [runAuthAction],
+  );
 
   const resetPassword = useCallback(
-    async (email: string) => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        await authService.sendPasswordReset(email);
-        showToast({
-          type: 'success',
-          message: 'Enviamos um e-mail com instruções para redefinir sua senha.',
-        });
-      } catch (err) {
-        const message = handleFirebaseError(err);
-        throw new Error(message);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [handleFirebaseError, showToast],
+    (email: string) =>
+      runAuthAction(() => authService.sendPasswordReset(email), {
+        successMessage: 'Enviamos um e-mail com instruções para redefinir sua senha.',
+      }),
+    [runAuthAction],
   );
 
   const hasRole = useCallback((roles: Role[]) => authService.hasRequiredRole(user, roles), [user]);
 
   const updateProfile = useCallback(
-    async (payload: UpdateProfilePayload) => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const updated = await authService.updateProfile(payload);
-        setUser(updated);
-        showToast({
-          type: 'success',
-          message: 'Perfil atualizado com sucesso.',
-        });
-      } catch (err) {
-        const message = handleFirebaseError(err);
-        throw new Error(message);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [handleFirebaseError, showToast],
+    (payload: UpdateProfilePayload) =>
+      runAuthAction(() => authService.updateProfile(payload), {
+        onSuccess: (updated) => setUser(updated),
+        successMessage: 'Perfil atualizado com sucesso.',
+      }),
+    [runAuthAction],
   );
 
   const value = useMemo<AuthContextValue>(
