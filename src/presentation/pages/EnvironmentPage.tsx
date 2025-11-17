@@ -63,7 +63,7 @@ export const EnvironmentPage = () => {
   const isInteractionLocked = !hasEnteredEnvironment || Boolean(isLocked);
   const canCopyPublicLink = hasEnteredEnvironment;
 
-  const { presentUsers, isCurrentUserPresent, joinEnvironment } = usePresentUsers({
+  const { isCurrentUserPresent, joinEnvironment } = usePresentUsers({
     environmentId: environment?.id ?? null,
     presentUsersIds: environment?.presentUsersIds ?? [],
     isLocked: Boolean(isLocked) || !hasEnteredEnvironment,
@@ -250,7 +250,7 @@ export const EnvironmentPage = () => {
     environmentService.exportAsMarkdown(environment);
   };
 
-  const openCreateBugModal = (scenarioId: string | null = null) => {
+  const openCreateBugModal = (scenarioId: string) => {
     setEditingBug(null);
     setDefaultBugScenarioId(scenarioId);
     setIsBugModalOpen(true);
@@ -332,29 +332,6 @@ export const EnvironmentPage = () => {
               </p>
               {headerMeta.length > 0 && (
                 <p className="section-subtitle">{headerMeta.join(' · ')}</p>
-              )}
-              {presentUsers.length > 0 && (
-                <div className="environment-presence-inline">
-                  <span className="environment-presence-inline__label">Usuários no ambiente</span>
-                  <ul className="environment-present-users environment-present-users--inline">
-                    {presentUsers.map((profile) => {
-                      const readableName = getReadableUserName(profile);
-                      const initials = getUserInitials(readableName);
-                      return (
-                        <li key={profile.id}>
-                          {profile.photoURL ? (
-                            <img src={profile.photoURL} alt={readableName} />
-                          ) : (
-                            <span className="environment-card-avatar environment-card-avatar--initials">
-                              {initials}
-                            </span>
-                          )}
-                          <span>{readableName}</span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
               )}
             </div>
           </div>
@@ -593,7 +570,6 @@ export const EnvironmentPage = () => {
           bugs={bugs}
           isLocked={Boolean(isInteractionLocked)}
           isLoading={isLoadingBugs}
-          onCreate={openCreateBugModal}
           onEdit={handleEditBug}
         />
       </section>

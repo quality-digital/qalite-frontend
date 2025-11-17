@@ -325,7 +325,6 @@ export const PublicEnvironmentPage = () => {
           bugs={bugs}
           isLocked
           isLoading={isLoadingBugs}
-          onCreate={() => {}}
           onEdit={() => {}}
           showActions={false}
         />

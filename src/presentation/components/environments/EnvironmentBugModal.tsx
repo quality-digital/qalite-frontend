@@ -35,10 +35,13 @@ export const EnvironmentBugModal = ({
   const [status, setStatus] = useState<EnvironmentBugStatus>('aberto');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const scenarioEntries = useMemo(
-    () => Object.entries(environment.scenarios ?? {}),
-    [environment.scenarios],
-  );
+  const scenarioLabel = useMemo(() => {
+    if (!scenarioId) {
+      return 'Nenhum cenário selecionado';
+    }
+
+    return environment.scenarios?.[scenarioId]?.titulo ?? 'Cenário removido';
+  }, [environment.scenarios, scenarioId]);
 
   useEffect(() => {
     if (bug) {
@@ -94,14 +97,7 @@ export const EnvironmentBugModal = ({
         <div className="environment-bug-form__grid">
           <label>
             <span>Cenário relacionado</span>
-            <select value={scenarioId} onChange={(event) => setScenarioId(event.target.value)}>
-              <option value="">Selecionar cenário</option>
-              {scenarioEntries.map(([id, scenario]) => (
-                <option key={id} value={id}>
-                  {scenario.titulo}
-                </option>
-              ))}
-            </select>
+            <input type="text" value={scenarioLabel} readOnly disabled />
           </label>
           <label>
             <span>Status</span>

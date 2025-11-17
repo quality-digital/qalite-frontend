@@ -1,8 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-
-import type { UserSummary } from '../../domain/entities/UserSummary';
+import { useCallback, useEffect, useMemo } from 'react';
 import { environmentService } from '../../main/factories/environmentServiceFactory';
-import { userService } from '../../main/factories/userServiceFactory';
 import { useAuth } from './useAuth';
 
 interface UsePresentUsersParams {
@@ -17,34 +14,6 @@ export const usePresentUsers = ({
   isLocked,
 }: UsePresentUsersParams) => {
   const { user } = useAuth();
-  const [profiles, setProfiles] = useState<UserSummary[]>([]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchProfiles = async () => {
-      if (!presentUsersIds || presentUsersIds.length === 0) {
-        if (isMounted) {
-          setProfiles([]);
-        }
-        return;
-      }
-
-      try {
-        const summaries = await userService.getSummariesByIds(presentUsersIds);
-        if (isMounted) {
-          setProfiles(summaries);
-        }
-      } catch (error) {
-        console.error('Failed to fetch user profiles', error);
-      }
-    };
-
-    void fetchProfiles();
-    return () => {
-      isMounted = false;
-    };
-  }, [presentUsersIds]);
 
   const joinEnvironment = useCallback(async () => {
     if (!environmentId || !user?.uid || isLocked) {
@@ -86,5 +55,5 @@ export const usePresentUsers = ({
     [presentUsersIds, user?.uid],
   );
 
-  return { presentUsers: profiles, isCurrentUserPresent, joinEnvironment, leaveEnvironment };
+  return { isCurrentUserPresent, joinEnvironment, leaveEnvironment };
 };

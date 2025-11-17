@@ -1,7 +1,6 @@
 import type { Environment } from '../../../domain/entities/Environment';
 import type { EnvironmentBug } from '../../../domain/entities/EnvironmentBug';
 import { environmentService } from '../../../main/factories/environmentServiceFactory';
-import { Button } from '../Button';
 import { useToast } from '../../context/ToastContext';
 
 const BUG_STATUS_LABEL: Record<EnvironmentBug['status'], string> = {
@@ -15,7 +14,6 @@ interface EnvironmentBugListProps {
   bugs: EnvironmentBug[];
   isLocked?: boolean;
   isLoading?: boolean;
-  onCreate: () => void;
   onEdit: (bug: EnvironmentBug) => void;
   showActions?: boolean;
 }
@@ -25,7 +23,6 @@ export const EnvironmentBugList = ({
   bugs,
   isLocked,
   isLoading,
-  onCreate,
   onEdit,
   showActions = true,
 }: EnvironmentBugListProps) => {
@@ -63,11 +60,6 @@ export const EnvironmentBugList = ({
     <div className="environment-bugs">
       <div className="environment-bugs__header">
         <h3 className="section-title">Registro de bugs</h3>
-        {showActions && (
-          <Button type="button" onClick={onCreate} disabled={isReadOnly}>
-            Registrar bug
-          </Button>
-        )}
       </div>
       {isLoading ? (
         <p className="section-subtitle">Carregando bugs...</p>
