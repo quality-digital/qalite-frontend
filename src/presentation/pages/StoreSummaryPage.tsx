@@ -89,6 +89,7 @@ export const StoreSummaryPage = () => {
   const [categories, setCategories] = useState<StoreCategory[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [isSyncingLegacyCategories, setIsSyncingLegacyCategories] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategoryName, setEditingCategoryName] = useState('');
   const [updatingCategoryId, setUpdatingCategoryId] = useState<string | null>(null);
@@ -117,7 +118,11 @@ export const StoreSummaryPage = () => {
       : `${selectedSuiteScenarioCount} cenário${selectedSuiteScenarioCount === 1 ? '' : 's'} selecionado${selectedSuiteScenarioCount === 1 ? '' : 's'}.`;
 
   const isPreparingStoreView =
-    isLoadingStore || isLoadingScenarios || isLoadingSuites || isLoadingCategories;
+    isLoadingStore ||
+    isLoadingScenarios ||
+    isLoadingSuites ||
+    isLoadingCategories ||
+    isSyncingLegacyCategories;
 
   const canManageScenarios = Boolean(user);
   const canManageStoreSettings = user?.role === 'admin';
@@ -452,7 +457,76 @@ export const StoreSummaryPage = () => {
     setUpdatingCategoryId(null);
     setDeletingCategoryId(null);
     setIsCreatingCategory(false);
+    setIsSyncingLegacyCategories(false);
   }, [store?.id]);
+
+  useEffect(() => {
+    if (
+      !store?.id ||
+      isLoadingCategories ||
+      isSyncingLegacyCategories ||
+      scenarioCategories.size === 0
+    ) {
+      return;
+    }
+
+    const persistedNames = new Set(
+      persistedCategoryNames.map((categoryName) => categoryName.toLowerCase()),
+    );
+    const missingLegacyCategories = Array.from(scenarioCategories).filter(
+      (categoryName) => categoryName.length > 0 && !persistedNames.has(categoryName.toLowerCase()),
+    );
+
+    if (missingLegacyCategories.length === 0) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const syncLegacyCategories = async () => {
+      try {
+        setIsSyncingLegacyCategories(true);
+        const createdCategories: StoreCategory[] = [];
+
+        for (const categoryName of missingLegacyCategories) {
+          try {
+            const created = await storeService.createCategory({
+              storeId: store.id,
+              name: categoryName,
+            });
+            createdCategories.push(created);
+          } catch (error) {
+            if (error instanceof Error && error.message.includes('Já existe')) {
+              continue;
+            }
+            console.error(error);
+          }
+        }
+
+        if (isMounted && createdCategories.length > 0) {
+          setCategories((previous) =>
+            [...previous, ...createdCategories].sort((a, b) => a.name.localeCompare(b.name)),
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setIsSyncingLegacyCategories(false);
+        }
+      }
+    };
+
+    void syncLegacyCategories();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    isLoadingCategories,
+    isSyncingLegacyCategories,
+    persistedCategoryNames,
+    scenarioCategories,
+    store?.id,
+  ]);
 
   useEffect(() => {
     setSuiteForm((previous) => {
@@ -1062,7 +1136,7 @@ export const StoreSummaryPage = () => {
                           onClick={handleCreateCategory}
                           isLoading={isCreatingCategory}
                           loadingText="Salvando..."
-                          disabled={!store || isLoadingCategories}
+                          disabled={!store || isLoadingCategories || isSyncingLegacyCategories}
                         >
                           Adicionar categoria
                         </Button>
@@ -1070,7 +1144,7 @@ export const StoreSummaryPage = () => {
                       {categoryError && (
                         <p className="form-message form-message--error">{categoryError}</p>
                       )}
-                      {isLoadingCategories ? (
+                      {isLoadingCategories || isSyncingLegacyCategories ? (
                         <p className="category-manager-description">Carregando categorias...</p>
                       ) : categories.length > 0 ? (
                         <ul className="category-manager-list">

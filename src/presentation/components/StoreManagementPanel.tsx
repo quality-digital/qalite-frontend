@@ -65,6 +65,7 @@ export const StoreManagementPanel = ({
   const [categories, setCategories] = useState<StoreCategory[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [isSyncingLegacyCategories, setIsSyncingLegacyCategories] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategoryName, setEditingCategoryName] = useState('');
   const [updatingCategoryId, setUpdatingCategoryId] = useState<string | null>(null);
@@ -208,6 +209,74 @@ export const StoreManagementPanel = ({
   }, [selectedStore, showToast]);
 
   useEffect(() => {
+    if (
+      !selectedStore?.id ||
+      isLoadingCategories ||
+      isSyncingLegacyCategories ||
+      scenarioCategories.size === 0
+    ) {
+      return;
+    }
+
+    const persistedNames = new Set(
+      persistedCategoryNames.map((categoryName) => categoryName.toLowerCase()),
+    );
+    const missingLegacyCategories = Array.from(scenarioCategories).filter(
+      (categoryName) => categoryName.length > 0 && !persistedNames.has(categoryName.toLowerCase()),
+    );
+
+    if (missingLegacyCategories.length === 0) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const syncLegacyCategories = async () => {
+      try {
+        setIsSyncingLegacyCategories(true);
+        const createdCategories: StoreCategory[] = [];
+
+        for (const categoryName of missingLegacyCategories) {
+          try {
+            const created = await storeService.createCategory({
+              storeId: selectedStore.id,
+              name: categoryName,
+            });
+            createdCategories.push(created);
+          } catch (error) {
+            if (error instanceof Error && error.message.includes('Já existe')) {
+              continue;
+            }
+            console.error(error);
+          }
+        }
+
+        if (isMounted && createdCategories.length > 0) {
+          setCategories((previous) =>
+            [...previous, ...createdCategories].sort((a, b) => a.name.localeCompare(b.name)),
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setIsSyncingLegacyCategories(false);
+        }
+      }
+    };
+
+    void syncLegacyCategories();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    isLoadingCategories,
+    isSyncingLegacyCategories,
+    persistedCategoryNames,
+    scenarioCategories,
+    selectedStore?.id,
+  ]);
+
+  useEffect(() => {
     setNewCategoryName('');
     setCategoryError(null);
     setEditingCategoryId(null);
@@ -215,6 +284,7 @@ export const StoreManagementPanel = ({
     setUpdatingCategoryId(null);
     setDeletingCategoryId(null);
     setIsCreatingCategory(false);
+    setIsSyncingLegacyCategories(false);
   }, [selectedStore?.id]);
 
   useEffect(() => {
@@ -942,7 +1012,7 @@ export const StoreManagementPanel = ({
                       onClick={handleCreateCategory}
                       isLoading={isCreatingCategory}
                       loadingText="Salvando..."
-                      disabled={!selectedStore || isLoadingCategories}
+                      disabled={!selectedStore || isLoadingCategories || isSyncingLegacyCategories}
                     >
                       Adicionar categoria
                     </Button>
@@ -950,7 +1020,7 @@ export const StoreManagementPanel = ({
                   {categoryError && (
                     <p className="form-message form-message--error">{categoryError}</p>
                   )}
-                  {isLoadingCategories ? (
+                  {isLoadingCategories || isSyncingLegacyCategories ? (
                     <p className="category-manager-description">Carregando categorias...</p>
                   ) : categories.length > 0 ? (
                     <ul className="category-manager-list">
