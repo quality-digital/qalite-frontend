@@ -1,3 +1,5 @@
+import { ReactNode } from 'react';
+
 interface SimpleBarChartDataPoint {
   label: string;
   value: number;
@@ -10,6 +12,7 @@ interface SimpleBarChartProps {
   emptyMessage: string;
   isLoading?: boolean;
   variant?: 'primary' | 'info';
+  icon?: ReactNode;
 }
 
 const getVariantClass = (variant: SimpleBarChartProps['variant']) => {
@@ -27,6 +30,7 @@ export const SimpleBarChart = ({
   emptyMessage,
   isLoading = false,
   variant = 'primary',
+  icon,
 }: SimpleBarChartProps) => {
   const maxValue = data.reduce((max, item) => Math.max(max, item.value), 0);
   const variantClass = getVariantClass(variant);
@@ -34,9 +38,16 @@ export const SimpleBarChart = ({
   return (
     <section className={`card simple-bar-chart ${variantClass}`}>
       <div className="simple-bar-chart__header">
-        <div>
-          <span className="badge">Visão geral</span>
-          <h3>{title}</h3>
+        <div className="simple-bar-chart__title">
+          {icon && (
+            <span className="section-heading__icon" aria-hidden>
+              {icon}
+            </span>
+          )}
+          <div>
+            <span className="badge">Visão geral</span>
+            <h3>{title}</h3>
+          </div>
         </div>
         {description && <p className="section-subtitle">{description}</p>}
       </div>

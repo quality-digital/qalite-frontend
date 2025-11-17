@@ -8,6 +8,7 @@ import { EmptyState } from '../components/EmptyState';
 import { useOrganizationStores } from '../hooks/useOrganizationStores';
 import { UserAvatar } from '../components/UserAvatar';
 import { SimpleBarChart } from '../components/SimpleBarChart';
+import { BarChartIcon, SparklesIcon, StorefrontIcon, UsersGroupIcon } from '../components/icons';
 import { storeService } from '../../main/factories/storeServiceFactory';
 
 export const UserDashboardPage = () => {
@@ -164,7 +165,12 @@ export const UserDashboardPage = () => {
                 onClick={() => handleSelectStore(store.id)}
               >
                 <div className="card-header">
-                  <h2 className="card-title">{store.name}</h2>
+                  <div className="card-title-group">
+                    <span className="card-title-icon" aria-hidden>
+                      <StorefrontIcon className="icon icon--lg" />
+                    </span>
+                    <h2 className="card-title">{store.name}</h2>
+                  </div>
                   <span className="badge">{store.scenarioCount} cenários</span>
                 </div>
                 <div className="card-description">
@@ -182,11 +188,16 @@ export const UserDashboardPage = () => {
             {organization && (
               <section className="organization-collaborators-card">
                 <div className="organization-collaborators-card__header">
-                  <div>
-                    <h3>Colaboradores da organização</h3>
-                    <p className="section-subtitle">
-                      Visualize rapidamente quem tem acesso a esta organização.
-                    </p>
+                  <div className="section-heading">
+                    <span className="section-heading__icon" aria-hidden>
+                      <UsersGroupIcon className="icon icon--lg" />
+                    </span>
+                    <div>
+                      <h3>Colaboradores da organização</h3>
+                      <p className="section-subtitle">
+                        Visualize rapidamente quem tem acesso a esta organização.
+                      </p>
+                    </div>
                   </div>
                   <span className="badge">
                     {organization.members.length} colaborad
@@ -204,10 +215,10 @@ export const UserDashboardPage = () => {
                         <UserAvatar
                           name={member.displayName || member.email}
                           photoURL={member.photoURL ?? undefined}
+                          size="sm"
                         />
                         <div className="collaborator-card__details">
                           <strong>{member.displayName || member.email}</strong>
-                          <span>{member.email}</span>
                         </div>
                       </li>
                     ))}
@@ -222,6 +233,7 @@ export const UserDashboardPage = () => {
                 description="Total de cenários cadastrados em cada loja desta organização."
                 data={scenariosPerStoreData}
                 emptyMessage="Cadastre lojas e cenários para visualizar este gráfico."
+                icon={<BarChartIcon aria-hidden className="icon icon--lg" />}
               />
               <SimpleBarChart
                 title="Cenários automatizados"
@@ -230,6 +242,7 @@ export const UserDashboardPage = () => {
                 emptyMessage="Ainda não identificamos cenários automatizados nas lojas desta organização."
                 isLoading={isLoadingAutomationStats}
                 variant="info"
+                icon={<SparklesIcon aria-hidden className="icon icon--lg" />}
               />
             </section>
           </div>
