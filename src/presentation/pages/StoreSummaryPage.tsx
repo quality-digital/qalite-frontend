@@ -28,12 +28,12 @@ import {
   getCriticalityClassName,
 } from '../constants/scenarioOptions';
 import { EnvironmentKanban } from '../components/environments/EnvironmentKanban';
-import { ScenarioColumnSortControl } from '../components/ScenarioColumnSortControl';
 import {
+  ScenarioColumnSortControl,
   createScenarioSortComparator,
   sortScenarioList,
   type ScenarioSortConfig,
-} from '../utils/scenarioSorting';
+} from '../components/ScenarioColumnSortControl';
 
 const emptyScenarioForm: StoreScenarioInput = {
   title: '',

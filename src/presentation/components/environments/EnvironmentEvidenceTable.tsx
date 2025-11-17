@@ -2,8 +2,11 @@ import { type ChangeEvent, useMemo, useState } from 'react';
 
 import type { Environment, EnvironmentScenarioStatus } from '../../../domain/entities/Environment';
 import { useScenarioEvidence } from '../../hooks/useScenarioEvidence';
-import { ScenarioColumnSortControl } from '../ScenarioColumnSortControl';
-import { createScenarioSortComparator, type ScenarioSortConfig } from '../../utils/scenarioSorting';
+import {
+  ScenarioColumnSortControl,
+  createScenarioSortComparator,
+  type ScenarioSortConfig,
+} from '../ScenarioColumnSortControl';
 
 interface EnvironmentEvidenceTableProps {
   environment: Environment;

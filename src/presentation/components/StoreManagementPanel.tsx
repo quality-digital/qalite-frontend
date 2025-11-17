@@ -18,9 +18,11 @@ import {
   CRITICALITY_OPTIONS,
   getCriticalityClassName,
 } from '../constants/scenarioOptions';
-import { ScenarioColumnSortControl } from './ScenarioColumnSortControl';
-import type { ScenarioSortConfig } from '../utils/scenarioSorting';
-import { sortScenarioList } from '../utils/scenarioSorting';
+import {
+  ScenarioColumnSortControl,
+  sortScenarioList,
+  type ScenarioSortConfig,
+} from './ScenarioColumnSortControl';
 
 interface StoreManagementPanelProps {
   organizationId: string;
