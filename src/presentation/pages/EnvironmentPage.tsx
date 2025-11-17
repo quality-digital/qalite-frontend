@@ -58,6 +58,7 @@ export const EnvironmentPage = () => {
   const [editingBug, setEditingBug] = useState<EnvironmentBug | null>(null);
   const [defaultBugScenarioId, setDefaultBugScenarioId] = useState<string | null>(null);
   const [hasEnteredEnvironment, setHasEnteredEnvironment] = useState(false);
+  const [hasManuallyExitedEnvironment, setHasManuallyExitedEnvironment] = useState(false);
   const [isJoiningEnvironment, setIsJoiningEnvironment] = useState(false);
   const [isCopyingMarkdown, setIsCopyingMarkdown] = useState(false);
   const [isLeavingEnvironment, setIsLeavingEnvironment] = useState(false);
@@ -70,7 +71,7 @@ export const EnvironmentPage = () => {
     environmentId: environment?.id ?? null,
     presentUsersIds: environment?.presentUsersIds ?? [],
     isLocked: Boolean(isLocked),
-    shouldAutoJoin: hasEnteredEnvironment && !isLocked,
+    shouldAutoJoin: hasEnteredEnvironment && !isLocked && !hasManuallyExitedEnvironment,
   });
   const { setActiveOrganization } = useOrganizationBranding();
   const participantProfiles = useUserProfiles(environment?.participants ?? []);
@@ -96,28 +97,32 @@ export const EnvironmentPage = () => {
   useEffect(() => {
     if (isCurrentUserPresent && !hasEnteredEnvironment) {
       setHasEnteredEnvironment(true);
+      setHasManuallyExitedEnvironment(false);
     }
   }, [hasEnteredEnvironment, isCurrentUserPresent]);
 
   useEffect(() => {
     if (!environment?.id || !user?.uid) {
       setHasEnteredEnvironment(false);
+      setHasManuallyExitedEnvironment(false);
       return;
     }
 
     const hasPersistedEntry = environment.participants?.includes(user.uid) ?? false;
-    if (hasPersistedEntry && !hasEnteredEnvironment) {
+    if (hasPersistedEntry && !hasEnteredEnvironment && !hasManuallyExitedEnvironment) {
       setHasEnteredEnvironment(true);
       return;
     }
 
     if (!hasPersistedEntry && !isCurrentUserPresent) {
       setHasEnteredEnvironment(false);
+      setHasManuallyExitedEnvironment(false);
     }
   }, [
     environment?.id,
     environment?.participants,
     hasEnteredEnvironment,
+    hasManuallyExitedEnvironment,
     isCurrentUserPresent,
     user?.uid,
   ]);
@@ -297,6 +302,7 @@ export const EnvironmentPage = () => {
     try {
       await joinEnvironment();
       setHasEnteredEnvironment(true);
+      setHasManuallyExitedEnvironment(false);
     } catch (error) {
       console.error(error);
       showToast({ type: 'error', message: 'Não foi possível entrar no ambiente.' });
@@ -315,6 +321,7 @@ export const EnvironmentPage = () => {
     try {
       await leaveEnvironment();
       setHasEnteredEnvironment(false);
+      setHasManuallyExitedEnvironment(true);
       showToast({ type: 'success', message: 'Você saiu do ambiente.' });
     } catch (error) {
       console.error(error);
