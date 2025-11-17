@@ -45,5 +45,21 @@ export const useScenarioEvidence = (environmentId: string | null | undefined) =>
     [environmentId],
   );
 
-  return { isUpdating, handleEvidenceUpload, changeScenarioStatus };
+  const updateScenarioBug = useCallback(
+    async (scenarioId: string, bugUrl: string | null) => {
+      if (!environmentId) {
+        throw new Error('Ambiente inválido.');
+      }
+
+      setIsUpdating(true);
+      try {
+        await environmentService.updateScenarioBug(environmentId, scenarioId, bugUrl);
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    [environmentId],
+  );
+
+  return { isUpdating, handleEvidenceUpload, changeScenarioStatus, updateScenarioBug };
 };

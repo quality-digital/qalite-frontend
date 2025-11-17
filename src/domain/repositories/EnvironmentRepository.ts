@@ -5,6 +5,11 @@ import type {
   EnvironmentScenarioStatus,
   UpdateEnvironmentInput,
 } from '../entities/Environment';
+import type {
+  CreateEnvironmentBugInput,
+  EnvironmentBug,
+  UpdateEnvironmentBugInput,
+} from '../entities/EnvironmentBug';
 
 export interface EnvironmentRealtimeFilters {
   storeId?: string;
@@ -30,5 +35,18 @@ export interface IEnvironmentRepository {
     status: EnvironmentScenarioStatus,
     platform?: EnvironmentScenarioPlatform,
   ): Promise<void>;
+  updateScenarioBug(
+    environmentId: string,
+    scenarioId: string,
+    bugUrl: string | null,
+  ): Promise<void>;
   uploadScenarioEvidence(environmentId: string, scenarioId: string, file: File): Promise<string>;
+  observeBugs(environmentId: string, callback: (bugs: EnvironmentBug[]) => void): () => void;
+  createBug(environmentId: string, payload: CreateEnvironmentBugInput): Promise<EnvironmentBug>;
+  updateBug(
+    environmentId: string,
+    bugId: string,
+    payload: UpdateEnvironmentBugInput,
+  ): Promise<void>;
+  deleteBug(environmentId: string, bugId: string): Promise<void>;
 }

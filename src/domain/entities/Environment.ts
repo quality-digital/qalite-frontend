@@ -18,6 +18,7 @@ export interface EnvironmentScenario {
   statusMobile?: EnvironmentScenarioStatus;
   statusDesktop?: EnvironmentScenarioStatus;
   evidenciaArquivoUrl: string | null;
+  bugUrl?: string | null;
 }
 
 export const SCENARIO_COMPLETED_STATUSES: EnvironmentScenarioStatus[] = [
@@ -89,4 +90,5 @@ export type UpdateEnvironmentInput = Partial<Omit<Environment, 'id'>>;
 export interface EnvironmentScenarioUpdate {
   status?: EnvironmentScenarioStatus;
   evidenciaArquivoUrl?: string | null;
+  bugUrl?: string | null;
 }
