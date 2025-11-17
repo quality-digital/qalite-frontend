@@ -13,6 +13,7 @@ export interface EnvironmentScenario {
   titulo: string;
   categoria: string;
   criticidade: string;
+  automatizado?: string;
   status: EnvironmentScenarioStatus;
   statusMobile?: EnvironmentScenarioStatus;
   statusDesktop?: EnvironmentScenarioStatus;
@@ -48,6 +49,8 @@ export interface Environment {
   jiraTask: string;
   tipoAmbiente: string;
   tipoTeste: string;
+  momento: string | null;
+  release: string | null;
   status: EnvironmentStatus;
   createdAt: string | null;
   updatedAt: string | null;
@@ -69,6 +72,8 @@ export interface CreateEnvironmentInput {
   jiraTask: string;
   tipoAmbiente: string;
   tipoTeste: string;
+  momento: string | null;
+  release: string | null;
   status: EnvironmentStatus;
   timeTracking: EnvironmentTimeTracking;
   presentUsersIds: string[];

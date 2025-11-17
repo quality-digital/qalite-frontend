@@ -8,6 +8,11 @@ import { Modal } from '../Modal';
 import { SelectInput } from '../SelectInput';
 import { TextArea } from '../TextArea';
 import { TextInput } from '../TextInput';
+import {
+  MOMENT_OPTIONS_BY_ENVIRONMENT,
+  TEST_TYPES_BY_ENVIRONMENT,
+  requiresReleaseField,
+} from '../../constants/environmentOptions';
 
 interface EditEnvironmentModalProps {
   isOpen: boolean;
@@ -30,7 +35,9 @@ export const EditEnvironmentModal = ({
   const [urls, setUrls] = useState('');
   const [jiraTask, setJiraTask] = useState('');
   const [tipoAmbiente, setTipoAmbiente] = useState('WS');
-  const [tipoTeste, setTipoTeste] = useState('Funcional');
+  const [tipoTeste, setTipoTeste] = useState('Smoke-test');
+  const [momento, setMomento] = useState('');
+  const [release, setRelease] = useState('');
   const [status, setStatus] = useState<EnvironmentStatus>('backlog');
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,6 +53,8 @@ export const EditEnvironmentModal = ({
     setJiraTask(environment.jiraTask);
     setTipoAmbiente(environment.tipoAmbiente);
     setTipoTeste(environment.tipoTeste);
+    setMomento(environment.momento ?? '');
+    setRelease(environment.release ?? '');
     setStatus(environment.status);
   }, [environment]);
 
@@ -55,10 +64,47 @@ export const EditEnvironmentModal = ({
     [environment?.scenarios],
   );
 
+  const tipoTesteOptions = useMemo(() => {
+    const options = TEST_TYPES_BY_ENVIRONMENT[tipoAmbiente] ?? ['Smoke-test'];
+    if (!options.includes(tipoTeste)) {
+      setTipoTeste(options[0]);
+    }
+    return options;
+  }, [tipoAmbiente, tipoTeste]);
+
+  const momentoOptions = useMemo(() => {
+    const options = MOMENT_OPTIONS_BY_ENVIRONMENT[tipoAmbiente] ?? [];
+    if (options.length === 0 && momento) {
+      setMomento('');
+    }
+    if (options.length > 0 && !options.includes(momento)) {
+      setMomento(options[0]);
+    }
+    return options;
+  }, [momento, tipoAmbiente]);
+
+  const shouldDisplayReleaseField = requiresReleaseField(tipoAmbiente);
+
+  useEffect(() => {
+    if (!shouldDisplayReleaseField && release) {
+      setRelease('');
+    }
+  }, [release, shouldDisplayReleaseField]);
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!environment) {
+      return;
+    }
+
+    if (momentoOptions.length > 0 && !momento) {
+      setFormError('Selecione o momento do ambiente.');
+      return;
+    }
+
+    if (shouldDisplayReleaseField && !release.trim()) {
+      setFormError('Informe a release para este ambiente.');
       return;
     }
 
@@ -77,6 +123,8 @@ export const EditEnvironmentModal = ({
         jiraTask: jiraTask.trim(),
         tipoAmbiente,
         tipoTeste,
+        momento: momentoOptions.length > 0 ? momento : null,
+        release: shouldDisplayReleaseField ? release.trim() : null,
       });
 
       if (environment.status !== status) {
@@ -139,13 +187,33 @@ export const EditEnvironmentModal = ({
             { value: 'PROD', label: 'PROD' },
           ]}
         />
-        <TextInput
+        <SelectInput
           id="tipoTesteEditar"
           label="Tipo de teste"
           value={tipoTeste}
           onChange={(event) => setTipoTeste(event.target.value)}
           disabled={isLocked}
+          options={tipoTesteOptions.map((option) => ({ value: option, label: option }))}
         />
+        {momentoOptions.length > 0 && (
+          <SelectInput
+            id="momentoEditar"
+            label="Momento/Quando"
+            value={momento}
+            onChange={(event) => setMomento(event.target.value)}
+            disabled={isLocked}
+            options={momentoOptions.map((option) => ({ value: option, label: option }))}
+          />
+        )}
+        {shouldDisplayReleaseField && (
+          <TextInput
+            id="releaseEditar"
+            label="Release"
+            value={release}
+            onChange={(event) => setRelease(event.target.value)}
+            disabled={isLocked}
+          />
+        )}
         <SelectInput
           id="statusEditar"
           label="Status"

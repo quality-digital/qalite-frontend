@@ -1,6 +1,6 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 
-import type { EnvironmentScenario, EnvironmentStatus } from '../../../domain/entities/Environment';
+import type { EnvironmentScenario } from '../../../domain/entities/Environment';
 import type { StoreScenario, StoreSuite } from '../../../domain/entities/Store';
 import { environmentService } from '../../../main/factories/environmentServiceFactory';
 import { Button } from '../Button';
@@ -8,6 +8,11 @@ import { Modal } from '../Modal';
 import { SelectInput } from '../SelectInput';
 import { TextArea } from '../TextArea';
 import { TextInput } from '../TextInput';
+import {
+  MOMENT_OPTIONS_BY_ENVIRONMENT,
+  TEST_TYPES_BY_ENVIRONMENT,
+  requiresReleaseField,
+} from '../../constants/environmentOptions';
 
 interface CreateEnvironmentModalProps {
   isOpen: boolean;
@@ -17,17 +22,6 @@ interface CreateEnvironmentModalProps {
   scenarios: StoreScenario[];
   onCreated?: () => void;
 }
-
-const STATUS_OPTIONS: { value: EnvironmentStatus; label: string }[] = [
-  { value: 'backlog', label: 'Backlog' },
-  { value: 'in_progress', label: 'Em andamento' },
-];
-
-const TEST_TYPES_BY_ENVIRONMENT: Record<string, string[]> = {
-  WS: ['Funcional', 'Regressão', 'Smoke'],
-  TM: ['Funcional', 'Homologação'],
-  PROD: ['Smoke', 'Regressão completa'],
-};
 
 const buildScenarioMap = (
   suite: StoreSuite | undefined,
@@ -48,6 +42,7 @@ const buildScenarioMap = (
       titulo: match.title,
       categoria: match.category,
       criticidade: match.criticality,
+      automatizado: match.automation,
       status: 'pendente',
       statusMobile: 'pendente',
       statusDesktop: 'pendente',
@@ -70,9 +65,10 @@ export const CreateEnvironmentModal = ({
   const [urls, setUrls] = useState('');
   const [jiraTask, setJiraTask] = useState('');
   const [tipoAmbiente, setTipoAmbiente] = useState('WS');
-  const [tipoTeste, setTipoTeste] = useState('Funcional');
+  const [tipoTeste, setTipoTeste] = useState('Smoke-test');
+  const [momento, setMomento] = useState('');
+  const [release, setRelease] = useState('');
   const [suiteId, setSuiteId] = useState('');
-  const [status, setStatus] = useState<EnvironmentStatus>('backlog');
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -87,18 +83,47 @@ export const CreateEnvironmentModal = ({
   const totalCenarios = Object.keys(scenarioMap).length;
 
   const tipoTesteOptions = useMemo(() => {
-    const options = TEST_TYPES_BY_ENVIRONMENT[tipoAmbiente] ?? ['Funcional'];
+    const options = TEST_TYPES_BY_ENVIRONMENT[tipoAmbiente] ?? ['Smoke-test'];
     if (!options.includes(tipoTeste)) {
       setTipoTeste(options[0]);
     }
     return options;
   }, [tipoAmbiente, tipoTeste]);
 
+  const momentoOptions = useMemo(() => {
+    const options = MOMENT_OPTIONS_BY_ENVIRONMENT[tipoAmbiente] ?? [];
+    if (options.length === 0 && momento) {
+      setMomento('');
+    }
+    if (options.length > 0 && !options.includes(momento)) {
+      setMomento(options[0]);
+    }
+    return options;
+  }, [momento, tipoAmbiente]);
+
+  const shouldDisplayReleaseField = requiresReleaseField(tipoAmbiente);
+
+  useEffect(() => {
+    if (!shouldDisplayReleaseField && release) {
+      setRelease('');
+    }
+  }, [shouldDisplayReleaseField, release]);
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!identificador.trim()) {
       setFormError('Informe um identificador para o ambiente.');
+      return;
+    }
+
+    if (momentoOptions.length > 0 && !momento) {
+      setFormError('Selecione o momento do ambiente.');
+      return;
+    }
+
+    if (shouldDisplayReleaseField && !release.trim()) {
+      setFormError('Informe a release para este ambiente.');
       return;
     }
 
@@ -110,10 +135,7 @@ export const CreateEnvironmentModal = ({
         .map((entry) => entry.trim())
         .filter((entry) => entry.length > 0);
 
-      const timeTracking =
-        status === 'in_progress'
-          ? { start: new Date().toISOString(), end: null, totalMs: 0 }
-          : { start: null, end: null, totalMs: 0 };
+      const timeTracking = { start: null, end: null, totalMs: 0 };
 
       await environmentService.create({
         identificador: identificador.trim(),
@@ -124,7 +146,9 @@ export const CreateEnvironmentModal = ({
         jiraTask: jiraTask.trim(),
         tipoAmbiente,
         tipoTeste,
-        status,
+        momento: momentoOptions.length > 0 ? momento : null,
+        release: shouldDisplayReleaseField ? release.trim() : null,
+        status: 'backlog',
         timeTracking,
         presentUsersIds: [],
         concludedBy: null,
@@ -201,13 +225,23 @@ export const CreateEnvironmentModal = ({
             ...suites.map((suite) => ({ value: suite.id, label: suite.name })),
           ]}
         />
-        <SelectInput
-          id="status"
-          label="Status inicial"
-          value={status}
-          onChange={(event) => setStatus(event.target.value as EnvironmentStatus)}
-          options={STATUS_OPTIONS}
-        />
+        {momentoOptions.length > 0 && (
+          <SelectInput
+            id="momento"
+            label="Momento/Quando"
+            value={momento}
+            onChange={(event) => setMomento(event.target.value)}
+            options={momentoOptions.map((option) => ({ value: option, label: option }))}
+          />
+        )}
+        {shouldDisplayReleaseField && (
+          <TextInput
+            id="release"
+            label="Release"
+            value={release}
+            onChange={(event) => setRelease(event.target.value)}
+          />
+        )}
         {selectedSuite && (
           <div className="environment-suite-preview">
             <p>

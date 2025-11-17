@@ -43,6 +43,8 @@ export class BrowserEnvironmentExporter implements EnvironmentExporter {
         <h1>Ambiente ${environment.identificador}</h1>
         <p>Status: ${environment.status}</p>
         <p>Tipo: ${environment.tipoAmbiente} · ${environment.tipoTeste}</p>
+        ${environment.momento ? `<p>Momento: ${environment.momento}</p>` : ''}
+        ${environment.release ? `<p>Release: ${environment.release}</p>` : ''}
         <p>Jira: ${environment.jiraTask || 'Não informado'}</p>
         <h2>Cenários</h2>
         <table>
@@ -93,6 +95,8 @@ export class BrowserEnvironmentExporter implements EnvironmentExporter {
 
 - Status: ${environment.status}
 - Tipo: ${environment.tipoAmbiente} · ${environment.tipoTeste}
+${environment.momento ? `- Momento: ${environment.momento}` : ''}
+${environment.release ? `- Release: ${environment.release}` : ''}
 - Jira: ${environment.jiraTask || 'Não informado'}
 - URLs:\n${environment.urls.map((url) => `  - ${url}`).join('\n') || '  - Nenhuma URL cadastrada'}
 

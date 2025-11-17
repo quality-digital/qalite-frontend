@@ -95,10 +95,12 @@ const parseScenarioMap = (
     const desktopStatus = (entry.statusDesktop ??
       entry.desktopStatus ??
       defaultStatus) as EnvironmentScenarioStatus;
+    const automation = getString(entry.automatizado ?? entry.automation);
     acc[id] = {
       titulo: getString(entry.titulo),
       categoria: getString(entry.categoria),
       criticidade: getString(entry.criticidade),
+      automatizado: automation,
       status: defaultStatus,
       statusMobile: mobileStatus,
       statusDesktop: desktopStatus,
@@ -118,6 +120,8 @@ const normalizeEnvironment = (id: string, data: Record<string, unknown>): Enviro
   jiraTask: getString(data.jiraTask),
   tipoAmbiente: getString(data.tipoAmbiente),
   tipoTeste: getString(data.tipoTeste),
+  momento: getStringOrNull(data.momento),
+  release: getStringOrNull(data.release),
   status: (data.status ?? 'backlog') as EnvironmentStatus,
   createdAt: parseTimestamp(data.createdAt as Timestamp | string | null | undefined) ?? null,
   updatedAt: parseTimestamp(data.updatedAt as Timestamp | string | null | undefined) ?? null,
