@@ -14,6 +14,7 @@ import { SelectInput } from '../components/SelectInput';
 import { Modal } from '../components/Modal';
 import { TextArea } from '../components/TextArea';
 import { UserAvatar } from '../components/UserAvatar';
+import { SimpleBarChart } from '../components/SimpleBarChart';
 
 interface StoreForm {
   name: string;
@@ -60,6 +61,8 @@ export const AdminStoresPage = () => {
   const [memberError, setMemberError] = useState<string | null>(null);
   const [isSavingOrganization, setIsSavingOrganization] = useState(false);
   const [isManagingMembers, setIsManagingMembers] = useState(false);
+  const [storeAutomationCounts, setStoreAutomationCounts] = useState<Record<string, number>>({});
+  const [isLoadingAutomationStats, setIsLoadingAutomationStats] = useState(false);
 
   useEffect(() => {
     const fetchOrganizations = async () => {
@@ -98,6 +101,7 @@ export const AdminStoresPage = () => {
   useEffect(() => {
     if (!selectedOrganizationId) {
       setStores([]);
+      setStoreAutomationCounts({});
       return;
     }
 
@@ -131,6 +135,71 @@ export const AdminStoresPage = () => {
   }, [selectedOrganization, setActiveOrganization]);
 
   useEffect(() => () => setActiveOrganization(null), [setActiveOrganization]);
+
+  useEffect(() => {
+    if (!selectedOrganizationId || stores.length === 0) {
+      setStoreAutomationCounts({});
+      return;
+    }
+
+    let isMounted = true;
+
+    const fetchAutomationStats = async () => {
+      setIsLoadingAutomationStats(true);
+      try {
+        const results = await Promise.all(
+          stores.map(async (store) => {
+            const scenarios = await storeService.listScenarios(store.id);
+            const automatedCount = scenarios.filter((scenario) =>
+              scenario.automation.toLowerCase().includes('automat'),
+            ).length;
+
+            return [store.id, automatedCount] as const;
+          }),
+        );
+
+        if (isMounted) {
+          setStoreAutomationCounts(Object.fromEntries(results));
+        }
+      } catch (error) {
+        console.error(error);
+        if (isMounted) {
+          showToast({
+            type: 'error',
+            message: 'Não foi possível carregar os cenários automatizados por loja.',
+          });
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingAutomationStats(false);
+        }
+      }
+    };
+
+    void fetchAutomationStats();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedOrganizationId, stores, showToast]);
+
+  const scenariosPerStoreData = useMemo(
+    () =>
+      stores.map((store) => ({
+        label: store.name,
+        value: store.scenarioCount,
+      })),
+    [stores],
+  );
+
+  const automatedScenariosPerStoreData = useMemo(
+    () =>
+      stores.map((store) => ({
+        label: store.name,
+        value: storeAutomationCounts[store.id] ?? 0,
+      })),
+    [stores, storeAutomationCounts],
+  );
 
   const openCreateModal = () => {
     setStoreForm(initialStoreForm);
@@ -416,9 +485,7 @@ export const AdminStoresPage = () => {
           </div>
           <div className="page-actions">
             {isOrganizationLocked ? (
-              <div className="selected-organization-info">
-                <strong>{selectedOrganization?.name ?? 'Organização selecionada'}</strong>
-              </div>
+              <strong>{selectedOrganization?.name ?? 'Organização selecionada'}</strong>
             ) : (
               <SelectInput
                 id="organization-selector"
@@ -456,37 +523,96 @@ export const AdminStoresPage = () => {
             </Button>
           </div>
         ) : (
-          <div className="dashboard-grid">
-            {stores.map((store) => (
-              <div
-                key={store.id}
-                className="card card-clickable"
-                role="button"
-                tabIndex={0}
-                onClick={() => navigate(`/stores/${store.id}`)}
-                onKeyDown={(event) =>
-                  handleCardKeyDown(event, () => navigate(`/stores/${store.id}`))
-                }
-              >
-                <div className="card-header">
-                  <div>
-                    <h2 className="card-title">{store.name}</h2>
-                    <p className="card-subtitle">{selectedOrganization?.name ?? 'Organização'}</p>
+          <>
+            <div className="dashboard-grid">
+              {stores.map((store) => (
+                <div
+                  key={store.id}
+                  className="card card-clickable"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => navigate(`/stores/${store.id}`)}
+                  onKeyDown={(event) =>
+                    handleCardKeyDown(event, () => navigate(`/stores/${store.id}`))
+                  }
+                >
+                  <div className="card-header">
+                    <div>
+                      <h2 className="card-title">{store.name}</h2>
+                      <p className="card-subtitle">{selectedOrganization?.name ?? 'Organização'}</p>
+                    </div>
+                    <span className="badge">{store.scenarioCount} cenários</span>
                   </div>
-                  <span className="badge">{store.scenarioCount} cenários</span>
+                  <p className="card-description">
+                    <span>
+                      <strong>Site:</strong> {store.site || 'Não informado'}
+                    </span>
+                  </p>
+                  <div className="card-link-hint">
+                    <span>Abrir loja</span>
+                    <span aria-hidden>&rarr;</span>
+                  </div>
                 </div>
-                <p className="card-description">
-                  <span>
-                    <strong>Site:</strong> {store.site || 'Não informado'}
-                  </span>
-                </p>
-                <div className="card-link-hint">
-                  <span>Abrir loja</span>
-                  <span aria-hidden>&rarr;</span>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+
+            <div className="organization-extra">
+              {selectedOrganization && (
+                <section className="organization-collaborators-card">
+                  <div className="organization-collaborators-card__header">
+                    <div>
+                      <h3>Colaboradores da organização</h3>
+                      <p className="section-subtitle">
+                        Visualize rapidamente quem tem acesso a esta organização.
+                      </p>
+                    </div>
+                    <span className="badge">
+                      {selectedOrganization.members.length} colaborad
+                      {selectedOrganization.members.length === 1 ? 'or' : 'ores'}
+                    </span>
+                  </div>
+                  {selectedOrganization.members.length === 0 ? (
+                    <p className="section-subtitle">
+                      Nenhum colaborador vinculado. Utilize o botão “Gerenciar organização” para
+                      convidar novos membros.
+                    </p>
+                  ) : (
+                    <ul className="collaborator-list">
+                      {selectedOrganization.members.map((member) => (
+                        <li key={member.uid} className="collaborator-card">
+                          <UserAvatar
+                            name={member.displayName || member.email}
+                            photoURL={member.photoURL ?? undefined}
+                          />
+                          <div className="collaborator-card__details">
+                            <strong>{member.displayName || member.email}</strong>
+                            <span>{member.email}</span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              )}
+
+              <section className="organization-charts-grid">
+                <SimpleBarChart
+                  title="Cenários por loja"
+                  description="Total de cenários cadastrados em cada loja desta organização."
+                  data={scenariosPerStoreData}
+                  emptyMessage="Cadastre lojas e cenários para visualizar este gráfico."
+                />
+                <SimpleBarChart
+                  title="Cenários automatizados"
+                  description="Comparativo de cenários marcados como automatizados por loja."
+                  data={automatedScenariosPerStoreData}
+                  emptyMessage="Ainda não identificamos cenários automatizados nas lojas desta organização."
+                  isLoading={isLoadingAutomationStats}
+                  variant="info"
+                />
+              </section>
+            </div>
+          </>
         )}
       </section>
 

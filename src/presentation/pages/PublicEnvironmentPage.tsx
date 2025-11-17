@@ -95,27 +95,6 @@ export const PublicEnvironmentPage = () => {
             <span className={`status-pill status-pill--${environment.status}`}>
               {STATUS_LABEL[environment.status]}
             </span>
-            {environmentOrganization && (
-              <div>
-                {environmentOrganization.logoUrl ? (
-                  <img
-                    src={environmentOrganization.logoUrl}
-                    alt={`Logo da ${environmentOrganization.name}`}
-                    className="environment-organization-branding__logo"
-                  />
-                ) : (
-                  <span className="environment-organization-branding__placeholder" aria-hidden>
-                    {environmentOrganization.name?.charAt(0)?.toUpperCase() ?? '?'}
-                  </span>
-                )}
-                <div className="environment-organization-branding__details">
-                  <span className="environment-organization-branding__label">Organização</span>
-                  <strong className="environment-organization-branding__name">
-                    {environmentOrganization.name}
-                  </strong>
-                </div>
-              </div>
-            )}
             <h1 className="section-title">{environment.identificador}</h1>
             <p className="section-subtitle">
               {environment.tipoAmbiente} · {environment.tipoTeste} · {suiteDescription}
