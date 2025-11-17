@@ -3162,34 +3162,56 @@ a.text-link:hover {
 
 .environment-kanban-columns {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
 }
 
 .environment-kanban-column {
-  border: 1px dashed var(--color-border);
+  border: 1px solid var(--color-border);
   border-radius: 16px;
-  padding: 1.5rem 1rem;
-  min-height: 200px;
+  padding: 1rem;
+  min-height: 180px;
   background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .environment-kanban-column-header {
-  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.environment-kanban-column-count {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: var(--color-surface-alt);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+}
+
+.environment-kanban-column--archived {
+  background: var(--color-surface-alt);
+  border-style: dashed;
 }
 
 .environment-card {
   background: var(--color-surface);
-  border-radius: 24px;
+  border-radius: 16px;
   box-shadow: var(--shadow-sm);
-  padding: 1.25rem 1.5rem;
-  margin-bottom: 1rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
   border: 1px solid var(--color-border-strong);
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  min-height: 180px;
+  gap: 0.75rem;
+  min-height: 0;
   transition:
     transform var(--transition-base),
     box-shadow var(--transition-base),
@@ -3207,17 +3229,24 @@ a.text-link:hover {
   opacity: 0.85;
 }
 
-.environment-card-minimal-header {
+.environment-card-header {
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.environment-card-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
 .environment-card-status-dot {
-  padding: 0.15rem 0.75rem;
+  padding: 0.2rem 0.85rem;
   border-radius: 999px;
   flex-shrink: 0;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -3241,32 +3270,38 @@ a.text-link:hover {
   color: #fff;
 }
 
-.environment-card-minimal-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
 .environment-card-identifier {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--color-text-primary);
 }
 
 .environment-card-type {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: var(--color-text-secondary);
 }
 
-.environment-card-suite {
-  font-size: 0.85rem;
-  text-transform: uppercase;
+.environment-card-suite-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0.65rem;
+  background: var(--color-surface-alt);
+  border-radius: 12px;
+}
+
+.environment-card-suite-label {
+  font-size: 0.75rem;
   letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--color-text-muted);
 }
 
-.environment-card-avatars {
-  width: 100%;
+.environment-card-suite-name {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  font-weight: 600;
 }
 
 .environment-card-participant-list {
@@ -3274,7 +3309,7 @@ a.text-link:hover {
   padding: 0;
   margin: 0;
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 0.4rem;
 }
 
@@ -3283,14 +3318,34 @@ a.text-link:hover {
 }
 
 .environment-card-participant .environment-card-avatar {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-width: 2px;
 }
 
 .environment-card-avatars__placeholder {
   font-size: 0.85rem;
   color: var(--color-text-muted);
+}
+
+.environment-card-participants {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.environment-card-participants-label {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.environment-card-participant--more {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-alt);
+  border-radius: 999px;
+  padding: 0.15rem 0.45rem;
 }
 
 .environment-present-users {
@@ -3324,8 +3379,8 @@ a.text-link:hover {
 }
 
 .environment-card-avatar {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   object-fit: cover;
   background: rgba(37, 99, 235, 0.1);

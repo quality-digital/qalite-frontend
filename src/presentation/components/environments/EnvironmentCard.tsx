@@ -30,6 +30,8 @@ export const EnvironmentCard = ({
   const isLocked = environment.status === 'done';
   const displaySuiteName = suiteName ?? 'Suíte não informada';
   const hasParticipants = participants.length > 0;
+  const visibleParticipants = participants.slice(0, 3);
+  const hiddenParticipantsCount = Math.max(participants.length - visibleParticipants.length, 0);
 
   const handleOpen = () => onOpen(environment);
 
@@ -49,45 +51,62 @@ export const EnvironmentCard = ({
       onDragStart={(event) => onDragStart?.(event, environment.id)}
       data-status={environment.status}
     >
-      <div className="environment-card-minimal-header">
+      <div className="environment-card-header">
+        <div className="environment-card-title">
+          <span className="environment-card-identifier">{environment.identificador}</span>
+          <span className="environment-card-type">{environment.tipoTeste}</span>
+        </div>
         <span
           className={`environment-card-status-dot environment-card-status-dot--${environment.status}`}
         >
           {STATUS_LABEL[environment.status]}
         </span>
-        <div className="environment-card-minimal-info">
-          <span className="environment-card-identifier">{environment.identificador}</span>
-          <span className="environment-card-type">{environment.tipoTeste}</span>
-          <span className="environment-card-suite">{displaySuiteName}</span>
-        </div>
       </div>
 
-      <div className="environment-card-avatars" aria-label="Participantes">
+      <div className="environment-card-suite-row">
+        <span className="environment-card-suite-label">Suíte</span>
+        <span className="environment-card-suite-name">{displaySuiteName}</span>
+      </div>
+
+      <div className="environment-card-participants" aria-label="Participantes">
         {hasParticipants ? (
-          <ul className="environment-card-participant-list" aria-label="Participantes cadastrados">
-            {participants.map((user) => {
-              const readableName = getReadableUserName(user);
-              const initials = getUserInitials(readableName);
-              return (
-                <li key={user.id} className="environment-card-participant" title={readableName}>
-                  {user.photoURL ? (
-                    <img
-                      src={user.photoURL}
-                      alt={readableName}
-                      className="environment-card-avatar"
-                    />
-                  ) : (
-                    <span
-                      className="environment-card-avatar environment-card-avatar--initials"
-                      aria-label={readableName}
-                    >
-                      {initials}
-                    </span>
-                  )}
+          <>
+            <ul
+              className="environment-card-participant-list"
+              aria-label="Participantes cadastrados"
+            >
+              {visibleParticipants.map((user) => {
+                const readableName = getReadableUserName(user);
+                const initials = getUserInitials(readableName);
+                return (
+                  <li key={user.id} className="environment-card-participant" title={readableName}>
+                    {user.photoURL ? (
+                      <img
+                        src={user.photoURL}
+                        alt={readableName}
+                        className="environment-card-avatar"
+                      />
+                    ) : (
+                      <span
+                        className="environment-card-avatar environment-card-avatar--initials"
+                        aria-label={readableName}
+                      >
+                        {initials}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+              {hiddenParticipantsCount > 0 && (
+                <li className="environment-card-participant environment-card-participant--more">
+                  +{hiddenParticipantsCount}
                 </li>
-              );
-            })}
-          </ul>
+              )}
+            </ul>
+            <span className="environment-card-participants-label">
+              {participants.length} participante{participants.length > 1 ? 's' : ''}
+            </span>
+          </>
         ) : (
           <span className="environment-card-avatars__placeholder">Sem participantes</span>
         )}

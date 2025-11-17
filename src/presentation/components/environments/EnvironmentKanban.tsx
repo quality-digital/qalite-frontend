@@ -190,6 +190,10 @@ export const EnvironmentKanban = ({ storeId, suites, scenarios }: EnvironmentKan
     navigate(`/environments/${environment.id}`);
   };
 
+  const doneEnvironments = grouped.done;
+  const activeDoneEnvironments = doneEnvironments.slice(0, 5);
+  const archivedEnvironments = doneEnvironments.slice(5);
+
   return (
     <section className="environment-kanban">
       <header className="environment-kanban-header">
@@ -203,35 +207,72 @@ export const EnvironmentKanban = ({ storeId, suites, scenarios }: EnvironmentKan
         <p className="section-subtitle">Carregando ambientes...</p>
       ) : (
         <div className="environment-kanban-columns">
-          {COLUMNS.map((column) => (
+          {COLUMNS.map((column) => {
+            const environmentsToRender =
+              column.status === 'done' ? activeDoneEnvironments : grouped[column.status];
+
+            return (
+              <div
+                key={column.status}
+                className="environment-kanban-column"
+                onDragOver={handleDragOver}
+                onDrop={handleDrop(column.status)}
+              >
+                <div className="environment-kanban-column-header">
+                  <h4>{column.title}</h4>
+                  <span className="environment-kanban-column-count">
+                    {environmentsToRender.length}
+                  </span>
+                </div>
+                {environmentsToRender.length === 0 ? (
+                  <p className="section-subtitle">Sem ambientes.</p>
+                ) : (
+                  environmentsToRender.map((environment) => (
+                    <EnvironmentCard
+                      key={environment.id}
+                      environment={environment}
+                      participants={(environment.participants ?? [])
+                        .map((id) => userProfilesMap[id])
+                        .filter((user): user is UserSummary => Boolean(user))}
+                      suiteName={suiteNameByEnvironment[environment.id]}
+                      draggable
+                      onDragStart={handleDragStart}
+                      onOpen={handleOpenEnvironment}
+                    />
+                  ))
+                )}
+              </div>
+            );
+          })}
+
+          {archivedEnvironments.length > 0 && (
             <div
-              key={column.status}
-              className="environment-kanban-column"
+              className="environment-kanban-column environment-kanban-column--archived"
               onDragOver={handleDragOver}
-              onDrop={handleDrop(column.status)}
+              onDrop={handleDrop('done')}
             >
               <div className="environment-kanban-column-header">
-                <h4>{column.title}</h4>
+                <h4>Arquivado</h4>
+                <span className="environment-kanban-column-count">
+                  {archivedEnvironments.length}
+                </span>
               </div>
-              {grouped[column.status].length === 0 ? (
-                <p className="section-subtitle">Sem ambientes.</p>
-              ) : (
-                grouped[column.status].map((environment) => (
-                  <EnvironmentCard
-                    key={environment.id}
-                    environment={environment}
-                    participants={(environment.participants ?? [])
-                      .map((id) => userProfilesMap[id])
-                      .filter((user): user is UserSummary => Boolean(user))}
-                    suiteName={suiteNameByEnvironment[environment.id]}
-                    draggable
-                    onDragStart={handleDragStart}
-                    onOpen={handleOpenEnvironment}
-                  />
-                ))
-              )}
+
+              {archivedEnvironments.map((environment) => (
+                <EnvironmentCard
+                  key={environment.id}
+                  environment={environment}
+                  participants={(environment.participants ?? [])
+                    .map((id) => userProfilesMap[id])
+                    .filter((user): user is UserSummary => Boolean(user))}
+                  suiteName={suiteNameByEnvironment[environment.id]}
+                  draggable
+                  onDragStart={handleDragStart}
+                  onOpen={handleOpenEnvironment}
+                />
+              ))}
             </div>
-          ))}
+          )}
         </div>
       )}
 
