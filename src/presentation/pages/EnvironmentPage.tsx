@@ -270,6 +270,14 @@ export const EnvironmentPage = () => {
     );
   }
 
+  const headerMeta: string[] = [];
+  if (environment.momento) {
+    headerMeta.push(`Momento: ${environment.momento}`);
+  }
+  if (environment.release) {
+    headerMeta.push(`Release: ${environment.release}`);
+  }
+
   return (
     <Layout>
       <section className="page-container environment-page">
@@ -283,6 +291,9 @@ export const EnvironmentPage = () => {
               <p className="section-subtitle">
                 {environment.tipoAmbiente} · {environment.tipoTeste} · {suiteDescription}
               </p>
+              {headerMeta.length > 0 && (
+                <p className="section-subtitle">{headerMeta.join(' · ')}</p>
+              )}
               {presentUsers.length > 0 && (
                 <div className="environment-presence-inline">
                   <span className="environment-presence-inline__label">Usuários no ambiente</span>
@@ -410,6 +421,18 @@ export const EnvironmentPage = () => {
                   {environment.jiraTask || 'Não informado'}
                 </strong>
               </div>
+              {environment.momento && (
+                <div className="summary-card__detail">
+                  <span className="summary-card__detail-label">Momento</span>
+                  <strong className="summary-card__detail-value">{environment.momento}</strong>
+                </div>
+              )}
+              {environment.release && (
+                <div className="summary-card__detail">
+                  <span className="summary-card__detail-label">Release</span>
+                  <strong className="summary-card__detail-value">{environment.release}</strong>
+                </div>
+              )}
               <div className="summary-card__detail">
                 <span className="summary-card__detail-label">Suíte</span>
                 <strong className="summary-card__detail-value">

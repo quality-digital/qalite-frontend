@@ -138,6 +138,14 @@ export const PublicEnvironmentPage = () => {
     );
   }
 
+  const headerMeta: string[] = [];
+  if (environment.momento) {
+    headerMeta.push(`Momento: ${environment.momento}`);
+  }
+  if (environment.release) {
+    headerMeta.push(`Release: ${environment.release}`);
+  }
+
   return (
     <Layout>
       <section className="page-container environment-page environment-page--public">
@@ -150,6 +158,7 @@ export const PublicEnvironmentPage = () => {
             <p className="section-subtitle">
               {environment.tipoAmbiente} · {environment.tipoTeste} · {suiteDescription}
             </p>
+            {headerMeta.length > 0 && <p className="section-subtitle">{headerMeta.join(' · ')}</p>}
           </div>
         </div>
 
@@ -221,6 +230,18 @@ export const PublicEnvironmentPage = () => {
                   {environment.jiraTask || 'Não informado'}
                 </strong>
               </div>
+              {environment.momento && (
+                <div className="summary-card__detail">
+                  <span className="summary-card__detail-label">Momento</span>
+                  <strong className="summary-card__detail-value">{environment.momento}</strong>
+                </div>
+              )}
+              {environment.release && (
+                <div className="summary-card__detail">
+                  <span className="summary-card__detail-label">Release</span>
+                  <strong className="summary-card__detail-value">{environment.release}</strong>
+                </div>
+              )}
               <div className="summary-card__detail">
                 <span className="summary-card__detail-label">Suíte</span>
                 <strong className="summary-card__detail-value">
