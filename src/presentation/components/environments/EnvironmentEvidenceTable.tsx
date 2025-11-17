@@ -5,7 +5,6 @@ import type {
   EnvironmentScenarioPlatform,
   EnvironmentScenarioStatus,
 } from '../../../domain/entities/Environment';
-import { useToast } from '../../context/ToastContext';
 import { useScenarioEvidence } from '../../hooks/useScenarioEvidence';
 import {
   ScenarioColumnSortControl,
@@ -37,9 +36,9 @@ export const EnvironmentEvidenceTable = ({
   isLocked,
   readOnly,
 }: EnvironmentEvidenceTableProps) => {
-  const { showToast } = useToast();
-  const { isUpdating, handleEvidenceUpload, changeScenarioStatus, updateScenarioBug } =
-    useScenarioEvidence(environment.id);
+  const { isUpdating, handleEvidenceUpload, changeScenarioStatus } = useScenarioEvidence(
+    environment.id,
+  );
   const [scenarioSort, setScenarioSort] = useState<ScenarioSortConfig | null>(null);
   const scenarioEntries = useMemo(() => {
     const entries = Object.entries(environment.scenarios ?? {});
@@ -104,31 +103,6 @@ export const EnvironmentEvidenceTable = ({
     event.target.value = '';
   };
 
-  const handleBugLinkChange = async (scenarioId: string, currentUrl: string | null | undefined) => {
-    if (isReadOnly) {
-      return;
-    }
-
-    const userInput = window.prompt('Informe o link do bug', currentUrl ?? '');
-    if (userInput === null) {
-      return;
-    }
-
-    const trimmed = userInput.trim();
-    const nextUrl = trimmed.length > 0 ? trimmed : null;
-
-    try {
-      await updateScenarioBug(scenarioId, nextUrl);
-      showToast({
-        type: 'success',
-        message: nextUrl ? 'Bug vinculado ao cenário.' : 'Bug removido do cenário.',
-      });
-    } catch (error) {
-      console.error(error);
-      showToast({ type: 'error', message: 'Não foi possível atualizar o bug.' });
-    }
-  };
-
   if (scenarioEntries.length === 0) {
     return <p className="section-subtitle">Nenhum cenário associado a este ambiente.</p>;
   }
@@ -158,7 +132,6 @@ export const EnvironmentEvidenceTable = ({
             <th>Status Mobile</th>
             <th>Status Desktop</th>
             <th>Evidência</th>
-            <th>Bug</th>
           </tr>
         </thead>
         <tbody>
@@ -204,12 +177,7 @@ export const EnvironmentEvidenceTable = ({
               <td>
                 <div className="scenario-evidence-cell">
                   {data.evidenciaArquivoUrl ? (
-                    <a
-                      href={data.evidenciaArquivoUrl}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="text-link"
-                    >
+                    <a href={data.evidenciaArquivoUrl} target="_blank" rel="noreferrer">
                       Abrir evidência
                     </a>
                   ) : (
@@ -224,32 +192,6 @@ export const EnvironmentEvidenceTable = ({
                       />
                       <span>Enviar arquivo</span>
                     </label>
-                  )}
-                </div>
-              </td>
-              <td>
-                <div className="scenario-bug-cell">
-                  {data.bugUrl ? (
-                    <a
-                      href={data.bugUrl}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="text-link"
-                    >
-                      Abrir bug
-                    </a>
-                  ) : (
-                    <span className="section-subtitle">Nenhum bug registrado</span>
-                  )}
-                  {!isReadOnly && (
-                    <button
-                      type="button"
-                      className="scenario-bug-cell__action"
-                      onClick={() => handleBugLinkChange(scenarioId, data.bugUrl ?? null)}
-                      disabled={isUpdating}
-                    >
-                      {data.bugUrl ? 'Atualizar link' : 'Registrar bug'}
-                    </button>
                   )}
                 </div>
               </td>
