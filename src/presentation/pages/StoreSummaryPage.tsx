@@ -366,12 +366,6 @@ export const StoreSummaryPage = () => {
   };
 
   useEffect(() => {
-    setCustomCategories([]);
-    setNewCategoryName('');
-    setCategoryError(null);
-  }, [storeId]);
-
-  useEffect(() => {
     setSuiteForm(emptySuiteForm);
     setSuiteFormError(null);
     setEditingSuiteId(null);
