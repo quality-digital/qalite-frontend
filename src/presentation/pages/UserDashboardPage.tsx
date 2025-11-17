@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../hooks/useAuth';
@@ -6,12 +6,17 @@ import { Layout } from '../components/Layout';
 import { Button } from '../components/Button';
 import { EmptyState } from '../components/EmptyState';
 import { useOrganizationStores } from '../hooks/useOrganizationStores';
+import { UserAvatar } from '../components/UserAvatar';
+import { SimpleBarChart } from '../components/SimpleBarChart';
+import { storeService } from '../../main/factories/storeServiceFactory';
 
 export const UserDashboardPage = () => {
   const navigate = useNavigate();
   const { user, isInitializing } = useAuth();
   const organizationId = user?.organizationId ?? null;
   const { organization, stores, isLoading, status } = useOrganizationStores(organizationId);
+  const [storeAutomationCounts, setStoreAutomationCounts] = useState<Record<string, number>>({});
+  const [isLoadingAutomationStats, setIsLoadingAutomationStats] = useState(false);
 
   useEffect(() => {
     if (isInitializing) {
@@ -34,6 +39,50 @@ export const UserDashboardPage = () => {
     }
   }, [isInitializing, navigate, user]);
 
+  useEffect(() => {
+    if (stores.length === 0) {
+      setStoreAutomationCounts({});
+      return;
+    }
+
+    let isMounted = true;
+
+    const fetchAutomationStats = async () => {
+      setIsLoadingAutomationStats(true);
+      try {
+        const stats = await Promise.all(
+          stores.map(async (store) => {
+            const scenarios = await storeService.listScenarios(store.id);
+            const automatedCount = scenarios.filter((scenario) =>
+              scenario.automation.toLowerCase().includes('automat'),
+            ).length;
+
+            return [store.id, automatedCount] as const;
+          }),
+        );
+
+        if (isMounted) {
+          setStoreAutomationCounts(Object.fromEntries(stats));
+        }
+      } catch (error) {
+        console.error(error);
+        if (isMounted) {
+          setStoreAutomationCounts({});
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingAutomationStats(false);
+        }
+      }
+    };
+
+    void fetchAutomationStats();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [stores]);
+
   const handleSelectStore = (storeId: string) => {
     navigate(`/stores/${storeId}`);
   };
@@ -51,10 +100,30 @@ export const UserDashboardPage = () => {
   }, [organization?.name, status]);
 
   const isError = status === 'error';
-  const emptyStateTitle = isError ? 'Não foi possível carregar as lojas' : 'Nenhuma loja disponível ainda';
+  const emptyStateTitle = isError
+    ? 'Não foi possível carregar as lojas'
+    : 'Nenhuma loja disponível ainda';
   const emptyStateDescription = isError
     ? 'Atualize a página ou tente novamente mais tarde. Se o problema persistir, contate o administrador.'
     : 'Peça para um administrador adicionar lojas à sua organização ou volte mais tarde.';
+
+  const scenariosPerStoreData = useMemo(
+    () =>
+      stores.map((store) => ({
+        label: store.name,
+        value: store.scenarioCount,
+      })),
+    [stores],
+  );
+
+  const automatedScenariosPerStoreData = useMemo(
+    () =>
+      stores.map((store) => ({
+        label: store.name,
+        value: storeAutomationCounts[store.id] ?? 0,
+      })),
+    [stores, storeAutomationCounts],
+  );
 
   return (
     <Layout>
@@ -105,6 +174,64 @@ export const UserDashboardPage = () => {
                 </div>
               </button>
             ))}
+          </div>
+        )}
+
+        {stores.length > 0 && (
+          <div className="organization-extra">
+            {organization && (
+              <section className="organization-collaborators-card">
+                <div className="organization-collaborators-card__header">
+                  <div>
+                    <h3>Colaboradores da organização</h3>
+                    <p className="section-subtitle">
+                      Visualize rapidamente quem tem acesso a esta organização.
+                    </p>
+                  </div>
+                  <span className="badge">
+                    {organization.members.length} colaborad
+                    {organization.members.length === 1 ? 'or' : 'ores'}
+                  </span>
+                </div>
+                {organization.members.length === 0 ? (
+                  <p className="section-subtitle">
+                    Nenhum colaborador vinculado. Aguarde um administrador convidar novos membros.
+                  </p>
+                ) : (
+                  <ul className="collaborator-list">
+                    {organization.members.map((member) => (
+                      <li key={member.uid} className="collaborator-card">
+                        <UserAvatar
+                          name={member.displayName || member.email}
+                          photoURL={member.photoURL ?? undefined}
+                        />
+                        <div className="collaborator-card__details">
+                          <strong>{member.displayName || member.email}</strong>
+                          <span>{member.email}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            )}
+
+            <section className="organization-charts-grid">
+              <SimpleBarChart
+                title="Cenários por loja"
+                description="Total de cenários cadastrados em cada loja desta organização."
+                data={scenariosPerStoreData}
+                emptyMessage="Cadastre lojas e cenários para visualizar este gráfico."
+              />
+              <SimpleBarChart
+                title="Cenários automatizados"
+                description="Comparativo de cenários marcados como automatizados por loja."
+                data={automatedScenariosPerStoreData}
+                emptyMessage="Ainda não identificamos cenários automatizados nas lojas desta organização."
+                isLoading={isLoadingAutomationStats}
+                variant="info"
+              />
+            </section>
           </div>
         )}
       </section>
