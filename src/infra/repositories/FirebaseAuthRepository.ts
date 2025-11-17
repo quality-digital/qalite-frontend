@@ -5,7 +5,7 @@ import {
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
-  updateProfile as firebaseUpdateProfile
+  updateProfile as firebaseUpdateProfile,
 } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
@@ -17,7 +17,7 @@ import {
   IAuthRepository,
   LoginPayload,
   RegisterPayload,
-  UpdateProfilePayload
+  UpdateProfilePayload,
 } from '../../domain/repositories/AuthRepository';
 import { firebaseAuth, firebaseFirestore, firebaseStorage } from '../firebase/firebaseConfig';
 
@@ -29,7 +29,7 @@ export class FirebaseAuthRepository implements IAuthRepository {
     const { user } = await createUserWithEmailAndPassword(
       firebaseAuth,
       payload.email,
-      payload.password
+      payload.password,
     );
 
     const normalizedDisplayName = payload.displayName.trim();
@@ -46,7 +46,7 @@ export class FirebaseAuthRepository implements IAuthRepository {
       phoneNumber: '',
       photoURL: user.photoURL ?? null,
       organizationId: null,
-      isNew: true
+      isNew: true,
     });
 
     const profile = await this.fetchUserProfile(user.uid);
@@ -57,7 +57,7 @@ export class FirebaseAuthRepository implements IAuthRepository {
     const credential = await signInWithEmailAndPassword(
       firebaseAuth,
       payload.email,
-      payload.password
+      payload.password,
     );
 
     const profile = await this.fetchUserProfile(credential.user.uid);
@@ -109,12 +109,15 @@ export class FirebaseAuthRepository implements IAuthRepository {
 
     const trimmedFirstName = payload.firstName.trim();
     const trimmedLastName = payload.lastName.trim();
-    const trimmedPhoneNumber = payload.phoneNumber.trim();
+    const trimmedPhoneNumber =
+      payload.phoneNumber !== undefined
+        ? payload.phoneNumber.trim()
+        : (currentProfile.phoneNumber ?? user.phoneNumber ?? '').trim();
     const displayName = `${trimmedFirstName} ${trimmedLastName}`.trim();
 
     await firebaseUpdateProfile(user, {
       displayName: displayName || undefined,
-      photoURL: photoURL ?? undefined
+      photoURL: photoURL ?? undefined,
     });
 
     await this.persistUserProfile(user, {
@@ -125,7 +128,7 @@ export class FirebaseAuthRepository implements IAuthRepository {
       phoneNumber: trimmedPhoneNumber,
       photoURL,
       organizationId: currentProfile.organizationId ?? null,
-      isNew: false
+      isNew: false,
     });
 
     const refreshedProfile = await this.fetchUserProfile(user.uid);
@@ -142,17 +145,18 @@ export class FirebaseAuthRepository implements IAuthRepository {
       phoneNumber?: string | null;
       photoURL?: string | null;
       organizationId?: string | null;
-    }
+    },
   ): AuthUser {
     const storedFirstName = (profile.firstName ?? '').trim();
     const storedLastName = (profile.lastName ?? '').trim();
     const storedPhoneNumber = (profile.phoneNumber ?? '').trim();
     const nameFromParts = `${storedFirstName} ${storedLastName}`.trim();
-    const computedDisplayName = (profile.displayName ?? '').trim()
-      || nameFromParts
-      || (user.displayName ?? '')
-      || (user.email ?? '')
-      || '';
+    const computedDisplayName =
+      (profile.displayName ?? '').trim() ||
+      nameFromParts ||
+      (user.displayName ?? '') ||
+      (user.email ?? '') ||
+      '';
     const [computedFirstName, ...computedLastNameParts] = computedDisplayName.split(/\s+/);
     const effectiveFirstName = storedFirstName || computedFirstName || '';
     const effectiveLastName = storedLastName || computedLastNameParts.join(' ');
@@ -168,7 +172,7 @@ export class FirebaseAuthRepository implements IAuthRepository {
       role: profile.role,
       organizationId: profile.organizationId ?? null,
       photoURL: profile.photoURL ?? user.photoURL ?? undefined,
-      accessToken: user.refreshToken
+      accessToken: user.refreshToken,
     };
   }
 
@@ -183,7 +187,7 @@ export class FirebaseAuthRepository implements IAuthRepository {
       photoURL?: string | null;
       organizationId: string | null;
       isNew?: boolean;
-    }
+    },
   ): Promise<void> {
     const userDoc = doc(firebaseFirestore, USERS_COLLECTION, user.uid);
     await setDoc(
@@ -198,15 +202,13 @@ export class FirebaseAuthRepository implements IAuthRepository {
         photoURL: profile.photoURL ?? null,
         organizationId: profile.organizationId,
         ...(profile.isNew ? { createdAt: serverTimestamp() } : {}),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       },
-      { merge: true }
+      { merge: true },
     );
   }
 
-  private async fetchUserProfile(
-    uid: string
-  ): Promise<{
+  private async fetchUserProfile(uid: string): Promise<{
     role: Role;
     displayName?: string | null;
     firstName?: string | null;
@@ -227,7 +229,7 @@ export class FirebaseAuthRepository implements IAuthRepository {
         lastName: (data.lastName as string) ?? '',
         phoneNumber: (data.phoneNumber as string) ?? '',
         photoURL: (data.photoURL as string | null) ?? null,
-        organizationId: (data.organizationId as string | null) ?? null
+        organizationId: (data.organizationId as string | null) ?? null,
       };
     }
 
@@ -238,7 +240,7 @@ export class FirebaseAuthRepository implements IAuthRepository {
       lastName: '',
       phoneNumber: '',
       photoURL: null,
-      organizationId: null
+      organizationId: null,
     };
   }
 
@@ -257,7 +259,7 @@ export class FirebaseAuthRepository implements IAuthRepository {
     const [first, ...rest] = trimmed.split(/\s+/);
     return {
       firstName: first ?? '',
-      lastName: rest.join(' ')
+      lastName: rest.join(' '),
     };
   }
 }

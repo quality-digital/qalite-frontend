@@ -20,8 +20,8 @@ export interface AuthStateListener {
 export interface UpdateProfilePayload {
   firstName: string;
   lastName: string;
-  phoneNumber: string;
   photoFile?: File | null;
+  phoneNumber?: string;
 }
 
 export interface IAuthRepository {

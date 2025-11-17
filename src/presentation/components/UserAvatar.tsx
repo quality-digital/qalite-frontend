@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+
 interface UserAvatarProps {
   name: string;
   photoURL?: string;
@@ -13,6 +15,25 @@ const getInitials = (name: string) => {
 
 export const UserAvatar = ({ name, photoURL, size = 'md', onClick }: UserAvatarProps) => {
   const dimension = size === 'sm' ? '2.5rem' : '3rem';
+  const [hasImageError, setHasImageError] = useState(false);
+  const shouldShowImage = Boolean(photoURL) && !hasImageError;
+
+  useEffect(() => {
+    setHasImageError(false);
+  }, [photoURL]);
+
+  const renderContent = () =>
+    shouldShowImage ? (
+      <img
+        src={photoURL}
+        alt={name}
+        className="avatar-image"
+        loading="lazy"
+        onError={() => setHasImageError(true)}
+      />
+    ) : (
+      <span className="avatar-fallback">{getInitials(name)}</span>
+    );
 
   if (onClick) {
     return (
@@ -23,11 +44,7 @@ export const UserAvatar = ({ name, photoURL, size = 'md', onClick }: UserAvatarP
         style={{ width: dimension, height: dimension }}
         aria-label="Abrir perfil"
       >
-        {photoURL ? (
-          <img src={photoURL} alt={name} className="avatar-image" />
-        ) : (
-          <span className="avatar-fallback">{getInitials(name)}</span>
-        )}
+        {renderContent()}
       </button>
     );
   }
@@ -39,11 +56,7 @@ export const UserAvatar = ({ name, photoURL, size = 'md', onClick }: UserAvatarP
       role="img"
       aria-label={`Avatar de ${name}`}
     >
-      {photoURL ? (
-        <img src={photoURL} alt={name} className="avatar-image" />
-      ) : (
-        <span className="avatar-fallback">{getInitials(name)}</span>
-      )}
+      {renderContent()}
     </div>
   );
 };

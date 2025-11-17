@@ -16,7 +16,6 @@ export const ProfilePage = () => {
   const { user, updateProfile, isLoading } = useAuth();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -24,8 +23,7 @@ export const ProfilePage = () => {
   useEffect(() => {
     setFirstName(user?.firstName ?? '');
     setLastName(user?.lastName ?? '');
-    setPhoneNumber(user?.phoneNumber ?? '');
-  }, [user?.firstName, user?.lastName, user?.phoneNumber]);
+  }, [user?.firstName, user?.lastName]);
 
   useEffect(() => {
     if (!photoFile) {
@@ -71,8 +69,6 @@ export const ProfilePage = () => {
 
     const trimmedFirstName = firstName.trim();
     const trimmedLastName = lastName.trim();
-    const trimmedPhoneNumber = phoneNumber.trim();
-
     if (!trimmedFirstName) {
       setLocalError('Informe seu nome para continuar.');
       return;
@@ -87,7 +83,6 @@ export const ProfilePage = () => {
       await updateProfile({
         firstName: trimmedFirstName,
         lastName: trimmedLastName,
-        phoneNumber: trimmedPhoneNumber,
         photoFile,
       });
       setPhotoFile(null);
@@ -149,14 +144,6 @@ export const ProfilePage = () => {
             value={lastName}
             onChange={(event) => setLastName(event.target.value)}
             required
-          />
-
-          <TextInput
-            id="phoneNumber"
-            label="Telefone"
-            type="tel"
-            value={phoneNumber}
-            onChange={(event) => setPhoneNumber(event.target.value)}
           />
 
           <TextInput
