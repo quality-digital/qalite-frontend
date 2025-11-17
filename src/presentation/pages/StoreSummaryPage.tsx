@@ -1605,6 +1605,7 @@ export const StoreSummaryPage = () => {
                                 variant="secondary"
                                 onClick={() => handleEditSuite(selectedSuitePreview)}
                                 disabled={isSavingSuite}
+                                className="suite-edit"
                               >
                                 Editar suíte
                               </Button>

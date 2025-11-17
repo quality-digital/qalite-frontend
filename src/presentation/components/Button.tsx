@@ -18,12 +18,19 @@ export const Button = ({
   isLoading = false,
   loadingText,
   disabled,
+  className: customClassName,
   ...props
 }: ButtonProps) => {
-  const className = `${BUTTON_VARIANT_CLASS[variant]}${isLoading ? ' button-loading' : ''}`;
+  const buttonClassName = [
+    BUTTON_VARIANT_CLASS[variant],
+    customClassName,
+    isLoading ? 'button-loading' : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <button className={className} disabled={disabled || isLoading} {...props}>
+    <button className={buttonClassName} disabled={disabled || isLoading} {...props}>
       {isLoading && <span className="button-spinner" aria-hidden />}
       <span className="button-label">{isLoading ? (loadingText ?? children) : children}</span>
     </button>

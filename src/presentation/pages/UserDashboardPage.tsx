@@ -173,11 +173,6 @@ export const UserDashboardPage = () => {
                   </div>
                   <span className="badge">{store.scenarioCount} cenários</span>
                 </div>
-                <div className="card-description">
-                  <p>
-                    <strong>Site:</strong> {store.site || 'Não informado'}
-                  </p>
-                </div>
               </button>
             ))}
           </div>

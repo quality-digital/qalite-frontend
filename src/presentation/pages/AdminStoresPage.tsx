@@ -525,18 +525,6 @@ export const AdminStoresPage = () => {
                     </div>
                     <span className="badge">{store.scenarioCount} cenários</span>
                   </div>
-                  <p className="card-description">
-                    <span>
-                      <strong>Site:</strong>{' '}
-                      {store.site ? (
-                        <a href={store.site} className="card-link" target="_blank" rel="noreferrer">
-                          {store.site}
-                        </a>
-                      ) : (
-                        'Não informado'
-                      )}
-                    </span>
-                  </p>
                   <div className="card-link-hint">
                     <span>Abrir loja</span>
                     <span aria-hidden>&rarr;</span>
