@@ -2,6 +2,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 
 import type { Role } from '../../domain/entities/Role';
 import { useAuth } from '../hooks/useAuth';
+import { PageLoader } from '../components/PageLoader';
 
 interface ProtectedRouteProps {
   redirectTo?: string;
@@ -11,7 +12,7 @@ export const ProtectedRoute = ({ redirectTo = '/login' }: ProtectedRouteProps) =
   const { user, isInitializing } = useAuth();
 
   if (isInitializing) {
-    return <div className="route-loading">Carregando acesso...</div>;
+    return <PageLoader message="Carregando acesso..." />;
   }
 
   if (!user) {
@@ -34,7 +35,7 @@ export const RoleProtectedRoute = ({
   const { user, hasRole, isInitializing } = useAuth();
 
   if (isInitializing) {
-    return <div className="route-loading">Carregando acesso...</div>;
+    return <PageLoader message="Carregando acesso..." />;
   }
 
   if (!user) {

@@ -1,12 +1,13 @@
 import { Navigate } from 'react-router-dom';
 
 import { useAuth } from '../hooks/useAuth';
+import { PageLoader } from '../components/PageLoader';
 
 export const HomePage = () => {
   const { user, hasRole, isInitializing } = useAuth();
 
   if (isInitializing) {
-    return <div className="route-loading">Carregando acesso...</div>;
+    return <PageLoader message="Carregando acesso..." />;
   }
 
   if (!user) {

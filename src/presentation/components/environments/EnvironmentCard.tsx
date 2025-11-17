@@ -2,6 +2,7 @@ import type { DragEvent } from 'react';
 
 import type { Environment } from '../../../domain/entities/Environment';
 import type { UserSummary } from '../../../domain/entities/UserSummary';
+import { getReadableUserName, getUserInitials } from '../../utils/userDisplay';
 
 interface EnvironmentCardProps {
   environment: Environment;
@@ -29,17 +30,6 @@ export const EnvironmentCard = ({
   const isLocked = environment.status === 'done';
   const displaySuiteName = suiteName ?? 'Suíte não informada';
   const hasParticipants = participants.length > 0;
-
-  const resolveDisplayName = (participant: UserSummary) =>
-    participant.displayName || participant.email || 'Usuário';
-
-  const resolveInitials = (name: string) =>
-    name
-      .split(' ')
-      .filter(Boolean)
-      .map((part) => part.charAt(0).toUpperCase())
-      .slice(0, 2)
-      .join('') || 'U';
 
   const handleOpen = () => onOpen(environment);
 
@@ -74,12 +64,12 @@ export const EnvironmentCard = ({
 
       <div className="environment-card-avatars" aria-label="Participantes">
         {hasParticipants ? (
-          <ul className="environment-card-participant-list">
+          <ul className="environment-card-participant-list" aria-label="Participantes cadastrados">
             {participants.map((user) => {
-              const readableName = resolveDisplayName(user);
-              const initials = resolveInitials(readableName);
+              const readableName = getReadableUserName(user);
+              const initials = getUserInitials(readableName);
               return (
-                <li key={user.id} className="environment-card-participant">
+                <li key={user.id} className="environment-card-participant" title={readableName}>
                   {user.photoURL ? (
                     <img
                       src={user.photoURL}
@@ -89,12 +79,11 @@ export const EnvironmentCard = ({
                   ) : (
                     <span
                       className="environment-card-avatar environment-card-avatar--initials"
-                      aria-hidden="true"
+                      aria-label={readableName}
                     >
                       {initials}
                     </span>
                   )}
-                  <span className="environment-card-participant-name">{readableName}</span>
                 </li>
               );
             })}
