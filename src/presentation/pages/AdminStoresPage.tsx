@@ -10,7 +10,6 @@ import { useOrganizationBranding } from '../context/OrganizationBrandingContext'
 import { Layout } from '../components/Layout';
 import { Button } from '../components/Button';
 import { TextInput } from '../components/TextInput';
-import { SelectInput } from '../components/SelectInput';
 import { Modal } from '../components/Modal';
 import { TextArea } from '../components/TextArea';
 import { UserAvatar } from '../components/UserAvatar';
@@ -46,7 +45,6 @@ export const AdminStoresPage = () => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>('');
   const [stores, setStores] = useState<Store[]>([]);
-  const [isLoadingOrganizations, setIsLoadingOrganizations] = useState(true);
   const [isLoadingStores, setIsLoadingStores] = useState(false);
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
   const [isOrganizationLocked, setIsOrganizationLocked] = useState(false);
@@ -67,7 +65,6 @@ export const AdminStoresPage = () => {
   useEffect(() => {
     const fetchOrganizations = async () => {
       try {
-        setIsLoadingOrganizations(true);
         const data = await organizationService.list();
         setOrganizations(data);
         const organizationFromParam = searchParams.get('organizationId');
@@ -90,8 +87,6 @@ export const AdminStoresPage = () => {
       } catch (error) {
         console.error(error);
         showToast({ type: 'error', message: 'Não foi possível carregar as organizações.' });
-      } finally {
-        setIsLoadingOrganizations(false);
       }
     };
 
@@ -484,21 +479,6 @@ export const AdminStoresPage = () => {
             </p>
           </div>
           <div className="page-actions">
-            {isOrganizationLocked ? (
-              <strong>{selectedOrganization?.name ?? 'Organização selecionada'}</strong>
-            ) : (
-              <SelectInput
-                id="organization-selector"
-                label="Organização"
-                value={selectedOrganizationId}
-                onChange={(event) => setSelectedOrganizationId(event.target.value)}
-                options={organizations.map((organization) => ({
-                  value: organization.id,
-                  label: organization.name,
-                }))}
-                disabled={isLoadingOrganizations || organizations.length === 0}
-              />
-            )}
             {selectedOrganization && (
               <Button type="button" variant="secondary" onClick={openOrganizationModal}>
                 Gerenciar organização
