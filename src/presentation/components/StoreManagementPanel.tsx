@@ -1,6 +1,11 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { Store, StoreScenario, StoreScenarioInput } from '../../domain/entities/Store';
+import type {
+  Store,
+  StoreCategory,
+  StoreScenario,
+  StoreScenarioInput,
+} from '../../domain/entities/Store';
 import type { StoreExportPayload } from '../../application/services/StoreService';
 import { storeService } from '../../main/factories/storeServiceFactory';
 import { useToast } from '../context/ToastContext';
@@ -55,9 +60,15 @@ export const StoreManagementPanel = ({
   const [editingScenarioId, setEditingScenarioId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [categoryError, setCategoryError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<StoreCategory[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [editingCategoryName, setEditingCategoryName] = useState('');
+  const [updatingCategoryId, setUpdatingCategoryId] = useState<string | null>(null);
+  const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
   const [isScenarioTableCollapsed, setIsScenarioTableCollapsed] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const canUseScenarioForm = canManageScenarios && showScenarioForm !== false;
@@ -72,11 +83,18 @@ export const StoreManagementPanel = ({
     [scenarios],
   );
 
+  const persistedCategoryNames = useMemo(
+    () =>
+      categories
+        .map((category) => category.name.trim())
+        .filter((categoryName) => categoryName.length > 0),
+    [categories],
+  );
+
   const availableCategories = useMemo(() => {
-    const fromScenarios = Array.from(scenarioCategories);
-    const combined = new Set([...fromScenarios, ...customCategories]);
+    const combined = new Set([...persistedCategoryNames, ...scenarioCategories]);
     return Array.from(combined).sort((a, b) => a.localeCompare(b));
-  }, [customCategories, scenarioCategories]);
+  }, [persistedCategoryNames, scenarioCategories]);
 
   const categorySelectOptions = useMemo(() => {
     if (availableCategories.length === 0) {
@@ -156,10 +174,48 @@ export const StoreManagementPanel = ({
   }, [selectedStore, showToast]);
 
   useEffect(() => {
-    setCustomCategories([]);
+    if (!selectedStore) {
+      setCategories([]);
+      setIsLoadingCategories(false);
+      return;
+    }
+
+    let isMounted = true;
+    const fetchCategories = async () => {
+      try {
+        setIsLoadingCategories(true);
+        const data = await storeService.listCategories(selectedStore.id);
+        if (isMounted) {
+          setCategories(data);
+        }
+      } catch (error) {
+        console.error(error);
+        if (isMounted) {
+          showToast({ type: 'error', message: 'Não foi possível carregar as categorias.' });
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingCategories(false);
+        }
+      }
+    };
+
+    void fetchCategories();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedStore, showToast]);
+
+  useEffect(() => {
     setNewCategoryName('');
     setCategoryError(null);
-  }, [selectedStoreId]);
+    setEditingCategoryId(null);
+    setEditingCategoryName('');
+    setUpdatingCategoryId(null);
+    setDeletingCategoryId(null);
+    setIsCreatingCategory(false);
+  }, [selectedStore?.id]);
 
   useEffect(() => {
     if (scenarios.length === 0) {
@@ -298,33 +354,133 @@ export const StoreManagementPanel = ({
       setScenarioForm((previous) => ({ ...previous, [field]: event.target.value }));
     };
 
-  const handleAddCategory = () => {
+  const handleCreateCategory = async () => {
+    if (!selectedStore) {
+      return;
+    }
+
     const trimmedCategory = newCategoryName.trim();
     if (!trimmedCategory) {
       setCategoryError('Informe o nome da nova categoria.');
       return;
     }
 
-    const alreadyExists = availableCategories.some(
-      (category) => category.toLowerCase() === trimmedCategory.toLowerCase(),
-    );
-
-    if (alreadyExists) {
-      setCategoryError('Esta categoria já está disponível.');
+    try {
+      setIsCreatingCategory(true);
+      const created = await storeService.createCategory({
+        storeId: selectedStore.id,
+        name: trimmedCategory,
+      });
+      setCategories((previous) =>
+        [...previous, created].sort((a, b) => a.name.localeCompare(b.name)),
+      );
       setScenarioForm((previous) => ({ ...previous, category: trimmedCategory }));
-      return;
+      setNewCategoryName('');
+      setCategoryError(null);
+      showToast({ type: 'success', message: 'Categoria criada com sucesso.' });
+    } catch (error) {
+      console.error(error);
+      const message =
+        error instanceof Error ? error.message : 'Não foi possível criar a categoria.';
+      setCategoryError(message);
+      showToast({ type: 'error', message });
+    } finally {
+      setIsCreatingCategory(false);
     }
+  };
 
-    setCustomCategories((previous) => [...previous, trimmedCategory]);
-    setScenarioForm((previous) => ({ ...previous, category: trimmedCategory }));
-    setNewCategoryName('');
+  const handleStartEditCategory = (category: StoreCategory) => {
+    setEditingCategoryId(category.id);
+    setEditingCategoryName(category.name);
     setCategoryError(null);
   };
 
-  const handleRemoveCustomCategory = (category: string) => {
-    setCustomCategories((previous) => previous.filter((item) => item !== category));
-    if (scenarioForm.category === category) {
-      setScenarioForm((previous) => ({ ...previous, category: '' }));
+  const handleCancelEditCategory = () => {
+    setEditingCategoryId(null);
+    setEditingCategoryName('');
+  };
+
+  const handleUpdateCategory = async () => {
+    if (!selectedStore || !editingCategoryId) {
+      return;
+    }
+
+    const trimmedName = editingCategoryName.trim();
+    if (!trimmedName) {
+      setCategoryError('Informe o nome da categoria.');
+      return;
+    }
+
+    const previousCategory = categories.find((category) => category.id === editingCategoryId);
+
+    try {
+      setUpdatingCategoryId(editingCategoryId);
+      const updated = await storeService.updateCategory(selectedStore.id, editingCategoryId, {
+        name: trimmedName,
+      });
+      setCategories((previous) =>
+        previous
+          .map((category) => (category.id === updated.id ? updated : category))
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      );
+      if (previousCategory && previousCategory.name !== trimmedName) {
+        setScenarios((previous) =>
+          previous.map((scenario) =>
+            scenario.category === previousCategory.name
+              ? { ...scenario, category: trimmedName }
+              : scenario,
+          ),
+        );
+        setScenarioForm((previous) => ({
+          ...previous,
+          category: previous.category === previousCategory.name ? trimmedName : previous.category,
+        }));
+      }
+      setEditingCategoryId(null);
+      setEditingCategoryName('');
+      setCategoryError(null);
+      showToast({ type: 'success', message: 'Categoria atualizada com sucesso.' });
+    } catch (error) {
+      console.error(error);
+      const message =
+        error instanceof Error ? error.message : 'Não foi possível atualizar a categoria.';
+      setCategoryError(message);
+      showToast({ type: 'error', message });
+    } finally {
+      setUpdatingCategoryId(null);
+    }
+  };
+
+  const handleDeleteCategory = async (category: StoreCategory) => {
+    if (!selectedStore) {
+      return;
+    }
+
+    const confirmation = window.confirm(
+      `Deseja remover a categoria "${category.name}"? Essa ação não pode ser desfeita.`,
+    );
+    if (!confirmation) {
+      return;
+    }
+
+    try {
+      setDeletingCategoryId(category.id);
+      await storeService.deleteCategory(selectedStore.id, category.id);
+      setCategories((previous) => previous.filter((item) => item.id !== category.id));
+      if (scenarioForm.category === category.name) {
+        setScenarioForm((previous) => ({ ...previous, category: '' }));
+      }
+      showToast({ type: 'success', message: 'Categoria removida com sucesso.' });
+    } catch (error) {
+      console.error(error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível remover esta categoria. Verifique se ela está em uso.';
+      setCategoryError(message);
+      showToast({ type: 'error', message });
+    } finally {
+      setDeletingCategoryId(null);
     }
   };
 
@@ -762,45 +918,110 @@ export const StoreManagementPanel = ({
                   <div className="category-manager-header">
                     <p className="field-label">Gerencie as categorias disponíveis</p>
                     <p className="category-manager-description">
-                      As categorias existentes são carregadas automaticamente a partir dos cenários
-                      já cadastrados. Cadastre novas opções para reutilizar no futuro.
+                      Cadastre, edite ou remova categorias para manter a massa organizada. Só é
+                      possível remover categorias que não estejam associadas a cenários.
                     </p>
                   </div>
                   <div className="category-manager-actions">
                     <input
                       type="text"
                       className="field-input"
-                      placeholder="Informe uma nova categoria"
+                      placeholder={
+                        selectedStore ? 'Informe uma nova categoria' : 'Selecione uma loja'
+                      }
                       value={newCategoryName}
                       onChange={(event) => {
                         setNewCategoryName(event.target.value);
                         setCategoryError(null);
                       }}
+                      disabled={!selectedStore}
                     />
-                    <Button type="button" variant="secondary" onClick={handleAddCategory}>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={handleCreateCategory}
+                      isLoading={isCreatingCategory}
+                      loadingText="Salvando..."
+                      disabled={!selectedStore || isLoadingCategories}
+                    >
                       Adicionar categoria
                     </Button>
                   </div>
                   {categoryError && (
                     <p className="form-message form-message--error">{categoryError}</p>
                   )}
-                  {availableCategories.length > 0 ? (
-                    <ul className="category-chip-list">
-                      {availableCategories.map((category) => (
-                        <li key={category} className="category-chip">
-                          <span>{category}</span>
-                          {!scenarioCategories.has(category) && (
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveCustomCategory(category)}
-                              className="category-chip-remove"
-                              aria-label={`Remover categoria ${category}`}
-                            >
-                              &times;
-                            </button>
-                          )}
-                        </li>
-                      ))}
+                  {isLoadingCategories ? (
+                    <p className="category-manager-description">Carregando categorias...</p>
+                  ) : categories.length > 0 ? (
+                    <ul className="category-manager-list">
+                      {categories.map((category) => {
+                        const isEditingCategory = editingCategoryId === category.id;
+                        const isCategoryUsed = scenarioCategories.has(category.name);
+                        return (
+                          <li key={category.id} className="category-manager-item">
+                            {isEditingCategory ? (
+                              <>
+                                <input
+                                  type="text"
+                                  className="field-input"
+                                  value={editingCategoryName}
+                                  onChange={(event) => {
+                                    setEditingCategoryName(event.target.value);
+                                    setCategoryError(null);
+                                  }}
+                                />
+                                <div className="category-manager-item-actions">
+                                  <Button
+                                    type="button"
+                                    onClick={handleUpdateCategory}
+                                    isLoading={updatingCategoryId === category.id}
+                                    loadingText="Salvando..."
+                                  >
+                                    Salvar
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={handleCancelEditCategory}
+                                    disabled={updatingCategoryId === category.id}
+                                  >
+                                    Cancelar
+                                  </Button>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <span className="category-manager-item-name">{category.name}</span>
+                                <div className="category-manager-item-actions">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={() => handleStartEditCategory(category)}
+                                    disabled={deletingCategoryId === category.id}
+                                  >
+                                    Editar
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="secondary"
+                                    onClick={() => handleDeleteCategory(category)}
+                                    disabled={deletingCategoryId === category.id || isCategoryUsed}
+                                    isLoading={deletingCategoryId === category.id}
+                                    loadingText="Removendo..."
+                                    title={
+                                      isCategoryUsed
+                                        ? 'Remova ou atualize os cenários associados antes de excluir.'
+                                        : undefined
+                                    }
+                                  >
+                                    Remover
+                                  </Button>
+                                </div>
+                              </>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                   ) : (
                     <p className="category-manager-empty">Nenhuma categoria cadastrada ainda.</p>

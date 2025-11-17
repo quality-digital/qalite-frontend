@@ -46,3 +46,15 @@ export interface StoreSuiteInput {
   description: string;
   scenarioIds: string[];
 }
+
+export interface StoreCategory {
+  id: string;
+  storeId: string;
+  name: string;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface StoreCategoryInput {
+  name: string;
+}

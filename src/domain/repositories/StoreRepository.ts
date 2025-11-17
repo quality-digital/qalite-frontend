@@ -1,5 +1,7 @@
 import type {
   Store,
+  StoreCategory,
+  StoreCategoryInput,
   StoreScenario,
   StoreScenarioInput,
   StoreSuite,
@@ -30,6 +32,12 @@ export interface CreateStoreSuitePayload extends StoreSuiteInput {
 }
 
 export interface UpdateStoreSuitePayload extends StoreSuiteInput {}
+
+export interface CreateStoreCategoryPayload extends StoreCategoryInput {
+  storeId: string;
+}
+
+export interface UpdateStoreCategoryPayload extends StoreCategoryInput {}
 
 export interface ImportScenariosResult {
   created: number;
@@ -64,4 +72,13 @@ export interface IStoreRepository {
     payload: UpdateStoreSuitePayload,
   ): Promise<StoreSuite>;
   deleteSuite(storeId: string, suiteId: string): Promise<void>;
+
+  listCategories(storeId: string): Promise<StoreCategory[]>;
+  createCategory(payload: CreateStoreCategoryPayload): Promise<StoreCategory>;
+  updateCategory(
+    storeId: string,
+    categoryId: string,
+    payload: UpdateStoreCategoryPayload,
+  ): Promise<StoreCategory>;
+  deleteCategory(storeId: string, categoryId: string): Promise<void>;
 }

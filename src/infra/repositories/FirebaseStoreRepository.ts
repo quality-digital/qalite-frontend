@@ -17,6 +17,8 @@ import {
 
 import type {
   Store,
+  StoreCategory,
+  StoreCategoryInput,
   StoreScenario,
   StoreScenarioInput,
   StoreSuite,
@@ -24,6 +26,7 @@ import type {
 } from '../../domain/entities/Store';
 import type {
   CreateStorePayload,
+  CreateStoreCategoryPayload,
   CreateStoreScenarioPayload,
   CreateStoreSuitePayload,
   IStoreRepository,
@@ -31,12 +34,14 @@ import type {
   UpdateStorePayload,
   UpdateStoreScenarioPayload,
   UpdateStoreSuitePayload,
+  UpdateStoreCategoryPayload,
 } from '../../domain/repositories/StoreRepository';
 import { firebaseFirestore } from '../firebase/firebaseConfig';
 
 const STORES_COLLECTION = 'stores';
 const SCENARIOS_SUBCOLLECTION = 'scenarios';
 const SUITES_SUBCOLLECTION = 'suites';
+const CATEGORIES_SUBCOLLECTION = 'categories';
 
 export class FirebaseStoreRepository implements IStoreRepository {
   private readonly storesCollection = collection(firebaseFirestore, STORES_COLLECTION);
@@ -105,10 +110,15 @@ export class FirebaseStoreRepository implements IStoreRepository {
 
     const scenariosCollection = collection(storeRef, SCENARIOS_SUBCOLLECTION);
     const scenariosSnapshot = await getDocs(scenariosCollection);
+    const categoriesCollection = collection(storeRef, CATEGORIES_SUBCOLLECTION);
+    const categoriesSnapshot = await getDocs(categoriesCollection);
 
     const batch = writeBatch(firebaseFirestore);
     scenariosSnapshot.forEach((scenarioDoc) => {
       batch.delete(scenarioDoc.ref);
+    });
+    categoriesSnapshot.forEach((categoryDoc) => {
+      batch.delete(categoryDoc.ref);
     });
 
     batch.delete(storeRef);
@@ -356,6 +366,119 @@ export class FirebaseStoreRepository implements IStoreRepository {
     await deleteDoc(suiteRef);
   }
 
+  async listCategories(storeId: string): Promise<StoreCategory[]> {
+    const storeRef = doc(firebaseFirestore, STORES_COLLECTION, storeId);
+    const categoriesCollection = collection(storeRef, CATEGORIES_SUBCOLLECTION);
+    const categoriesQuery = query(categoriesCollection, orderBy('searchName'));
+    const snapshot = await getDocs(categoriesQuery);
+
+    return snapshot.docs.map((docSnapshot) =>
+      this.mapCategory(storeId, docSnapshot.id, docSnapshot.data()),
+    );
+  }
+
+  async createCategory(payload: CreateStoreCategoryPayload): Promise<StoreCategory> {
+    const storeRef = doc(firebaseFirestore, STORES_COLLECTION, payload.storeId);
+    const storeSnapshot = await getDoc(storeRef);
+
+    if (!storeSnapshot.exists()) {
+      throw new Error('Loja não encontrada.');
+    }
+
+    const { name } = this.normalizeCategoryInput(payload);
+    if (!name) {
+      throw new Error('Informe o nome da categoria.');
+    }
+    const searchName = name.toLowerCase();
+    const categoriesCollection = collection(storeRef, CATEGORIES_SUBCOLLECTION);
+
+    const existingQuery = query(categoriesCollection, where('searchName', '==', searchName));
+    const existingSnapshot = await getDocs(existingQuery);
+
+    if (!existingSnapshot.empty) {
+      throw new Error('Já existe uma categoria com este nome.');
+    }
+
+    const categoryRef = await addDoc(categoriesCollection, {
+      name,
+      searchName,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    const categorySnapshot = await getDoc(categoryRef);
+    return this.mapCategory(payload.storeId, categorySnapshot.id, categorySnapshot.data() ?? {});
+  }
+
+  async updateCategory(
+    storeId: string,
+    categoryId: string,
+    payload: UpdateStoreCategoryPayload,
+  ): Promise<StoreCategory> {
+    const storeRef = doc(firebaseFirestore, STORES_COLLECTION, storeId);
+    const categoryRef = doc(storeRef, CATEGORIES_SUBCOLLECTION, categoryId);
+    const categorySnapshot = await getDoc(categoryRef);
+
+    if (!categorySnapshot.exists()) {
+      throw new Error('Categoria não encontrada.');
+    }
+
+    const previousName = ((categorySnapshot.data()?.name as string) ?? '').trim();
+    const { name } = this.normalizeCategoryInput(payload);
+    if (!name) {
+      throw new Error('Informe o nome da categoria.');
+    }
+    const searchName = name.toLowerCase();
+
+    const categoriesCollection = collection(storeRef, CATEGORIES_SUBCOLLECTION);
+    const existingQuery = query(categoriesCollection, where('searchName', '==', searchName));
+    const existingSnapshot = await getDocs(existingQuery);
+    const duplicated = existingSnapshot.docs.some((docSnapshot) => docSnapshot.id !== categoryId);
+
+    if (duplicated) {
+      throw new Error('Já existe uma categoria com este nome.');
+    }
+
+    await updateDoc(categoryRef, {
+      name,
+      searchName,
+      updatedAt: serverTimestamp(),
+    });
+
+    if (previousName && previousName !== name) {
+      await this.updateScenarioCategories(storeId, previousName, name);
+    }
+
+    const updatedSnapshot = await getDoc(categoryRef);
+    return this.mapCategory(storeId, updatedSnapshot.id, updatedSnapshot.data() ?? {});
+  }
+
+  async deleteCategory(storeId: string, categoryId: string): Promise<void> {
+    const storeRef = doc(firebaseFirestore, STORES_COLLECTION, storeId);
+    const categoryRef = doc(storeRef, CATEGORIES_SUBCOLLECTION, categoryId);
+    const categorySnapshot = await getDoc(categoryRef);
+
+    if (!categorySnapshot.exists()) {
+      throw new Error('Categoria não encontrada.');
+    }
+
+    const categoryName = ((categorySnapshot.data()?.name as string) ?? '').trim();
+
+    if (categoryName) {
+      const scenariosCollection = collection(storeRef, SCENARIOS_SUBCOLLECTION);
+      const scenariosQuery = query(scenariosCollection, where('category', '==', categoryName));
+      const scenariosSnapshot = await getDocs(scenariosQuery);
+
+      if (!scenariosSnapshot.empty) {
+        throw new Error(
+          'Não é possível remover uma categoria associada a cenários. Atualize ou remova os cenários primeiro.',
+        );
+      }
+    }
+
+    await deleteDoc(categoryRef);
+  }
+
   private normalizeScenarioInput(input: StoreScenarioInput): StoreScenarioInput {
     return {
       title: input.title.trim(),
@@ -419,6 +542,47 @@ export class FirebaseStoreRepository implements IStoreRepository {
       createdAt: this.timestampToDate(data.createdAt),
       updatedAt: this.timestampToDate(data.updatedAt),
     };
+  }
+
+  private mapCategory(storeId: string, id: string, data: Record<string, unknown>): StoreCategory {
+    return {
+      id,
+      storeId,
+      name: ((data.name as string) ?? '').trim(),
+      createdAt: this.timestampToDate(data.createdAt),
+      updatedAt: this.timestampToDate(data.updatedAt),
+    };
+  }
+
+  private normalizeCategoryInput(input: StoreCategoryInput): StoreCategoryInput {
+    return {
+      name: input.name.trim(),
+    };
+  }
+
+  private async updateScenarioCategories(
+    storeId: string,
+    previousName: string,
+    newName: string,
+  ): Promise<void> {
+    const storeRef = doc(firebaseFirestore, STORES_COLLECTION, storeId);
+    const scenariosCollection = collection(storeRef, SCENARIOS_SUBCOLLECTION);
+    const scenariosQuery = query(scenariosCollection, where('category', '==', previousName));
+    const snapshot = await getDocs(scenariosQuery);
+
+    if (snapshot.empty) {
+      return;
+    }
+
+    const batch = writeBatch(firebaseFirestore);
+    snapshot.forEach((docSnapshot) => {
+      batch.update(docSnapshot.ref, {
+        category: newName,
+        updatedAt: serverTimestamp(),
+      });
+    });
+
+    await batch.commit();
   }
 
   private timestampToDate(value: unknown): Date | null {

@@ -1,5 +1,7 @@
 import type {
   Store,
+  StoreCategory,
+  StoreCategoryInput,
   StoreScenario,
   StoreScenarioInput,
   StoreSuite,
@@ -18,6 +20,7 @@ import { DeleteStoreScenario } from '../../domain/usecases/DeleteStoreScenario';
 import { DeleteStoreSuite } from '../../domain/usecases/DeleteStoreSuite';
 import { GetStoreById } from '../../domain/usecases/GetStoreById';
 import { ListStoreScenarios } from '../../domain/usecases/ListStoreScenarios';
+import { ListStoreCategories } from '../../domain/usecases/ListStoreCategories';
 import { ListStoreSuites } from '../../domain/usecases/ListStoreSuites';
 import { ListStoresByOrganization } from '../../domain/usecases/ListStoresByOrganization';
 import { MergeStoreScenarios } from '../../domain/usecases/MergeStoreScenarios';
@@ -25,6 +28,9 @@ import { ReplaceStoreScenarios } from '../../domain/usecases/ReplaceStoreScenari
 import { UpdateStore } from '../../domain/usecases/UpdateStore';
 import { UpdateStoreScenario } from '../../domain/usecases/UpdateStoreScenario';
 import { UpdateStoreSuite } from '../../domain/usecases/UpdateStoreSuite';
+import { CreateStoreCategory } from '../../domain/usecases/CreateStoreCategory';
+import { UpdateStoreCategory } from '../../domain/usecases/UpdateStoreCategory';
+import { DeleteStoreCategory } from '../../domain/usecases/DeleteStoreCategory';
 
 export interface StoreExportPayload {
   store: {
@@ -55,6 +61,10 @@ export class StoreService {
   private readonly createSuiteUseCase: CreateStoreSuite;
   private readonly updateSuiteUseCase: UpdateStoreSuite;
   private readonly deleteSuiteUseCase: DeleteStoreSuite;
+  private readonly listCategoriesUseCase: ListStoreCategories;
+  private readonly createCategoryUseCase: CreateStoreCategory;
+  private readonly updateCategoryUseCase: UpdateStoreCategory;
+  private readonly deleteCategoryUseCase: DeleteStoreCategory;
 
   constructor(repository: IStoreRepository) {
     this.listStoresByOrganization = new ListStoresByOrganization(repository);
@@ -73,6 +83,10 @@ export class StoreService {
     this.createSuiteUseCase = new CreateStoreSuite(repository);
     this.updateSuiteUseCase = new UpdateStoreSuite(repository);
     this.deleteSuiteUseCase = new DeleteStoreSuite(repository);
+    this.listCategoriesUseCase = new ListStoreCategories(repository);
+    this.createCategoryUseCase = new CreateStoreCategory(repository);
+    this.updateCategoryUseCase = new UpdateStoreCategory(repository);
+    this.deleteCategoryUseCase = new DeleteStoreCategory(repository);
   }
 
   listByOrganization(organizationId: string): Promise<Store[]> {
@@ -129,6 +143,26 @@ export class StoreService {
 
   deleteSuite(storeId: string, suiteId: string): Promise<void> {
     return this.deleteSuiteUseCase.execute(storeId, suiteId);
+  }
+
+  listCategories(storeId: string): Promise<StoreCategory[]> {
+    return this.listCategoriesUseCase.execute(storeId);
+  }
+
+  createCategory(payload: { storeId: string } & StoreCategoryInput): Promise<StoreCategory> {
+    return this.createCategoryUseCase.execute(payload);
+  }
+
+  updateCategory(
+    storeId: string,
+    categoryId: string,
+    payload: StoreCategoryInput,
+  ): Promise<StoreCategory> {
+    return this.updateCategoryUseCase.execute(storeId, categoryId, payload);
+  }
+
+  deleteCategory(storeId: string, categoryId: string): Promise<void> {
+    return this.deleteCategoryUseCase.execute(storeId, categoryId);
   }
 
   async exportStore(storeId: string): Promise<StoreExportPayload> {
