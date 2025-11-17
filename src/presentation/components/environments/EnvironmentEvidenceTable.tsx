@@ -16,6 +16,8 @@ interface EnvironmentEvidenceTableProps {
   environment: Environment;
   isLocked?: boolean;
   readOnly?: boolean;
+  onRegisterBug?: (scenarioId: string) => void;
+  bugCountByScenario?: Record<string, number>;
 }
 
 const STATUS_OPTIONS: { value: EnvironmentScenarioStatus; label: string }[] = [
@@ -35,6 +37,8 @@ export const EnvironmentEvidenceTable = ({
   environment,
   isLocked,
   readOnly,
+  onRegisterBug,
+  bugCountByScenario,
 }: EnvironmentEvidenceTableProps) => {
   const { isUpdating, handleEvidenceUpload, changeScenarioStatus } = useScenarioEvidence(
     environment.id,
@@ -132,6 +136,7 @@ export const EnvironmentEvidenceTable = ({
             <th>Status Mobile</th>
             <th>Status Desktop</th>
             <th>Evidência</th>
+            <th>Bug</th>
           </tr>
         </thead>
         <tbody>
@@ -177,7 +182,12 @@ export const EnvironmentEvidenceTable = ({
               <td>
                 <div className="scenario-evidence-cell">
                   {data.evidenciaArquivoUrl ? (
-                    <a href={data.evidenciaArquivoUrl} target="_blank" rel="noreferrer">
+                    <a
+                      href={data.evidenciaArquivoUrl}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="text-link"
+                    >
                       Abrir evidência
                     </a>
                   ) : (
@@ -192,6 +202,32 @@ export const EnvironmentEvidenceTable = ({
                       />
                       <span>Enviar arquivo</span>
                     </label>
+                  )}
+                </div>
+              </td>
+              <td>
+                <div className="scenario-bug-cell">
+                  <span className="scenario-bug-cell__label">
+                    {(() => {
+                      const count = bugCountByScenario?.[scenarioId] ?? 0;
+                      if (count === 0) {
+                        return 'Nenhum bug registrado';
+                      }
+                      if (count === 1) {
+                        return '1 bug registrado';
+                      }
+                      return `${count} bugs registrados`;
+                    })()}
+                  </span>
+                  {!isReadOnly && (
+                    <button
+                      type="button"
+                      className="scenario-bug-cell__action"
+                      onClick={() => onRegisterBug?.(scenarioId)}
+                      disabled={isUpdating || !onRegisterBug}
+                    >
+                      Registrar bug
+                    </button>
                   )}
                 </div>
               </td>
