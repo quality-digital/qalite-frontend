@@ -33,20 +33,8 @@ const normalizeParticipants = (
       id,
       name: displayName,
       email: profile?.email ?? 'Não informado',
-      photoURL: profile?.photoURL ?? null,
     };
   });
-};
-
-const getInitials = (name: string) => {
-  const initials = name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join('');
-
-  return initials || name.slice(0, 2).toUpperCase();
 };
 
 export class BrowserEnvironmentExporter implements EnvironmentExporter {
@@ -86,13 +74,6 @@ export class BrowserEnvironmentExporter implements EnvironmentExporter {
             .map(
               (participant) => `
         <tr>
-          <td>
-            ${
-              participant.photoURL
-                ? `<img src="${participant.photoURL}" alt="Foto de ${participant.name}" class="participant-avatar" />`
-                : `<span class="participant-avatar participant-avatar--fallback">${getInitials(participant.name)}</span>`
-            }
-          </td>
           <td>${participant.name}</td>
           <td>${participant.email}</td>
         </tr>
@@ -101,7 +82,7 @@ export class BrowserEnvironmentExporter implements EnvironmentExporter {
             .join('')
         : `
         <tr>
-          <td colspan="3">Nenhum participante registrado.</td>
+          <td colspan="2">Nenhum participante registrado.</td>
         </tr>
       `;
 
@@ -134,8 +115,6 @@ export class BrowserEnvironmentExporter implements EnvironmentExporter {
           h1 { margin-bottom: 0; }
           table { width: 100%; border-collapse: collapse; margin-top: 16px; }
           th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; }
-          .participants-table .participant-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; display: inline-flex; align-items: center; justify-content: center; background: #e5e7eb; color: #374151; font-weight: 600; }
-          .participants-table .participant-avatar--fallback { font-size: 14px; }
         </style>
       </head>
       <body>
@@ -149,7 +128,6 @@ export class BrowserEnvironmentExporter implements EnvironmentExporter {
         <table class="participants-table">
           <thead>
             <tr>
-              <th>Foto</th>
               <th>Nome</th>
               <th>Email</th>
             </tr>
@@ -229,11 +207,8 @@ export class BrowserEnvironmentExporter implements EnvironmentExporter {
     const urls = (environment.urls ?? []).map((url) => `  - ${url}`).join('\n');
     const participants = normalizedParticipants
       .map((participant) => {
-        const photo = participant.photoURL
-          ? `![Foto de ${participant.name}](${participant.photoURL}) `
-          : '';
         const email = participant.email !== 'Não informado' ? ` (${participant.email})` : '';
-        return `- ${photo}**${participant.name}**${email} · ID: ${participant.id}`;
+        return `- **${participant.name}**${email} · ID: ${participant.id}`;
       })
       .join('\n');
 
