@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 
 interface AuthLayoutProps {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   children: ReactNode;
   footer?: ReactNode;
   hideHeader?: boolean;
@@ -13,7 +13,7 @@ export const AuthLayout = ({
   subtitle,
   children,
   footer,
-  hideHeader = false
+  hideHeader = false,
 }: AuthLayoutProps) => (
   <div className="auth-page">
     {!hideHeader && (
@@ -25,7 +25,7 @@ export const AuthLayout = ({
       <section className="auth-page__panel">
         <div className="auth-page__panel-header">
           <h2>{title}</h2>
-          <p>{subtitle}</p>
+          {subtitle && <p>{subtitle}</p>}
         </div>
         <div className="auth-page__panel-content">{children}</div>
         {footer && <div className="auth-page__panel-footer">{footer}</div>}

@@ -55,7 +55,6 @@ export const RegisterPage = () => {
   return (
     <AuthLayout
       title="Crie sua conta"
-      subtitle="Escolha um nome, defina uma senha forte e personalize sua experiência."
       hideHeader
       footer={
         <div className="auth-links">

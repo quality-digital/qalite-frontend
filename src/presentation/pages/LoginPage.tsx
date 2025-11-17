@@ -44,7 +44,6 @@ export const LoginPage = () => {
   return (
     <AuthLayout
       title="Entre na sua conta"
-      subtitle="Gerencie dashboards e mantenha seu time sincronizado com segurança."
       hideHeader
       footer={
         <div className="auth-links">

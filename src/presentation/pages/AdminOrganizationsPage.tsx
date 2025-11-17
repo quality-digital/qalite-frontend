@@ -7,18 +7,15 @@ import { useToast } from '../context/ToastContext';
 import { Layout } from '../components/Layout';
 import { Button } from '../components/Button';
 import { TextInput } from '../components/TextInput';
-import { TextArea } from '../components/TextArea';
 import { Modal } from '../components/Modal';
 
 interface OrganizationFormState {
   name: string;
-  description: string;
   logoFile: File | null;
 }
 
 const initialOrganizationForm: OrganizationFormState = {
   name: '',
-  description: '',
   logoFile: null,
 };
 
@@ -79,14 +76,12 @@ export const AdminOrganizationsPage = () => {
       return;
     }
 
-    const trimmedDescription = organizationForm.description.trim();
-
     try {
       setIsSavingOrganization(true);
 
       const created = await organizationService.create({
         name: trimmedName,
-        description: trimmedDescription,
+        description: '',
         logoFile: organizationForm.logoFile,
       });
       setOrganizations((previous) => [...previous, created]);
@@ -150,10 +145,6 @@ export const AdminOrganizationsPage = () => {
                 <div className="organization-card-header">
                   <div>
                     <h2 className="card-title">{organization.name}</h2>
-                    <p className="card-subtitle">
-                      {organization.description ||
-                        'Organização sem descrição cadastrada até o momento.'}
-                    </p>
                   </div>
                 </div>
                 <div className="organization-card-footer">
@@ -172,12 +163,7 @@ export const AdminOrganizationsPage = () => {
         )}
       </section>
 
-      <Modal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        title="Nova organização"
-        description="Cadastre uma nova organização para liberar o acesso ao QaLite."
-      >
+      <Modal isOpen={isModalOpen} onClose={closeModal} title="Nova organização">
         {formError && <p className="form-message form-message--error">{formError}</p>}
         <form className="form-grid" onSubmit={handleOrganizationSubmit}>
           <TextInput
@@ -189,15 +175,6 @@ export const AdminOrganizationsPage = () => {
             }
             placeholder="Ex.: Squad de Onboarding"
             required
-          />
-          <TextArea
-            id="organization-description"
-            label="Descrição"
-            value={organizationForm.description}
-            onChange={(event) =>
-              setOrganizationForm((previous) => ({ ...previous, description: event.target.value }))
-            }
-            placeholder="Resuma o objetivo principal desta organização"
           />
           <label className="upload-label" htmlFor="organization-logo">
             <span>Logo da organização</span>

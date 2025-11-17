@@ -31,7 +31,7 @@ export const ForgotPasswordPage = () => {
   return (
     <AuthLayout
       title="Recupere seu acesso"
-      subtitle="Informe o e-mail cadastrado para receber um link seguro de redefinição."
+      hideHeader
       footer={
         <div className="auth-links">
           <span>

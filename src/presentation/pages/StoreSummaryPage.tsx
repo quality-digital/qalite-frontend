@@ -967,10 +967,6 @@ export const StoreSummaryPage = () => {
                 <div className="scenario-table-header">
                   <div>
                     <h3 className="section-subtitle">Massa de cenários e suítes de testes</h3>
-                    <p className="scenario-table-description">
-                      Monte agrupamentos customizados a partir dos cenários cadastrados e navegue
-                      entre as visualizações.
-                    </p>
                   </div>
                   {viewMode === 'scenarios' && scenarios.length > 0 && (
                     <button
@@ -1242,10 +1238,6 @@ export const StoreSummaryPage = () => {
                                       ? 'Editar suíte de testes'
                                       : 'Nova suíte de testes'}
                                   </h3>
-                                  <p className="suite-form-description">
-                                    Escolha quais cenários farão parte do grupo e utilize a seção de
-                                    suítes cadastradas para validar a massa antes de salvar.
-                                  </p>
                                 </div>
                               </div>
                               {suiteFormError && (
@@ -1270,11 +1262,11 @@ export const StoreSummaryPage = () => {
                               <div className="suite-scenario-selector">
                                 <div className="suite-scenario-selector-header">
                                   <p className="field-label">Seleção de cenários</p>
-                                  <p className="suite-scenario-selector-description">
-                                    {scenarios.length === 0
-                                      ? 'Cadastre cenários na seção acima para começar a criar suítes.'
-                                      : 'Marque abaixo os cenários que deverão compor esta suíte.'}
-                                  </p>
+                                  {scenarios.length === 0 && (
+                                    <p className="suite-scenario-selector-description">
+                                      Cadastre cenários na seção acima para começar a criar suítes.
+                                    </p>
+                                  )}
                                 </div>
                                 <p className="suite-selection-summary">{suiteSelectionSummary}</p>
                                 {scenarios.length === 0 ? (
@@ -1425,7 +1417,6 @@ export const StoreSummaryPage = () => {
         isOpen={isStoreSettingsOpen}
         onClose={closeStoreSettings}
         title="Configurações da loja"
-        description="Atualize o nome e o site apresentados para todos do time."
       >
         {storeSettingsError && (
           <p className="form-message form-message--error">{storeSettingsError}</p>

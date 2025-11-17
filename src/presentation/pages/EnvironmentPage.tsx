@@ -42,6 +42,7 @@ export const EnvironmentPage = () => {
   const isLocked = environment?.status === 'done';
   const isScenarioLocked = environment?.status !== 'in_progress' || !hasEnteredEnvironment;
   const isInteractionLocked = !hasEnteredEnvironment || Boolean(isLocked);
+  const canCopyPublicLink = hasEnteredEnvironment;
 
   const { presentUsers, isCurrentUserPresent, joinEnvironment } = usePresentUsers({
     environmentId: environment?.id ?? null,
@@ -288,13 +289,6 @@ export const EnvironmentPage = () => {
           </div>
         </div>
 
-        {!hasEnteredEnvironment && (
-          <p>
-            Você pode visualizar os dados do ambiente sem entrar. Entre no ambiente apenas se
-            precisar interagir com as funcionalidades.
-          </p>
-        )}
-
         <div className="environment-summary-grid">
           <div className="summary-card summary-card--environment">
             <h3>Resumo do ambiente</h3>
@@ -413,7 +407,7 @@ export const EnvironmentPage = () => {
                 type="button"
                 variant="secondary"
                 onClick={() => handleCopyLink(publicLink)}
-                disabled={isInteractionLocked}
+                disabled={!canCopyPublicLink}
               >
                 Copiar link público
               </Button>

@@ -11,7 +11,6 @@ import { Layout } from '../components/Layout';
 import { Button } from '../components/Button';
 import { TextInput } from '../components/TextInput';
 import { Modal } from '../components/Modal';
-import { TextArea } from '../components/TextArea';
 import { UserAvatar } from '../components/UserAvatar';
 import { SimpleBarChart } from '../components/SimpleBarChart';
 
@@ -22,7 +21,6 @@ interface StoreForm {
 
 interface OrganizationFormState {
   name: string;
-  description: string;
   logoFile: File | null;
 }
 
@@ -33,7 +31,6 @@ const initialStoreForm: StoreForm = {
 
 const initialOrganizationForm: OrganizationFormState = {
   name: '',
-  description: '',
   logoFile: null,
 };
 
@@ -215,7 +212,6 @@ export const AdminStoresPage = () => {
 
     setOrganizationForm({
       name: selectedOrganization.name,
-      description: selectedOrganization.description,
       logoFile: null,
     });
     setOrganizationError(null);
@@ -286,8 +282,6 @@ export const AdminStoresPage = () => {
     }
 
     const trimmedName = organizationForm.name.trim();
-    const trimmedDescription = organizationForm.description.trim();
-
     if (!trimmedName) {
       setOrganizationError('Informe um nome para a organização.');
       return;
@@ -297,7 +291,7 @@ export const AdminStoresPage = () => {
       setIsSavingOrganization(true);
       const updated = await organizationService.update(selectedOrganization.id, {
         name: trimmedName,
-        description: trimmedDescription,
+        description: (selectedOrganization.description ?? '').trim(),
         logoFile: organizationForm.logoFile,
       });
 
@@ -644,7 +638,6 @@ export const AdminStoresPage = () => {
           isOpen={isOrganizationModalOpen}
           onClose={closeOrganizationModal}
           title={`Gerenciar ${selectedOrganization.name}`}
-          description="Atualize as informações e gerencie os membros desta organização."
         >
           {organizationError && (
             <p className="form-message form-message--error">{organizationError}</p>
@@ -660,18 +653,6 @@ export const AdminStoresPage = () => {
               }
               placeholder="Ex.: Squad de Onboarding"
               required
-            />
-            <TextArea
-              id="organization-description"
-              label="Descrição"
-              value={organizationForm.description}
-              onChange={(event) =>
-                setOrganizationForm((previous) => ({
-                  ...previous,
-                  description: event.target.value,
-                }))
-              }
-              placeholder="Resuma o objetivo principal desta organização"
             />
             <label className="upload-label" htmlFor="organization-update-logo">
               <span>Logo da organização</span>
