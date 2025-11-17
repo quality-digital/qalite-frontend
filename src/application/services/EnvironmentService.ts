@@ -1,6 +1,7 @@
 import type {
   CreateEnvironmentInput,
   Environment,
+  EnvironmentScenario,
   EnvironmentScenarioStatus,
   EnvironmentStatus,
   EnvironmentTimeTracking,
@@ -102,6 +103,25 @@ export class EnvironmentService {
       status: targetStatus,
       timeTracking: nextTimeTracking,
     };
+
+    if (targetStatus === 'in_progress') {
+      const scenariosEntries = Object.entries(environment.scenarios ?? {});
+
+      if (scenariosEntries.length > 0) {
+        const scenarios = scenariosEntries.reduce<Record<string, EnvironmentScenario>>(
+          (acc, [scenarioId, scenario]) => {
+            acc[scenarioId] = {
+              ...scenario,
+              status: 'em_andamento',
+            };
+            return acc;
+          },
+          {},
+        );
+
+        payload.scenarios = scenarios;
+      }
+    }
 
     if (targetStatus === 'done') {
       const uniqueParticipants = Array.from(

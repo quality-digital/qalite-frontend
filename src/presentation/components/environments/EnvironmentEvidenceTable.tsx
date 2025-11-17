@@ -31,10 +31,21 @@ export const EnvironmentEvidenceTable = ({
     environment.id,
   );
   const [scenarioSort, setScenarioSort] = useState<ScenarioSortConfig | null>(null);
-  const scenarioEntries = useMemo(
-    () => Object.entries(environment.scenarios ?? {}),
-    [environment.scenarios],
-  );
+  const scenarioEntries = useMemo(() => {
+    const entries = Object.entries(environment.scenarios ?? {});
+
+    return entries.sort(([firstId, first], [secondId, second]) => {
+      const firstTitle = first.titulo?.trim() ?? '';
+      const secondTitle = second.titulo?.trim() ?? '';
+      const diff = firstTitle.localeCompare(secondTitle, 'pt-BR', { sensitivity: 'base' });
+
+      if (diff !== 0) {
+        return diff;
+      }
+
+      return firstId.localeCompare(secondId, 'pt-BR', { sensitivity: 'base' });
+    });
+  }, [environment.scenarios]);
   const orderedScenarioEntries = useMemo(() => {
     if (!scenarioSort) {
       return scenarioEntries;
