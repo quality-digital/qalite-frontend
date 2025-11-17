@@ -20,6 +20,7 @@ import { TextInput } from '../components/TextInput';
 import { TextArea } from '../components/TextArea';
 import { SelectInput } from '../components/SelectInput';
 import { Modal } from '../components/Modal';
+import { PageLoader } from '../components/PageLoader';
 import {
   AUTOMATION_OPTIONS,
   CRITICALITY_OPTIONS,
@@ -107,6 +108,8 @@ export const StoreSummaryPage = () => {
     selectedSuiteScenarioCount === 0
       ? 'Nenhum cenário selecionado ainda.'
       : `${selectedSuiteScenarioCount} cenário${selectedSuiteScenarioCount === 1 ? '' : 's'} selecionado${selectedSuiteScenarioCount === 1 ? '' : 's'}.`;
+
+  const isPreparingStoreView = isLoadingStore || isLoadingScenarios || isLoadingSuites;
 
   const canManageScenarios = Boolean(user);
   const canManageStoreSettings = user?.role === 'admin';
@@ -753,6 +756,16 @@ export const StoreSummaryPage = () => {
       setIsSavingSuite(false);
     }
   };
+
+  if (isPreparingStoreView) {
+    return (
+      <Layout>
+        <section className="page-container">
+          <PageLoader message="Carregando loja..." />
+        </section>
+      </Layout>
+    );
+  }
 
   return (
     <>
