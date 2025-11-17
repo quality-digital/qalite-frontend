@@ -573,6 +573,17 @@ a.text-link:hover {
   gap: 0.5rem;
 }
 
+.card-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.card-link:hover,
+.card-link:focus-visible {
+  text-decoration: underline;
+}
+
 .card-link-hint {
   display: flex;
   align-items: center;
@@ -703,7 +714,7 @@ a.text-link:hover {
 
 .collaborator-card {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
@@ -711,22 +722,22 @@ a.text-link:hover {
   border-radius: 1.25rem;
   background: var(--color-surface-alt);
   box-shadow: var(--shadow-sm);
-  min-height: 150px;
-  text-align: center;
+  min-height: 80px;
+  text-align: left;
 }
 
 .collaborator-card__details {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  font-size: 0.9rem;
-  align-items: center;
+  font-size: 0.95rem;
+  align-items: flex-start;
 }
 
 .collaborator-card__details strong {
   color: var(--color-text-primary);
   font-size: 1rem;
-  text-align: center;
+  text-align: left;
 }
 
 .collaborator-card__details span {

@@ -527,7 +527,14 @@ export const AdminStoresPage = () => {
                   </div>
                   <p className="card-description">
                     <span>
-                      <strong>Site:</strong> {store.site || 'Não informado'}
+                      <strong>Site:</strong>{' '}
+                      {store.site ? (
+                        <a href={store.site} className="card-link" target="_blank" rel="noreferrer">
+                          {store.site}
+                        </a>
+                      ) : (
+                        'Não informado'
+                      )}
                     </span>
                   </p>
                   <div className="card-link-hint">
