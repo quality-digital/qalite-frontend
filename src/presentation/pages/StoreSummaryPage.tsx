@@ -28,7 +28,12 @@ import {
   getCriticalityClassName,
 } from '../constants/scenarioOptions';
 import { EnvironmentKanban } from '../components/environments/EnvironmentKanban';
-import { compareScenarioPriority, sortScenarioList } from '../utils/scenarioSorting';
+import { ScenarioColumnSortControl } from '../components/ScenarioColumnSortControl';
+import {
+  createScenarioSortComparator,
+  sortScenarioList,
+  type ScenarioSortConfig,
+} from '../utils/scenarioSorting';
 
 const emptyScenarioForm: StoreScenarioInput = {
   title: '',
@@ -99,7 +104,7 @@ export const StoreSummaryPage = () => {
   const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
   const [isCategoryListCollapsed, setIsCategoryListCollapsed] = useState(true);
   const [isScenarioTableCollapsed, setIsScenarioTableCollapsed] = useState(false);
-  const [isScenarioSortEnabled, setIsScenarioSortEnabled] = useState(false);
+  const [scenarioSort, setScenarioSort] = useState<ScenarioSortConfig | null>(null);
   const [suiteForm, setSuiteForm] = useState<StoreSuiteInput>(emptySuiteForm);
   const [suiteFormError, setSuiteFormError] = useState<string | null>(null);
   const [editingSuiteId, setEditingSuiteId] = useState<string | null>(null);
@@ -108,9 +113,9 @@ export const StoreSummaryPage = () => {
   const [scenarioFilters, setScenarioFilters] = useState<ScenarioFilters>(emptyScenarioFilters);
   const [suiteScenarioFilters, setSuiteScenarioFilters] =
     useState<ScenarioFilters>(emptyScenarioFilters);
-  const [isSuiteScenarioSortEnabled, setIsSuiteScenarioSortEnabled] = useState(false);
+  const [suiteScenarioSort, setSuiteScenarioSort] = useState<ScenarioSortConfig | null>(null);
   const [selectedSuitePreviewId, setSelectedSuitePreviewId] = useState<string | null>(null);
-  const [isSuitePreviewSortEnabled, setIsSuitePreviewSortEnabled] = useState(false);
+  const [suitePreviewSort, setSuitePreviewSort] = useState<ScenarioSortConfig | null>(null);
   const [isViewingSuitesOnly, setIsViewingSuitesOnly] = useState(false);
   const suiteListRef = useRef<HTMLDivElement | null>(null);
   const [isStoreSettingsOpen, setIsStoreSettingsOpen] = useState(false);
@@ -206,8 +211,8 @@ export const StoreSummaryPage = () => {
     [scenarioFilters, scenarios],
   );
   const orderedFilteredScenarios = useMemo(
-    () => (isScenarioSortEnabled ? sortScenarioList(filteredScenarios) : filteredScenarios),
-    [filteredScenarios, isScenarioSortEnabled],
+    () => sortScenarioList(filteredScenarios, scenarioSort),
+    [filteredScenarios, scenarioSort],
   );
 
   const filteredSuiteScenarios = useMemo(
@@ -215,11 +220,8 @@ export const StoreSummaryPage = () => {
     [scenarios, suiteScenarioFilters],
   );
   const orderedSuiteScenarios = useMemo(
-    () =>
-      isSuiteScenarioSortEnabled
-        ? sortScenarioList(filteredSuiteScenarios)
-        : filteredSuiteScenarios,
-    [filteredSuiteScenarios, isSuiteScenarioSortEnabled],
+    () => sortScenarioList(filteredSuiteScenarios, suiteScenarioSort),
+    [filteredSuiteScenarios, suiteScenarioSort],
   );
 
   const selectedSuitePreview = useMemo(
@@ -239,12 +241,14 @@ export const StoreSummaryPage = () => {
   }, [scenarioMap, selectedSuitePreview]);
 
   const orderedSuitePreviewEntries = useMemo(() => {
-    if (!isSuitePreviewSortEnabled) {
+    if (!suitePreviewSort) {
       return selectedSuitePreviewEntries;
     }
 
+    const comparator = createScenarioSortComparator(suitePreviewSort);
+
     return selectedSuitePreviewEntries.slice().sort((first, second) =>
-      compareScenarioPriority(
+      comparator(
         {
           criticality: first.scenario?.criticality ?? '',
           category: first.scenario?.category ?? '',
@@ -259,7 +263,7 @@ export const StoreSummaryPage = () => {
         },
       ),
     );
-  }, [isSuitePreviewSortEnabled, selectedSuitePreviewEntries]);
+  }, [selectedSuitePreviewEntries, suitePreviewSort]);
 
   useEffect(() => {
     if (isInitializing) {
@@ -326,9 +330,9 @@ export const StoreSummaryPage = () => {
 
   useEffect(() => {
     setIsCategoryListCollapsed(true);
-    setIsScenarioSortEnabled(false);
-    setIsSuiteScenarioSortEnabled(false);
-    setIsSuitePreviewSortEnabled(false);
+    setScenarioSort(null);
+    setSuiteScenarioSort(null);
+    setSuitePreviewSort(null);
   }, [storeId]);
 
   const openStoreSettings = () => {
@@ -1412,23 +1416,29 @@ export const StoreSummaryPage = () => {
                             <thead>
                               <tr>
                                 <th>Título</th>
-                                <th>Categoria</th>
-                                <th>Automação</th>
                                 <th>
-                                  <button
-                                    type="button"
-                                    className="scenario-sort-toggle"
-                                    onClick={() =>
-                                      setIsScenarioSortEnabled((previousState) => !previousState)
-                                    }
-                                    aria-pressed={isScenarioSortEnabled}
-                                    title="Ordena por criticidade, categoria e automação"
-                                  >
-                                    Criticidade
-                                    <span className="scenario-sort-toggle-status">
-                                      {isScenarioSortEnabled ? 'Ordenação ativa' : 'Padrão'}
-                                    </span>
-                                  </button>
+                                  <ScenarioColumnSortControl
+                                    label="Categoria"
+                                    field="category"
+                                    sort={scenarioSort}
+                                    onChange={setScenarioSort}
+                                  />
+                                </th>
+                                <th>
+                                  <ScenarioColumnSortControl
+                                    label="Automação"
+                                    field="automation"
+                                    sort={scenarioSort}
+                                    onChange={setScenarioSort}
+                                  />
+                                </th>
+                                <th>
+                                  <ScenarioColumnSortControl
+                                    label="Criticidade"
+                                    field="criticality"
+                                    sort={scenarioSort}
+                                    onChange={setScenarioSort}
+                                  />
                                 </th>
                                 <th>Observação</th>
                                 <th>BDD</th>
@@ -1543,25 +1553,29 @@ export const StoreSummaryPage = () => {
                                 <thead>
                                   <tr>
                                     <th>Cenário</th>
-                                    <th>Categoria</th>
-                                    <th>Automação</th>
                                     <th>
-                                      <button
-                                        type="button"
-                                        className="scenario-sort-toggle"
-                                        onClick={() =>
-                                          setIsSuitePreviewSortEnabled(
-                                            (previousState) => !previousState,
-                                          )
-                                        }
-                                        aria-pressed={isSuitePreviewSortEnabled}
-                                        title="Ordena por criticidade, categoria e automação"
-                                      >
-                                        Criticidade
-                                        <span className="scenario-sort-toggle-status">
-                                          {isSuitePreviewSortEnabled ? 'Ordenação ativa' : 'Padrão'}
-                                        </span>
-                                      </button>
+                                      <ScenarioColumnSortControl
+                                        label="Categoria"
+                                        field="category"
+                                        sort={suitePreviewSort}
+                                        onChange={setSuitePreviewSort}
+                                      />
+                                    </th>
+                                    <th>
+                                      <ScenarioColumnSortControl
+                                        label="Automação"
+                                        field="automation"
+                                        sort={suitePreviewSort}
+                                        onChange={setSuitePreviewSort}
+                                      />
+                                    </th>
+                                    <th>
+                                      <ScenarioColumnSortControl
+                                        label="Criticidade"
+                                        field="criticality"
+                                        sort={suitePreviewSort}
+                                        onChange={setSuitePreviewSort}
+                                      />
                                     </th>
                                   </tr>
                                 </thead>
@@ -1728,27 +1742,29 @@ export const StoreSummaryPage = () => {
                                                 Selecionar
                                               </th>
                                               <th>Título</th>
-                                              <th>Categoria</th>
-                                              <th>Automação</th>
                                               <th>
-                                                <button
-                                                  type="button"
-                                                  className="scenario-sort-toggle"
-                                                  onClick={() =>
-                                                    setIsSuiteScenarioSortEnabled(
-                                                      (previousState) => !previousState,
-                                                    )
-                                                  }
-                                                  aria-pressed={isSuiteScenarioSortEnabled}
-                                                  title="Ordena por criticidade, categoria e automação"
-                                                >
-                                                  Criticidade
-                                                  <span className="scenario-sort-toggle-status">
-                                                    {isSuiteScenarioSortEnabled
-                                                      ? 'Ordenação ativa'
-                                                      : 'Padrão'}
-                                                  </span>
-                                                </button>
+                                                <ScenarioColumnSortControl
+                                                  label="Categoria"
+                                                  field="category"
+                                                  sort={suiteScenarioSort}
+                                                  onChange={setSuiteScenarioSort}
+                                                />
+                                              </th>
+                                              <th>
+                                                <ScenarioColumnSortControl
+                                                  label="Automação"
+                                                  field="automation"
+                                                  sort={suiteScenarioSort}
+                                                  onChange={setSuiteScenarioSort}
+                                                />
+                                              </th>
+                                              <th>
+                                                <ScenarioColumnSortControl
+                                                  label="Criticidade"
+                                                  field="criticality"
+                                                  sort={suiteScenarioSort}
+                                                  onChange={setSuiteScenarioSort}
+                                                />
                                               </th>
                                               <th>Observação</th>
                                             </tr>

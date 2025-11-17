@@ -18,6 +18,8 @@ import {
   CRITICALITY_OPTIONS,
   getCriticalityClassName,
 } from '../constants/scenarioOptions';
+import { ScenarioColumnSortControl } from './ScenarioColumnSortControl';
+import type { ScenarioSortConfig } from '../utils/scenarioSorting';
 import { sortScenarioList } from '../utils/scenarioSorting';
 
 interface StoreManagementPanelProps {
@@ -73,7 +75,7 @@ export const StoreManagementPanel = ({
   const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
   const [isCategoryListCollapsed, setIsCategoryListCollapsed] = useState(true);
   const [isScenarioTableCollapsed, setIsScenarioTableCollapsed] = useState(false);
-  const [isScenarioSortEnabled, setIsScenarioSortEnabled] = useState(false);
+  const [scenarioSort, setScenarioSort] = useState<ScenarioSortConfig | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const canUseScenarioForm = canManageScenarios && showScenarioForm !== false;
   const canToggleCategoryList =
@@ -90,8 +92,8 @@ export const StoreManagementPanel = ({
   );
 
   const displayedScenarios = useMemo(
-    () => (isScenarioSortEnabled ? sortScenarioList(scenarios) : scenarios),
-    [isScenarioSortEnabled, scenarios],
+    () => sortScenarioList(scenarios, scenarioSort),
+    [scenarioSort, scenarios],
   );
 
   const persistedCategoryNames = useMemo(
@@ -220,7 +222,7 @@ export const StoreManagementPanel = ({
 
   useEffect(() => {
     setIsCategoryListCollapsed(true);
-    setIsScenarioSortEnabled(false);
+    setScenarioSort(null);
   }, [selectedStoreId]);
 
   useEffect(() => {
@@ -1195,23 +1197,29 @@ export const StoreManagementPanel = ({
                   <thead>
                     <tr>
                       <th>Título</th>
-                      <th>Categoria</th>
-                      <th>Automação</th>
                       <th>
-                        <button
-                          type="button"
-                          className="scenario-sort-toggle"
-                          onClick={() =>
-                            setIsScenarioSortEnabled((previousState) => !previousState)
-                          }
-                          aria-pressed={isScenarioSortEnabled}
-                          title="Ordena por criticidade, categoria e automação"
-                        >
-                          Criticidade
-                          <span className="scenario-sort-toggle-status">
-                            {isScenarioSortEnabled ? 'Ordenação ativa' : 'Padrão'}
-                          </span>
-                        </button>
+                        <ScenarioColumnSortControl
+                          label="Categoria"
+                          field="category"
+                          sort={scenarioSort}
+                          onChange={setScenarioSort}
+                        />
+                      </th>
+                      <th>
+                        <ScenarioColumnSortControl
+                          label="Automação"
+                          field="automation"
+                          sort={scenarioSort}
+                          onChange={setScenarioSort}
+                        />
+                      </th>
+                      <th>
+                        <ScenarioColumnSortControl
+                          label="Criticidade"
+                          field="criticality"
+                          sort={scenarioSort}
+                          onChange={setScenarioSort}
+                        />
                       </th>
                       <th>Observação</th>
                       <th>BDD</th>

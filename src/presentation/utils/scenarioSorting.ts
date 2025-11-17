@@ -26,6 +26,14 @@ export interface ScenarioSortableShape {
   title?: string | null;
 }
 
+export type ScenarioSortField = 'criticality' | 'automation' | 'category';
+export type ScenarioSortDirection = 'asc' | 'desc';
+
+export interface ScenarioSortConfig {
+  field: ScenarioSortField;
+  direction: ScenarioSortDirection;
+}
+
 const compareText = (a?: string | null, b?: string | null) => {
   const first = (a ?? '').trim();
   const second = (b ?? '').trim();
@@ -71,5 +79,45 @@ export const compareScenarioPriority = <T extends ScenarioSortableShape>(a: T, b
   return compareText(a.title, b.title);
 };
 
-export const sortScenarioList = <T extends ScenarioSortableShape>(list: T[]) =>
-  list.slice().sort(compareScenarioPriority);
+const compareScenarioField = <T extends ScenarioSortableShape>(
+  a: T,
+  b: T,
+  field: ScenarioSortField,
+) => {
+  switch (field) {
+    case 'criticality':
+      return getCriticalityRank(a.criticality) - getCriticalityRank(b.criticality);
+    case 'automation':
+      return getAutomationRank(a.automation) - getAutomationRank(b.automation);
+    case 'category':
+    default:
+      return compareText(a.category, b.category);
+  }
+};
+
+export const createScenarioSortComparator = <T extends ScenarioSortableShape>(
+  sort: ScenarioSortConfig,
+) => {
+  const multiplier = sort.direction === 'asc' ? 1 : -1;
+
+  return (a: T, b: T) => {
+    const fieldDiff = compareScenarioField(a, b, sort.field);
+    if (fieldDiff !== 0) {
+      return fieldDiff * multiplier;
+    }
+
+    return compareText(a.title, b.title) * multiplier;
+  };
+};
+
+export const sortScenarioList = <T extends ScenarioSortableShape>(
+  list: T[],
+  sort?: ScenarioSortConfig | null,
+) => {
+  if (!sort) {
+    return list;
+  }
+
+  const comparator = createScenarioSortComparator(sort);
+  return list.slice().sort(comparator);
+};
