@@ -2483,30 +2483,6 @@ button.store-summary-highlight:focus-visible {
   }
 }
 
-@media (min-width: 768px) {
-  .suite-form {
-    padding: 0 1.5rem;
-  }
-}
-
-@media (min-width: 1280px) {
-  .suite-form {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0;
-  }
-}
-
-@media (max-width: 767px) {
-  .suite-form {
-    padding: 0.75rem;
-  }
-
-  .suite-form > .suite-card {
-    padding: 1.5rem;
-  }
-}
-
 .suite-form-grid {
   display: grid;
   gap: 1.25rem;

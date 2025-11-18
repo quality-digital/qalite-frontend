@@ -1746,7 +1746,7 @@ export const StoreSummaryPage = () => {
                         <>
                           <div className="suite-form">
                             <form
-                              className="card suite-card suite-editor-card"
+                              className="suite-card suite-editor-card"
                               onSubmit={handleSuiteSubmit}
                             >
                               <div className="suite-form-header-actions suite-editor-actions">
