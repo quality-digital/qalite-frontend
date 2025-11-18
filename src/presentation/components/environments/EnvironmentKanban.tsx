@@ -38,6 +38,7 @@ export const EnvironmentKanban = ({
   const navigate = useNavigate();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [userProfilesMap, setUserProfilesMap] = useState<Record<string, UserSummary>>({});
+  const [isArchiveMinimized, setIsArchiveMinimized] = useState(true);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -281,30 +282,54 @@ export const EnvironmentKanban = ({
 
           {archivedEnvironments.length > 0 && (
             <div
-              className="environment-kanban-column environment-kanban-column--archived"
+              className={[
+                'environment-kanban-column environment-kanban-column--archived',
+                isArchiveMinimized ? 'environment-kanban-column--collapsed' : null,
+              ]
+                .filter(Boolean)
+                .join(' ')}
               onDragOver={handleDragOver}
               onDrop={handleDrop('done')}
             >
               <div className="environment-kanban-column-header">
-                <h4>Arquivado</h4>
+                <div className="environment-kanban-column-title">
+                  <h4>Arquivado</h4>
+                  <button
+                    type="button"
+                    className="environment-kanban-archive-toggle"
+                    onClick={() => setIsArchiveMinimized((previous) => !previous)}
+                    aria-expanded={!isArchiveMinimized}
+                    aria-controls="environment-kanban-archived-list"
+                  >
+                    {isArchiveMinimized ? 'Maximizar' : 'Minimizar'}
+                  </button>
+                </div>
                 <span className="environment-kanban-column-count">
                   {archivedEnvironments.length}
                 </span>
               </div>
 
-              {archivedEnvironments.map((environment) => (
-                <EnvironmentCard
-                  key={environment.id}
-                  environment={environment}
-                  participants={(environment.participants ?? [])
-                    .map((id) => userProfilesMap[id])
-                    .filter((user): user is UserSummary => Boolean(user))}
-                  suiteName={suiteNameByEnvironment[environment.id]}
-                  draggable
-                  onDragStart={handleDragStart}
-                  onOpen={handleOpenEnvironment}
-                />
-              ))}
+              {isArchiveMinimized ? (
+                <p className="environment-kanban-archive-placeholder">
+                  Clique em “Maximizar” para visualizar os ambientes arquivados.
+                </p>
+              ) : (
+                <div id="environment-kanban-archived-list">
+                  {archivedEnvironments.map((environment) => (
+                    <EnvironmentCard
+                      key={environment.id}
+                      environment={environment}
+                      participants={(environment.participants ?? [])
+                        .map((id) => userProfilesMap[id])
+                        .filter((user): user is UserSummary => Boolean(user))}
+                      suiteName={suiteNameByEnvironment[environment.id]}
+                      draggable
+                      onDragStart={handleDragStart}
+                      onOpen={handleOpenEnvironment}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
