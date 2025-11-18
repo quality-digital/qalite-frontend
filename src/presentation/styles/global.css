@@ -3306,6 +3306,12 @@ button.store-summary-highlight:focus-visible {
   border-bottom: 1px dashed var(--color-border);
 }
 
+.environment-kanban-column-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .environment-kanban-column-count {
   font-size: 0.85rem;
   font-weight: 600;
@@ -3318,6 +3324,39 @@ button.store-summary-highlight:focus-visible {
 .environment-kanban-column--archived {
   background: var(--color-surface-alt);
   border-style: dashed;
+}
+
+.environment-kanban-column--archived.environment-kanban-column--collapsed {
+  min-height: auto;
+}
+
+.environment-kanban-archive-toggle {
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  padding: 0.15rem 0.35rem;
+  border-radius: 6px;
+  transition:
+    background var(--transition-base),
+    color var(--transition-base);
+}
+
+.environment-kanban-archive-toggle:hover,
+.environment-kanban-archive-toggle:focus-visible {
+  background: var(--color-border);
+  color: var(--color-text-primary);
+  outline: none;
+}
+
+.environment-kanban-archive-placeholder {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin: 0;
 }
 
 .environment-card {
