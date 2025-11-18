@@ -984,6 +984,22 @@ export const StoreSummaryPage = () => {
     });
   };
 
+  const handleSelectAllSuiteScenarios = () => {
+    if (filteredSuiteScenarios.length === 0) {
+      return;
+    }
+
+    setSuiteForm((previous) => {
+      const nextSelection = new Set(previous.scenarioIds);
+      filteredSuiteScenarios.forEach((scenario) => nextSelection.add(scenario.id));
+      return { ...previous, scenarioIds: Array.from(nextSelection) };
+    });
+  };
+
+  const handleClearSuiteSelection = () => {
+    setSuiteForm((previous) => ({ ...previous, scenarioIds: [] }));
+  };
+
   const handleCancelSuiteEdit = () => {
     setSuiteForm(emptySuiteForm);
     setSuiteFormError(null);
@@ -1666,6 +1682,12 @@ export const StoreSummaryPage = () => {
                             </p>
                           ) : (
                             <div className="suite-preview suite-preview--cards">
+                              <div className="suite-preview-description">
+                                <p className="suite-description">
+                                  {selectedSuitePreview?.description ||
+                                    'Sem descrição adicionada para esta suíte.'}
+                                </p>
+                              </div>
                               <div className="table-scroll-area">
                                 <table className="suite-preview-table data-table">
                                   <thead>
@@ -1806,6 +1828,26 @@ export const StoreSummaryPage = () => {
                                   )}
                                 </div>
                                 <p className="suite-selection-summary">{suiteSelectionSummary}</p>
+                                {scenarios.length > 0 && (
+                                  <div className="suite-selection-actions">
+                                    <button
+                                      type="button"
+                                      className="suite-selection-action"
+                                      onClick={handleSelectAllSuiteScenarios}
+                                      disabled={filteredSuiteScenarios.length === 0}
+                                    >
+                                      Selecionar todos os cenários listados
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="suite-selection-action suite-selection-action--ghost"
+                                      onClick={handleClearSuiteSelection}
+                                      disabled={suiteForm.scenarioIds.length === 0}
+                                    >
+                                      Limpar seleção
+                                    </button>
+                                  </div>
+                                )}
                                 {scenarios.length === 0 ? (
                                   <p className="category-manager-empty">
                                     Nenhum cenário disponível para seleção no momento.

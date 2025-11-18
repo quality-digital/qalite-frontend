@@ -3,6 +3,27 @@ import type { UserSummary } from '../../../domain/entities/UserSummary';
 import { ENVIRONMENT_STATUS_LABEL } from '../../../shared/constants/environmentLabels';
 import { getReadableUserName, getUserInitials } from '../../utils/userDisplay';
 
+const buildJiraLink = (value: string | null | undefined): string | null => {
+  if (!value) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (trimmed.includes('.')) {
+    return `https://${trimmed}`;
+  }
+
+  return null;
+};
+
 interface EnvironmentSummaryCardProps {
   environment: Environment;
   progressPercentage: number;
@@ -30,6 +51,10 @@ export const EnvironmentSummaryCard = ({
   const remainingParticipants = participants.length - visibleParticipants.length;
   const visibleUrls = urls.slice(0, 3);
   const remainingUrls = urls.length - visibleUrls.length;
+  const isWsEnvironment = environment.tipoAmbiente?.toUpperCase() === 'WS';
+  const bugLabel = isWsEnvironment ? 'Storyfix registrados' : 'Bugs registrados';
+  const jiraTask = environment.jiraTask?.trim() ?? '';
+  const jiraUrl = buildJiraLink(jiraTask);
 
   return (
     <div className="summary-card summary-card--environment summary-card--compact">
@@ -60,12 +85,23 @@ export const EnvironmentSummaryCard = ({
           </span>
         </div>
         <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">Bugs registrados</span>
+          <span className="summary-card__meta-label">{bugLabel}</span>
           <strong>{bugsCount}</strong>
         </div>
         <div className="summary-card__meta-item">
           <span className="summary-card__meta-label">Jira</span>
-          <strong>{environment.jiraTask || 'Não informado'}</strong>
+          {jiraUrl ? (
+            <a
+              href={jiraUrl}
+              className="summary-card__meta-link"
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              {jiraTask}
+            </a>
+          ) : (
+            <strong>{jiraTask || 'Não informado'}</strong>
+          )}
         </div>
       </div>
 

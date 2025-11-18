@@ -3,6 +3,7 @@ export type EnvironmentStatus = 'backlog' | 'in_progress' | 'done';
 export type EnvironmentScenarioStatus =
   | 'pendente'
   | 'em_andamento'
+  | 'bloqueado'
   | 'concluido'
   | 'concluido_automatizado'
   | 'nao_se_aplica';

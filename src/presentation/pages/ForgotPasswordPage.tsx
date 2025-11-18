@@ -6,25 +6,38 @@ import { AuthLayout } from '../components/AuthLayout';
 import { Button } from '../components/Button';
 import { TextInput } from '../components/TextInput';
 
+interface FeedbackState {
+  message: string;
+  isSuccess: boolean;
+}
+
 export const ForgotPasswordPage = () => {
   const { resetPassword, isLoading } = useAuth();
   const [email, setEmail] = useState('');
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackState | null>(null);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFeedback(null);
 
     if (!email) {
-      setFeedback('Informe o e-mail cadastrado.');
+      setFeedback({ message: 'Informe o e-mail cadastrado.', isSuccess: false });
       return;
     }
 
     try {
       await resetPassword(email);
-      setFeedback('Verifique seu e-mail para redefinir a senha.');
+      setFeedback({
+        message: 'Verifique seu e-mail para redefinir a senha.',
+        isSuccess: true,
+      });
     } catch (err) {
       console.error(err);
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Não foi possível enviar o link de recuperação. Tente novamente.';
+      setFeedback({ message, isSuccess: false });
     }
   };
 
@@ -42,9 +55,9 @@ export const ForgotPasswordPage = () => {
     >
       {feedback && (
         <p
-          className={`form-message ${feedback.startsWith('Verifique') ? 'form-message--success' : 'form-message--error'}`}
+          className={`form-message ${feedback.isSuccess ? 'form-message--success' : 'form-message--error'}`}
         >
-          {feedback}
+          {feedback.message}
         </p>
       )}
       <form className="form-grid" onSubmit={handleSubmit}>

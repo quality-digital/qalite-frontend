@@ -27,6 +27,7 @@ export const EnvironmentCard = ({
   const hasParticipants = participants.length > 0;
   const visibleParticipants = participants.slice(0, 3);
   const hiddenParticipantsCount = Math.max(participants.length - visibleParticipants.length, 0);
+  const bugLabel = environment.tipoAmbiente?.toUpperCase() === 'WS' ? 'Storyfix' : 'Bugs';
 
   const handleOpen = () => onOpen(environment);
 
@@ -61,6 +62,17 @@ export const EnvironmentCard = ({
       <div className="environment-card-suite-row">
         <span className="environment-card-suite-label">Suíte</span>
         <span className="environment-card-suite-name">{displaySuiteName}</span>
+      </div>
+
+      <div className="environment-card-stats">
+        <div className="environment-card-stat">
+          <span className="environment-card-stat-label">Cenários</span>
+          <strong className="environment-card-stat-value">{environment.totalCenarios}</strong>
+        </div>
+        <div className="environment-card-stat">
+          <span className="environment-card-stat-label">{bugLabel}</span>
+          <strong className="environment-card-stat-value">{environment.bugs}</strong>
+        </div>
       </div>
 
       <div className="environment-card-participants" aria-label="Participantes">

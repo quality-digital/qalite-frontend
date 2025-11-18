@@ -1,4 +1,5 @@
 import { ReactNode, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ModalProps {
   isOpen: boolean;
@@ -28,7 +29,7 @@ export const Modal = ({ isOpen, title, description, onClose, children }: ModalPr
     return null;
   }
 
-  return (
+  const modalContent = (
     <div className="modal-overlay" role="dialog" aria-modal="true" aria-label={title}>
       <div className="modal" role="document">
         <div className="modal-header">
@@ -44,4 +45,10 @@ export const Modal = ({ isOpen, title, description, onClose, children }: ModalPr
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') {
+    return modalContent;
+  }
+
+  return createPortal(modalContent, document.body);
 };

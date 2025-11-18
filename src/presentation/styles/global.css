@@ -2604,6 +2604,41 @@ button.store-summary-highlight:focus-visible {
   color: var(--color-text-primary);
 }
 
+.suite-selection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.suite-selection-action {
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-full);
+  padding: 0.35rem 0.85rem;
+  font-size: 0.85rem;
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--color-primary);
+  cursor: pointer;
+  transition:
+    background var(--transition-base),
+    border-color var(--transition-base);
+}
+
+.suite-selection-action--ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+.suite-selection-action:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.suite-selection-action:not(:disabled):hover {
+  border-color: var(--color-primary);
+  background: rgba(37, 99, 235, 0.12);
+}
+
 .suite-scenario-filters {
   display: grid;
   gap: 0.75rem;
@@ -2857,6 +2892,10 @@ button.store-summary-highlight:focus-visible {
 
 .suite-description {
   white-space: pre-wrap;
+}
+
+.suite-preview-description {
+  margin-bottom: 1rem;
 }
 
 .suite-list {
@@ -3377,6 +3416,38 @@ button.store-summary-highlight:focus-visible {
   font-weight: 600;
 }
 
+.environment-card-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.environment-card-stat {
+  background: rgba(15, 23, 42, 0.04);
+  border-radius: var(--radius-lg);
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+[data-theme='dark'] .environment-card-stat {
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.environment-card-stat-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.environment-card-stat-value {
+  font-size: 1.15rem;
+  color: var(--color-text-primary);
+}
+
 .environment-card-participant-list {
   list-style: none;
   padding: 0;
@@ -3711,6 +3782,18 @@ button.store-summary-highlight:focus-visible {
 .summary-card__meta-hint {
   font-size: 0.85rem;
   color: var(--color-text-muted);
+}
+
+.summary-card__meta-link {
+  font-weight: 600;
+  color: var(--color-primary);
+  word-break: break-all;
+  text-decoration: none;
+}
+
+.summary-card__meta-link:hover,
+.summary-card__meta-link:focus-visible {
+  text-decoration: underline;
 }
 
 .summary-card__meta-item--full {
@@ -4259,6 +4342,11 @@ button.store-summary-highlight:focus-visible {
 .scenario-status-select--em_andamento {
   background-color: #1d4ed8;
   border-color: rgba(59, 130, 246, 0.75);
+}
+
+.scenario-status-select--bloqueado {
+  background-color: #b91c1c;
+  border-color: rgba(248, 113, 113, 0.8);
 }
 
 .scenario-status-select--concluido,

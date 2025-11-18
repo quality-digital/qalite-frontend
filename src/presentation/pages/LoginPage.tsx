@@ -38,6 +38,9 @@ export const LoginPage = () => {
       navigate('/no-organization', { replace: true });
     } catch (err) {
       console.error(err);
+      const message =
+        err instanceof Error ? err.message : 'Não foi possível autenticar. Tente novamente.';
+      setFormError(message);
     }
   };
 

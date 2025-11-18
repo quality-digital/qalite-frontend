@@ -9,5 +9,4 @@ export const MOMENT_OPTIONS_BY_ENVIRONMENT: Record<string, string[]> = {
   PROD: ['Pós-deploy', 'Prod'],
 };
 
-export const requiresReleaseField = (tipoAmbiente: string): boolean =>
-  tipoAmbiente === 'TM' || tipoAmbiente === 'PROD';
+export const requiresReleaseField = (tipoAmbiente: string): boolean => tipoAmbiente === 'TM';

@@ -49,6 +49,9 @@ export const RegisterPage = () => {
       navigate('/');
     } catch (err) {
       console.error(err);
+      const message =
+        err instanceof Error ? err.message : 'Não foi possível criar sua conta. Tente novamente.';
+      setFormError(message);
     }
   };
 
