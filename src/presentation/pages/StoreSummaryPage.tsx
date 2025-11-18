@@ -33,6 +33,7 @@ import {
   sortScenarioList,
   type ScenarioSortConfig,
 } from '../components/ScenarioColumnSortControl';
+import { useStoreEnvironments } from '../hooks/useStoreEnvironments';
 
 const emptyScenarioForm: StoreScenarioInput = {
   title: '',
@@ -53,6 +54,15 @@ interface ScenarioFilters {
   search: string;
   category: string;
   criticality: string;
+}
+
+interface StoreHighlight {
+  id: string;
+  label: string;
+  value: string;
+  description?: string;
+  isActive?: boolean;
+  onClick?: () => void;
 }
 
 const emptyScenarioFilters: ScenarioFilters = {
@@ -134,6 +144,11 @@ export const StoreSummaryPage = () => {
   const [storeSettingsError, setStoreSettingsError] = useState<string | null>(null);
   const [isUpdatingStore, setIsUpdatingStore] = useState(false);
   const [isDeletingStore, setIsDeletingStore] = useState(false);
+  const {
+    environments,
+    isLoading: isLoadingEnvironments,
+    statusCounts: environmentStatusCounts,
+  } = useStoreEnvironments(storeId);
   const selectedSuiteScenarioCount = suiteForm.scenarioIds.length;
   const suiteSelectionSummary =
     selectedSuiteScenarioCount === 0
@@ -151,6 +166,68 @@ export const StoreSummaryPage = () => {
   const canManageStoreSettings = user?.role === 'admin';
   const canToggleCategoryList =
     !isLoadingCategories && !isSyncingLegacyCategories && categories.length > 0;
+  const automatedScenarioCount = useMemo(
+    () =>
+      scenarios.filter((scenario) => scenario.automation.toLowerCase().includes('automatizado'))
+        .length,
+    [scenarios],
+  );
+  const suitesWithScenariosCount = useMemo(
+    () => suites.filter((suite) => suite.scenarioIds.length > 0).length,
+    [suites],
+  );
+  const environmentInProgressCount = environmentStatusCounts.in_progress;
+  const environmentTotalCount = environmentStatusCounts.total;
+  const storeHighlights = useMemo<StoreHighlight[]>(() => {
+    const scenarioDescription = `${automatedScenarioCount} automatizado${
+      automatedScenarioCount === 1 ? '' : 's'
+    }`;
+    const suitesDescription = `${suitesWithScenariosCount} com cenário${
+      suitesWithScenariosCount === 1 ? '' : 's'
+    }`;
+    const environmentDescription = isLoadingEnvironments
+      ? 'Sincronizando ambientes...'
+      : `${environmentInProgressCount} em andamento`;
+
+    return [
+      {
+        id: 'scenarios',
+        label: 'Massa de cenários',
+        value: scenarios.length.toString(),
+        description: scenarioDescription,
+        isActive: viewMode === 'scenarios',
+        onClick: () => {
+          setViewMode('scenarios');
+          setIsViewingSuitesOnly(false);
+        },
+      },
+      {
+        id: 'suites',
+        label: 'Suítes de testes',
+        value: suites.length.toString(),
+        description: suitesDescription,
+        isActive: viewMode === 'suites',
+        onClick: () => setViewMode('suites'),
+      },
+      {
+        id: 'environments',
+        label: 'Ambientes',
+        value: isLoadingEnvironments ? '...' : environmentTotalCount.toString(),
+        description: environmentDescription,
+      },
+    ];
+  }, [
+    automatedScenarioCount,
+    environmentInProgressCount,
+    environmentTotalCount,
+    isLoadingEnvironments,
+    scenarios.length,
+    suites.length,
+    suitesWithScenariosCount,
+    viewMode,
+    setViewMode,
+    setIsViewingSuitesOnly,
+  ]);
 
   const scenarioMap = useMemo(() => {
     const map = new Map<string, StoreScenario>();
@@ -1099,16 +1176,9 @@ export const StoreSummaryPage = () => {
             ) : (
               <div className="store-summary">
                 <div className="store-summary-meta">
-                  <div>
-                    <span className="badge">Resumo</span>
-                    <h2 className="text-xl font-semibold text-primary">Informações gerais</h2>
-                  </div>
-                  <div className="store-summary-stats">
+                  <div className="store-summary-context">
+                    {organization?.name && <span>{organization.name}</span>}
                     <span>
-                      <strong>Cenários:</strong> {scenarios.length}
-                    </span>
-                    <span>
-                      <strong>Site:</strong>{' '}
                       {storeSiteInfo.href ? (
                         <a href={storeSiteInfo.href} target="_blank" rel="noreferrer noopener">
                           {storeSiteInfo.label}
@@ -1118,25 +1188,44 @@ export const StoreSummaryPage = () => {
                       )}
                     </span>
                   </div>
-                </div>
+                  <div
+                    className="store-summary-highlights"
+                    role="group"
+                    aria-label="Resumo da loja"
+                  >
+                    {storeHighlights.map((highlight) => {
+                      const content = (
+                        <>
+                          <span className="store-summary-highlight__value">{highlight.value}</span>
+                          <span className="store-summary-highlight__label">{highlight.label}</span>
+                          {highlight.description && (
+                            <span className="store-summary-highlight__description">
+                              {highlight.description}
+                            </span>
+                          )}
+                        </>
+                      );
 
-                <div className="scenario-view-toggle" aria-label="Alternar visualização">
-                  <span>Visualizar</span>
-                  <div className="scenario-view-toggle-buttons">
-                    <button
-                      type="button"
-                      className={viewMode === 'scenarios' ? 'is-active' : ''}
-                      onClick={() => setViewMode('scenarios')}
-                    >
-                      Massa de cenários
-                    </button>
-                    <button
-                      type="button"
-                      className={viewMode === 'suites' ? 'is-active' : ''}
-                      onClick={() => setViewMode('suites')}
-                    >
-                      Suítes de testes
-                    </button>
+                      return highlight.onClick ? (
+                        <button
+                          key={highlight.id}
+                          type="button"
+                          className={`store-summary-highlight${highlight.isActive ? ' is-active' : ''}`}
+                          onClick={highlight.onClick}
+                          aria-pressed={highlight.isActive}
+                        >
+                          {content}
+                        </button>
+                      ) : (
+                        <div
+                          key={highlight.id}
+                          className="store-summary-highlight"
+                          aria-live="polite"
+                        >
+                          {content}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -1430,85 +1519,89 @@ export const StoreSummaryPage = () => {
                             Nenhum cenário corresponde aos filtros aplicados.
                           </p>
                         ) : (
-                          <table className="scenario-table data-table">
-                            <thead>
-                              <tr>
-                                <th>Título</th>
-                                <th>
-                                  <ScenarioColumnSortControl
-                                    label="Categoria"
-                                    field="category"
-                                    sort={scenarioSort}
-                                    onChange={setScenarioSort}
-                                  />
-                                </th>
-                                <th>
-                                  <ScenarioColumnSortControl
-                                    label="Automação"
-                                    field="automation"
-                                    sort={scenarioSort}
-                                    onChange={setScenarioSort}
-                                  />
-                                </th>
-                                <th>
-                                  <ScenarioColumnSortControl
-                                    label="Criticidade"
-                                    field="criticality"
-                                    sort={scenarioSort}
-                                    onChange={setScenarioSort}
-                                  />
-                                </th>
-                                <th>Observação</th>
-                                <th>BDD</th>
-                                {canManageScenarios && <th>Ações</th>}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {orderedFilteredScenarios.map((scenario) => (
-                                <tr key={scenario.id}>
-                                  <td>{scenario.title}</td>
-                                  <td>{scenario.category}</td>
-                                  <td>{scenario.automation}</td>
-                                  <td>
-                                    <span
-                                      className={`criticality-badge ${getCriticalityClassName(scenario.criticality)}`}
-                                    >
-                                      {scenario.criticality}
-                                    </span>
-                                  </td>
-                                  <td className="scenario-observation">{scenario.observation}</td>
-                                  <td className="scenario-bdd">
-                                    <button
-                                      type="button"
-                                      className="scenario-copy-button"
-                                      onClick={() => void handleCopyBdd(scenario.bdd)}
-                                    >
-                                      Copiar BDD
-                                    </button>
-                                  </td>
-                                  {canManageScenarios && (
-                                    <td className="scenario-actions">
+                          <div className="table-scroll-area">
+                            <table className="scenario-table data-table">
+                              <thead>
+                                <tr>
+                                  <th>Título</th>
+                                  <th>
+                                    <ScenarioColumnSortControl
+                                      label="Categoria"
+                                      field="category"
+                                      sort={scenarioSort}
+                                      onChange={setScenarioSort}
+                                    />
+                                  </th>
+                                  <th>
+                                    <ScenarioColumnSortControl
+                                      label="Automação"
+                                      field="automation"
+                                      sort={scenarioSort}
+                                      onChange={setScenarioSort}
+                                    />
+                                  </th>
+                                  <th>
+                                    <ScenarioColumnSortControl
+                                      label="Criticidade"
+                                      field="criticality"
+                                      sort={scenarioSort}
+                                      onChange={setScenarioSort}
+                                    />
+                                  </th>
+                                  <th>Observação</th>
+                                  <th>BDD</th>
+                                  {canManageScenarios && <th>Ações</th>}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {orderedFilteredScenarios.map((scenario) => (
+                                  <tr key={scenario.id}>
+                                    <td>{scenario.title}</td>
+                                    <td>{scenario.category}</td>
+                                    <td>{scenario.automation}</td>
+                                    <td>
+                                      <span
+                                        className={`criticality-badge ${getCriticalityClassName(
+                                          scenario.criticality,
+                                        )}`}
+                                      >
+                                        {scenario.criticality}
+                                      </span>
+                                    </td>
+                                    <td className="scenario-observation">{scenario.observation}</td>
+                                    <td className="scenario-bdd">
                                       <button
                                         type="button"
-                                        onClick={() => handleEditScenario(scenario)}
-                                        disabled={isSavingScenario}
+                                        className="scenario-copy-button"
+                                        onClick={() => void handleCopyBdd(scenario.bdd)}
                                       >
-                                        Editar
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => void handleDeleteScenario(scenario)}
-                                        disabled={isSavingScenario}
-                                        className="scenario-delete"
-                                      >
-                                        Excluir
+                                        Copiar BDD
                                       </button>
                                     </td>
-                                  )}
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                                    {canManageScenarios && (
+                                      <td className="scenario-actions">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleEditScenario(scenario)}
+                                          disabled={isSavingScenario}
+                                        >
+                                          Editar
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => void handleDeleteScenario(scenario)}
+                                          disabled={isSavingScenario}
+                                          className="scenario-delete"
+                                        >
+                                          Excluir
+                                        </button>
+                                      </td>
+                                    )}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
                         )}
                       </>
                     )
@@ -1573,47 +1666,57 @@ export const StoreSummaryPage = () => {
                             </p>
                           ) : (
                             <div className="suite-preview suite-preview--cards">
-                              <table className="suite-preview-table data-table">
-                                <thead>
-                                  <tr>
-                                    <th>Cenário</th>
-                                    <th>
-                                      <ScenarioColumnSortControl
-                                        label="Categoria"
-                                        field="category"
-                                        sort={suitePreviewSort}
-                                        onChange={setSuitePreviewSort}
-                                      />
-                                    </th>
-                                    <th>
-                                      <ScenarioColumnSortControl
-                                        label="Automação"
-                                        field="automation"
-                                        sort={suitePreviewSort}
-                                        onChange={setSuitePreviewSort}
-                                      />
-                                    </th>
-                                    <th>
-                                      <ScenarioColumnSortControl
-                                        label="Criticidade"
-                                        field="criticality"
-                                        sort={suitePreviewSort}
-                                        onChange={setSuitePreviewSort}
-                                      />
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {orderedSuitePreviewEntries.map(({ scenarioId, scenario }) => (
-                                    <tr key={`${selectedSuitePreview.id}-${scenarioId}`}>
-                                      <td>{scenario?.title ?? 'Cenário removido'}</td>
-                                      <td>{scenario?.category ?? 'N/A'}</td>
-                                      <td>{scenario?.automation ?? '-'}</td>
-                                      <td>{scenario?.criticality ?? '-'}</td>
+                              <div className="table-scroll-area">
+                                <table className="suite-preview-table data-table">
+                                  <thead>
+                                    <tr>
+                                      <th>Cenário</th>
+                                      <th>
+                                        <ScenarioColumnSortControl
+                                          label="Categoria"
+                                          field="category"
+                                          sort={suitePreviewSort}
+                                          onChange={setSuitePreviewSort}
+                                        />
+                                      </th>
+                                      <th>
+                                        <ScenarioColumnSortControl
+                                          label="Automação"
+                                          field="automation"
+                                          sort={suitePreviewSort}
+                                          onChange={setSuitePreviewSort}
+                                        />
+                                      </th>
+                                      <th>
+                                        <ScenarioColumnSortControl
+                                          label="Criticidade"
+                                          field="criticality"
+                                          sort={suitePreviewSort}
+                                          onChange={setSuitePreviewSort}
+                                        />
+                                      </th>
                                     </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+                                  </thead>
+                                  <tbody>
+                                    {orderedSuitePreviewEntries.map(({ scenarioId, scenario }) => (
+                                      <tr key={`${selectedSuitePreview.id}-${scenarioId}`}>
+                                        <td data-label="Cenário">
+                                          {scenario?.title ?? 'Cenário removido'}
+                                        </td>
+                                        <td data-label="Categoria">
+                                          {scenario?.category ?? 'N/A'}
+                                        </td>
+                                        <td data-label="Automação">
+                                          {scenario?.automation ?? '-'}
+                                        </td>
+                                        <td data-label="Criticidade">
+                                          {scenario?.criticality ?? '-'}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
                             </div>
                           )}
                           {selectedSuitePreview && canManageScenarios && (
@@ -1643,7 +1746,7 @@ export const StoreSummaryPage = () => {
                         <>
                           <div className="suite-form">
                             <form
-                              className="card suite-card suite-editor-card"
+                              className="suite-card suite-editor-card"
                               onSubmit={handleSuiteSubmit}
                             >
                               <div className="suite-form-header-actions suite-editor-actions">
@@ -1759,7 +1862,7 @@ export const StoreSummaryPage = () => {
                                         Nenhum cenário corresponde aos filtros aplicados.
                                       </p>
                                     ) : (
-                                      <div className="suite-scenario-table-wrapper">
+                                      <div className="suite-scenario-table-wrapper table-scroll-area">
                                         <table className="scenario-table suite-scenario-table data-table">
                                           <thead>
                                             <tr>
@@ -1804,7 +1907,10 @@ export const StoreSummaryPage = () => {
                                                   key={scenario.id}
                                                   className={isSelected ? 'is-selected' : ''}
                                                 >
-                                                  <td className="suite-scenario-checkbox">
+                                                  <td
+                                                    className="suite-scenario-checkbox"
+                                                    data-label="Selecionar"
+                                                  >
                                                     <input
                                                       type="checkbox"
                                                       checked={isSelected}
@@ -1814,10 +1920,14 @@ export const StoreSummaryPage = () => {
                                                       aria-label={`Selecionar cenário ${scenario.title}`}
                                                     />
                                                   </td>
-                                                  <td>{scenario.title}</td>
-                                                  <td>{scenario.category}</td>
-                                                  <td>{scenario.automation}</td>
-                                                  <td>
+                                                  <td data-label="Título">{scenario.title}</td>
+                                                  <td data-label="Categoria">
+                                                    {scenario.category}
+                                                  </td>
+                                                  <td data-label="Automação">
+                                                    {scenario.automation}
+                                                  </td>
+                                                  <td data-label="Criticidade">
                                                     <span
                                                       className={`criticality-badge ${getCriticalityClassName(
                                                         scenario.criticality,
@@ -1826,7 +1936,10 @@ export const StoreSummaryPage = () => {
                                                       {scenario.criticality}
                                                     </span>
                                                   </td>
-                                                  <td className="scenario-observation">
+                                                  <td
+                                                    className="scenario-observation"
+                                                    data-label="Observação"
+                                                  >
                                                     {scenario.observation}
                                                   </td>
                                                 </tr>
@@ -1862,7 +1975,13 @@ export const StoreSummaryPage = () => {
         {storeId && (
           <section className="page-container">
             <div className="card">
-              <EnvironmentKanban storeId={storeId} suites={suites} scenarios={scenarios} />
+              <EnvironmentKanban
+                storeId={storeId}
+                suites={suites}
+                scenarios={scenarios}
+                environments={environments}
+                isLoading={isLoadingEnvironments}
+              />
             </div>
           </section>
         )}
