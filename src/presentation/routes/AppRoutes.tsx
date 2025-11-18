@@ -1,10 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
-import { AuthProvider } from '../context/AuthContext';
 import { ProtectedRoute, RoleProtectedRoute } from './ProtectedRoute';
-import { ThemeProvider } from '../context/ThemeContext';
-import { ToastProvider } from '../context/ToastContext';
-import { OrganizationBrandingProvider } from '../context/OrganizationBrandingContext';
 import { AdminOrganizationsPage } from '../pages/AdminOrganizationsPage';
 import { AdminStoresPage } from '../pages/AdminStoresPage';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
@@ -19,43 +15,35 @@ import { OrganizationDashboardPage } from '../pages/OrganizationDashboardPage';
 import { StoreSummaryPage } from '../pages/StoreSummaryPage';
 import { EnvironmentPage } from '../pages/EnvironmentPage';
 import { PublicEnvironmentPage } from '../pages/PublicEnvironmentPage';
+import { AppProviders } from '../providers/AppProviders';
 
 export const AppRoutes = () => (
-  <ThemeProvider>
-    <ToastProvider>
-      <AuthProvider>
-        <OrganizationBrandingProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/403" element={<ForbiddenPage />} />
-              <Route
-                path="/environments/:environmentId/public"
-                element={<PublicEnvironmentPage />}
-              />
+  <AppProviders>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/403" element={<ForbiddenPage />} />
+        <Route path="/environments/:environmentId/public" element={<PublicEnvironmentPage />} />
 
-              <Route element={<ProtectedRoute />}>
-                <Route path="/dashboard" element={<UserDashboardPage />} />
-                <Route path="/organization" element={<OrganizationDashboardPage />} />
-                <Route path="/no-organization" element={<NoOrganizationPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/stores/:storeId" element={<StoreSummaryPage />} />
-                <Route path="/environments/:environmentId" element={<EnvironmentPage />} />
-              </Route>
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<UserDashboardPage />} />
+          <Route path="/organization" element={<OrganizationDashboardPage />} />
+          <Route path="/no-organization" element={<NoOrganizationPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/stores/:storeId" element={<StoreSummaryPage />} />
+          <Route path="/environments/:environmentId" element={<EnvironmentPage />} />
+        </Route>
 
-              <Route element={<RoleProtectedRoute allowedRoles={['admin']} />}>
-                <Route path="/admin" element={<AdminOrganizationsPage />} />
-                <Route path="/admin/organizations" element={<AdminStoresPage />} />
-              </Route>
+        <Route element={<RoleProtectedRoute allowedRoles={['admin']} />}>
+          <Route path="/admin" element={<AdminOrganizationsPage />} />
+          <Route path="/admin/organizations" element={<AdminStoresPage />} />
+        </Route>
 
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </BrowserRouter>
-        </OrganizationBrandingProvider>
-      </AuthProvider>
-    </ToastProvider>
-  </ThemeProvider>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
+  </AppProviders>
 );

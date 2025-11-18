@@ -9,7 +9,7 @@ import { useOrganizationStores } from '../hooks/useOrganizationStores';
 import { UserAvatar } from '../components/UserAvatar';
 import { SimpleBarChart } from '../components/SimpleBarChart';
 import { BarChartIcon, SparklesIcon, StorefrontIcon, UsersGroupIcon } from '../components/icons';
-import { storeService } from '../../main/factories/storeServiceFactory';
+import { storeService } from '../../services';
 
 export const UserDashboardPage = () => {
   const navigate = useNavigate();

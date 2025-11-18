@@ -2,7 +2,7 @@ import { FormEvent, KeyboardEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import type { Organization } from '../../domain/entities/Organization';
-import { organizationService } from '../../main/factories/organizationServiceFactory';
+import { organizationService } from '../../services';
 import { useToast } from '../context/ToastContext';
 import { Layout } from '../components/Layout';
 import { Button } from '../components/Button';

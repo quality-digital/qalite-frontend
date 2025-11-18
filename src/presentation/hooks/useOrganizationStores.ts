@@ -2,8 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import type { Organization } from '../../domain/entities/Organization';
 import type { Store } from '../../domain/entities/Store';
-import { organizationService } from '../../main/factories/organizationServiceFactory';
-import { storeService } from '../../main/factories/storeServiceFactory';
+import { organizationService, storeService } from '../../services';
 import { useToast } from '../context/ToastContext';
 
 export type OrganizationStoresStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';

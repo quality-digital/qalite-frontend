@@ -6,8 +6,7 @@ import { EnvironmentStatusError } from '../../../application/errors/EnvironmentS
 import type { Environment, EnvironmentStatus } from '../../../domain/entities/Environment';
 import type { StoreScenario, StoreSuite } from '../../../domain/entities/Store';
 import type { UserSummary } from '../../../domain/entities/UserSummary';
-import { environmentService } from '../../../main/factories/environmentServiceFactory';
-import { userService } from '../../../main/factories/userServiceFactory';
+import { environmentService, userService } from '../../../services';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../Button';

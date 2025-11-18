@@ -1,38 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useCallback } from 'react';
 
 import type { Environment } from '../../domain/entities/Environment';
-import { environmentService } from '../../main/factories/environmentServiceFactory';
+import { environmentService } from '../../services';
+import { useRealtimeResource } from './useRealtimeResource';
 
 export const useEnvironmentRealtime = (environmentId: string | null | undefined) => {
-  const [environment, setEnvironment] = useState<Environment | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const subscribeToEnvironment = useCallback(
+    (id: string, handler: (environment: Environment | null) => void) =>
+      environmentService.observeEnvironment(id, handler),
+    [],
+  );
 
-  useEffect(() => {
-    if (!environmentId) {
-      setEnvironment(null);
-      setIsLoading(false);
-      return;
-    }
+  const { value, isLoading, error } = useRealtimeResource<Environment | null>({
+    resourceId: environmentId,
+    getInitialValue: () => null,
+    subscribe: subscribeToEnvironment,
+    missingResourceMessage: 'Ambiente não encontrado.',
+  });
 
-    setIsLoading(true);
-    const unsubscribe = environmentService.observeEnvironment(environmentId, (data) => {
-      setEnvironment(data);
-      setIsLoading(false);
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [environmentId]);
-
-  useEffect(() => {
-    if (!environmentId) {
-      setError('Ambiente não encontrado.');
-    } else {
-      setError(null);
-    }
-  }, [environmentId]);
-
-  return { environment, isLoading, error };
+  return { environment: value, isLoading, error };
 };

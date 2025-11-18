@@ -10,8 +10,7 @@ import type {
   StoreSuite,
   StoreSuiteInput,
 } from '../../domain/entities/Store';
-import { organizationService } from '../../main/factories/organizationServiceFactory';
-import { storeService } from '../../main/factories/storeServiceFactory';
+import { organizationService, storeService } from '../../services';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
 import { useOrganizationBranding } from '../context/OrganizationBrandingContext';

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { EnvironmentStatus } from '../../domain/entities/Environment';
-import { environmentService } from '../../main/factories/environmentServiceFactory';
+import { environmentService } from '../../services';
 import { useAuth } from './useAuth';
 
 interface UsePresentUsersParams {

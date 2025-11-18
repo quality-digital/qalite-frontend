@@ -1,6 +1,6 @@
 import type { Environment } from '../../../domain/entities/Environment';
 import type { EnvironmentBug } from '../../../domain/entities/EnvironmentBug';
-import { environmentService } from '../../../main/factories/environmentServiceFactory';
+import { environmentService } from '../../../services';
 import { useToast } from '../../context/ToastContext';
 
 const BUG_STATUS_LABEL: Record<EnvironmentBug['status'], string> = {

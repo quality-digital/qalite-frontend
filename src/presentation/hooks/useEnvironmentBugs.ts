@@ -1,29 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useCallback } from 'react';
 
 import type { EnvironmentBug } from '../../domain/entities/EnvironmentBug';
-import { environmentService } from '../../main/factories/environmentServiceFactory';
+import { environmentService } from '../../services';
+import { useRealtimeResource } from './useRealtimeResource';
 
 export const useEnvironmentBugs = (environmentId: string | null | undefined) => {
-  const [bugs, setBugs] = useState<EnvironmentBug[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const subscribeToBugs = useCallback(
+    (id: string, handler: (bugs: EnvironmentBug[]) => void) =>
+      environmentService.observeBugs(id, handler),
+    [],
+  );
 
-  useEffect(() => {
-    if (!environmentId) {
-      setBugs([]);
-      setIsLoading(false);
-      return;
-    }
+  const { value, isLoading } = useRealtimeResource<EnvironmentBug[]>({
+    resourceId: environmentId,
+    getInitialValue: () => [],
+    subscribe: subscribeToBugs,
+  });
 
-    setIsLoading(true);
-    const unsubscribe = environmentService.observeBugs(environmentId, (nextBugs) => {
-      setBugs(nextBugs);
-      setIsLoading(false);
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [environmentId]);
-
-  return { bugs, isLoading };
+  return { bugs: value, isLoading };
 };

@@ -10,7 +10,7 @@ import type {
   EnvironmentScenarioPlatform,
   EnvironmentStatus,
 } from '../../domain/entities/Environment';
-import { environmentService } from '../../main/factories/environmentServiceFactory';
+import { environmentService } from '../../services';
 import { Button } from '../components/Button';
 import { Layout } from '../components/Layout';
 import { useToast } from '../context/ToastContext';

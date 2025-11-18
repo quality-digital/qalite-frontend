@@ -12,7 +12,7 @@ import type { AuthUser } from '../../domain/entities/AuthUser';
 import type { Role } from '../../domain/entities/Role';
 import type { UpdateProfilePayload } from '../../domain/repositories/AuthRepository';
 import { mapFirebaseError } from '../../application/errors/mapFirebaseError';
-import { authService } from '../../main/factories/authServiceFactory';
+import { authService } from '../../services';
 import { useToast } from './ToastContext';
 
 interface AuthContextValue {

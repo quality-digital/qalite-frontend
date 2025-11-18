@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import type { Organization } from '../../domain/entities/Organization';
-import { organizationService } from '../../main/factories/organizationServiceFactory';
+import { organizationService } from '../../services';
 import { useAuth } from '../hooks/useAuth';
 import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
 import { Button } from './Button';
