@@ -105,7 +105,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (!authenticatedUser.isEmailVerified) {
         const message =
-          'Confirme seu e-mail corporativo para acessar o sistema. Verifique sua caixa de entrada e tente novamente.';
+          'Confirme seu e-mail corporativo para acessar o sistema. Reenviamos o link de verificação para sua caixa de entrada.';
         setError(message);
         showToast({ type: 'error', message });
         await signOutSilently();

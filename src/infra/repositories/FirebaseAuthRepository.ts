@@ -65,6 +65,10 @@ export class FirebaseAuthRepository implements IAuthRepository {
       payload.password,
     );
 
+    if (!credential.user.emailVerified) {
+      await sendEmailVerification(credential.user);
+    }
+
     const profile = await this.fetchUserProfile(credential.user.uid);
     return this.mapToAuthUser(credential.user, profile);
   }
