@@ -1,8 +1,5 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-
-import type { Organization } from '../../domain/entities/Organization';
-import { organizationService } from '../../services';
 import { useAuth } from '../hooks/useAuth';
 import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
 import { Button } from './Button';
@@ -18,44 +15,7 @@ export const Layout = ({ children }: LayoutProps) => {
   const { activeOrganization } = useOrganizationBranding();
   const navigate = useNavigate();
   const displayName = user?.displayName || user?.email || '';
-  const [organization, setOrganization] = useState<Organization | null>(null);
-  const [isLoadingOrganization, setIsLoadingOrganization] = useState(false);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchOrganization = async () => {
-      if (!user?.organizationId) {
-        setOrganization(null);
-        return;
-      }
-
-      setIsLoadingOrganization(true);
-      try {
-        const data = await organizationService.getById(user.organizationId);
-        if (isMounted) {
-          setOrganization(data);
-        }
-      } catch (error) {
-        console.error(error);
-        if (isMounted) {
-          setOrganization(null);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoadingOrganization(false);
-        }
-      }
-    };
-
-    void fetchOrganization();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user?.organizationId]);
-
-  const brandSource = activeOrganization ?? organization;
+  const brandSource = activeOrganization;
   const brandName = brandSource?.name || 'QaLite';
   const brandLogo = brandSource?.logoUrl || null;
 
@@ -64,12 +24,7 @@ export const Layout = ({ children }: LayoutProps) => {
       <header className="app-header">
         <Link to="/" className="app-brand" aria-label={`Página inicial da ${brandName}`}>
           {brandLogo ? (
-            <img
-              src={brandLogo}
-              alt={`Logo da ${brandName}`}
-              className="app-brand-logo"
-              aria-hidden={isLoadingOrganization}
-            />
+            <img src={brandLogo} alt={`Logo da ${brandName}`} className="app-brand-logo" />
           ) : (
             <span className="app-logo">{brandName}</span>
           )}
