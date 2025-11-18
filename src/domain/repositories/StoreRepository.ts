@@ -45,6 +45,12 @@ export interface ImportScenariosResult {
   scenarios: StoreScenario[];
 }
 
+export interface ImportSuitesResult {
+  created: number;
+  skipped: number;
+  suites: StoreSuite[];
+}
+
 export interface IStoreRepository {
   listByOrganization(organizationId: string): Promise<Store[]>;
   getById(storeId: string): Promise<Store | null>;
@@ -72,6 +78,8 @@ export interface IStoreRepository {
     payload: UpdateStoreSuitePayload,
   ): Promise<StoreSuite>;
   deleteSuite(storeId: string, suiteId: string): Promise<void>;
+  replaceSuites(storeId: string, suites: StoreSuiteInput[]): Promise<StoreSuite[]>;
+  mergeSuites(storeId: string, suites: StoreSuiteInput[]): Promise<ImportSuitesResult>;
 
   listCategories(storeId: string): Promise<StoreCategory[]>;
   createCategory(payload: CreateStoreCategoryPayload): Promise<StoreCategory>;

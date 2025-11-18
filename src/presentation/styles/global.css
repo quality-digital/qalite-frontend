@@ -2425,6 +2425,14 @@ button.store-summary-highlight:focus-visible {
   margin-bottom: 0.5rem;
 }
 
+.scenario-table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 .scenario-table-header .scenario-table-description {
   margin: 0.4rem 0 0;
   font-size: 0.85rem;

@@ -31,6 +31,7 @@ import type {
   CreateStoreSuitePayload,
   IStoreRepository,
   ImportScenariosResult,
+  ImportSuitesResult,
   UpdateStorePayload,
   UpdateStoreScenarioPayload,
   UpdateStoreSuitePayload,
@@ -364,6 +365,79 @@ export class FirebaseStoreRepository implements IStoreRepository {
     }
 
     await deleteDoc(suiteRef);
+  }
+
+  async replaceSuites(storeId: string, suites: StoreSuiteInput[]): Promise<StoreSuite[]> {
+    const storeRef = doc(firebaseFirestore, STORES_COLLECTION, storeId);
+    const storeSnapshot = await getDoc(storeRef);
+
+    if (!storeSnapshot.exists()) {
+      throw new Error('Loja não encontrada.');
+    }
+
+    const suitesCollection = collection(storeRef, SUITES_SUBCOLLECTION);
+    const existingSuites = await getDocs(suitesCollection);
+    const batch = writeBatch(firebaseFirestore);
+
+    existingSuites.forEach((docSnapshot) => {
+      batch.delete(docSnapshot.ref);
+    });
+
+    suites.forEach((suite) => {
+      const suiteRef = doc(suitesCollection);
+      batch.set(suiteRef, {
+        ...this.normalizeSuiteInput(suite),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    });
+
+    await batch.commit();
+    return this.listSuites(storeId);
+  }
+
+  async mergeSuites(storeId: string, suites: StoreSuiteInput[]): Promise<ImportSuitesResult> {
+    const storeRef = doc(firebaseFirestore, STORES_COLLECTION, storeId);
+    const storeSnapshot = await getDoc(storeRef);
+
+    if (!storeSnapshot.exists()) {
+      throw new Error('Loja não encontrada.');
+    }
+
+    const existingSuites = await this.listSuites(storeId);
+    const existingNames = new Set(existingSuites.map((suite) => suite.name.trim().toLowerCase()));
+    const normalizedSuites = suites.map((suite) => this.normalizeSuiteInput(suite));
+    const suitesToCreate = normalizedSuites.filter(
+      (suite) => !existingNames.has(suite.name.trim().toLowerCase()),
+    );
+
+    if (suitesToCreate.length === 0) {
+      return {
+        created: 0,
+        skipped: normalizedSuites.length,
+        suites: existingSuites,
+      };
+    }
+
+    const suitesCollection = collection(storeRef, SUITES_SUBCOLLECTION);
+    const batch = writeBatch(firebaseFirestore);
+
+    suitesToCreate.forEach((suite) => {
+      const suiteRef = doc(suitesCollection);
+      batch.set(suiteRef, {
+        ...suite,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    });
+
+    await batch.commit();
+    const updatedSuites = await this.listSuites(storeId);
+    return {
+      created: suitesToCreate.length,
+      skipped: normalizedSuites.length - suitesToCreate.length,
+      suites: updatedSuites,
+    };
   }
 
   async listCategories(storeId: string): Promise<StoreCategory[]> {
