@@ -21,7 +21,6 @@ export interface UpdateProfilePayload {
   firstName: string;
   lastName: string;
   photoFile?: File | null;
-  phoneNumber?: string;
 }
 
 export interface IAuthRepository {

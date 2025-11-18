@@ -6,7 +6,6 @@ export interface AuthUser {
   displayName: string;
   firstName: string;
   lastName: string;
-  phoneNumber: string;
   role: Role;
   organizationId?: string | null;
   accessToken?: string;

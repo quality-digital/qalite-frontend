@@ -44,7 +44,6 @@ export class FirebaseAuthRepository implements IAuthRepository {
       displayName: normalizedDisplayName,
       firstName,
       lastName,
-      phoneNumber: '',
       photoURL: user.photoURL ?? null,
       organizationId: null,
       isNew: true,
@@ -118,10 +117,6 @@ export class FirebaseAuthRepository implements IAuthRepository {
 
     const trimmedFirstName = payload.firstName.trim();
     const trimmedLastName = payload.lastName.trim();
-    const trimmedPhoneNumber =
-      payload.phoneNumber !== undefined
-        ? payload.phoneNumber.trim()
-        : (currentProfile.phoneNumber ?? user.phoneNumber ?? '').trim();
     const displayName = `${trimmedFirstName} ${trimmedLastName}`.trim();
 
     await firebaseUpdateProfile(user, {
@@ -134,7 +129,6 @@ export class FirebaseAuthRepository implements IAuthRepository {
       displayName,
       firstName: trimmedFirstName,
       lastName: trimmedLastName,
-      phoneNumber: trimmedPhoneNumber,
       photoURL,
       organizationId: currentProfile.organizationId ?? null,
       isNew: false,
@@ -151,14 +145,12 @@ export class FirebaseAuthRepository implements IAuthRepository {
       displayName?: string | null;
       firstName?: string | null;
       lastName?: string | null;
-      phoneNumber?: string | null;
       photoURL?: string | null;
       organizationId?: string | null;
     },
   ): AuthUser {
     const storedFirstName = (profile.firstName ?? '').trim();
     const storedLastName = (profile.lastName ?? '').trim();
-    const storedPhoneNumber = (profile.phoneNumber ?? '').trim();
     const nameFromParts = `${storedFirstName} ${storedLastName}`.trim();
     const computedDisplayName =
       (profile.displayName ?? '').trim() ||
@@ -169,15 +161,12 @@ export class FirebaseAuthRepository implements IAuthRepository {
     const [computedFirstName, ...computedLastNameParts] = computedDisplayName.split(/\s+/);
     const effectiveFirstName = storedFirstName || computedFirstName || '';
     const effectiveLastName = storedLastName || computedLastNameParts.join(' ');
-    const effectivePhoneNumber = storedPhoneNumber || (user.phoneNumber ?? '').trim();
-
     return {
       uid: user.uid,
       email: user.email ?? '',
       displayName: computedDisplayName,
       firstName: effectiveFirstName,
       lastName: effectiveLastName,
-      phoneNumber: effectivePhoneNumber,
       role: profile.role,
       organizationId: profile.organizationId ?? null,
       photoURL: profile.photoURL ?? user.photoURL ?? undefined,
@@ -193,7 +182,6 @@ export class FirebaseAuthRepository implements IAuthRepository {
       displayName: string;
       firstName: string;
       lastName: string;
-      phoneNumber: string;
       photoURL?: string | null;
       organizationId: string | null;
       isNew?: boolean;
@@ -207,7 +195,6 @@ export class FirebaseAuthRepository implements IAuthRepository {
         displayName: profile.displayName,
         firstName: profile.firstName,
         lastName: profile.lastName,
-        phoneNumber: profile.phoneNumber,
         role: profile.role,
         photoURL: profile.photoURL ?? null,
         organizationId: profile.organizationId,
@@ -223,7 +210,6 @@ export class FirebaseAuthRepository implements IAuthRepository {
     displayName?: string | null;
     firstName?: string | null;
     lastName?: string | null;
-    phoneNumber?: string | null;
     photoURL?: string | null;
     organizationId?: string | null;
   }> {
@@ -237,7 +223,6 @@ export class FirebaseAuthRepository implements IAuthRepository {
         displayName: (data.displayName as string) ?? '',
         firstName: (data.firstName as string) ?? '',
         lastName: (data.lastName as string) ?? '',
-        phoneNumber: (data.phoneNumber as string) ?? '',
         photoURL: (data.photoURL as string | null) ?? null,
         organizationId: (data.organizationId as string | null) ?? null,
       };
@@ -248,7 +233,6 @@ export class FirebaseAuthRepository implements IAuthRepository {
       displayName: '',
       firstName: '',
       lastName: '',
-      phoneNumber: '',
       photoURL: null,
       organizationId: null,
     };

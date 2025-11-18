@@ -1215,6 +1215,47 @@ button.store-summary-highlight:focus-visible {
     background var(--transition-base);
 }
 
+.field-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.field-input--with-action {
+  padding-right: 4.5rem;
+}
+
+.field-input-action {
+  position: absolute;
+  right: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    color var(--transition-base),
+    background var(--transition-base),
+    border-color var(--transition-base);
+}
+
+.field-input-action:hover {
+  color: var(--color-primary);
+}
+
+.field-input-action:focus-visible {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-ring);
+  background: var(--color-surface);
+}
+
 .field-input::placeholder {
   color: var(--color-text-muted);
 }
