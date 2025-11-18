@@ -6,65 +6,39 @@ import type {
   RemoveUserFromOrganizationPayload,
   UpdateOrganizationPayload,
 } from '../../domain/repositories/OrganizationRepository';
-import { AddUserToOrganization } from '../../domain/usecases/AddUserToOrganization';
-import { CreateOrganization } from '../../domain/usecases/CreateOrganization';
-import { DeleteOrganization } from '../../domain/usecases/DeleteOrganization';
-import { GetOrganizationById } from '../../domain/usecases/GetOrganizationById';
-import { GetUserOrganization } from '../../domain/usecases/GetUserOrganization';
-import { ListOrganizations } from '../../domain/usecases/ListOrganizations';
-import { RemoveUserFromOrganization } from '../../domain/usecases/RemoveUserFromOrganization';
-import { UpdateOrganization } from '../../domain/usecases/UpdateOrganization';
 
 export class OrganizationService {
-  private readonly listOrganizations: ListOrganizations;
-  private readonly getOrganizationById: GetOrganizationById;
-  private readonly createOrganization: CreateOrganization;
-  private readonly updateOrganization: UpdateOrganization;
-  private readonly deleteOrganization: DeleteOrganization;
-  private readonly addUserToOrganization: AddUserToOrganization;
-  private readonly removeUserFromOrganization: RemoveUserFromOrganization;
-  private readonly getUserOrganization: GetUserOrganization;
-
-  constructor(repository: IOrganizationRepository) {
-    this.listOrganizations = new ListOrganizations(repository);
-    this.getOrganizationById = new GetOrganizationById(repository);
-    this.createOrganization = new CreateOrganization(repository);
-    this.updateOrganization = new UpdateOrganization(repository);
-    this.deleteOrganization = new DeleteOrganization(repository);
-    this.addUserToOrganization = new AddUserToOrganization(repository);
-    this.removeUserFromOrganization = new RemoveUserFromOrganization(repository);
-    this.getUserOrganization = new GetUserOrganization(repository);
-  }
+  constructor(private readonly repository: IOrganizationRepository) {}
 
   list(): Promise<Organization[]> {
-    return this.listOrganizations.execute();
+    return this.repository.list();
   }
 
   getById(id: string): Promise<Organization | null> {
-    return this.getOrganizationById.execute(id);
+    return this.repository.getById(id);
   }
 
   create(payload: CreateOrganizationPayload): Promise<Organization> {
-    return this.createOrganization.execute(payload);
+    return this.repository.create(payload);
   }
 
   update(id: string, payload: UpdateOrganizationPayload): Promise<Organization> {
-    return this.updateOrganization.execute(id, payload);
+    return this.repository.update(id, payload);
   }
 
   delete(id: string): Promise<void> {
-    return this.deleteOrganization.execute(id);
+    return this.repository.delete(id);
   }
 
   addUser(payload: AddUserToOrganizationPayload): Promise<OrganizationMember> {
-    return this.addUserToOrganization.execute(payload);
+    return this.repository.addUserByEmail(payload);
   }
 
   removeUser(payload: RemoveUserFromOrganizationPayload): Promise<void> {
-    return this.removeUserFromOrganization.execute(payload);
+    return this.repository.removeUser(payload);
   }
 
   getUserOrganizationByUserId(userId: string): Promise<Organization | null> {
-    return this.getUserOrganization.execute(userId);
+    return this.repository.getUserOrganization(userId);
   }
 }

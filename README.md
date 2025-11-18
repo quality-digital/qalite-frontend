@@ -17,24 +17,28 @@ Base de autenticação escalável construída com **React + Vite** e **Firebase 
 src/
  ├─ domain/
  │   ├─ entities/        # Entidades e tipos de domínio (User, Role, AuthUser)
- │   ├─ repositories/    # Interfaces/contratos (IAuthRepository)
- │   └─ usecases/        # Casos de uso (LoginUser, RegisterUser, ...)
+ │   └─ repositories/    # Contratos dos repositórios (IAuthRepository, IStoreRepository...)
+ ├─ application/
+ │   ├─ errors/          # Classes de erro reutilizáveis
+ │   ├─ ports/           # Portas/adapters (ex.: exportadores)
+ │   └─ services/        # Serviços orquestradores que falam diretamente com os repositórios
  ├─ infra/
  │   ├─ firebase/        # Configuração do Firebase
- │   └─ repositories/    # Implementações concretas (FirebaseAuthRepository)
- ├─ application/
- │   ├─ context/         # Contextos React (AuthContext, AuthProvider)
- │   ├─ hooks/           # Hooks reutilizáveis (useAuth)
- │   ├─ routes/          # Componentes de rota protegida
- │   └─ services/        # Serviços orquestradores (AuthService)
- └─ presentation/
-     ├─ components/      # Componentes de UI reutilizáveis
-     ├─ pages/           # Páginas da aplicação (Login, Register, Dashboards)
-     ├─ routes/          # Definição das rotas da aplicação (AppRoutes)
-     └─ styles/          # Estilos globais
+ │   ├─ repositories/    # Implementações concretas (FirebaseAuthRepository)
+ │   └─ services/        # Adapters específicos de infraestrutura (ex.: exportadores)
+ ├─ presentation/
+ │   ├─ components/      # Componentes de UI reutilizáveis
+ │   ├─ context/         # Contextos React (AuthProvider, ToastProvider...)
+ │   ├─ hooks/           # Hooks reutilizáveis (useAuth, useToast)
+ │   ├─ pages/           # Páginas da aplicação (Login, Register, Dashboards)
+ │   ├─ routes/          # Definição das rotas da aplicação (AppRoutes)
+ │   ├─ styles/          # Estilos globais
+ │   └─ utils/           # Funções de apoio da camada de UI
+ └─ main/
+     └─ factories/       # Factories que montam serviços (ex.: authService)
 ```
 
-Essa organização separa claramente domínio, infraestrutura, aplicação e apresentação, seguindo o princípio da inversão de dependências: o domínio depende apenas de abstrações (`IAuthRepository`), enquanto a implementação concreta com Firebase fica na camada `infra`.
+O domínio permanece independente de detalhes externos, descrevendo apenas os tipos e contratos. Os serviços da camada `application` agora se conectam diretamente aos repositórios concretos providos pela `infra`, reduzindo indiretamente o número de camadas sem abrir mão das abstrações necessárias.
 
 ## 🔐 Funcionalidades de autenticação
 
@@ -72,7 +76,7 @@ As variáveis são lidas via `import.meta.env` em `src/infra/firebase/firebaseCo
 - **Suportar outro provider de autenticação:**
   1. Implemente uma classe que siga `IAuthRepository` em `src/infra/repositories`.
   2. Substitua a instância usada em `AuthService` pelo novo repositório (ou injete via factory/DI).
-  3. Os casos de uso e camadas superiores permanecem inalterados.
+  3. Os serviços e camadas superiores permanecem inalterados.
 
 ## 🧩 Scripts disponíveis
 

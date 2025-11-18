@@ -2,65 +2,42 @@ import type { AuthUser } from '../../domain/entities/AuthUser';
 import type { Role } from '../../domain/entities/Role';
 import type {
   IAuthRepository,
+  LoginPayload,
+  RegisterPayload,
   UpdateProfilePayload,
 } from '../../domain/repositories/AuthRepository';
-import { GetCurrentUser } from '../../domain/usecases/GetCurrentUser';
-import { LoginUser, type LoginUserInput } from '../../domain/usecases/LoginUser';
-import { LogoutUser } from '../../domain/usecases/LogoutUser';
-import { ObserveAuthState } from '../../domain/usecases/ObserveAuthState';
-import { RegisterUser, type RegisterUserInput } from '../../domain/usecases/RegisterUser';
-import { ResetPassword } from '../../domain/usecases/ResetPassword';
-import { UpdateUserProfile } from '../../domain/usecases/UpdateUserProfile';
-
 export class AuthService {
-  private readonly registerUser: RegisterUser;
-  private readonly loginUser: LoginUser;
-  private readonly logoutUser: LogoutUser;
-  private readonly resetPassword: ResetPassword;
-  private readonly getCurrentUser: GetCurrentUser;
-  private readonly observeAuthState: ObserveAuthState;
-  private readonly updateUserProfile: UpdateUserProfile;
+  constructor(private readonly authRepository: IAuthRepository) {}
 
-  constructor(authRepository: IAuthRepository) {
-    this.registerUser = new RegisterUser(authRepository);
-    this.loginUser = new LoginUser(authRepository);
-    this.logoutUser = new LogoutUser(authRepository);
-    this.resetPassword = new ResetPassword(authRepository);
-    this.getCurrentUser = new GetCurrentUser(authRepository);
-    this.observeAuthState = new ObserveAuthState(authRepository);
-    this.updateUserProfile = new UpdateUserProfile(authRepository);
+  register(input: RegisterPayload): Promise<AuthUser> {
+    return this.authRepository.register(input);
   }
 
-  register(input: RegisterUserInput): Promise<AuthUser> {
-    return this.registerUser.execute(input);
-  }
-
-  login(input: LoginUserInput): Promise<AuthUser> {
-    return this.loginUser.execute(input);
+  login(input: LoginPayload): Promise<AuthUser> {
+    return this.authRepository.login(input);
   }
 
   logout(): Promise<void> {
-    return this.logoutUser.execute();
+    return this.authRepository.logout();
   }
 
   sendPasswordReset(email: string): Promise<void> {
-    return this.resetPassword.execute(email);
+    return this.authRepository.sendPasswordReset(email);
   }
 
   getCurrent(): Promise<AuthUser | null> {
-    return this.getCurrentUser.execute();
+    return this.authRepository.getCurrentUser();
   }
 
   onAuthStateChanged(listener: (user: AuthUser | null) => void): () => void {
-    return this.observeAuthState.execute(listener);
+    return this.authRepository.onAuthStateChanged(listener);
   }
 
   hasRequiredRole(user: AuthUser | null, allowedRoles: Role[]): boolean {
-    if (!user) return false;
-    return allowedRoles.includes(user.role);
+    return Boolean(user && allowedRoles.includes(user.role));
   }
 
   updateProfile(input: UpdateProfilePayload): Promise<AuthUser> {
-    return this.updateUserProfile.execute(input);
+    return this.authRepository.updateProfile(input);
   }
 }
