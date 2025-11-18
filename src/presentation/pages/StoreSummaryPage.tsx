@@ -43,6 +43,7 @@ import {
   validateScenarioImportPayload,
   validateSuiteImportPayload,
 } from '../../shared/utils/storeImportExport';
+import { isAutomatedScenario } from '../../shared/utils/automation';
 
 const emptyScenarioForm: StoreScenarioInput = {
   title: '',
@@ -102,16 +103,6 @@ const filterScenarios = (list: StoreScenario[], filters: ScenarioFilters) => {
 
   return filtered;
 };
-
-const normalizeAutomationLabel = (value: string) =>
-  value
-    .normalize('NFD')
-    .replace(/[^\p{Letter}\p{Number}\s]+/gu, '')
-    .trim()
-    .toLowerCase();
-
-const isAutomatedScenario = (automation: string) =>
-  normalizeAutomationLabel(automation).startsWith('automatizado');
 
 export const StoreSummaryPage = () => {
   const navigate = useNavigate();

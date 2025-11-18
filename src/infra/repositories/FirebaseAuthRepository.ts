@@ -2,6 +2,7 @@ import {
   User as FirebaseUser,
   createUserWithEmailAndPassword,
   onAuthStateChanged as firebaseOnAuthStateChanged,
+  sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
@@ -49,6 +50,10 @@ export class FirebaseAuthRepository implements IAuthRepository {
       isNew: true,
     });
 
+    if (!user.emailVerified) {
+      await sendEmailVerification(user);
+    }
+
     const profile = await this.fetchUserProfile(user.uid);
     return this.mapToAuthUser(user, profile);
   }
@@ -59,6 +64,10 @@ export class FirebaseAuthRepository implements IAuthRepository {
       payload.email,
       payload.password,
     );
+
+    if (!credential.user.emailVerified) {
+      await sendEmailVerification(credential.user);
+    }
 
     const profile = await this.fetchUserProfile(credential.user.uid);
     return this.mapToAuthUser(credential.user, profile);
@@ -173,6 +182,7 @@ export class FirebaseAuthRepository implements IAuthRepository {
       organizationId: profile.organizationId ?? null,
       photoURL: profile.photoURL ?? user.photoURL ?? undefined,
       accessToken: user.refreshToken,
+      isEmailVerified: user.emailVerified,
     };
   }
 

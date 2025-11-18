@@ -13,6 +13,7 @@ import { Modal } from '../components/Modal';
 import { UserAvatar } from '../components/UserAvatar';
 import { SimpleBarChart } from '../components/SimpleBarChart';
 import { BarChartIcon, SparklesIcon, StorefrontIcon, UsersGroupIcon } from '../components/icons';
+import { isAutomatedScenario } from '../../shared/utils/automation';
 
 interface StoreForm {
   name: string;
@@ -143,7 +144,7 @@ export const AdminStoresPage = () => {
           stores.map(async (store) => {
             const scenarios = await storeService.listScenarios(store.id);
             const automatedCount = scenarios.filter((scenario) =>
-              scenario.automation.toLowerCase().includes('automat'),
+              isAutomatedScenario(scenario.automation),
             ).length;
 
             return [store.id, automatedCount] as const;

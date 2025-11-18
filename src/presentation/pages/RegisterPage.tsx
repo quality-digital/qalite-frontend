@@ -5,6 +5,8 @@ import { useAuth } from '../hooks/useAuth';
 import { AuthLayout } from '../components/AuthLayout';
 import { Button } from '../components/Button';
 import { TextInput } from '../components/TextInput';
+import { ALLOWED_EMAIL_DOMAINS_LABEL } from '../../shared/constants/auth';
+import { isAllowedEmailDomain } from '../../shared/utils/email';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -23,14 +25,22 @@ export const RegisterPage = () => {
     event.preventDefault();
     setFormError(null);
 
-    if (!displayName || !email || !password || !confirmPassword) {
+    const normalizedDisplayName = displayName.trim();
+    const normalizedEmail = email.trim();
+
+    if (!normalizedDisplayName || !normalizedEmail || !password || !confirmPassword) {
       setFormError('Todos os campos são obrigatórios.');
       return;
     }
 
     const emailRegex = /[^@\s]+@[^@\s]+\.[^@\s]+/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(normalizedEmail)) {
       setFormError('Informe um e-mail válido.');
+      return;
+    }
+
+    if (!isAllowedEmailDomain(normalizedEmail)) {
+      setFormError(`Utilize um e-mail corporativo (${ALLOWED_EMAIL_DOMAINS_LABEL}).`);
       return;
     }
 
@@ -45,7 +55,7 @@ export const RegisterPage = () => {
     }
 
     try {
-      await register({ email, password, displayName });
+      await register({ email: normalizedEmail, password, displayName: normalizedDisplayName });
       navigate('/');
     } catch (err) {
       console.error(err);
@@ -84,6 +94,7 @@ export const RegisterPage = () => {
           onChange={(event) => setEmail(event.target.value)}
           required
         />
+        <p className="form-hint">Use um e-mail corporativo ({ALLOWED_EMAIL_DOMAINS_LABEL}).</p>
         <TextInput
           id="password"
           label="Senha"

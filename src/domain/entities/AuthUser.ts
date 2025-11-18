@@ -11,4 +11,5 @@ export interface AuthUser {
   organizationId?: string | null;
   accessToken?: string;
   photoURL?: string;
+  isEmailVerified: boolean;
 }

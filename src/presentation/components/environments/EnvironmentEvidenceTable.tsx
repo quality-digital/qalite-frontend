@@ -13,6 +13,7 @@ import {
   type ScenarioSortConfig,
 } from '../ScenarioColumnSortControl';
 import { ENVIRONMENT_PLATFORM_LABEL } from '../../../shared/constants/environmentLabels';
+import { isAutomatedScenario } from '../../../shared/utils/automation';
 
 interface EnvironmentEvidenceTableProps {
   environment: Environment;
@@ -35,21 +36,8 @@ const AUTOMATED_STATUS_OPTION: { value: EnvironmentScenarioStatus; label: string
   label: 'Concluído automatizado',
 };
 
-const normalizeAutomationValue = (value: string | null | undefined) =>
-  (value ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-zA-Z0-9]+/g, ' ')
-    .trim()
-    .toLowerCase();
-
-const isScenarioAutomated = (automation: string | null | undefined) => {
-  const normalized = normalizeAutomationValue(automation);
-  return normalized === 'automatizado' || normalized === 'sim';
-};
-
 const getScenarioStatusOptions = (scenario: EnvironmentScenario) =>
-  isScenarioAutomated(scenario.automatizado)
+  isAutomatedScenario(scenario.automatizado)
     ? [...BASE_STATUS_OPTIONS.slice(0, 3), AUTOMATED_STATUS_OPTION, ...BASE_STATUS_OPTIONS.slice(3)]
     : BASE_STATUS_OPTIONS;
 

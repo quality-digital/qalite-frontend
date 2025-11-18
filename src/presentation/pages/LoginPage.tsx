@@ -5,6 +5,8 @@ import { useAuth } from '../hooks/useAuth';
 import { AuthLayout } from '../components/AuthLayout';
 import { Button } from '../components/Button';
 import { TextInput } from '../components/TextInput';
+import { ALLOWED_EMAIL_DOMAINS_LABEL } from '../../shared/constants/auth';
+import { isAllowedEmailDomain } from '../../shared/utils/email';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -17,13 +19,20 @@ export const LoginPage = () => {
     event.preventDefault();
     setFormError(null);
 
-    if (!email || !password) {
+    const normalizedEmail = email.trim();
+
+    if (!normalizedEmail || !password) {
       setFormError('Informe e-mail e senha para continuar.');
       return;
     }
 
+    if (!isAllowedEmailDomain(normalizedEmail)) {
+      setFormError(`Utilize um e-mail corporativo (${ALLOWED_EMAIL_DOMAINS_LABEL}).`);
+      return;
+    }
+
     try {
-      const authenticatedUser = await login(email, password);
+      const authenticatedUser = await login(normalizedEmail, password);
 
       if (authenticatedUser.role === 'admin') {
         navigate('/admin', { replace: true });
@@ -67,6 +76,7 @@ export const LoginPage = () => {
           onChange={(event) => setEmail(event.target.value)}
           required
         />
+        <p className="form-hint">Use um e-mail corporativo ({ALLOWED_EMAIL_DOMAINS_LABEL}).</p>
         <TextInput
           id="password"
           label="Senha"

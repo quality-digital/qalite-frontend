@@ -10,6 +10,7 @@ import { UserAvatar } from '../components/UserAvatar';
 import { SimpleBarChart } from '../components/SimpleBarChart';
 import { BarChartIcon, SparklesIcon, StorefrontIcon, UsersGroupIcon } from '../components/icons';
 import { storeService } from '../../services';
+import { isAutomatedScenario } from '../../shared/utils/automation';
 
 export const UserDashboardPage = () => {
   const navigate = useNavigate();
@@ -55,7 +56,7 @@ export const UserDashboardPage = () => {
           stores.map(async (store) => {
             const scenarios = await storeService.listScenarios(store.id);
             const automatedCount = scenarios.filter((scenario) =>
-              scenario.automation.toLowerCase().includes('automat'),
+              isAutomatedScenario(scenario.automation),
             ).length;
 
             return [store.id, automatedCount] as const;

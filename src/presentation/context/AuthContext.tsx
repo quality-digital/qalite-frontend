@@ -78,6 +78,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = authService.onAuthStateChanged((currentUser) => {
+      if (currentUser && !currentUser.isEmailVerified) {
+        setUser(null);
+        setIsInitializing(false);
+        return;
+      }
+
       setUser(currentUser);
       setIsInitializing(false);
     });
@@ -85,30 +91,63 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
+  const signOutSilently = useCallback(async () => {
+    try {
+      await authService.logout();
+    } catch (logoutError) {
+      console.error(logoutError);
+    }
+  }, []);
+
   const login = useCallback(
-    (email: string, password: string) =>
-      runAuthAction(() => authService.login({ email, password }), {
-        onSuccess: (logged) => setUser(logged),
-        successMessage: (logged) =>
-          `Bem-vindo de volta, ${logged.displayName.split(' ')[0] || 'usuário'}!`,
-      }),
-    [runAuthAction],
+    async (email: string, password: string) => {
+      const authenticatedUser = await runAuthAction(() => authService.login({ email, password }));
+
+      if (!authenticatedUser.isEmailVerified) {
+        const message =
+          'Confirme seu e-mail corporativo para acessar o sistema. Reenviamos o link de verificação para sua caixa de entrada.';
+        setError(message);
+        showToast({ type: 'error', message });
+        await signOutSilently();
+        throw new Error(message);
+      }
+
+      setUser(authenticatedUser);
+      showToast({
+        type: 'success',
+        message: `Bem-vindo de volta, ${authenticatedUser.displayName.split(' ')[0] || 'usuário'}!`,
+      });
+
+      return authenticatedUser;
+    },
+    [runAuthAction, showToast, signOutSilently],
   );
 
   const register = useCallback(
-    (input: { email: string; password: string; displayName: string }) =>
-      runAuthAction(
-        () =>
-          authService.register({
-            ...input,
-            role: DEFAULT_ROLE,
-          }),
-        {
-          onSuccess: (registered) => setUser(registered),
-          successMessage: 'Conta criada com sucesso! Personalize sua experiência a seguir.',
-        },
-      ),
-    [runAuthAction],
+    async (input: { email: string; password: string; displayName: string }) => {
+      const registeredUser = await runAuthAction(() =>
+        authService.register({
+          ...input,
+          role: DEFAULT_ROLE,
+        }),
+      );
+
+      if (registeredUser.isEmailVerified) {
+        setUser(registeredUser);
+      } else {
+        await signOutSilently();
+        setUser(null);
+      }
+
+      showToast({
+        type: 'success',
+        message:
+          'Conta criada com sucesso! Verifique seu e-mail corporativo para liberar o acesso.',
+      });
+
+      return registeredUser;
+    },
+    [runAuthAction, showToast, signOutSilently],
   );
 
   const logout = useCallback(
