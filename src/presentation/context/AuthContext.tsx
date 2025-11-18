@@ -10,6 +10,7 @@ import {
 
 import type { AuthUser } from '../../domain/entities/AuthUser';
 import type { Role } from '../../domain/entities/Role';
+import { DEFAULT_ROLE } from '../../domain/entities/Role';
 import type { UpdateProfilePayload } from '../../domain/repositories/AuthRepository';
 import { mapFirebaseError } from '../../application/errors/mapFirebaseError';
 import { authService } from '../../services';
@@ -96,10 +97,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = useCallback(
     (input: { email: string; password: string; displayName: string }) =>
-      runAuthAction(() => authService.register(input), {
-        onSuccess: (registered) => setUser(registered),
-        successMessage: 'Conta criada com sucesso! Personalize sua experiência a seguir.',
-      }),
+      runAuthAction(
+        () =>
+          authService.register({
+            ...input,
+            role: DEFAULT_ROLE,
+          }),
+        {
+          onSuccess: (registered) => setUser(registered),
+          successMessage: 'Conta criada com sucesso! Personalize sua experiência a seguir.',
+        },
+      ),
     [runAuthAction],
   );
 

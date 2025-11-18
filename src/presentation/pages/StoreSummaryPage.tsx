@@ -10,6 +10,10 @@ import type {
   StoreSuite,
   StoreSuiteInput,
 } from '../../domain/entities/Store';
+import type {
+  StoreExportPayload,
+  StoreSuiteExportPayload,
+} from '../../application/services/StoreService';
 import { organizationService, storeService } from '../../services';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
@@ -34,6 +38,11 @@ import {
   type ScenarioSortConfig,
 } from '../components/ScenarioColumnSortControl';
 import { useStoreEnvironments } from '../hooks/useStoreEnvironments';
+import {
+  downloadJsonFile,
+  validateScenarioImportPayload,
+  validateSuiteImportPayload,
+} from '../../shared/utils/storeImportExport';
 
 const emptyScenarioForm: StoreScenarioInput = {
   title: '',
@@ -94,6 +103,16 @@ const filterScenarios = (list: StoreScenario[], filters: ScenarioFilters) => {
   return filtered;
 };
 
+const normalizeAutomationLabel = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[^\p{Letter}\p{Number}\s]+/gu, '')
+    .trim()
+    .toLowerCase();
+
+const isAutomatedScenario = (automation: string) =>
+  normalizeAutomationLabel(automation).startsWith('automatizado');
+
 export const StoreSummaryPage = () => {
   const navigate = useNavigate();
   const { storeId } = useParams<{ storeId: string }>();
@@ -138,6 +157,12 @@ export const StoreSummaryPage = () => {
   const [suitePreviewSort, setSuitePreviewSort] = useState<ScenarioSortConfig | null>(null);
   const [isViewingSuitesOnly, setIsViewingSuitesOnly] = useState(false);
   const suiteListRef = useRef<HTMLDivElement | null>(null);
+  const scenarioFileInputRef = useRef<HTMLInputElement | null>(null);
+  const suiteFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isExportingScenarios, setIsExportingScenarios] = useState(false);
+  const [isImportingScenarios, setIsImportingScenarios] = useState(false);
+  const [isExportingSuites, setIsExportingSuites] = useState(false);
+  const [isImportingSuites, setIsImportingSuites] = useState(false);
   const storeSiteInfo = useMemo(() => normalizeStoreSite(store?.site), [store?.site]);
   const [isStoreSettingsOpen, setIsStoreSettingsOpen] = useState(false);
   const [storeSettings, setStoreSettings] = useState({ name: '', site: '' });
@@ -167,9 +192,7 @@ export const StoreSummaryPage = () => {
   const canToggleCategoryList =
     !isLoadingCategories && !isSyncingLegacyCategories && categories.length > 0;
   const automatedScenarioCount = useMemo(
-    () =>
-      scenarios.filter((scenario) => scenario.automation.toLowerCase().includes('automatizado'))
-        .length,
+    () => scenarios.filter((scenario) => isAutomatedScenario(scenario.automation)).length,
     [scenarios],
   );
   const suitesWithScenariosCount = useMemo(
@@ -966,6 +989,100 @@ export const StoreSummaryPage = () => {
     }
   };
 
+  const handleScenarioExport = async () => {
+    if (!store) {
+      return;
+    }
+
+    try {
+      setIsExportingScenarios(true);
+      const data = await storeService.exportStore(store.id);
+      downloadJsonFile(data, `${store.name.replace(/\s+/g, '_')}_cenarios.json`);
+      showToast({ type: 'success', message: 'Exportação de cenários concluída.' });
+    } catch (error) {
+      console.error(error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível exportar os cenários desta loja.';
+      showToast({ type: 'error', message });
+    } finally {
+      setIsExportingScenarios(false);
+    }
+  };
+
+  const handleScenarioImportClick = () => {
+    if (!canManageScenarios) {
+      return;
+    }
+
+    scenarioFileInputRef.current?.click();
+  };
+
+  const handleScenarioImportFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file || !store) {
+      return;
+    }
+
+    try {
+      setIsImportingScenarios(true);
+      const content = await file.text();
+      const parsed = JSON.parse(content) as StoreExportPayload;
+      validateScenarioImportPayload(parsed);
+
+      const importedStoreName = parsed.store.name.trim().toLowerCase();
+      const selectedStoreName = store.name.trim().toLowerCase();
+      if (
+        parsed.store.id &&
+        parsed.store.id !== store.id &&
+        importedStoreName !== selectedStoreName
+      ) {
+        throw new Error('O arquivo selecionado pertence a outra loja.');
+      }
+
+      if (parsed.scenarios.length === 0) {
+        showToast({ type: 'info', message: 'Nenhum cenário encontrado para importar.' });
+        return;
+      }
+
+      const shouldReplace = window.confirm(
+        'Deseja sobrescrever os cenários atuais? Clique em Cancelar para mesclar com os existentes.',
+      );
+      const strategy = shouldReplace ? 'replace' : 'merge';
+      const scenariosPayload = parsed.scenarios.map((scenario) => ({
+        title: scenario.title,
+        category: scenario.category,
+        automation: scenario.automation,
+        criticality: scenario.criticality,
+        observation: scenario.observation,
+        bdd: scenario.bdd,
+      }));
+
+      const result = await storeService.importScenarios(store.id, scenariosPayload, strategy);
+      setScenarios(result.scenarios);
+      setStore((previous) =>
+        previous ? { ...previous, scenarioCount: result.scenarios.length } : previous,
+      );
+
+      const feedbackMessage =
+        result.strategy === 'replace'
+          ? `Cenários substituídos com sucesso (${result.scenarios.length} itens).`
+          : `Importação concluída. ${result.created} novo(s) cenário(s) adicionados, ${result.skipped} ignorados.`;
+
+      showToast({ type: 'success', message: feedbackMessage });
+    } catch (error) {
+      console.error(error);
+      const message =
+        error instanceof Error ? error.message : 'Não foi possível importar o arquivo selecionado.';
+      showToast({ type: 'error', message });
+    } finally {
+      setIsImportingScenarios(false);
+    }
+  };
+
   const handleSuiteFormChange =
     (field: keyof Omit<StoreSuiteInput, 'scenarioIds'>) =>
     (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -1139,6 +1256,129 @@ export const StoreSummaryPage = () => {
       showToast({ type: 'error', message });
     } finally {
       setIsSavingSuite(false);
+    }
+  };
+
+  const handleSuiteExport = async () => {
+    if (!store) {
+      return;
+    }
+
+    try {
+      setIsExportingSuites(true);
+      const data = await storeService.exportSuites(store.id);
+      downloadJsonFile(data, `${store.name.replace(/\s+/g, '_')}_suites.json`);
+      showToast({ type: 'success', message: 'Exportação de suítes concluída.' });
+    } catch (error) {
+      console.error(error);
+      const message =
+        error instanceof Error ? error.message : 'Não foi possível exportar as suítes desta loja.';
+      showToast({ type: 'error', message });
+    } finally {
+      setIsExportingSuites(false);
+    }
+  };
+
+  const handleSuiteImportClick = () => {
+    if (!canManageScenarios) {
+      return;
+    }
+
+    suiteFileInputRef.current?.click();
+  };
+
+  const handleSuiteImportFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file || !store) {
+      return;
+    }
+
+    try {
+      setIsImportingSuites(true);
+      const content = await file.text();
+      const parsed = JSON.parse(content) as StoreSuiteExportPayload;
+      validateSuiteImportPayload(parsed);
+
+      const importedStoreName = parsed.store.name.trim().toLowerCase();
+      const selectedStoreName = store.name.trim().toLowerCase();
+      if (
+        parsed.store.id &&
+        parsed.store.id !== store.id &&
+        importedStoreName !== selectedStoreName
+      ) {
+        throw new Error('O arquivo selecionado pertence a outra loja.');
+      }
+
+      if (parsed.suites.length === 0) {
+        showToast({ type: 'info', message: 'Nenhuma suíte encontrada para importar.' });
+        return;
+      }
+
+      const shouldReplace = window.confirm(
+        'Deseja sobrescrever as suítes atuais? Clique em Cancelar para mesclar com as existentes.',
+      );
+      const strategy = shouldReplace ? 'replace' : 'merge';
+
+      const scenarioById = new Map(scenarios.map((scenario) => [scenario.id, scenario.id]));
+      const scenarioByTitle = new Map(
+        scenarios.map((scenario) => [scenario.title.trim().toLowerCase(), scenario.id]),
+      );
+      let missingReferences = 0;
+
+      const suitesPayload: StoreSuiteInput[] = parsed.suites.map((suite) => {
+        const mappedScenarioIds: string[] = [];
+
+        suite.scenarios.forEach((scenarioRef) => {
+          const normalizedTitle = scenarioRef.title.trim().toLowerCase();
+          const matchedId =
+            (scenarioRef.id ? scenarioById.get(scenarioRef.id) : undefined) ||
+            (normalizedTitle ? scenarioByTitle.get(normalizedTitle) : undefined);
+
+          if (matchedId && !mappedScenarioIds.includes(matchedId)) {
+            mappedScenarioIds.push(matchedId);
+          } else if (scenarioRef.id || normalizedTitle) {
+            missingReferences += 1;
+          }
+        });
+
+        return {
+          name: suite.name,
+          description: suite.description,
+          scenarioIds: mappedScenarioIds,
+        };
+      });
+
+      const result = await storeService.importSuites(store.id, suitesPayload, strategy);
+      setSuites(result.suites);
+
+      if (editingSuiteId && !result.suites.some((item) => item.id === editingSuiteId)) {
+        handleCancelSuiteEdit();
+      }
+
+      const summaryParts = [
+        result.strategy === 'replace'
+          ? `Suítes substituídas com sucesso (${result.suites.length} itens).`
+          : `Importação concluída. ${result.created} nova(s) suíte(s), ${result.skipped} ignorada(s).`,
+      ];
+
+      if (missingReferences > 0) {
+        summaryParts.push(
+          `${missingReferences} referência${missingReferences === 1 ? '' : 's'} de cenário não encontrada${missingReferences === 1 ? '' : 's'} e ignorada${missingReferences === 1 ? '' : 's'}.`,
+        );
+      }
+
+      showToast({ type: 'success', message: summaryParts.join(' ') });
+    } catch (error) {
+      console.error(error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível importar as suítes selecionadas.';
+      showToast({ type: 'error', message });
+    } finally {
+      setIsImportingSuites(false);
     }
   };
 
@@ -1458,16 +1698,79 @@ export const StoreSummaryPage = () => {
                   <div>
                     <h3 className="section-subtitle">Massa de cenários e suítes de testes</h3>
                   </div>
-                  {viewMode === 'scenarios' && scenarios.length > 0 && (
-                    <button
-                      type="button"
-                      className="scenario-table-toggle"
-                      onClick={() => setIsScenarioTableCollapsed((previous) => !previous)}
-                    >
-                      {isScenarioTableCollapsed ? 'Maximizar tabela' : 'Minimizar tabela'}
-                    </button>
-                  )}
+                  <div className="scenario-table-actions">
+                    {viewMode === 'scenarios' ? (
+                      <>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={handleScenarioExport}
+                          isLoading={isExportingScenarios}
+                          loadingText="Exportando..."
+                        >
+                          Exportar JSON
+                        </Button>
+                        {canManageScenarios && (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={handleScenarioImportClick}
+                            isLoading={isImportingScenarios}
+                            loadingText="Importando..."
+                          >
+                            Importar JSON
+                          </Button>
+                        )}
+                        {scenarios.length > 0 && (
+                          <button
+                            type="button"
+                            className="scenario-table-toggle"
+                            onClick={() => setIsScenarioTableCollapsed((previous) => !previous)}
+                          >
+                            {isScenarioTableCollapsed ? 'Maximizar tabela' : 'Minimizar tabela'}
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={handleSuiteExport}
+                          isLoading={isExportingSuites}
+                          loadingText="Exportando..."
+                        >
+                          Exportar suítes
+                        </Button>
+                        {canManageScenarios && (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={handleSuiteImportClick}
+                            isLoading={isImportingSuites}
+                            loadingText="Importando..."
+                          >
+                            Importar suítes
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
+                <input
+                  ref={scenarioFileInputRef}
+                  type="file"
+                  accept="application/json"
+                  className="hidden"
+                  onChange={handleScenarioImportFile}
+                />
+                <input
+                  ref={suiteFileInputRef}
+                  type="file"
+                  accept="application/json"
+                  className="hidden"
+                  onChange={handleSuiteImportFile}
+                />
                 <div className="scenario-table-wrapper">
                   {viewMode === 'scenarios' ? (
                     isScenarioTableCollapsed ? (

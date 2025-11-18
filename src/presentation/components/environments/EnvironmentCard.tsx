@@ -28,6 +28,7 @@ export const EnvironmentCard = ({
   const visibleParticipants = participants.slice(0, 3);
   const hiddenParticipantsCount = Math.max(participants.length - visibleParticipants.length, 0);
   const bugLabel = environment.tipoAmbiente?.toUpperCase() === 'WS' ? 'Storyfix' : 'Bugs';
+  const totalScenariosWithPlatforms = environment.totalCenarios * 2;
 
   const handleOpen = () => onOpen(environment);
 
@@ -67,7 +68,7 @@ export const EnvironmentCard = ({
       <div className="environment-card-stats">
         <div className="environment-card-stat">
           <span className="environment-card-stat-label">Cenários</span>
-          <strong className="environment-card-stat-value">{environment.totalCenarios}</strong>
+          <strong className="environment-card-stat-value">{totalScenariosWithPlatforms}</strong>
         </div>
         <div className="environment-card-stat">
           <span className="environment-card-stat-label">{bugLabel}</span>

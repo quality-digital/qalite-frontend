@@ -25,6 +25,26 @@ export interface StoreExportPayload {
   scenarios: StoreScenario[];
 }
 
+export interface StoreSuiteExportPayload {
+  store: {
+    id: string;
+    name: string;
+    site: string;
+    stage: string;
+    scenarioCount: number;
+  };
+  exportedAt: string;
+  suites: Array<{
+    id: string;
+    name: string;
+    description: string;
+    scenarios: Array<{
+      id: string;
+      title: string;
+    }>;
+  }>;
+}
+
 export class StoreService {
   constructor(private readonly repository: IStoreRepository) {}
 
@@ -125,6 +145,43 @@ export class StoreService {
     };
   }
 
+  async exportSuites(storeId: string): Promise<StoreSuiteExportPayload> {
+    const store = await this.getById(storeId);
+
+    if (!store) {
+      throw new Error('Loja não encontrada.');
+    }
+
+    const [suites, scenarios] = await Promise.all([
+      this.listSuites(storeId),
+      this.listScenarios(storeId),
+    ]);
+    const scenarioMap = scenarios.reduce<Record<string, string>>((acc, scenario) => {
+      acc[scenario.id] = scenario.title;
+      return acc;
+    }, {});
+
+    return {
+      store: {
+        id: store.id,
+        name: store.name,
+        site: store.site,
+        stage: store.stage,
+        scenarioCount: scenarios.length,
+      },
+      exportedAt: new Date().toISOString(),
+      suites: suites.map((suite) => ({
+        id: suite.id,
+        name: suite.name,
+        description: suite.description,
+        scenarios: suite.scenarioIds.map((scenarioId) => ({
+          id: scenarioId,
+          title: scenarioMap[scenarioId] ?? '',
+        })),
+      })),
+    };
+  }
+
   async importScenarios(
     storeId: string,
     scenarios: StoreScenarioInput[],
@@ -146,6 +203,33 @@ export class StoreService {
     }
 
     const result = await this.repository.mergeScenarios(storeId, scenarios);
+    return {
+      ...result,
+      strategy,
+    };
+  }
+
+  async importSuites(
+    storeId: string,
+    suites: StoreSuiteInput[],
+    strategy: 'replace' | 'merge',
+  ): Promise<{
+    suites: StoreSuite[];
+    created: number;
+    skipped: number;
+    strategy: 'replace' | 'merge';
+  }> {
+    if (strategy === 'replace') {
+      const replaced = await this.repository.replaceSuites(storeId, suites);
+      return {
+        suites: replaced,
+        created: replaced.length,
+        skipped: 0,
+        strategy,
+      };
+    }
+
+    const result = await this.repository.mergeSuites(storeId, suites);
     return {
       ...result,
       strategy,

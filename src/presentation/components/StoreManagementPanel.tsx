@@ -23,6 +23,10 @@ import {
   sortScenarioList,
   type ScenarioSortConfig,
 } from './ScenarioColumnSortControl';
+import {
+  downloadJsonFile,
+  validateScenarioImportPayload,
+} from '../../shared/utils/storeImportExport';
 
 interface StoreManagementPanelProps {
   organizationId: string;
@@ -1294,65 +1298,4 @@ export const StoreManagementPanel = ({
   );
 };
 
-const downloadJsonFile = (data: StoreExportPayload, fileName: string) => {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-};
-
-const validateImportPayload = (payload: StoreExportPayload) => {
-  if (!payload || typeof payload !== 'object') {
-    throw new Error('Arquivo inválido.');
-  }
-
-  if (!payload.store || typeof payload.store !== 'object') {
-    throw new Error('Arquivo não possui informações da loja.');
-  }
-
-  const requiredStoreFields: (keyof StoreExportPayload['store'])[] = [
-    'id',
-    'name',
-    'site',
-    'scenarioCount',
-  ];
-  requiredStoreFields.forEach((field) => {
-    if (field === 'scenarioCount') {
-      if (typeof payload.store.scenarioCount !== 'number') {
-        throw new Error('Quantidade de cenários inválida.');
-      }
-      return;
-    }
-
-    if (typeof payload.store[field] !== 'string') {
-      throw new Error('Dados da loja estão incompletos.');
-    }
-  });
-
-  if (!Array.isArray(payload.scenarios)) {
-    throw new Error('Estrutura de cenários inválida.');
-  }
-
-  payload.scenarios.forEach((scenario) => {
-    const requiredScenarioFields: (keyof StoreScenario)[] = [
-      'title',
-      'category',
-      'automation',
-      'criticality',
-      'observation',
-      'bdd',
-    ];
-
-    requiredScenarioFields.forEach((field) => {
-      const value = scenario[field];
-      if (typeof value !== 'string' || !value.trim()) {
-        throw new Error(`Cenário inválido. O campo "${field}" é obrigatório.`);
-      }
-    });
-  });
-};
+const validateImportPayload = validateScenarioImportPayload;
