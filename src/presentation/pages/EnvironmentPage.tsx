@@ -58,44 +58,45 @@ const buildSuiteDetails = (count: number) => {
   return `${count} cenário${count > 1 ? 's' : ''} vinculados`;
 };
 
-const formatDateTimeLabel = (value: string | null | undefined) => {
-  if (!value) {
-    return 'Não informado';
-  }
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return 'Não informado';
-  }
-
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(parsed);
-};
-
-const buildTestingMoments = (environment: Environment) => {
-  const testedAtCandidate = environment.timeTracking?.start ?? environment.createdAt;
-  const concludedAtCandidate =
-    environment.timeTracking?.end ?? environment.updatedAt ?? environment.timeTracking?.start;
-
-  return {
-    testedAt: formatDateTimeLabel(testedAtCandidate),
-    concludedAt: formatDateTimeLabel(concludedAtCandidate),
-  };
-};
-
 const buildSlackSummaryMessage = (
-  taskIdentifier: string,
-  testedAt: string,
-  concludedAt: string,
+  environment: Environment,
+  options: SlackSummaryBuilderOptions,
+  fix: SlackTaskSummaryPayload['environmentSummary']['fix'],
+  monitoredUrls: string[],
+  attendees: SlackTaskSummaryPayload['environmentSummary']['attendees'],
+  participantsCount: number,
 ): string => {
-  const identifierChunk =
-    taskIdentifier && taskIdentifier !== 'Não informado'
-      ? `Resumo do ambiente ${taskIdentifier}`
-      : 'Resumo do ambiente';
+  const environmentName = environment.identificador?.trim() || 'Não informado';
+  const fixLabel = fix?.type === 'storyfixes' ? 'Storyfixes registrados' : 'Bugs registrados';
+  const fixValue = typeof fix?.value === 'number' ? fix.value : 0;
+  const suiteName = options.suiteDescription || 'Não informado';
+  const urlLines = (monitoredUrls.length > 0 ? monitoredUrls : ['Não informado']).map(
+    (url) => `  - ${url}`,
+  );
+  const attendeeLines =
+    attendees.length > 0
+      ? attendees.map((attendee) =>
+          typeof attendee === 'string'
+            ? `• ${attendee}`
+            : `• ${attendee.name}${attendee.email ? ` (${attendee.email})` : ''}`,
+        )
+      : ['• Não informado'];
 
-  return `${identifierChunk}\nTestado em: ${testedAt}\nConcluído em: ${concludedAt}`;
+  return [
+    ':brilhos: Resumo de QA',
+    `• Ambiente: ${environmentName}`,
+    `• Tempo total: ${options.formattedTime || '00:00:00'}`,
+    `• Cenários: ${options.scenarioCount ?? 0}`,
+    `• Execução: ${formatExecutedScenariosMessage(options.executedScenariosCount)}`,
+    `• ${fixLabel}: ${fixValue}`,
+    `• Jira: ${environment.jiraTask?.trim() || 'Não informado'}`,
+    `• Suíte: ${suiteName} — ${buildSuiteDetails(options.scenarioCount)}`,
+    `• Participantes: ${participantsCount}`,
+    '• :globo_com_meridianos: URLs monitoradas:',
+    ...urlLines,
+    ':silhuetas: Quem está participando',
+    ...attendeeLines,
+  ].join('\n');
 };
 
 const mapProfileToAttendee = (
@@ -142,7 +143,6 @@ const buildSlackTaskSummaryPayload = (
   const monitoredUrls = (options.urls ?? []).filter(
     (url) => typeof url === 'string' && url.trim().length > 0,
   );
-  const { testedAt, concludedAt } = buildTestingMoments(environment);
   const taskIdentifier = environment.identificador?.trim() || 'Não informado';
   const normalizedEnvironmentType = environment.tipoAmbiente?.trim().toUpperCase();
   const isWorkspaceEnvironment = normalizedEnvironmentType === 'WS';
@@ -167,7 +167,14 @@ const buildSlackTaskSummaryPayload = (
       monitoredUrls,
       attendees,
     },
-    message: buildSlackSummaryMessage(taskIdentifier, testedAt, concludedAt),
+    message: buildSlackSummaryMessage(
+      environment,
+      options,
+      fix,
+      monitoredUrls,
+      attendees,
+      participantsCount,
+    ),
   };
 };
 
