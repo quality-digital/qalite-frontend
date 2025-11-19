@@ -1,5 +1,5 @@
-import type { Environment } from '../../../domain/entities/Environment';
-import type { UserSummary } from '../../../domain/entities/UserSummary';
+import type { Environment } from '../../../lib/types';
+import type { UserSummary } from '../../../lib/types';
 import { ENVIRONMENT_STATUS_LABEL } from '../../../shared/constants/environmentLabels';
 import { getReadableUserName, getUserInitials } from '../../utils/userDisplay';
 

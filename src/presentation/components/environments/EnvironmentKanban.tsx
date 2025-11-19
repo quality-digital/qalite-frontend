@@ -2,10 +2,10 @@ import type { DragEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { EnvironmentStatusError } from '../../../application/errors/EnvironmentStatusError';
-import type { Environment, EnvironmentStatus } from '../../../domain/entities/Environment';
-import type { StoreScenario, StoreSuite } from '../../../domain/entities/Store';
-import type { UserSummary } from '../../../domain/entities/UserSummary';
+import { EnvironmentStatusError } from '../../../lib/errors';
+import type { Environment, EnvironmentStatus } from '../../../lib/types';
+import type { StoreScenario, StoreSuite } from '../../../lib/types';
+import type { UserSummary } from '../../../lib/types';
 import { environmentService, userService } from '../../../services';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';

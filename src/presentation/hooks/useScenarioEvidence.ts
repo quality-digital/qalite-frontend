@@ -1,9 +1,6 @@
 import { useCallback, useState } from 'react';
 
-import type {
-  EnvironmentScenarioPlatform,
-  EnvironmentScenarioStatus,
-} from '../../domain/entities/Environment';
+import type { EnvironmentScenarioPlatform, EnvironmentScenarioStatus } from '../../lib/types';
 import { environmentService } from '../../services';
 
 export const useScenarioEvidence = (environmentId: string | null | undefined) => {

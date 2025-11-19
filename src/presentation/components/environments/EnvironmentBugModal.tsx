@@ -1,7 +1,7 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
 
-import type { Environment } from '../../../domain/entities/Environment';
-import type { EnvironmentBug, EnvironmentBugStatus } from '../../../domain/entities/EnvironmentBug';
+import type { Environment } from '../../../lib/types';
+import type { EnvironmentBug, EnvironmentBugStatus } from '../../../lib/types';
 import { environmentService } from '../../../services';
 import { useToast } from '../../context/ToastContext';
 import { Button } from '../Button';

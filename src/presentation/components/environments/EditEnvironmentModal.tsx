@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
-import type { Environment } from '../../../domain/entities/Environment';
+import type { Environment } from '../../../lib/types';
 import { environmentService } from '../../../services';
 import { Button } from '../Button';
 import { Modal } from '../Modal';

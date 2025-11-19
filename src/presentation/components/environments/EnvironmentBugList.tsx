@@ -1,5 +1,5 @@
-import type { Environment } from '../../../domain/entities/Environment';
-import type { EnvironmentBug } from '../../../domain/entities/EnvironmentBug';
+import type { Environment } from '../../../lib/types';
+import type { EnvironmentBug } from '../../../lib/types';
 import { environmentService } from '../../../services';
 import { useToast } from '../../context/ToastContext';
 import { BUG_STATUS_LABEL } from '../../../shared/constants/environmentLabels';

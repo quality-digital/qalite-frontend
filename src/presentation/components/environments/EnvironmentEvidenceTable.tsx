@@ -5,8 +5,8 @@ import {
   EnvironmentScenario,
   EnvironmentScenarioPlatform,
   EnvironmentScenarioStatus,
-  getScenarioPlatformStatuses,
-} from '../../../domain/entities/Environment';
+} from '../../../lib/types';
+import { getScenarioPlatformStatuses } from '../../../lib/environments';
 import { useScenarioEvidence } from '../../hooks/useScenarioEvidence';
 import {
   ScenarioColumnSortControl,

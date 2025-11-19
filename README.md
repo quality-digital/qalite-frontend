@@ -15,30 +15,22 @@ Base de autenticação escalável construída com **React + Vite** e **Firebase 
 
 ```
 src/
- ├─ domain/
- │   ├─ entities/        # Entidades e tipos de domínio (User, Role, AuthUser)
- │   └─ repositories/    # Contratos dos repositórios (IAuthRepository, IStoreRepository...)
- ├─ application/
- │   ├─ errors/          # Classes de erro reutilizáveis
- │   ├─ ports/           # Portas/adapters (ex.: exportadores)
- │   └─ services/        # Serviços orquestradores que falam diretamente com os repositórios
- ├─ infra/
- │   ├─ firebase/        # Configuração do Firebase
- │   ├─ repositories/    # Implementações concretas (FirebaseAuthRepository)
- │   └─ services/        # Adapters específicos de infraestrutura (ex.: exportadores)
+ ├─ lib/                # Tipos e funções puras que falam com o Firebase (auth, stores, ambientes...)
  ├─ presentation/
- │   ├─ components/      # Componentes de UI reutilizáveis
- │   ├─ context/         # Contextos React (AuthProvider, ToastProvider...)
- │   ├─ hooks/           # Hooks reutilizáveis (useAuth, useToast)
- │   ├─ pages/           # Páginas da aplicação (Login, Register, Dashboards)
- │   ├─ routes/          # Definição das rotas da aplicação (AppRoutes)
- │   ├─ styles/          # Estilos globais
- │   └─ utils/           # Funções de apoio da camada de UI
- └─ main/
-     └─ factories/       # Factories que montam serviços (ex.: authService)
+ │   ├─ components/     # Componentes reutilizáveis
+ │   ├─ context/        # Contextos React (AuthProvider, ToastProvider...)
+ │   ├─ hooks/          # Hooks reutilizáveis (useAuth, useToast...)
+ │   ├─ pages/          # Páginas (Login, Dashboards, Ambientes, Admin...)
+ │   ├─ routes/         # Definição das rotas da aplicação
+ │   ├─ styles/         # Estilos globais
+ │   └─ utils/          # Helpers específicos da camada de apresentação
+ ├─ services/           # Ponte fina que expõe os helpers de `lib` num formato fácil para a UI
+ ├─ shared/             # Constantes e utilidades agnósticas de UI
+ ├─ App.tsx             # Entrada da aplicação
+ └─ main.tsx            # Bootstrapping do React
 ```
 
-O domínio permanece independente de detalhes externos, descrevendo apenas os tipos e contratos. Os serviços da camada `application` agora se conectam diretamente aos repositórios concretos providos pela `infra`, reduzindo indiretamente o número de camadas sem abrir mão das abstrações necessárias.
+Toda a comunicação com o Firebase fica concentrada em `src/lib`, onde moram funções simples (sem classes ou inversão de controle) responsáveis por autenticação, ambientes, lojas, organizações e execuções de cenário. Essa camada exporta apenas funções e tipos, eliminando as camadas `domain`, `application` e `infra` anteriores sem sacrificar as regras de negócio.
 
 ## 🔐 Funcionalidades de autenticação
 
@@ -62,21 +54,21 @@ VITE_FIREBASE_APP_ID=1:000000000000:web:abcdef123456
 VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXX
 ```
 
-As variáveis são lidas via `import.meta.env` em `src/infra/firebase/firebaseConfig.ts` e **nenhuma chave fica hardcoded** no código.
+As variáveis são lidas via `import.meta.env` em `src/lib/firebase.ts` e **nenhuma chave fica hardcoded** no código.
 
 ## 🧠 Como estender
 
 - **Adicionar um novo papel (role):**
-  1. Inclua o novo valor em `AVAILABLE_ROLES` (`src/domain/entities/Role.ts`).
+  1. Inclua o novo valor em `AVAILABLE_ROLES` (`src/lib/types.ts`).
   2. Atualize interfaces/guards (`RoleProtectedRoute`) com a nova role quando necessário.
   3. Ajuste formulários ou lógica de atribuição no cadastro, se aplicável.
 - **Criar nova rota protegida:**
   1. Crie a página em `src/presentation/pages`.
   2. No arquivo de rotas (`src/presentation/routes/AppRoutes.tsx`), envolva a rota com `<ProtectedRoute>` ou `<RoleProtectedRoute allowedRoles={[...]}>` conforme o nível de permissão desejado.
 - **Suportar outro provider de autenticação:**
-  1. Implemente uma classe que siga `IAuthRepository` em `src/infra/repositories`.
-  2. Substitua a instância usada em `AuthService` pelo novo repositório (ou injete via factory/DI).
-  3. Os serviços e camadas superiores permanecem inalterados.
+  1. Crie funções equivalentes em `src/lib/auth.ts` usando o provider desejado.
+  2. Ajuste `src/services/index.ts` para exportar as novas funções.
+  3. Os hooks e contextos continuam apontando para `authService`, sem alterações adicionais.
 
 ## 🧩 Scripts disponíveis
 

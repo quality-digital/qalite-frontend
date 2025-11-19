@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { EnvironmentStatusError } from '../../application/errors/EnvironmentStatusError';
-import type { EnvironmentStatus } from '../../domain/entities/Environment';
+import { EnvironmentStatusError } from '../../lib/errors';
+import type { EnvironmentStatus } from '../../lib/types';
 import { environmentService } from '../../services';
 import { Button } from '../components/Button';
 import { Layout } from '../components/Layout';
@@ -21,7 +21,7 @@ import { PageLoader } from '../components/PageLoader';
 import { useUserProfiles } from '../hooks/useUserProfiles';
 import { useEnvironmentBugs } from '../hooks/useEnvironmentBugs';
 import { EnvironmentBugModal } from '../components/environments/EnvironmentBugModal';
-import type { EnvironmentBug } from '../../domain/entities/EnvironmentBug';
+import type { EnvironmentBug } from '../../lib/types';
 import { useEnvironmentDetails } from '../hooks/useEnvironmentDetails';
 import { useEnvironmentEngagement } from '../hooks/useEnvironmentEngagement';
 import { EnvironmentSummaryCard } from '../components/environments/EnvironmentSummaryCard';

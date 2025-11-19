@@ -1,5 +1,17 @@
 import { FirebaseError } from 'firebase/app';
 
+export type EnvironmentStatusErrorCode = 'PENDING_SCENARIOS' | 'INVALID_ENVIRONMENT';
+
+export class EnvironmentStatusError extends Error {
+  constructor(
+    public readonly code: EnvironmentStatusErrorCode,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'EnvironmentStatusError';
+  }
+}
+
 const firebaseErrorMessages: Record<string, string> = {
   'auth/invalid-email': 'E-mail inválido. Revise o endereço informado.',
   'auth/invalid-credential': 'E-mail ou senha incorretos. Confira os dados informados.',

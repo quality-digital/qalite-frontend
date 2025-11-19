@@ -1,31 +1,152 @@
-import { AuthService } from '../application/services/AuthService';
-import { EnvironmentService } from '../application/services/EnvironmentService';
-import { OrganizationService } from '../application/services/OrganizationService';
-import { ScenarioExecutionService } from '../application/services/ScenarioExecutionService';
-import { StoreService } from '../application/services/StoreService';
-import { UserService } from '../application/services/UserService';
-import { FirebaseAuthRepository } from '../infra/repositories/FirebaseAuthRepository';
-import { FirebaseEnvironmentRepository } from '../infra/repositories/FirebaseEnvironmentRepository';
-import { FirebaseOrganizationRepository } from '../infra/repositories/FirebaseOrganizationRepository';
-import { FirebaseScenarioExecutionRepository } from '../infra/repositories/FirebaseScenarioExecutionRepository';
-import { FirebaseStoreRepository } from '../infra/repositories/FirebaseStoreRepository';
-import { FirebaseUserRepository } from '../infra/repositories/FirebaseUserRepository';
-import { BrowserEnvironmentExporter } from '../infra/services/BrowserEnvironmentExporter';
+import {
+  addEnvironmentUser,
+  copyEnvironmentAsMarkdown,
+  createEnvironment,
+  createEnvironmentBug,
+  deleteEnvironment,
+  deleteEnvironmentBug,
+  observeEnvironment,
+  observeEnvironmentBugs,
+  observeEnvironments,
+  removeEnvironmentUser,
+  transitionEnvironmentStatus,
+  updateEnvironment,
+  updateEnvironmentBug,
+  updateScenarioStatus,
+  uploadScenarioEvidence,
+  exportEnvironmentAsPDF,
+} from '../lib/environments';
+import {
+  addUserToOrganization,
+  createOrganization,
+  deleteOrganization,
+  getOrganization,
+  getUserOrganization,
+  listOrganizations,
+  removeUserFromOrganization,
+  updateOrganization,
+} from '../lib/organizations';
+import {
+  createScenarioExecution,
+  getStoreScenarioAverages,
+  listScenarioExecutionsByStore,
+  logScenarioExecution,
+} from '../lib/scenarioExecutions';
+import {
+  createStore,
+  createCategory,
+  createScenario,
+  createSuite,
+  deleteCategory,
+  deleteScenario,
+  deleteStore,
+  deleteSuite,
+  exportStoreData,
+  exportStoreSuites,
+  getStore,
+  importStoreScenarios,
+  importStoreSuites,
+  listCategories,
+  listScenarios,
+  listStores,
+  listSuites,
+  mergeScenarios,
+  mergeSuites,
+  replaceScenarios,
+  replaceSuites,
+  updateCategory,
+  updateScenario,
+  updateStore,
+  updateSuite,
+} from '../lib/stores';
+import {
+  getCurrentUser,
+  hasRequiredRole,
+  loginUser,
+  logoutUser,
+  onAuthStateChanged,
+  registerUser,
+  sendPasswordReset,
+  updateUserProfile,
+} from '../lib/auth';
+import { getUserSummariesByIds } from '../lib/users';
 
-const authRepository = new FirebaseAuthRepository();
-const environmentRepository = new FirebaseEnvironmentRepository();
-const organizationRepository = new FirebaseOrganizationRepository();
-const storeRepository = new FirebaseStoreRepository();
-const userRepository = new FirebaseUserRepository();
-const scenarioExecutionRepository = new FirebaseScenarioExecutionRepository();
-const environmentExporter = new BrowserEnvironmentExporter();
+export const authService = {
+  register: registerUser,
+  login: loginUser,
+  logout: logoutUser,
+  sendPasswordReset,
+  getCurrent: getCurrentUser,
+  onAuthStateChanged,
+  hasRequiredRole,
+  updateProfile: updateUserProfile,
+};
 
-export const authService = new AuthService(authRepository);
-export const environmentService = new EnvironmentService(
-  environmentRepository,
-  environmentExporter,
-);
-export const organizationService = new OrganizationService(organizationRepository);
-export const storeService = new StoreService(storeRepository);
-export const userService = new UserService(userRepository);
-export const scenarioExecutionService = new ScenarioExecutionService(scenarioExecutionRepository);
+export const environmentService = {
+  create: createEnvironment,
+  update: updateEnvironment,
+  delete: deleteEnvironment,
+  observeEnvironment,
+  observeAll: observeEnvironments,
+  addUser: addEnvironmentUser,
+  removeUser: removeEnvironmentUser,
+  updateScenarioStatus,
+  uploadScenarioEvidence,
+  observeBugs: observeEnvironmentBugs,
+  createBug: createEnvironmentBug,
+  updateBug: updateEnvironmentBug,
+  deleteBug: deleteEnvironmentBug,
+  transitionStatus: transitionEnvironmentStatus,
+  exportAsPDF: exportEnvironmentAsPDF,
+  copyAsMarkdown: copyEnvironmentAsMarkdown,
+};
+
+export const organizationService = {
+  list: listOrganizations,
+  getById: getOrganization,
+  create: createOrganization,
+  update: updateOrganization,
+  delete: deleteOrganization,
+  addUser: addUserToOrganization,
+  removeUser: removeUserFromOrganization,
+  getUserOrganizationByUserId: getUserOrganization,
+};
+
+export const storeService = {
+  listByOrganization: listStores,
+  getById: getStore,
+  create: createStore,
+  update: updateStore,
+  delete: deleteStore,
+  listScenarios,
+  createScenario,
+  updateScenario,
+  deleteScenario,
+  listSuites,
+  createSuite,
+  updateSuite,
+  deleteSuite,
+  listCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  exportStore: exportStoreData,
+  exportSuites: exportStoreSuites,
+  importScenarios: importStoreScenarios,
+  importSuites: importStoreSuites,
+  replaceScenarios,
+  replaceSuites,
+  mergeScenarios,
+  mergeSuites,
+};
+
+export const userService = {
+  getSummariesByIds: getUserSummariesByIds,
+};
+
+export const scenarioExecutionService = {
+  logExecution: logScenarioExecution,
+  getStoreScenarioAverages,
+  listByStore: listScenarioExecutionsByStore,
+  create: createScenarioExecution,
+};

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import type { UserSummary } from '../../domain/entities/UserSummary';
+import type { UserSummary } from '../../lib/types';
 import { userService } from '../../services';
 
 export const useUserProfiles = (userIds: string[]) => {

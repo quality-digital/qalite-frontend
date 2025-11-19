@@ -8,11 +8,10 @@ import {
   useState,
 } from 'react';
 
-import type { AuthUser } from '../../domain/entities/AuthUser';
-import type { Role } from '../../domain/entities/Role';
-import { DEFAULT_ROLE } from '../../domain/entities/Role';
-import type { UpdateProfilePayload } from '../../domain/repositories/AuthRepository';
-import { mapFirebaseError } from '../../application/errors/mapFirebaseError';
+import type { AuthUser, Role } from '../../lib/types';
+import { DEFAULT_ROLE } from '../../lib/types';
+import type { UpdateProfilePayload } from '../../lib/auth';
+import { mapFirebaseError } from '../../lib/errors';
 import { authService } from '../../services';
 import { useToast } from './ToastContext';
 

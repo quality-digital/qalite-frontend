@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { Environment } from '../../domain/entities/Environment';
+import type { Environment } from '../../lib/types';
 import { environmentService } from '../../services';
 import { useAuth } from './useAuth';
 

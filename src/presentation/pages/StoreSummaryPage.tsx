@@ -1,7 +1,7 @@
 import { type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import type { Organization } from '../../domain/entities/Organization';
+import type { Organization } from '../../lib/types';
 import type {
   Store,
   StoreCategory,
@@ -9,11 +9,8 @@ import type {
   StoreScenarioInput,
   StoreSuite,
   StoreSuiteInput,
-} from '../../domain/entities/Store';
-import type {
-  StoreExportPayload,
-  StoreSuiteExportPayload,
-} from '../../application/services/StoreService';
+} from '../../lib/types';
+import type { StoreExportPayload, StoreSuiteExportPayload } from '../../lib/stores';
 import { organizationService, scenarioExecutionService, storeService } from '../../services';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
@@ -45,7 +42,7 @@ import {
 } from '../../shared/utils/storeImportExport';
 import { isAutomatedScenario } from '../../shared/utils/automation';
 import { formatDurationFromMs } from '../../shared/utils/time';
-import type { ScenarioAverageMap } from '../../application/services/ScenarioExecutionService';
+import type { ScenarioAverageMap } from '../../lib/scenarioExecutions';
 
 const emptyScenarioForm: StoreScenarioInput = {
   title: '',

@@ -1,12 +1,7 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 
-import type {
-  Store,
-  StoreCategory,
-  StoreScenario,
-  StoreScenarioInput,
-} from '../../domain/entities/Store';
-import type { StoreExportPayload } from '../../application/services/StoreService';
+import type { Store, StoreCategory, StoreScenario, StoreScenarioInput } from '../../lib/types';
+import type { StoreExportPayload } from '../../lib/stores';
 import { storeService } from '../../services';
 import { useToast } from '../context/ToastContext';
 import { Button } from './Button';

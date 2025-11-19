@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
-import type { EnvironmentScenario } from '../../../domain/entities/Environment';
-import type { StoreScenario, StoreSuite } from '../../../domain/entities/Store';
+import type { EnvironmentScenario } from '../../../lib/types';
+import type { StoreScenario, StoreSuite } from '../../../lib/types';
 import { environmentService } from '../../../services';
 import { Button } from '../Button';
 import { Modal } from '../Modal';

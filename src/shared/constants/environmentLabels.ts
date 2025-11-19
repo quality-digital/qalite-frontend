@@ -1,8 +1,5 @@
-import type {
-  EnvironmentScenarioPlatform,
-  EnvironmentStatus,
-} from '../../domain/entities/Environment';
-import type { EnvironmentBug } from '../../domain/entities/EnvironmentBug';
+import type { EnvironmentScenarioPlatform, EnvironmentStatus } from '../../lib/types';
+import type { EnvironmentBug } from '../../lib/types';
 
 export const ENVIRONMENT_STATUS_LABEL: Record<EnvironmentStatus, string> = {
   backlog: 'Backlog',
