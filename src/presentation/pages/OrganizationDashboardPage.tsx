@@ -8,6 +8,7 @@ import { useToast } from '../context/ToastContext';
 import { Layout } from '../components/Layout';
 import { UserAvatar } from '../components/UserAvatar';
 import { StoreManagementPanel } from '../components/StoreManagementPanel';
+import { OrganizationLogPanel } from '../components/OrganizationLogPanel';
 
 export const OrganizationDashboardPage = () => {
   const navigate = useNavigate();
@@ -109,6 +110,10 @@ export const OrganizationDashboardPage = () => {
           )}
         </div>
       </section>
+
+      {!isLoading && organization && user?.role === 'admin' && (
+        <OrganizationLogPanel organizationId={organization.id} />
+      )}
 
       {!isLoading && organization && (
         <StoreManagementPanel

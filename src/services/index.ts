@@ -71,6 +71,7 @@ import {
 } from '../lib/auth';
 import { getUserSummariesByIds } from '../lib/users';
 import { sendEnvironmentSummaryToSlack } from '../lib/slack';
+import { listOrganizationLogs, logActivity } from '../lib/logs';
 
 export const authService = {
   register: registerUser,
@@ -154,4 +155,9 @@ export const scenarioExecutionService = {
 
 export const slackService = {
   sendTaskSummary: sendEnvironmentSummaryToSlack,
+};
+
+export const logService = {
+  record: logActivity,
+  listByOrganization: listOrganizationLogs,
 };

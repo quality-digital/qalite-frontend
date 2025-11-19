@@ -25,11 +25,37 @@ import {
   type StoreSuiteInput,
 } from './types';
 import { firebaseFirestore } from './firebase';
+import { logActivity } from './logs';
 
 const STORES_COLLECTION = 'stores';
 const SCENARIOS_SUBCOLLECTION = 'scenarios';
 const SUITES_SUBCOLLECTION = 'suites';
 const CATEGORIES_SUBCOLLECTION = 'categories';
+
+const getStoreContext = async (
+  storeId: string,
+  snapshotData?: Record<string, unknown> | null,
+): Promise<{ organizationId: string | null; storeName: string }> => {
+  if (snapshotData) {
+    return {
+      organizationId: (snapshotData.organizationId as string | undefined | null) ?? null,
+      storeName: (snapshotData.name as string | undefined) ?? '',
+    };
+  }
+
+  const storeRef = doc(firebaseFirestore, STORES_COLLECTION, storeId);
+  const snapshot = await getDoc(storeRef);
+
+  if (!snapshot.exists()) {
+    return { organizationId: null, storeName: '' };
+  }
+
+  const data = snapshot.data();
+  return {
+    organizationId: (data.organizationId as string | undefined | null) ?? null,
+    storeName: (data.name as string | undefined) ?? '',
+  };
+};
 
 export interface CreateStorePayload {
   organizationId: string;
@@ -197,7 +223,17 @@ export const createStore = async (payload: CreateStorePayload): Promise<Store> =
   });
 
   const snapshot = await getDoc(docRef);
-  return mapStore(snapshot.id, snapshot.data() ?? {});
+  const createdStore = mapStore(snapshot.id, snapshot.data() ?? {});
+
+  await logActivity({
+    organizationId: payload.organizationId,
+    entityId: createdStore.id,
+    entityType: 'store',
+    action: 'create',
+    message: `Loja criada: ${createdStore.name}`,
+  });
+
+  return createdStore;
 };
 
 export const updateStore = async (storeId: string, payload: UpdateStorePayload): Promise<Store> => {
@@ -210,7 +246,17 @@ export const updateStore = async (storeId: string, payload: UpdateStorePayload):
   });
 
   const snapshot = await getDoc(storeRef);
-  return mapStore(snapshot.id, snapshot.data() ?? {});
+  const updated = mapStore(snapshot.id, snapshot.data() ?? {});
+
+  await logActivity({
+    organizationId: updated.organizationId,
+    entityId: updated.id,
+    entityType: 'store',
+    action: 'update',
+    message: `Loja atualizada: ${updated.name}`,
+  });
+
+  return updated;
 };
 
 export const deleteStore = async (storeId: string): Promise<void> => {
@@ -236,6 +282,17 @@ export const deleteStore = async (storeId: string): Promise<void> => {
 
   batch.delete(storeRef);
   await batch.commit();
+
+  const context = await getStoreContext(storeId, snapshot.data() ?? {});
+  if (context.organizationId) {
+    await logActivity({
+      organizationId: context.organizationId,
+      entityId: storeId,
+      entityType: 'store',
+      action: 'delete',
+      message: `Loja removida: ${context.storeName || storeId}`,
+    });
+  }
 };
 
 export const listScenarios = async (storeId: string): Promise<StoreScenario[]> => {
@@ -254,12 +311,16 @@ export const createScenario = async (
   const storeRef = doc(firebaseFirestore, STORES_COLLECTION, payload.storeId);
   const scenariosCollection = collection(storeRef, SCENARIOS_SUBCOLLECTION);
 
+  let storeData: Record<string, unknown> | null = null;
+
   const scenarioRef = await runTransaction(firebaseFirestore, async (transaction) => {
     const storeSnapshot = await transaction.get(storeRef);
 
     if (!storeSnapshot.exists()) {
       throw new Error('Loja não encontrada.');
     }
+
+    storeData = storeSnapshot.data();
 
     const newScenarioRef = doc(scenariosCollection);
     transaction.set(newScenarioRef, {
@@ -278,7 +339,24 @@ export const createScenario = async (
   });
 
   const scenarioSnapshot = await getDoc(scenarioRef);
-  return mapScenario(payload.storeId, scenarioSnapshot.id, scenarioSnapshot.data() ?? {});
+  const createdScenario = mapScenario(
+    payload.storeId,
+    scenarioSnapshot.id,
+    scenarioSnapshot.data() ?? {},
+  );
+
+  const context = await getStoreContext(payload.storeId, storeData);
+  if (context.organizationId) {
+    await logActivity({
+      organizationId: context.organizationId,
+      entityId: createdScenario.id,
+      entityType: 'scenario',
+      action: 'create',
+      message: `Cenário criado: ${createdScenario.title} (${context.storeName || 'Loja'})`,
+    });
+  }
+
+  return createdScenario;
 };
 
 export const updateScenario = async (
@@ -297,18 +375,39 @@ export const updateScenario = async (
   await updateDoc(storeRef, { updatedAt: serverTimestamp() });
 
   const scenarioSnapshot = await getDoc(scenarioRef);
-  return mapScenario(storeId, scenarioSnapshot.id, scenarioSnapshot.data() ?? {});
+  const updatedScenario = mapScenario(storeId, scenarioSnapshot.id, scenarioSnapshot.data() ?? {});
+
+  const context = await getStoreContext(storeId);
+  if (context.organizationId) {
+    await logActivity({
+      organizationId: context.organizationId,
+      entityId: updatedScenario.id,
+      entityType: 'scenario',
+      action: 'update',
+      message: `Cenário atualizado: ${updatedScenario.title} (${context.storeName || 'Loja'})`,
+    });
+  }
+
+  return updatedScenario;
 };
 
 export const deleteScenario = async (storeId: string, scenarioId: string): Promise<void> => {
   const storeRef = doc(firebaseFirestore, STORES_COLLECTION, storeId);
   const scenarioRef = doc(storeRef, SCENARIOS_SUBCOLLECTION, scenarioId);
 
+  let storeData: Record<string, unknown> | null = null;
+  let scenarioTitle: string | null = null;
+
   await runTransaction(firebaseFirestore, async (transaction) => {
     const storeSnapshot = await transaction.get(storeRef);
     if (!storeSnapshot.exists()) {
       throw new Error('Loja não encontrada.');
     }
+
+    storeData = storeSnapshot.data();
+
+    const scenarioSnapshot = await transaction.get(scenarioRef);
+    scenarioTitle = (scenarioSnapshot.data()?.title as string | undefined) ?? null;
 
     transaction.delete(scenarioRef);
 
@@ -318,6 +417,17 @@ export const deleteScenario = async (storeId: string, scenarioId: string): Promi
       updatedAt: serverTimestamp(),
     });
   });
+
+  const context = await getStoreContext(storeId, storeData);
+  if (context.organizationId) {
+    await logActivity({
+      organizationId: context.organizationId,
+      entityId: scenarioId,
+      entityType: 'scenario',
+      action: 'delete',
+      message: `Cenário removido: ${scenarioTitle || scenarioId} (${context.storeName || 'Loja'})`,
+    });
+  }
 };
 
 export const replaceScenarios = async (
@@ -355,6 +465,17 @@ export const replaceScenarios = async (
   });
 
   await batch.commit();
+
+  const context = await getStoreContext(storeId, storeSnapshot.data());
+  if (context.organizationId) {
+    await logActivity({
+      organizationId: context.organizationId,
+      entityId: storeId,
+      entityType: 'scenario',
+      action: 'update',
+      message: `Massa de cenários substituída (${scenarios.length} itens) em ${context.storeName || 'Loja'}`,
+    });
+  }
 
   return listScenarios(storeId);
 };
@@ -405,6 +526,17 @@ export const mergeScenarios = async (
 
   await batch.commit();
 
+  const context = await getStoreContext(storeId, storeSnapshot.data());
+  if (context.organizationId && scenariosToCreate.length > 0) {
+    await logActivity({
+      organizationId: context.organizationId,
+      entityId: storeId,
+      entityType: 'scenario',
+      action: 'update',
+      message: `Massa de cenários mesclada: ${scenariosToCreate.length} novo(s) em ${context.storeName || 'Loja'}`,
+    });
+  }
+
   const updatedScenarios = await listScenarios(storeId);
   return {
     created: scenariosToCreate.length,
@@ -440,7 +572,20 @@ export const createSuite = async (
   });
 
   const snapshot = await getDoc(suiteRef);
-  return mapSuite(payload.storeId, snapshot.id, snapshot.data() ?? {});
+  const createdSuite = mapSuite(payload.storeId, snapshot.id, snapshot.data() ?? {});
+
+  const context = await getStoreContext(payload.storeId, storeSnapshot.data());
+  if (context.organizationId) {
+    await logActivity({
+      organizationId: context.organizationId,
+      entityId: createdSuite.id,
+      entityType: 'suite',
+      action: 'create',
+      message: `Suíte criada: ${createdSuite.name} (${context.storeName || 'Loja'})`,
+    });
+  }
+
+  return createdSuite;
 };
 
 export const updateSuite = async (
@@ -462,7 +607,20 @@ export const updateSuite = async (
   });
 
   const updatedSnapshot = await getDoc(suiteRef);
-  return mapSuite(storeId, updatedSnapshot.id, updatedSnapshot.data() ?? {});
+  const updatedSuite = mapSuite(storeId, updatedSnapshot.id, updatedSnapshot.data() ?? {});
+
+  const context = await getStoreContext(storeId, storeSnapshot.data());
+  if (context.organizationId) {
+    await logActivity({
+      organizationId: context.organizationId,
+      entityId: updatedSuite.id,
+      entityType: 'suite',
+      action: 'update',
+      message: `Suíte atualizada: ${updatedSuite.name} (${context.storeName || 'Loja'})`,
+    });
+  }
+
+  return updatedSuite;
 };
 
 export const deleteSuite = async (storeId: string, suiteId: string): Promise<void> => {
@@ -475,6 +633,17 @@ export const deleteSuite = async (storeId: string, suiteId: string): Promise<voi
   }
 
   await deleteDoc(suiteRef);
+
+  const context = await getStoreContext(storeId);
+  if (context.organizationId) {
+    await logActivity({
+      organizationId: context.organizationId,
+      entityId: suiteId,
+      entityType: 'suite',
+      action: 'delete',
+      message: `Suíte removida: ${(snapshot.data()?.name as string | undefined) ?? suiteId} (${context.storeName || 'Loja'})`,
+    });
+  }
 };
 
 export const replaceSuites = async (
@@ -506,6 +675,16 @@ export const replaceSuites = async (
   });
 
   await batch.commit();
+  const context = await getStoreContext(storeId, storeSnapshot.data());
+  if (context.organizationId) {
+    await logActivity({
+      organizationId: context.organizationId,
+      entityId: storeId,
+      entityType: 'suite',
+      action: 'update',
+      message: `Suítes substituídas (${suites.length} itens) em ${context.storeName || 'Loja'}`,
+    });
+  }
   return listSuites(storeId);
 };
 
@@ -548,6 +727,16 @@ export const mergeSuites = async (
   });
 
   await batch.commit();
+  const context = await getStoreContext(storeId, storeSnapshot.data());
+  if (context.organizationId && suitesToCreate.length > 0) {
+    await logActivity({
+      organizationId: context.organizationId,
+      entityId: storeId,
+      entityType: 'suite',
+      action: 'update',
+      message: `Suítes mescladas: ${suitesToCreate.length} nova(s) em ${context.storeName || 'Loja'}`,
+    });
+  }
   const updatedSuites = await listSuites(storeId);
   return {
     created: suitesToCreate.length,

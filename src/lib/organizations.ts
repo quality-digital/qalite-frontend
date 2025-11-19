@@ -19,6 +19,7 @@ import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 
 import type { Organization, OrganizationMember } from './types';
 import { firebaseFirestore, firebaseStorage } from './firebase';
+import { logActivity } from './logs';
 
 const ORGANIZATIONS_COLLECTION = 'organizations';
 const USERS_COLLECTION = 'users';
@@ -90,6 +91,14 @@ export const createOrganization = async (
     });
   }
 
+  await logActivity({
+    organizationId: docRef.id,
+    entityId: docRef.id,
+    entityType: 'organization',
+    action: 'create',
+    message: `Organização criada: ${trimmedName}`,
+  });
+
   const snapshot = await getDoc(docRef);
   return mapOrganization(snapshot.id, snapshot.data() ?? {});
 };
@@ -112,6 +121,14 @@ export const updateOrganization = async (
   }
 
   await updateDoc(organizationRef, updatePayload);
+
+  await logActivity({
+    organizationId: id,
+    entityId: id,
+    entityType: 'organization',
+    action: 'update',
+    message: `Organização atualizada: ${updatePayload.name}`,
+  });
 
   const snapshot = await getDoc(organizationRef);
   return mapOrganization(snapshot.id, snapshot.data() ?? {});
@@ -142,6 +159,14 @@ export const deleteOrganization = async (id: string): Promise<void> => {
 
   batch.delete(organizationRef);
   await batch.commit();
+
+  await logActivity({
+    organizationId: id,
+    entityId: id,
+    entityType: 'organization',
+    action: 'delete',
+    message: `Organização removida: ${(snapshot.data()?.name as string | undefined) ?? id}`,
+  });
 };
 
 export const addUserToOrganization = async (
@@ -152,7 +177,9 @@ export const addUserToOrganization = async (
     throw new Error('Informe um e-mail válido.');
   }
 
-  return runTransaction(firebaseFirestore, async (transaction) => {
+  let organizationName = '';
+
+  const member = await runTransaction(firebaseFirestore, async (transaction) => {
     const organizationRef = doc(
       firebaseFirestore,
       ORGANIZATIONS_COLLECTION,
@@ -163,6 +190,8 @@ export const addUserToOrganization = async (
     if (!organizationSnapshot.exists()) {
       throw new Error('Organização não encontrada.');
     }
+
+    organizationName = (organizationSnapshot.data()?.name as string | undefined) ?? '';
 
     const currentMembers = (organizationSnapshot.data()?.members as string[] | undefined) ?? [];
 
@@ -209,6 +238,16 @@ export const addUserToOrganization = async (
       photoURL: (userData.photoURL as string | null) ?? null,
     };
   });
+
+  await logActivity({
+    organizationId: payload.organizationId,
+    entityId: payload.organizationId,
+    entityType: 'organization',
+    action: 'participation',
+    message: `Membro adicionado: ${member.displayName || member.email} em ${organizationName || 'organização'}`,
+  });
+
+  return member;
 };
 
 export const removeUserFromOrganization = async (
@@ -217,12 +256,17 @@ export const removeUserFromOrganization = async (
   const organizationRef = doc(firebaseFirestore, ORGANIZATIONS_COLLECTION, payload.organizationId);
   const userRef = doc(firebaseFirestore, USERS_COLLECTION, payload.userId);
 
+  let organizationName = '';
+  let removedUserLabel: string | null = null;
+
   await runTransaction(firebaseFirestore, async (transaction) => {
     const organizationSnapshot = await transaction.get(organizationRef);
 
     if (!organizationSnapshot.exists()) {
       throw new Error('Organização não encontrada.');
     }
+
+    organizationName = (organizationSnapshot.data()?.name as string | undefined) ?? '';
 
     transaction.update(organizationRef, {
       members: arrayRemove(payload.userId),
@@ -233,6 +277,8 @@ export const removeUserFromOrganization = async (
     if (userSnapshot.exists()) {
       const userData = userSnapshot.data();
       const currentOrganizationId = (userData.organizationId as string | null) ?? null;
+
+      removedUserLabel = (userData.displayName as string | undefined) ?? userData.email;
 
       if (currentOrganizationId === payload.organizationId) {
         transaction.set(
@@ -245,6 +291,14 @@ export const removeUserFromOrganization = async (
         );
       }
     }
+  });
+
+  await logActivity({
+    organizationId: payload.organizationId,
+    entityId: payload.organizationId,
+    entityType: 'organization',
+    action: 'participation',
+    message: `Membro removido: ${removedUserLabel ?? payload.userId} de ${organizationName || 'organização'}`,
   });
 };
 
