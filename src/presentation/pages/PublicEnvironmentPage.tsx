@@ -12,7 +12,6 @@ import { useStoreOrganizationBranding } from '../hooks/useStoreOrganizationBrand
 import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
 import { useEnvironmentBugs } from '../hooks/useEnvironmentBugs';
 import { useEnvironmentDetails } from '../hooks/useEnvironmentDetails';
-import { ENVIRONMENT_STATUS_LABEL } from '../../shared/constants/environmentLabels';
 
 export const PublicEnvironmentPage = () => {
   const { environmentId } = useParams<{ environmentId: string }>();
@@ -71,9 +70,6 @@ export const PublicEnvironmentPage = () => {
       <section className="page-container environment-page environment-page--public">
         <div className="environment-page__header">
           <div>
-            <span className={`status-pill status-pill--${environment.status}`}>
-              {ENVIRONMENT_STATUS_LABEL[environment.status]}
-            </span>
             <h1 className="section-title">{environment.identificador}</h1>
             <p className="section-subtitle">
               {environment.tipoAmbiente} · {environment.tipoTeste} · {suiteDescription}
