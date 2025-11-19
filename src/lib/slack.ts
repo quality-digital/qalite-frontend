@@ -19,6 +19,9 @@ export interface SlackEnvironmentSummary {
   participantsCount: number;
   monitoredUrls: string[];
   attendees: SlackTaskSummaryAttendee[];
+  taskIdentifier: string;
+  testedAt: string;
+  concludedAt: string;
 }
 
 export interface SlackTaskSummaryPayload {

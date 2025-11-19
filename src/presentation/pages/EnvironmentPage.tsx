@@ -56,6 +56,46 @@ const buildSuiteDetails = (count: number) => {
   return `${count} cenário${count > 1 ? 's' : ''} vinculados`;
 };
 
+const formatDateTimeLabel = (value: string | null | undefined) => {
+  if (!value) {
+    return 'Não informado';
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return 'Não informado';
+  }
+
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(parsed);
+};
+
+const buildTestingMoments = (environment: Environment) => {
+  const testedAtCandidate = environment.timeTracking?.start ?? environment.createdAt;
+  const concludedAtCandidate =
+    environment.timeTracking?.end ?? environment.updatedAt ?? environment.timeTracking?.start;
+
+  return {
+    testedAt: formatDateTimeLabel(testedAtCandidate),
+    concludedAt: formatDateTimeLabel(concludedAtCandidate),
+  };
+};
+
+const buildSlackSummaryMessage = (
+  taskIdentifier: string,
+  testedAt: string,
+  concludedAt: string,
+): string => {
+  const identifierChunk =
+    taskIdentifier && taskIdentifier !== 'Não informado'
+      ? `Resumo do ambiente ${taskIdentifier}`
+      : 'Resumo do ambiente';
+
+  return `${identifierChunk}\nTestado em: ${testedAt}\nConcluído em: ${concludedAt}`;
+};
+
 const mapProfileToAttendee = (
   profile: UserSummary | undefined,
   fallbackId: string | null,
@@ -100,6 +140,8 @@ const buildSlackTaskSummaryPayload = (
   const monitoredUrls = (options.urls ?? []).filter(
     (url) => typeof url === 'string' && url.trim().length > 0,
   );
+  const { testedAt, concludedAt } = buildTestingMoments(environment);
+  const taskIdentifier = environment.identificador?.trim() || 'Não informado';
 
   return {
     environmentSummary: {
@@ -113,7 +155,11 @@ const buildSlackTaskSummaryPayload = (
       participantsCount,
       monitoredUrls,
       attendees,
+      taskIdentifier,
+      testedAt,
+      concludedAt,
     },
+    message: buildSlackSummaryMessage(taskIdentifier, testedAt, concludedAt),
   };
 };
 
