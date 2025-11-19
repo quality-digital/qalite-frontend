@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { EnvironmentStatusError } from '../../lib/errors';
-import type { EnvironmentStatus } from '../../lib/types';
-import { environmentService } from '../../services';
+import type { Environment, EnvironmentStatus, UserSummary } from '../../lib/types';
+import type { SlackTaskSummaryPayload } from '../../lib/slack';
+import { environmentService, slackService } from '../../services';
 import { Button } from '../components/Button';
 import { Layout } from '../components/Layout';
 import { useToast } from '../context/ToastContext';
@@ -26,6 +27,108 @@ import { useEnvironmentDetails } from '../hooks/useEnvironmentDetails';
 import { useEnvironmentEngagement } from '../hooks/useEnvironmentEngagement';
 import { EnvironmentSummaryCard } from '../components/environments/EnvironmentSummaryCard';
 
+interface SlackSummaryBuilderOptions {
+  formattedTime: string;
+  totalTimeMs: number;
+  scenarioCount: number;
+  executedScenariosCount: number;
+  suiteDescription: string;
+  urls: string[];
+  bugsCount: number;
+  participantProfiles: UserSummary[];
+}
+
+const formatExecutedScenariosMessage = (count: number) => {
+  if (count === 0) {
+    return 'Nenhum cenário executado';
+  }
+
+  if (count === 1) {
+    return '1 cenário executado';
+  }
+
+  return `${count} cenários executados`;
+};
+
+const buildSuiteDetails = (count: number) => {
+  if (count === 0) {
+    return 'Nenhum cenário vinculado';
+  }
+
+  return `${count} cenário${count > 1 ? 's' : ''} vinculados`;
+};
+
+const mapProfileToAttendee = (
+  profile: UserSummary | undefined,
+  fallbackId: string | null,
+  index: number,
+) => {
+  const fallbackName = fallbackId ? `Participante ${fallbackId}` : `Participante ${index + 1}`;
+  const trimmedName = profile?.displayName?.trim();
+
+  return {
+    name: trimmedName || profile?.email || fallbackName,
+    email: profile?.email ?? 'Não informado',
+  };
+};
+
+const buildAttendeesList = (
+  environment: Environment,
+  participantProfiles: UserSummary[],
+): SlackTaskSummaryPayload['environmentSummary']['attendees'] => {
+  const participantIds = Array.from(new Set(environment.participants ?? []));
+  const profileMap = new Map(participantProfiles.map((profile) => [profile.id, profile]));
+  const attendees = participantIds.map((participantId, index) =>
+    mapProfileToAttendee(profileMap.get(participantId), participantId, index),
+  );
+
+  const knownParticipants = new Set(participantIds);
+  participantProfiles
+    .filter((profile) => !knownParticipants.has(profile.id))
+    .forEach((profile, index) => {
+      attendees.push(mapProfileToAttendee(profile, profile.id, participantIds.length + index));
+    });
+
+  return attendees;
+};
+
+const buildSlackTaskSummaryPayload = (
+  environment: Environment,
+  options: SlackSummaryBuilderOptions,
+): SlackTaskSummaryPayload => {
+  const attendees = buildAttendeesList(environment, options.participantProfiles);
+  const uniqueParticipantsCount = new Set(environment.participants ?? []).size;
+  const participantsCount = uniqueParticipantsCount || attendees.length;
+  const monitoredUrls = (options.urls ?? []).filter(
+    (url) => typeof url === 'string' && url.trim().length > 0,
+  );
+  const taskIdentifier = environment.identificador?.trim() || 'Não informado';
+  const normalizedEnvironmentType = environment.tipoAmbiente?.trim().toUpperCase();
+  const isWorkspaceEnvironment = normalizedEnvironmentType === 'WS';
+  const fix = {
+    type: isWorkspaceEnvironment ? 'storyfixes' : 'bug',
+    value: options.bugsCount,
+  } as const;
+
+  return {
+    environmentSummary: {
+      identifier: taskIdentifier,
+      totalTime: options.formattedTime || '00:00:00',
+      totalTimeMs: options.totalTimeMs,
+      scenariosCount: options.scenarioCount,
+      executedScenariosCount: options.executedScenariosCount,
+      executedScenariosMessage: formatExecutedScenariosMessage(options.executedScenariosCount),
+      fix,
+      jira: environment.jiraTask?.trim() || 'Não informado',
+      suiteName: options.suiteDescription,
+      suiteDetails: buildSuiteDetails(options.scenarioCount),
+      participantsCount,
+      monitoredUrls,
+      attendees,
+    },
+  };
+};
+
 export const EnvironmentPage = () => {
   const { environmentId } = useParams<{ environmentId: string }>();
   const navigate = useNavigate();
@@ -42,6 +145,7 @@ export const EnvironmentPage = () => {
   const [editingBug, setEditingBug] = useState<EnvironmentBug | null>(null);
   const [defaultBugScenarioId, setDefaultBugScenarioId] = useState<string | null>(null);
   const [isCopyingMarkdown, setIsCopyingMarkdown] = useState(false);
+  const [isSendingSlackSummary, setIsSendingSlackSummary] = useState(false);
   const { setActiveOrganization } = useOrganizationBranding();
   const participantProfiles = useUserProfiles(environment?.participants ?? []);
   const { bugs, isLoading: isLoadingBugs } = useEnvironmentBugs(environment?.id ?? null);
@@ -62,6 +166,7 @@ export const EnvironmentPage = () => {
     progressPercentage,
     progressLabel,
     scenarioCount,
+    executedScenariosCount,
     suiteDescription,
     headerMeta,
     urls,
@@ -88,7 +193,7 @@ export const EnvironmentPage = () => {
     };
   }, [environmentOrganization, setActiveOrganization]);
 
-  const { formattedTime } = useTimeTracking(
+  const { formattedTime, totalMs } = useTimeTracking(
     environment?.timeTracking ?? null,
     environment?.status === 'in_progress',
   );
@@ -159,6 +264,44 @@ export const EnvironmentPage = () => {
       showToast({ type: 'error', message: 'Não foi possível copiar o Markdown.' });
     } finally {
       setIsCopyingMarkdown(false);
+    }
+  };
+
+  const handleSendSlackSummary = async () => {
+    if (!environment) {
+      return;
+    }
+
+    setIsSendingSlackSummary(true);
+
+    try {
+      const payload = buildSlackTaskSummaryPayload(environment, {
+        formattedTime,
+        totalTimeMs: totalMs,
+        scenarioCount,
+        executedScenariosCount,
+        suiteDescription,
+        urls,
+        bugsCount: bugs.length,
+        participantProfiles,
+      });
+
+      await slackService.sendTaskSummary(payload);
+
+      showToast({
+        type: 'success',
+        message: 'Resumo enviado para o Slack com sucesso.',
+      });
+    } catch (error) {
+      console.error(error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Não foi possível enviar o resumo para o Slack.';
+      showToast({
+        type: 'error',
+        message: errorMessage,
+      });
+    } finally {
+      setIsSendingSlackSummary(false);
     }
   };
 
@@ -366,6 +509,16 @@ export const EnvironmentPage = () => {
                 loadingText="Copiando..."
               >
                 Copiar Markdown
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleSendSlackSummary}
+                disabled={isSendingSlackSummary}
+                isLoading={isSendingSlackSummary}
+                loadingText="Enviando..."
+              >
+                Enviar resumo para o Slack
               </Button>
             </div>
             {isLocked && (

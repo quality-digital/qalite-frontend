@@ -17,6 +17,7 @@ interface UseEnvironmentDetailsResult {
   progressPercentage: number;
   progressLabel: string;
   scenarioCount: number;
+  executedScenariosCount: number;
   suiteDescription: string;
   headerMeta: string[];
   urls: string[];
@@ -124,7 +125,8 @@ export const useEnvironmentDetails = (
         combinedScenarioStats.concluded,
         combinedScenarioStats.total,
       ),
-      scenarioCount: platformScenarioStats.mobile.total,
+      scenarioCount: combinedScenarioStats.total,
+      executedScenariosCount: combinedScenarioStats.concluded,
       suiteDescription: environment?.suiteName ?? 'Suíte não informada',
       headerMeta: [
         ...(environment?.momento ? [`Momento: ${environment.momento}`] : []),
