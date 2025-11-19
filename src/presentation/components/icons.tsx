@@ -91,16 +91,6 @@ export const SparklesIcon = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-export const TrophyIcon = (props: SVGProps<SVGSVGElement>) => (
-  <svg {...baseProps} {...strokeProps} {...props}>
-    <path d="M8 21h8" />
-    <path d="M12 17v4" />
-    <path d="M7 4V2h10v2" />
-    <path d="M17 4h4v2a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5V4h4" />
-    <path d="M7 13a5 5 0 0 0 10 0" />
-  </svg>
-);
-
 export const EyeIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg {...baseProps} {...strokeProps} {...props}>
     <path d="M1.5 12s4.5-7.5 10.5-7.5S22.5 12 22.5 12s-4.5 7.5-10.5 7.5S1.5 12 1.5 12Z" />

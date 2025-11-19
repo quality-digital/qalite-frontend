@@ -40,31 +40,6 @@ export class FirebaseScenarioExecutionRepository implements IScenarioExecutionRe
     });
   }
 
-  async listByOrganization(organizationId: string): Promise<ScenarioExecution[]> {
-    const executionQuery = query(
-      scenarioExecutionsCollection,
-      where('organizationId', '==', organizationId),
-    );
-    const snapshot = await getDocs(executionQuery);
-
-    return snapshot.docs.map((docSnapshot) => {
-      const data = docSnapshot.data();
-      return {
-        id: docSnapshot.id,
-        organizationId: String(data.organizationId ?? ''),
-        storeId: String(data.storeId ?? ''),
-        environmentId: String(data.environmentId ?? ''),
-        scenarioId: String(data.scenarioId ?? ''),
-        scenarioTitle: String(data.scenarioTitle ?? ''),
-        qaId: data.qaId ? String(data.qaId) : null,
-        qaName: data.qaName ? String(data.qaName) : null,
-        totalMs: Number(data.totalMs ?? 0),
-        executedAt: String(data.executedAt ?? ''),
-        createdAt: parseTimestamp(data.createdAt as Timestamp | string | null | undefined),
-      } satisfies ScenarioExecution;
-    });
-  }
-
   async listByStore(storeId: string): Promise<ScenarioExecution[]> {
     const executionQuery = query(scenarioExecutionsCollection, where('storeId', '==', storeId));
     const snapshot = await getDocs(executionQuery);

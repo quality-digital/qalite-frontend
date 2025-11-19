@@ -3,7 +3,6 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { ProtectedRoute, RoleProtectedRoute } from './ProtectedRoute';
 import { AdminOrganizationsPage } from '../pages/AdminOrganizationsPage';
 import { AdminStoresPage } from '../pages/AdminStoresPage';
-import { AdminOrganizationMetricsPage } from '../pages/AdminOrganizationMetricsPage';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
 import { ForgotPasswordPage } from '../pages/ForgotPasswordPage';
 import { HomePage } from '../pages/HomePage';
@@ -36,7 +35,6 @@ export const AppRoutes = () => (
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/stores/:storeId" element={<StoreSummaryPage />} />
           <Route path="/environments/:environmentId" element={<EnvironmentPage />} />
-          <Route path="/admin/organization" element={<AdminOrganizationMetricsPage />} />
         </Route>
 
         <Route element={<RoleProtectedRoute allowedRoles={['admin']} />}>

@@ -3,8 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import type { Organization, OrganizationMember } from '../../domain/entities/Organization';
 import type { Store } from '../../domain/entities/Store';
-import type { ScenarioExecutionMetrics } from '../../application/services/ScenarioExecutionService';
-import { organizationService, scenarioExecutionService, storeService } from '../../services';
+import { organizationService, storeService } from '../../services';
 import { useToast } from '../context/ToastContext';
 import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
 import { Layout } from '../components/Layout';
@@ -13,15 +12,8 @@ import { TextInput } from '../components/TextInput';
 import { Modal } from '../components/Modal';
 import { UserAvatar } from '../components/UserAvatar';
 import { SimpleBarChart } from '../components/SimpleBarChart';
-import {
-  BarChartIcon,
-  SparklesIcon,
-  StorefrontIcon,
-  TrophyIcon,
-  UsersGroupIcon,
-} from '../components/icons';
+import { BarChartIcon, SparklesIcon, StorefrontIcon, UsersGroupIcon } from '../components/icons';
 import { isAutomatedScenario } from '../../shared/utils/automation';
-import { formatDurationFromMs } from '../../shared/utils/time';
 
 interface StoreForm {
   name: string;
@@ -67,12 +59,6 @@ export const AdminStoresPage = () => {
   const [isManagingMembers, setIsManagingMembers] = useState(false);
   const [storeAutomationCounts, setStoreAutomationCounts] = useState<Record<string, number>>({});
   const [isLoadingAutomationStats, setIsLoadingAutomationStats] = useState(false);
-  const [organizationMetrics, setOrganizationMetrics] = useState<ScenarioExecutionMetrics | null>(
-    null,
-  );
-  const [storeMetrics, setStoreMetrics] = useState<Record<string, ScenarioExecutionMetrics>>({});
-  const [isLoadingMetrics, setIsLoadingMetrics] = useState(false);
-  const [metricsError, setMetricsError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchOrganizations = async () => {
@@ -109,9 +95,6 @@ export const AdminStoresPage = () => {
     if (!selectedOrganizationId) {
       setStores([]);
       setStoreAutomationCounts({});
-      setOrganizationMetrics(null);
-      setStoreMetrics({});
-      setMetricsError(null);
       return;
     }
 
@@ -145,42 +128,6 @@ export const AdminStoresPage = () => {
   }, [selectedOrganization, setActiveOrganization]);
 
   useEffect(() => () => setActiveOrganization(null), [setActiveOrganization]);
-
-  useEffect(() => {
-    if (!selectedOrganizationId) {
-      return;
-    }
-
-    let isMounted = true;
-    setIsLoadingMetrics(true);
-    setMetricsError(null);
-
-    const fetchMetrics = async () => {
-      try {
-        const data =
-          await scenarioExecutionService.getOrganizationMetricsWithStores(selectedOrganizationId);
-        if (isMounted) {
-          setOrganizationMetrics(data.organization);
-          setStoreMetrics(data.stores);
-        }
-      } catch (error) {
-        console.error(error);
-        if (isMounted) {
-          setMetricsError('Não foi possível carregar as métricas de execução desta organização.');
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoadingMetrics(false);
-        }
-      }
-    };
-
-    void fetchMetrics();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [selectedOrganizationId]);
 
   useEffect(() => {
     if (!selectedOrganizationId || stores.length === 0) {
@@ -507,25 +454,6 @@ export const AdminStoresPage = () => {
     }
   };
 
-  const qaRanking = organizationMetrics?.qaRanking ?? [];
-  const scenarioRanking = organizationMetrics?.scenarioRanking ?? [];
-  const fastestScenario = scenarioRanking[0] ?? null;
-  const hasExecutions = (organizationMetrics?.totalExecutions ?? 0) > 0;
-
-  const memberLookup = useMemo(() => {
-    if (!selectedOrganization) {
-      return {} as Record<string, OrganizationMember>;
-    }
-
-    return selectedOrganization.members.reduce<Record<string, OrganizationMember>>(
-      (accumulator, member) => {
-        accumulator[member.uid] = member;
-        return accumulator;
-      },
-      {},
-    );
-  }, [selectedOrganization]);
-
   return (
     <Layout>
       <section className="page-container">
@@ -557,12 +485,6 @@ export const AdminStoresPage = () => {
           </div>
         </div>
 
-        {metricsError && (
-          <p className="form-message form-message--error" style={{ marginBottom: '1.5rem' }}>
-            {metricsError}
-          </p>
-        )}
-
         {isLoadingStores ? (
           <p className="section-subtitle">Carregando lojas vinculadas...</p>
         ) : stores.length === 0 ? (
@@ -577,213 +499,35 @@ export const AdminStoresPage = () => {
           </div>
         ) : (
           <>
-            <div className="dashboard-grid store-dashboard-grid">
-              {hasExecutions && !metricsError && (
-                <div className="card organization-ranking-card">
-                  <div className="organization-ranking-card__header">
-                    <div>
-                      <p className="organization-ranking-card__kicker">
-                        Ranking geral da organização
-                      </p>
-                      <h3>QAs mais rápidos</h3>
-                    </div>
-                    <div className="organization-ranking-card__meta">
-                      <span className="badge">
-                        {isLoadingMetrics
-                          ? 'Carregando...'
-                          : `${organizationMetrics?.totalExecutions ?? 0} execução${
-                              (organizationMetrics?.totalExecutions ?? 0) === 1 ? '' : 'es'
-                            }`}
+            <div className="dashboard-grid">
+              {stores.map((store) => (
+                <div
+                  key={store.id}
+                  className="card card-clickable"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => navigate(`/stores/${store.id}`)}
+                  onKeyDown={(event) =>
+                    handleCardKeyDown(event, () => navigate(`/stores/${store.id}`))
+                  }
+                >
+                  <div className="card-header">
+                    <div className="card-title-group">
+                      <span className="card-title-icon" aria-hidden>
+                        <StorefrontIcon className="icon icon--lg" />
                       </span>
-                      {fastestScenario && (
-                        <span className="metrics-chip metrics-chip--muted">
-                          Cenário destaque: {fastestScenario.scenarioTitle}
-                        </span>
-                      )}
+                      <div>
+                        <h2 className="card-title">{store.name}</h2>
+                      </div>
                     </div>
+                    <span className="badge">{store.scenarioCount} cenários</span>
                   </div>
-                  <div className="organization-ranking-card__podium">
-                    {isLoadingMetrics ? (
-                      <p className="store-ranking__empty">Carregando ranking geral...</p>
-                    ) : (
-                      qaRanking.slice(0, 3).map((entry, index) => {
-                        const tier = index === 0 ? 'gold' : index === 1 ? 'silver' : 'bronze';
-                        const member = entry.qaId ? memberLookup[entry.qaId] : undefined;
-                        const displayName =
-                          entry.qaName || member?.displayName || member?.email || 'QA';
-
-                        return (
-                          <div
-                            key={`${entry.qaId ?? entry.qaName}-${tier}`}
-                            className="organization-ranking-card__podium-entry"
-                          >
-                            <span
-                              className={`trophy-badge trophy-badge--${tier}`}
-                              aria-label={`${index + 1}º lugar`}
-                            >
-                              <TrophyIcon className="trophy-badge__icon" />
-                            </span>
-                            <div className="organization-ranking-card__podium-body">
-                              <UserAvatar
-                                name={displayName}
-                                photoURL={member?.photoURL ?? undefined}
-                                size="sm"
-                              />
-                              <div>
-                                <strong>{displayName}</strong>
-                                <span>Média {formatDurationFromMs(entry.averageMs)}</span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
+                  <div className="card-link-hint">
+                    <span>Abrir loja</span>
+                    <span aria-hidden>&rarr;</span>
                   </div>
-                  {!isLoadingMetrics && qaRanking.length > 0 && (
-                    <div className="metrics-table-wrapper organization-ranking-card__table">
-                      <table className="metrics-table">
-                        <thead>
-                          <tr>
-                            <th>Posição</th>
-                            <th>QA</th>
-                            <th>Média</th>
-                            <th>Melhor tempo</th>
-                            <th>Execuções</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {qaRanking.map((entry, index) => {
-                            const member = entry.qaId ? memberLookup[entry.qaId] : undefined;
-                            const displayName =
-                              entry.qaName || member?.displayName || member?.email || 'QA';
-                            return (
-                              <tr key={`${entry.qaId ?? entry.qaName}-${index}`}>
-                                <td>{index + 1}</td>
-                                <td>
-                                  <div className="qa-table-entry">
-                                    <UserAvatar
-                                      name={displayName}
-                                      photoURL={member?.photoURL ?? undefined}
-                                      size="xs"
-                                    />
-                                    <div>
-                                      <strong>{displayName}</strong>
-                                      <span>{entry.executions} exec.</span>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td>{formatDurationFromMs(entry.averageMs)}</td>
-                                <td>{formatDurationFromMs(entry.bestMs)}</td>
-                                <td>{entry.executions}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
                 </div>
-              )}
-
-              {stores.map((store) => {
-                const storeMetric = storeMetrics[store.id];
-                const storeRankingEntries = storeMetric?.qaRanking.slice(0, 3) ?? [];
-                const storeHasExecutions = (storeMetric?.totalExecutions ?? 0) > 0;
-
-                return (
-                  <div
-                    key={store.id}
-                    className="card card-clickable store-card"
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => navigate(`/stores/${store.id}`)}
-                    onKeyDown={(event) =>
-                      handleCardKeyDown(event, () => navigate(`/stores/${store.id}`))
-                    }
-                  >
-                    <div className="card-header">
-                      <div className="card-title-group">
-                        <span className="card-title-icon" aria-hidden>
-                          <StorefrontIcon className="icon icon--lg" />
-                        </span>
-                        <div>
-                          <h2 className="card-title">{store.name}</h2>
-                          <p className="store-card__subtitle">
-                            {store.scenarioCount} cenários publicados
-                          </p>
-                        </div>
-                      </div>
-                      <span className="badge">
-                        {isLoadingMetrics
-                          ? 'Métricas...'
-                          : `${storeMetric?.totalExecutions ?? 0} execução${
-                              (storeMetric?.totalExecutions ?? 0) === 1 ? '' : 'es'
-                            }`}
-                      </span>
-                    </div>
-
-                    <div className="store-card__metrics">
-                      <div className="store-card__metrics-header">
-                        <div>
-                          <p className="store-card__metrics-kicker">Ranking por loja</p>
-                          <h3>Top QAs nesta loja</h3>
-                        </div>
-                      </div>
-
-                      {isLoadingMetrics ? (
-                        <p className="store-ranking__empty">Coletando dados desta loja...</p>
-                      ) : !storeHasExecutions ? (
-                        <p className="store-ranking__empty">
-                          Registre execuções para descobrir quem lidera esta loja.
-                        </p>
-                      ) : (
-                        <ul className="store-ranking">
-                          {storeRankingEntries.map((entry, index) => {
-                            const tier = index === 0 ? 'gold' : index === 1 ? 'silver' : 'bronze';
-                            const member = entry.qaId ? memberLookup[entry.qaId] : undefined;
-                            const displayName =
-                              entry.qaName || member?.displayName || member?.email || 'QA';
-
-                            return (
-                              <li
-                                key={`${store.id}-${entry.qaId ?? entry.qaName}-${tier}`}
-                                className="store-ranking__entry"
-                              >
-                                <div className="store-ranking__qa">
-                                  <span
-                                    className={`trophy-badge trophy-badge--${tier}`}
-                                    aria-label={`${index + 1}º lugar`}
-                                  >
-                                    <TrophyIcon className="trophy-badge__icon" />
-                                  </span>
-                                  <UserAvatar
-                                    name={displayName}
-                                    photoURL={member?.photoURL ?? undefined}
-                                    size="sm"
-                                  />
-                                  <div className="store-ranking__details">
-                                    <strong>{displayName}</strong>
-                                    <span>Média {formatDurationFromMs(entry.averageMs)}</span>
-                                  </div>
-                                </div>
-                                <div className="store-ranking__stats">
-                                  <span>Melhor {formatDurationFromMs(entry.bestMs)}</span>
-                                  <span>{entry.executions} exec.</span>
-                                </div>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      )}
-                    </div>
-
-                    <div className="card-link-hint">
-                      <span>Abrir loja</span>
-                      <span aria-hidden>&rarr;</span>
-                    </div>
-                  </div>
-                );
-              })}
+              ))}
             </div>
 
             <div className="organization-extra">
@@ -827,44 +571,6 @@ export const AdminStoresPage = () => {
                       ))}
                     </ul>
                   )}
-                </section>
-              )}
-
-              {hasExecutions && !metricsError && (
-                <section className="scenario-ranking-card card">
-                  <div className="scenario-ranking-card__header">
-                    <div>
-                      <p className="scenario-ranking-card__kicker">Cenários em evidência</p>
-                      <h3>Cenários mais rápidos</h3>
-                    </div>
-                    {fastestScenario && (
-                      <span className="badge">Destaque: {fastestScenario.scenarioTitle}</span>
-                    )}
-                  </div>
-                  <div className="metrics-table-wrapper">
-                    <table className="metrics-table">
-                      <thead>
-                        <tr>
-                          <th>Posição</th>
-                          <th>Cenário</th>
-                          <th>Média</th>
-                          <th>Melhor tempo</th>
-                          <th>Execuções</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {scenarioRanking.map((entry, index) => (
-                          <tr key={`${entry.scenarioId}-${index}`}>
-                            <td>{index + 1}</td>
-                            <td>{entry.scenarioTitle}</td>
-                            <td>{formatDurationFromMs(entry.averageMs)}</td>
-                            <td>{formatDurationFromMs(entry.bestMs)}</td>
-                            <td>{entry.executions}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
                 </section>
               )}
 
