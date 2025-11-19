@@ -107,3 +107,23 @@ export const EyeSlashIcon = (props: SVGProps<SVGSVGElement>) => (
     <path d="M3 12s3.5 6 9 6a9.45 9.45 0 0 0 3.5-.69" />
   </svg>
 );
+
+export const ActivityIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg {...baseProps} {...strokeProps} {...props}>
+    <path d="M22 12h-4l-3 9-4-18-3 9H2" />
+  </svg>
+);
+
+export const FilterIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg {...baseProps} {...strokeProps} {...props}>
+    <path d="M3 5h18" />
+    <path d="M7 12h10" />
+    <path d="M11 19h2" />
+  </svg>
+);
+
+export const ChevronDownIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg {...baseProps} {...strokeProps} {...props}>
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);

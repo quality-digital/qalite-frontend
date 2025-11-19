@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ActivityLog } from '../../lib/types';
 import { logService } from '../../services';
 import { useToast } from '../context/ToastContext';
+import { ActivityIcon, ChevronDownIcon, FilterIcon } from './icons';
 
 interface OrganizationLogPanelProps {
   organizationId: string;
@@ -89,32 +90,74 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
 
   const toggleCollapse = () => setIsCollapsed((prev) => !prev);
 
+  const renderActionLabel = (action: ActivityLog['action']) => {
+    switch (action) {
+      case 'create':
+        return 'Criação';
+      case 'update':
+        return 'Atualização';
+      case 'delete':
+        return 'Exclusão';
+      case 'status_change':
+        return 'Status';
+      case 'attachment':
+        return 'Anexo';
+      case 'participation':
+        return 'Participação';
+      default:
+        return action;
+    }
+  };
+
+  const renderEntityLabel = (entity: ActivityLog['entityType']) => {
+    const option = ENTITY_FILTERS.find((filter) => filter.value === entity);
+    return option?.label ?? entity;
+  };
+
   return (
     <div
       className={`card organization-log-panel${isCollapsed ? ' organization-log-panel--collapsed' : ''}`}
     >
       <div className="organization-log-panel__header">
-        <div>
-          <div className="organization-log-panel__title-row">
-            <span className="badge">Auditoria</span>
-            <span className="badge badge--muted">
-              {logs.length} registro{logs.length === 1 ? '' : 's'}
-            </span>
+        <div className="organization-log-panel__heading">
+          <span className="icon-pill" aria-hidden>
+            <ActivityIcon className="icon" />
+          </span>
+          <div>
+            <div className="organization-log-panel__title-row">
+              <span className="badge">Auditoria</span>
+              <span className="badge badge--muted">
+                {logs.length} registro{logs.length === 1 ? '' : 's'}
+              </span>
+            </div>
+            <h2 className="text-xl font-semibold text-primary">Logs da organização</h2>
+            <p className="section-subtitle">
+              Registro das ações realizadas em ambientes, lojas, cenários e suítes.
+            </p>
           </div>
-          <h2 className="text-xl font-semibold text-primary">Logs da organização</h2>
-          <p className="section-subtitle">
-            Registro das ações realizadas em ambientes, lojas, cenários e suítes.
-          </p>
         </div>
 
-        <button className="button button-secondary" type="button" onClick={toggleCollapse}>
-          {isCollapsed ? 'Mostrar logs' : 'Ocultar logs'}
+        <button
+          className="button button-secondary button-ghost"
+          type="button"
+          onClick={toggleCollapse}
+        >
+          {isCollapsed ? 'Mostrar' : 'Ocultar'}
+          <ChevronDownIcon
+            className={`icon icon--rotate ${isCollapsed ? '' : 'icon--rotate-180'}`}
+            aria-hidden
+          />
         </button>
       </div>
 
       {!isCollapsed && (
         <>
           <div className="organization-log-panel__filters">
+            <div className="filter-chip" aria-hidden>
+              <FilterIcon className="icon" />
+              <span>Filtros</span>
+            </div>
+
             <label className="form-field">
               <span className="form-label">Entidade</span>
               <select
@@ -154,10 +197,17 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
             <ul className="activity-log-list">
               {filteredLogs.map((log) => (
                 <li key={log.id} className="activity-log-item">
-                  <div className="activity-log-item__meta">
+                  <div className="activity-log-item__timeline" aria-hidden>
+                    <span className={`activity-log-dot activity-log-dot--${log.action}`} />
+                    <span className="activity-log-line" />
+                  </div>
+
+                  <div className="activity-log-item__content">
                     <div className="activity-log-tags">
-                      <span className={`chip chip--${log.action}`}>{log.action}</span>
-                      <span className="chip chip--entity">{log.entityType}</span>
+                      <span className={`chip chip--${log.action}`}>
+                        {renderActionLabel(log.action)}
+                      </span>
+                      <span className="chip chip--entity">{renderEntityLabel(log.entityType)}</span>
                     </div>
                     <p className="activity-log-message">{log.message}</p>
                     <p className="activity-log-meta">

@@ -4537,6 +4537,8 @@ button.store-summary-highlight:focus-visible {
 
 .organization-log-panel {
   margin-bottom: 1.5rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.06);
 }
 
 .organization-log-panel--collapsed {
@@ -4550,6 +4552,31 @@ button.store-summary-highlight:focus-visible {
   gap: 1rem;
   flex-wrap: wrap;
   margin-bottom: 1rem;
+}
+
+.organization-log-panel__heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.icon-pill {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(16, 185, 129, 0.12));
+  color: #2563eb;
+}
+
+.icon--rotate {
+  transition: transform 0.2s ease;
+}
+
+.icon--rotate-180 {
+  transform: rotate(180deg);
 }
 
 .organization-log-panel__title-row {
@@ -4566,6 +4593,18 @@ button.store-summary-highlight:focus-visible {
   margin-bottom: 0.75rem;
 }
 
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 12px;
+  background: #f3f4f6;
+  color: #111827;
+  font-weight: 600;
+  width: fit-content;
+}
+
 .organization-log-panel__filters .form-field select {
   width: 100%;
 }
@@ -4578,11 +4617,10 @@ button.store-summary-highlight:focus-visible {
 }
 
 .activity-log-item {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: auto 1fr;
   gap: 1rem;
-  padding: 0.75rem 0;
+  padding: 0.85rem 0;
   border-bottom: 1px solid #ececec;
 }
 
@@ -4590,7 +4628,53 @@ button.store-summary-highlight:focus-visible {
   border-bottom: none;
 }
 
-.activity-log-item__meta {
+.activity-log-item__timeline {
+  display: grid;
+  justify-items: center;
+  gap: 0.25rem;
+  margin-top: 0.15rem;
+}
+
+.activity-log-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 3px solid #fff;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+  background: #e5e7eb;
+}
+
+.activity-log-dot--create {
+  background: #10b981;
+}
+
+.activity-log-dot--update {
+  background: #6366f1;
+}
+
+.activity-log-dot--delete {
+  background: #ef4444;
+}
+
+.activity-log-dot--status_change {
+  background: #3b82f6;
+}
+
+.activity-log-dot--attachment {
+  background: #ec4899;
+}
+
+.activity-log-dot--participation {
+  background: #f59e0b;
+}
+
+.activity-log-line {
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(229, 231, 235, 0.8), rgba(209, 213, 219, 0.6));
+}
+
+.activity-log-item__content {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
