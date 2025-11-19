@@ -4605,8 +4605,57 @@ button.store-summary-highlight:focus-visible {
   width: fit-content;
 }
 
+.organization-log-panel__filters .form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f9fafb 0%, #ffffff 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.organization-log-panel__filters .form-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: 0.02em;
+}
+
 .organization-log-panel__filters .form-field select {
   width: 100%;
+}
+
+.organization-log-panel__select {
+  appearance: none;
+  width: 100%;
+  padding: 0.65rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #ffffff
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' viewBox='0 0 24 24'%3E%3Cpath stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right 0.9rem center;
+  color: #1f2937;
+  font-weight: 600;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.1s ease;
+}
+
+.organization-log-panel__select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.organization-log-panel__select:hover {
+  border-color: #9ca3af;
+}
+
+.organization-log-panel__select:active {
+  transform: translateY(1px);
 }
 
 .activity-log-list {

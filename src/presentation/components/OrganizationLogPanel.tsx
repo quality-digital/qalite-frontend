@@ -161,6 +161,7 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
             <label className="form-field">
               <span className="form-label">Entidade</span>
               <select
+                className="organization-log-panel__select"
                 value={entityFilter}
                 onChange={(event) => setEntityFilter(event.target.value as typeof entityFilter)}
               >
@@ -175,6 +176,7 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
             <label className="form-field">
               <span className="form-label">Ação</span>
               <select
+                className="organization-log-panel__select"
                 value={actionFilter}
                 onChange={(event) => setActionFilter(event.target.value as typeof actionFilter)}
               >
