@@ -117,13 +117,15 @@ export const useEnvironmentEngagement = (
   const isScenarioLocked = environment?.status !== 'in_progress' || !hasEnteredEnvironment;
   const isInteractionLocked = !hasEnteredEnvironment || isLocked;
 
+  const canShare = hasEnteredEnvironment && !isLocked;
+
   return {
     hasEnteredEnvironment,
     isLocked,
     isScenarioLocked,
     isInteractionLocked,
-    canCopyPublicLink: hasEnteredEnvironment,
-    isShareDisabled: !hasEnteredEnvironment,
+    canCopyPublicLink: canShare,
+    isShareDisabled: !canShare,
     isJoiningEnvironment,
     isLeavingEnvironment,
     enterEnvironment,

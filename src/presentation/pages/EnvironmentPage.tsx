@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { EnvironmentStatusError } from '../../lib/errors';
 import type { EnvironmentStatus } from '../../lib/types';
@@ -35,6 +35,7 @@ export const EnvironmentPage = () => {
   const { organization: environmentOrganization } = useStoreOrganizationBranding(
     environment?.storeId ?? null,
   );
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isBugModalOpen, setIsBugModalOpen] = useState(false);
@@ -66,6 +67,18 @@ export const EnvironmentPage = () => {
     urls,
     shareLinks,
   } = useEnvironmentDetails(environment, bugs);
+  const inviteParam = searchParams.get('invite');
+  const shouldAutoJoinFromInvite = inviteParam === 'true' || inviteParam === '1';
+
+  const clearInviteParam = useCallback(() => {
+    if (!inviteParam) {
+      return;
+    }
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('invite');
+    setSearchParams(nextParams, { replace: true });
+  }, [inviteParam, searchParams, setSearchParams]);
 
   useEffect(() => {
     setActiveOrganization(environmentOrganization ?? null);
@@ -171,16 +184,18 @@ export const EnvironmentPage = () => {
     openCreateBugModal(scenarioId);
   };
 
-  const handleEnterEnvironment = async () => {
+  const handleEnterEnvironment = useCallback(async () => {
     try {
       await enterEnvironment();
+      return true;
     } catch (error) {
       console.error(error);
       showToast({ type: 'error', message: 'Não foi possível entrar no ambiente.' });
+      return false;
     }
-  };
+  }, [enterEnvironment, showToast]);
 
-  const handleLeaveEnvironment = async () => {
+  const handleLeaveEnvironment = useCallback(async () => {
     try {
       await leaveEnvironment();
       showToast({ type: 'success', message: 'Você saiu do ambiente.' });
@@ -188,7 +203,31 @@ export const EnvironmentPage = () => {
       console.error(error);
       showToast({ type: 'error', message: 'Não foi possível sair do ambiente.' });
     }
-  };
+  }, [leaveEnvironment, showToast]);
+
+  useEffect(() => {
+    if (!shouldAutoJoinFromInvite) {
+      return;
+    }
+
+    if (hasEnteredEnvironment || isLocked) {
+      clearInviteParam();
+      return;
+    }
+
+    const attemptAutoJoin = async () => {
+      await handleEnterEnvironment();
+      clearInviteParam();
+    };
+
+    void attemptAutoJoin();
+  }, [
+    clearInviteParam,
+    handleEnterEnvironment,
+    hasEnteredEnvironment,
+    isLocked,
+    shouldAutoJoinFromInvite,
+  ]);
 
   if (isLoading) {
     return (
@@ -297,10 +336,10 @@ export const EnvironmentPage = () => {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => handleCopyLink(shareLinks.private)}
+                onClick={() => handleCopyLink(shareLinks.invite)}
                 disabled={isShareDisabled}
               >
-                Copiar link do ambiente
+                Convidar para o ambiente
               </Button>
               <Button
                 type="button"

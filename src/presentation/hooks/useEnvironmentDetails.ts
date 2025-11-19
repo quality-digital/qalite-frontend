@@ -22,6 +22,7 @@ interface UseEnvironmentDetailsResult {
   urls: string[];
   shareLinks: {
     private: string;
+    invite: string;
     public: string;
   };
 }
@@ -48,7 +49,7 @@ const formatProgressLabel = (concluded: number, total: number) => {
 
 const buildShareLinks = (environment: Environment | null | undefined) => {
   if (!environment) {
-    return { private: '', public: '' };
+    return { private: '', invite: '', public: '' };
   }
 
   const origin = typeof window === 'undefined' ? '' : window.location.origin;
@@ -56,6 +57,7 @@ const buildShareLinks = (environment: Environment | null | undefined) => {
 
   return {
     private: baseUrl,
+    invite: `${baseUrl}?invite=true`,
     public: `${baseUrl}/public`,
   };
 };
