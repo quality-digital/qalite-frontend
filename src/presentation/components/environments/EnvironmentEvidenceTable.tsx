@@ -1,6 +1,6 @@
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 
-import type {
+import {
   Environment,
   EnvironmentScenario,
   EnvironmentScenarioPlatform,
