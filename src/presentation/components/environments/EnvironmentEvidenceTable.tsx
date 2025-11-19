@@ -229,7 +229,6 @@ export const EnvironmentEvidenceTable = ({
 
     try {
       await scenarioExecutionService.logExecution(payload);
-      showToast({ type: 'success', message: 'Tempo registrado com sucesso.' });
       setScenarioStartTimes((previous) => {
         const next = { ...previous };
         delete next[scenarioId];
