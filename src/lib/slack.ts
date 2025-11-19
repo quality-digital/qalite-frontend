@@ -3,32 +3,32 @@ const getServiceBaseUrl = (): string => {
   return envUrl && envUrl.length > 0 ? envUrl.replace(/\/$/, '') : 'http://localhost:3000';
 };
 
-export interface SlackTaskSummaryAttendee {
+export interface EnvironmentSummaryAttendee {
   name: string;
   email: string;
 }
 
-export interface SlackEnvironmentSummary {
-  totalTime: string;
-  scenariosCount: number;
-  executedScenariosMessage: string;
-  fix: {
-    type: string;
-    value: number;
+export interface EnvironmentSummaryPayload {
+  identifier?: string;
+  totalTime?: string;
+  totalTimeMs?: number;
+  scenariosCount?: number;
+  executedScenariosCount?: number;
+  executedScenariosMessage?: string;
+  fix?: {
+    type?: 'bug' | 'storyfixes';
+    value?: number;
   };
-  jira: string;
-  suiteName: string;
-  suiteDetails: string;
-  participantsCount: number;
-  monitoredUrls: string[];
-  attendees: SlackTaskSummaryAttendee[];
-  taskIdentifier: string;
-  testedAt: string;
-  concludedAt: string;
+  jira?: string;
+  suiteName?: string;
+  suiteDetails?: string;
+  participantsCount?: number;
+  monitoredUrls?: string[];
+  attendees?: Array<EnvironmentSummaryAttendee | string>;
 }
 
 export interface SlackTaskSummaryPayload {
-  environmentSummary: SlackEnvironmentSummary;
+  environmentSummary: EnvironmentSummaryPayload;
   message?: string;
 }
 

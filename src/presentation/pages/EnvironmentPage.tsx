@@ -29,7 +29,9 @@ import { EnvironmentSummaryCard } from '../components/environments/EnvironmentSu
 
 interface SlackSummaryBuilderOptions {
   formattedTime: string;
+  totalTimeMs: number;
   scenarioCount: number;
+  executedScenariosCount: number;
   suiteDescription: string;
   urls: string[];
   bugsCount: number;
@@ -144,17 +146,19 @@ const buildSlackTaskSummaryPayload = (
   const taskIdentifier = environment.identificador?.trim() || 'Não informado';
   const normalizedEnvironmentType = environment.tipoAmbiente?.trim().toUpperCase();
   const isWorkspaceEnvironment = normalizedEnvironmentType === 'WS';
-  const bugsCount = options.bugsCount;
   const fix = {
-    type: isWorkspaceEnvironment ? 'storyfix' : 'bug',
-    value: bugsCount,
+    type: isWorkspaceEnvironment ? 'storyfixes' : 'bug',
+    value: options.bugsCount,
   } as const;
 
   return {
     environmentSummary: {
+      identifier: taskIdentifier,
       totalTime: options.formattedTime || '00:00:00',
+      totalTimeMs: options.totalTimeMs,
       scenariosCount: options.scenarioCount,
-      executedScenariosMessage: formatExecutedScenariosMessage(options.scenarioCount),
+      executedScenariosCount: options.executedScenariosCount,
+      executedScenariosMessage: formatExecutedScenariosMessage(options.executedScenariosCount),
       fix,
       jira: environment.jiraTask?.trim() || 'Não informado',
       suiteName: options.suiteDescription,
@@ -162,9 +166,6 @@ const buildSlackTaskSummaryPayload = (
       participantsCount,
       monitoredUrls,
       attendees,
-      taskIdentifier,
-      testedAt,
-      concludedAt,
     },
     message: buildSlackSummaryMessage(taskIdentifier, testedAt, concludedAt),
   };
@@ -207,6 +208,7 @@ export const EnvironmentPage = () => {
     progressPercentage,
     progressLabel,
     scenarioCount,
+    executedScenariosCount,
     suiteDescription,
     headerMeta,
     urls,
@@ -233,7 +235,7 @@ export const EnvironmentPage = () => {
     };
   }, [environmentOrganization, setActiveOrganization]);
 
-  const { formattedTime } = useTimeTracking(
+  const { formattedTime, totalMs } = useTimeTracking(
     environment?.timeTracking ?? null,
     environment?.status === 'in_progress',
   );
@@ -317,7 +319,9 @@ export const EnvironmentPage = () => {
     try {
       const payload = buildSlackTaskSummaryPayload(environment, {
         formattedTime,
+        totalTimeMs: totalMs,
         scenarioCount,
+        executedScenariosCount,
         suiteDescription,
         urls,
         bugsCount: bugs.length,
