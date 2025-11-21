@@ -1,4 +1,4 @@
-import type { ActivityLog, ActivityLogInput } from '../entities/types';
+import type { ActivityLog, ActivityLogInput } from '../entities/activityLog';
 
 export interface LogRepository {
   record: (input: ActivityLogInput) => Promise<void>;

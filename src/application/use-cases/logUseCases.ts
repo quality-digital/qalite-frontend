@@ -1,5 +1,5 @@
 import type { LogRepository } from '../../domain/repositories/LogRepository';
-import type { ActivityLog, ActivityLogInput } from '../../domain/entities/types';
+import type { ActivityLog, ActivityLogInput } from '../../domain/entities/activityLog';
 
 export class LogUseCases {
   constructor(private readonly logRepository: LogRepository) {}

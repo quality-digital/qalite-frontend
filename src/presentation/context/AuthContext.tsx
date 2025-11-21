@@ -10,8 +10,8 @@ import {
 
 import type { UpdateProfilePayload } from '../../application/dto/auth';
 import { authService } from '../../application/use-cases/auth';
-import type { AuthUser, Role } from '../../domain/entities/types';
-import { DEFAULT_ROLE } from '../../domain/entities/types';
+import type { AuthUser, Role } from '../../domain/entities/auth';
+import { DEFAULT_ROLE } from '../../domain/entities/auth';
 import { mapFirebaseError } from '../../shared/errors/firebaseErrors';
 import { useToast } from './ToastContext';
 

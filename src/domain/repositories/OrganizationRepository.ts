@@ -5,7 +5,7 @@ import type {
   OrganizationMember,
   RemoveUserFromOrganizationPayload,
   UpdateOrganizationPayload,
-} from '../entities/types';
+} from '../entities/organization';
 
 export interface OrganizationRepository {
   list: () => Promise<Organization[]>;

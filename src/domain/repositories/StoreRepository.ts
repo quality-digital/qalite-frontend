@@ -1,7 +1,7 @@
 import type {
+  CreateStorePayload,
   ImportScenariosResult,
   ImportSuitesResult,
-  CreateStorePayload,
   Store,
   StoreCategory,
   StoreCategoryInput,
@@ -12,7 +12,7 @@ import type {
   StoreSuiteExportPayload,
   StoreSuiteInput,
   UpdateStorePayload,
-} from '../entities/types';
+} from '../entities/store';
 
 export interface StoreRepository {
   listByOrganization: (organizationId: string) => Promise<Store[]>;
@@ -34,7 +34,11 @@ export interface StoreRepository {
   deleteSuite: (storeId: string, suiteId: string) => Promise<void>;
   listCategories: (storeId: string) => Promise<StoreCategory[]>;
   createCategory: (category: { storeId: string } & StoreCategoryInput) => Promise<StoreCategory>;
-  updateCategory: (storeId: string, categoryId: string, category: StoreCategoryInput) => Promise<StoreCategory>;
+  updateCategory: (
+    storeId: string,
+    categoryId: string,
+    category: StoreCategoryInput,
+  ) => Promise<StoreCategory>;
   deleteCategory: (storeId: string, categoryId: string) => Promise<void>;
   exportStore: (storeId: string) => Promise<StoreExportPayload>;
   exportSuites: (storeId: string) => Promise<StoreSuiteExportPayload>;
@@ -60,6 +64,9 @@ export interface StoreRepository {
   }>;
   replaceScenarios: (storeId: string, scenarios: StoreScenarioInput[]) => Promise<StoreScenario[]>;
   replaceSuites: (storeId: string, suites: StoreSuiteInput[]) => Promise<StoreSuite[]>;
-  mergeScenarios: (storeId: string, scenarios: StoreScenarioInput[]) => Promise<ImportScenariosResult>;
+  mergeScenarios: (
+    storeId: string,
+    scenarios: StoreScenarioInput[],
+  ) => Promise<ImportScenariosResult>;
   mergeSuites: (storeId: string, suites: StoreSuiteInput[]) => Promise<ImportSuitesResult>;
 }

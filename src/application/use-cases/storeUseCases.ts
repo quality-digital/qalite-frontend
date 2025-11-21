@@ -13,7 +13,7 @@ import type {
   StoreSuiteExportPayload,
   StoreSuiteInput,
   UpdateStorePayload,
-} from '../../domain/entities/types';
+} from '../../domain/entities/store';
 
 export class StoreUseCases {
   constructor(private readonly storeRepository: StoreRepository) {}

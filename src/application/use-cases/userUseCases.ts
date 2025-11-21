@@ -1,5 +1,5 @@
 import type { UserRepository } from '../../domain/repositories/UserRepository';
-import type { UserSummary } from '../../domain/entities/types';
+import type { UserSummary } from '../../domain/entities/user';
 
 export class UserUseCases {
   constructor(private readonly userRepository: UserRepository) {}

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import type { Organization } from '../../domain/entities/types';
-import type { Store } from '../../domain/entities/types';
+import type { Organization } from '../../domain/entities/organization';
+import type { Store } from '../../domain/entities/store';
 import { organizationService } from '../../application/use-cases/organization';
 import { storeService } from '../../application/use-cases/store';
 import { useToast } from '../context/ToastContext';

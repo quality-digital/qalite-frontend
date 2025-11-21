@@ -1,7 +1,7 @@
 import { type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import type { Organization } from '../../domain/entities/types';
+import type { Organization } from '../../domain/entities/organization';
 import type {
   Store,
   StoreCategory,
@@ -9,7 +9,7 @@ import type {
   StoreScenarioInput,
   StoreSuite,
   StoreSuiteInput,
-} from '../../domain/entities/types';
+} from '../../domain/entities/store';
 import type {
   StoreExportPayload,
   StoreSuiteExportPayload,

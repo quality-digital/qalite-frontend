@@ -3,9 +3,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { EnvironmentStatusError } from '../../../shared/errors/firebaseErrors';
-import type { Environment, EnvironmentStatus } from '../../../domain/entities/types';
-import type { StoreScenario, StoreSuite } from '../../../domain/entities/types';
-import type { UserSummary } from '../../../domain/entities/types';
+import type { Environment, EnvironmentStatus } from '../../../domain/entities/environment';
+import type { StoreScenario, StoreSuite } from '../../../domain/entities/store';
+import type { UserSummary } from '../../../domain/entities/user';
 import { environmentService } from '../../../application/use-cases/environment';
 import { userService } from '../../../application/use-cases/user';
 import { useToast } from '../../context/ToastContext';

@@ -1,6 +1,7 @@
 import type { DragEvent } from 'react';
 
-import type { Environment, UserSummary } from '../../../domain/entities/types';
+import type { Environment } from '../../../domain/entities/environment';
+import type { UserSummary } from '../../../domain/entities/user';
 import { getReadableUserName, getUserInitials } from '../../utils/userDisplay';
 import { ENVIRONMENT_STATUS_LABEL } from '../../../shared/config/environmentLabels';
 

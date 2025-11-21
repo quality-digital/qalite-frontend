@@ -4,7 +4,7 @@ import type {
   Environment,
   EnvironmentScenarioPlatform,
   EnvironmentBug,
-} from '../../domain/entities/types';
+} from '../../domain/entities/environment';
 import {
   SCENARIO_COMPLETED_STATUSES,
   getScenarioPlatformStatuses,

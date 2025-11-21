@@ -8,21 +8,16 @@ import {
   where,
 } from 'firebase/firestore';
 
-import type { CreateScenarioExecutionInput, ScenarioExecution } from '../../domain/entities/types';
+import type {
+  CreateScenarioExecutionInput,
+  ScenarioAverageEntry,
+  ScenarioAverageMap,
+  ScenarioExecution,
+} from '../../domain/entities/scenarioExecution';
 import { firebaseFirestore } from '../database/firebase';
 
 const SCENARIO_EXECUTIONS_COLLECTION = 'scenarioExecutions';
 const scenarioExecutionsCollection = collection(firebaseFirestore, SCENARIO_EXECUTIONS_COLLECTION);
-
-export interface ScenarioAverageEntry {
-  scenarioId: string | null;
-  scenarioTitle: string;
-  executions: number;
-  averageMs: number;
-  bestMs: number;
-}
-
-export type ScenarioAverageMap = Record<string, ScenarioAverageEntry>;
 
 const parseTimestamp = (value: Timestamp | string | null | undefined): string | null => {
   if (!value) {

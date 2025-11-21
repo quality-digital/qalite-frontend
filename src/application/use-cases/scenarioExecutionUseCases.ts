@@ -3,7 +3,7 @@ import type {
   CreateScenarioExecutionInput,
   ScenarioAverageMap,
   ScenarioExecution,
-} from '../../domain/entities/types';
+} from '../../domain/entities/scenarioExecution';
 
 export class ScenarioExecutionUseCases {
   constructor(private readonly scenarioExecutionRepository: ScenarioExecutionRepository) {}

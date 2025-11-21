@@ -5,7 +5,7 @@ import {
   EnvironmentScenario,
   EnvironmentScenarioPlatform,
   EnvironmentScenarioStatus,
-} from '../../../domain/entities/types';
+} from '../../../domain/entities/environment';
 import { getScenarioPlatformStatuses } from '../../../infrastructure/external/environments';
 import { useScenarioEvidence } from '../../hooks/useScenarioEvidence';
 import {
@@ -167,7 +167,9 @@ export const EnvironmentEvidenceTable = ({
     () =>
       scenarioEntries.filter(([, data]) => {
         const matchesCategory = categoryFilter ? data.categoria === categoryFilter : true;
-        const matchesCriticality = criticalityFilter ? data.criticidade === criticalityFilter : true;
+        const matchesCriticality = criticalityFilter
+          ? data.criticidade === criticalityFilter
+          : true;
         return matchesCategory && matchesCriticality;
       }),
     [categoryFilter, criticalityFilter, scenarioEntries],

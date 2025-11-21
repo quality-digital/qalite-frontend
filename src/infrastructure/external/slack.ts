@@ -2,7 +2,7 @@ import type {
   EnvironmentSummaryAttendee,
   EnvironmentSummaryPayload,
   SlackTaskSummaryPayload,
-} from '../../domain/entities/types';
+} from '../../domain/entities/slack';
 
 export type { EnvironmentSummaryAttendee, EnvironmentSummaryPayload, SlackTaskSummaryPayload };
 

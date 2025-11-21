@@ -10,8 +10,8 @@ import type {
   TransitionEnvironmentStatusParams,
   UpdateEnvironmentBugInput,
   UpdateEnvironmentInput,
-  UserSummary,
-} from '../../domain/entities/types';
+} from '../../domain/entities/environment';
+import type { UserSummary } from '../../domain/entities/user';
 
 export class EnvironmentUseCases {
   constructor(private readonly environmentRepository: EnvironmentRepository) {}

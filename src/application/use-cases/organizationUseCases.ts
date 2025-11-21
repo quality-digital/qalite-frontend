@@ -6,7 +6,7 @@ import type {
   OrganizationMember,
   RemoveUserFromOrganizationPayload,
   UpdateOrganizationPayload,
-} from '../../domain/entities/types';
+} from '../../domain/entities/organization';
 
 export class OrganizationUseCases {
   constructor(private readonly organizationRepository: OrganizationRepository) {}

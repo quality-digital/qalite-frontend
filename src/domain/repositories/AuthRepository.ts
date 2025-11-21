@@ -1,4 +1,4 @@
-import type { AuthUser, Role } from '../entities/types';
+import type { AuthUser, Role } from '../entities/auth';
 
 export interface AuthRepository {
   register: (input: {
