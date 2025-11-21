@@ -823,7 +823,7 @@ export const exportEnvironmentAsPDF = (
 
   const normalizedParticipants = normalizeParticipants(environment, participantProfiles);
   const timeSummary = buildTimeTrackingSummary(environment);
-  const scenarioCount = Object.values(environment.scenarios ?? {}).length;
+  const scenarioCount = Object.values(environment.scenarios ?? {}).length * 2;
   const urlList =
     (environment.urls ?? []).length > 0
       ? `<ul>${(environment.urls ?? [])
@@ -1009,7 +1009,7 @@ export const copyEnvironmentAsMarkdown = async (
 
   const normalizedParticipants = normalizeParticipants(environment, participantProfiles);
   const timeSummary = buildTimeTrackingSummary(environment);
-  const scenarioCount = Object.values(environment.scenarios ?? {}).length;
+  const scenarioCount = Object.values(environment.scenarios ?? {}).length * 2;
   const scenarioTableRows = Object.values(environment.scenarios ?? {})
     .map((scenario) => {
       const statuses = getScenarioPlatformStatuses(scenario);
