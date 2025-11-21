@@ -3,7 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import type { Organization, OrganizationMember } from '../../domain/entities/types';
 import type { Store } from '../../domain/entities/types';
-import { organizationService, storeService } from '../../application/use-cases';
+import { organizationService } from '../../application/use-cases/organization';
+import { storeService } from '../../application/use-cases/store';
 import { useToast } from '../context/ToastContext';
 import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
 import { Layout } from '../components/Layout';

@@ -139,6 +139,7 @@ const parseScenarioMap = (
         titulo: '',
         categoria: '',
         criticidade: '',
+        observacao: '',
         status: 'pendente',
         evidenciaArquivoUrl: null,
       };
@@ -158,6 +159,7 @@ const parseScenarioMap = (
       titulo: getString(entry.titulo),
       categoria: getString(entry.categoria),
       criticidade: getString(entry.criticidade),
+      observacao: getString(entry.observacao ?? entry.observation),
       automatizado: automation,
       status: defaultStatus,
       statusMobile: mobileStatus,
@@ -814,6 +816,7 @@ export const exportEnvironmentAsPDF = (
           <td>${scenario.titulo}</td>
           <td>${scenario.categoria}</td>
           <td>${scenario.criticidade}</td>
+          <td>${scenario.observacao || ''}</td>
           <td>${statuses.mobile}</td>
           <td>${statuses.desktop}</td>
           <td>${
@@ -899,6 +902,7 @@ export const exportEnvironmentAsPDF = (
               <th>Título</th>
               <th>Categoria</th>
               <th>Criticidade</th>
+              <th>Observação</th>
               <th>Status Mobile</th>
               <th>Status Desktop</th>
               <th>Evidência</th>
@@ -943,16 +947,19 @@ export const copyEnvironmentAsMarkdown = async (
   }
 
   const normalizedParticipants = normalizeParticipants(environment, participantProfiles);
-  const scenarioLines = Object.entries(environment.scenarios ?? {})
-    .map(([id, scenario]) => {
+  const scenarioTableRows = Object.values(environment.scenarios ?? {})
+    .map((scenario) => {
       const statuses = getScenarioPlatformStatuses(scenario);
-      return `- **${scenario.titulo}** (${scenario.categoria} | ${scenario.criticidade}) - Mobile: ${
-        statuses.mobile
-      } · Desktop: ${statuses.desktop}${
-        scenario.evidenciaArquivoUrl ? ` [evidência](${scenario.evidenciaArquivoUrl})` : ''
-      } (ID: ${id})`;
+      const evidenceLink = scenario.evidenciaArquivoUrl
+        ? `[evidência](${scenario.evidenciaArquivoUrl})`
+        : 'Sem evidência';
+      const observation = scenario.observacao?.trim() || '—';
+      return `| ${scenario.titulo} | ${scenario.categoria} | ${scenario.criticidade} | ${observation} | ${statuses.mobile} | ${statuses.desktop} | ${evidenceLink} |`;
     })
     .join('\n');
+  const scenarioTable = scenarioTableRows
+    ? `| Título | Categoria | Criticidade | Observação | Status Mobile | Status Desktop | Evidência |\n| --- | --- | --- | --- | --- | --- | --- |\n${scenarioTableRows}`
+    : '- Nenhum cenário cadastrado';
 
   const bugLines = bugs
     .map((bug) => {
@@ -966,7 +973,7 @@ export const copyEnvironmentAsMarkdown = async (
   const participants = normalizedParticipants
     .map((participant) => {
       const email = participant.email !== 'Não informado' ? ` (${participant.email})` : '';
-      return `- **${participant.name}**${email} · ID: ${participant.id}`;
+      return `- **${participant.name}**${email}`;
     })
     .join('\n');
 
@@ -980,7 +987,7 @@ ${environment.momento ? `- Momento: ${environment.momento}\n` : ''}${
 - URLs:\n${urls || '  - Nenhuma URL cadastrada'}
 
 ## Cenários
-${scenarioLines || '- Nenhum cenário cadastrado'}
+${scenarioTable}
 
 ## Bugs
 ${bugLines || '- Nenhum bug registrado'}

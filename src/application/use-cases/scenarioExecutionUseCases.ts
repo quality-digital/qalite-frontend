@@ -1,4 +1,4 @@
-import type { ScenarioExecutionRepository } from '../../domain/repositories';
+import type { ScenarioExecutionRepository } from '../../domain/repositories/ScenarioExecutionRepository';
 import type {
   CreateScenarioExecutionInput,
   ScenarioAverageMap,

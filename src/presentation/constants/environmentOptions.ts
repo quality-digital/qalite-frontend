@@ -1,7 +1,7 @@
 export const TEST_TYPES_BY_ENVIRONMENT: Record<string, string[]> = {
-  WS: ['Smoke-test', 'SEO', 'Performance', 'Regressivo', 'Progressivo'],
-  TM: ['Smoke', 'SEO', 'Performance', 'Progressivo'],
-  PROD: ['Smoke-test', 'Regressivo', 'Progressivo'],
+  WS: ['Smoke-test', 'SEO', 'Performance', 'Regressivo'],
+  TM: ['Smoke', 'SEO', 'Performance'],
+  PROD: ['Smoke-test', 'Regressivo'],
 };
 
 export const MOMENT_OPTIONS_BY_ENVIRONMENT: Record<string, string[]> = {

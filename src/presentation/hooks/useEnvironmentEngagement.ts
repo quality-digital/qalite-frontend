@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Environment } from '../../domain/entities/types';
-import { environmentService } from '../../application/use-cases';
+import { environmentService } from '../../application/use-cases/environment';
 import { useAuth } from './useAuth';
 
 interface UseEnvironmentEngagementResult {
@@ -117,7 +117,7 @@ export const useEnvironmentEngagement = (
   const isScenarioLocked = environment?.status !== 'in_progress' || !hasEnteredEnvironment;
   const isInteractionLocked = !hasEnteredEnvironment || isLocked;
 
-  const canShare = hasEnteredEnvironment && !isLocked;
+  const canShare = hasEnteredEnvironment;
 
   return {
     hasEnteredEnvironment,

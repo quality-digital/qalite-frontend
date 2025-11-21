@@ -1,4 +1,4 @@
-import type { OrganizationRepository } from '../../domain/repositories';
+import type { OrganizationRepository } from '../../domain/repositories/OrganizationRepository';
 import type {
   AddUserToOrganizationPayload,
   CreateOrganizationPayload,

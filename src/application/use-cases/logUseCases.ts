@@ -1,4 +1,4 @@
-import type { LogRepository } from '../../domain/repositories';
+import type { LogRepository } from '../../domain/repositories/LogRepository';
 import type { ActivityLog, ActivityLogInput } from '../../domain/entities/types';
 
 export class LogUseCases {

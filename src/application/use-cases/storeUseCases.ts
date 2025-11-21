@@ -1,4 +1,4 @@
-import type { StoreRepository } from '../../domain/repositories';
+import type { StoreRepository } from '../../domain/repositories/StoreRepository';
 import type {
   CreateStorePayload,
   ImportScenariosResult,

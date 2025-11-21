@@ -16,7 +16,7 @@ import {
 import { ENVIRONMENT_PLATFORM_LABEL } from '../../../shared/config/environmentLabels';
 import { isAutomatedScenario } from '../../../shared/utils/automation';
 import { useToast } from '../../context/ToastContext';
-import { scenarioExecutionService } from '../../../application/use-cases';
+import { scenarioExecutionService } from '../../../application/use-cases/scenarioExecution';
 import { useAuth } from '../../hooks/useAuth';
 
 interface EnvironmentEvidenceTableProps {
@@ -60,6 +60,8 @@ export const EnvironmentEvidenceTable = ({
   const { showToast } = useToast();
   const { user } = useAuth();
   const [scenarioSort, setScenarioSort] = useState<ScenarioSortConfig | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [criticalityFilter, setCriticalityFilter] = useState('');
   const [scenarioStartTimes, setScenarioStartTimes] = useState<Record<string, number>>({});
   const environmentStartTimestamp = useMemo(() => {
     if (!environment?.timeTracking?.start) {
@@ -137,14 +139,47 @@ export const EnvironmentEvidenceTable = ({
       return firstId.localeCompare(secondId, 'pt-BR', { sensitivity: 'base' });
     });
   }, [environment.scenarios]);
+  const categoryOptions = useMemo(() => {
+    const categories = new Set<string>();
+    scenarioEntries.forEach(([, data]) => {
+      const normalized = data.categoria?.trim();
+      if (normalized) {
+        categories.add(normalized);
+      }
+    });
+    return Array.from(categories).sort((first, second) =>
+      first.localeCompare(second, 'pt-BR', { sensitivity: 'base' }),
+    );
+  }, [scenarioEntries]);
+  const criticalityOptions = useMemo(() => {
+    const criticalities = new Set<string>();
+    scenarioEntries.forEach(([, data]) => {
+      const normalized = data.criticidade?.trim();
+      if (normalized) {
+        criticalities.add(normalized);
+      }
+    });
+    return Array.from(criticalities).sort((first, second) =>
+      first.localeCompare(second, 'pt-BR', { sensitivity: 'base' }),
+    );
+  }, [scenarioEntries]);
+  const filteredScenarioEntries = useMemo(
+    () =>
+      scenarioEntries.filter(([, data]) => {
+        const matchesCategory = categoryFilter ? data.categoria === categoryFilter : true;
+        const matchesCriticality = criticalityFilter ? data.criticidade === criticalityFilter : true;
+        return matchesCategory && matchesCriticality;
+      }),
+    [categoryFilter, criticalityFilter, scenarioEntries],
+  );
   const orderedScenarioEntries = useMemo(() => {
     if (!scenarioSort) {
-      return scenarioEntries;
+      return filteredScenarioEntries;
     }
 
     const comparator = createScenarioSortComparator(scenarioSort);
 
-    return scenarioEntries.slice().sort(([, first], [, second]) =>
+    return filteredScenarioEntries.slice().sort(([, first], [, second]) =>
       comparator(
         {
           criticality: first.criticidade,
@@ -160,7 +195,7 @@ export const EnvironmentEvidenceTable = ({
         },
       ),
     );
-  }, [scenarioEntries, scenarioSort]);
+  }, [filteredScenarioEntries, scenarioSort]);
   const isReadOnly = Boolean(isLocked || readOnly);
   const handleStatusChange = async (
     scenarioId: string,
@@ -254,8 +289,44 @@ export const EnvironmentEvidenceTable = ({
     return <p className="section-subtitle">Nenhum cenário associado a este ambiente.</p>;
   }
 
+  if (filteredScenarioEntries.length === 0) {
+    return <p className="section-subtitle">Nenhum cenário corresponde aos filtros selecionados.</p>;
+  }
+
   return (
     <div className="environment-table">
+      <div className="environment-table__filters">
+        <label className="environment-table__filter">
+          <span>Categoria</span>
+          <select
+            value={categoryFilter}
+            onChange={(event) => setCategoryFilter(event.target.value)}
+            aria-label="Filtrar cenários por categoria"
+          >
+            <option value="">Todas</option>
+            {categoryOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="environment-table__filter">
+          <span>Criticidade</span>
+          <select
+            value={criticalityFilter}
+            onChange={(event) => setCriticalityFilter(event.target.value)}
+            aria-label="Filtrar cenários por criticidade"
+          >
+            <option value="">Todas</option>
+            {criticalityOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
       <table className="data-table">
         <thead>
           <tr>
@@ -276,6 +347,7 @@ export const EnvironmentEvidenceTable = ({
                 onChange={setScenarioSort}
               />
             </th>
+            <th>Observação</th>
             <th>Status Mobile</th>
             <th>Status Desktop</th>
             <th>Evidência</th>
@@ -290,6 +362,7 @@ export const EnvironmentEvidenceTable = ({
                 <td>{data.titulo}</td>
                 <td>{data.categoria}</td>
                 <td>{data.criticidade}</td>
+                <td>{data.observacao || '—'}</td>
                 {(['mobile', 'desktop'] as EnvironmentScenarioPlatform[]).map((platform) => {
                   const currentStatus =
                     platform === 'mobile'
