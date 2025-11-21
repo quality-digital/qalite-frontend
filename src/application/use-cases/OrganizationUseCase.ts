@@ -1,30 +1,30 @@
 import type { OrganizationRepository } from '../../domain/repositories/OrganizationRepository';
 import type {
-  AddUserToOrganizationDTO,
-  CreateOrganizationDTO,
-  OrganizationDTO,
-  OrganizationMemberDTO,
-  RemoveUserFromOrganizationDTO,
-  UpdateOrganizationDTO,
-} from '../dto/OrganizationDto';
+  AddUserToOrganizationPayload,
+  CreateOrganizationPayload,
+  Organization,
+  OrganizationMember,
+  RemoveUserFromOrganizationPayload,
+  UpdateOrganizationPayload,
+} from '../../domain/entities/organization';
 import { firebaseOrganizationRepository } from '../../infrastructure/repositories/firebaseOrganizationRepository';
 
 export class OrganizationUseCases {
   constructor(private readonly organizationRepository: OrganizationRepository) {}
 
-  list(): Promise<OrganizationDTO[]> {
+  list(): Promise<Organization[]> {
     return this.organizationRepository.list();
   }
 
-  getById(id: string): Promise<OrganizationDTO | null> {
+  getById(id: string): Promise<Organization | null> {
     return this.organizationRepository.getById(id);
   }
 
-  create(organization: CreateOrganizationDTO): Promise<OrganizationDTO> {
+  create(organization: CreateOrganizationPayload): Promise<Organization> {
     return this.organizationRepository.create(organization);
   }
 
-  update(id: string, organization: UpdateOrganizationDTO): Promise<OrganizationDTO> {
+  update(id: string, organization: UpdateOrganizationPayload): Promise<Organization> {
     return this.organizationRepository.update(id, organization);
   }
 
@@ -32,15 +32,15 @@ export class OrganizationUseCases {
     return this.organizationRepository.delete(id);
   }
 
-  addUser(payload: AddUserToOrganizationDTO): Promise<OrganizationMemberDTO> {
+  addUser(payload: AddUserToOrganizationPayload): Promise<OrganizationMember> {
     return this.organizationRepository.addUser(payload);
   }
 
-  removeUser(payload: RemoveUserFromOrganizationDTO): Promise<void> {
+  removeUser(payload: RemoveUserFromOrganizationPayload): Promise<void> {
     return this.organizationRepository.removeUser(payload);
   }
 
-  getUserOrganizationByUserId(userId: string): Promise<OrganizationDTO | null> {
+  getUserOrganizationByUserId(userId: string): Promise<Organization | null> {
     return this.organizationRepository.getUserOrganizationByUserId(userId);
   }
 }

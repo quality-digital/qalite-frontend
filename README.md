@@ -1,48 +1,42 @@
 # QaLite Auth Starter
 
-Base de autenticação escalável construída com **React + Vite** e **Firebase Authentication** seguindo princípios de clean architecture e preparada para expansão de módulos.
+Base de autenticação escalável construída com **React + Vite** e **Firebase Authentication** seguindo princípios de clean architecture e SOLID. O código foi simplificado para evitar camadas desnecessárias e manter a estrutura enxuta e legível.
 
 ## 🚀 Stack principal
 
 - React 18 com Vite + TypeScript
-- Firebase Authentication e Firestore para perfis/roles
+- Firebase Authentication e Firestore
 - React Router DOM para roteamento
 - ESLint + Prettier para qualidade de código
 - Husky + lint-staged + Commitlint para automação de commits
 - GitHub Actions para CI (build + lint)
 
-## 📁 Estrutura de pastas
+## 📁 Arquitetura em camadas
 
 ```
 src/
- ├─ lib/                # Tipos e funções puras que falam com o Firebase (auth, stores, ambientes...)
- ├─ presentation/
- │   ├─ components/     # Componentes reutilizáveis
- │   ├─ context/        # Contextos React (AuthProvider, ToastProvider...)
- │   ├─ hooks/          # Hooks reutilizáveis (useAuth, useToast...)
- │   ├─ pages/          # Páginas (Login, Dashboards, Ambientes, Admin...)
- │   ├─ routes/         # Definição das rotas da aplicação
- │   ├─ styles/         # Estilos globais
- │   └─ utils/          # Helpers específicos da camada de apresentação
- ├─ services/           # Ponte fina que expõe os helpers de `lib` num formato fácil para a UI
- ├─ shared/             # Constantes e utilidades agnósticas de UI
- ├─ App.tsx             # Entrada da aplicação
- └─ main.tsx            # Bootstrapping do React
+ ├─ domain/            # Entidades e contratos de repositório (regra de negócio pura)
+ ├─ application/       # Casos de uso que orquestram os repositórios
+ ├─ infrastructure/    # Implementações concretas (Firebase, fetch etc.)
+ ├─ presentation/      # Páginas, componentes, hooks, rotas e provedores React
+ ├─ shared/            # Utilidades e configurações agnósticas de UI
+ ├─ App.tsx            # Composição de rotas
+ └─ main.tsx           # Bootstrap do React
 ```
 
-Toda a comunicação com o Firebase fica concentrada em `src/lib`, onde moram funções simples (sem classes ou inversão de controle) responsáveis por autenticação, ambientes, lojas, organizações e execuções de cenário. Essa camada exporta apenas funções e tipos, eliminando as camadas `domain`, `application` e `infra` anteriores sem sacrificar as regras de negócio.
+A camada de aplicação agora usa diretamente os tipos do `domain`, removendo o antigo nível de DTOs que apenas replicava interfaces. Os repositórios continuam definidos por contratos na camada de domínio e implementados no diretório `infrastructure`, preservando inversão de dependência.
 
-## 🔐 Funcionalidades de autenticação
+## 🔐 Funcionalidades
 
-- Cadastro com validação de nome, e-mail, senha e confirmação, gravando perfil/role no Firestore.
-- Login com persistência de sessão do Firebase e mensagens de erro tratadas.
-- Recuperação de senha com envio de e-mail.
-- Logout com limpeza de estado e contexto.
-- Rotas protegidas por autenticação e por role (`admin` e `user`) com redirecionamentos apropriados.
+- Cadastro, login, logout e redefinição de senha com Firebase.
+- Persistência de perfil (nome, avatar, role e organização) no Firestore.
+- Proteção de rotas por autenticação e por role (`admin` e `user`).
+- Dashboards, gerenciamento de organizações/lojas, ambientes e evidências.
+- Exportação de ambientes em PDF ou Markdown e integração opcional com Slack.
 
 ## ⚙️ Configuração do Firebase
 
-Crie um arquivo `.env` baseado no `.env.example` com suas credenciais do Firebase:
+Crie um arquivo `.env` baseado em `.env.example` com suas credenciais:
 
 ```
 VITE_FIREBASE_API_KEY=your-firebase-api-key
@@ -54,21 +48,14 @@ VITE_FIREBASE_APP_ID=1:000000000000:web:abcdef123456
 VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXX
 ```
 
-As variáveis são lidas via `import.meta.env` em `src/lib/firebase.ts` e **nenhuma chave fica hardcoded** no código.
+As variáveis são lidas via `import.meta.env` e nenhuma chave fica hardcoded.
 
-## 🧠 Como estender
+## 🧠 Como evoluir sem poluir
 
-- **Adicionar um novo papel (role):**
-  1. Inclua o novo valor em `AVAILABLE_ROLES` (`src/lib/types.ts`).
-  2. Atualize interfaces/guards (`RoleProtectedRoute`) com a nova role quando necessário.
-  3. Ajuste formulários ou lógica de atribuição no cadastro, se aplicável.
-- **Criar nova rota protegida:**
-  1. Crie a página em `src/presentation/pages`.
-  2. No arquivo de rotas (`src/presentation/routes/AppRoutes.tsx`), envolva a rota com `<ProtectedRoute>` ou `<RoleProtectedRoute allowedRoles={[...]}>` conforme o nível de permissão desejado.
-- **Suportar outro provider de autenticação:**
-  1. Crie funções equivalentes em `src/lib/auth.ts` usando o provider desejado.
-  2. Ajuste `src/services/index.ts` para exportar as novas funções.
-  3. Os hooks e contextos continuam apontando para `authService`, sem alterações adicionais.
+- Preferir funções puras e contratos em `domain` para novas regras de negócio.
+- Casos de uso em `application` devem depender apenas das interfaces de repositório.
+- Implementações concretas ou integrações externas residem em `infrastructure`.
+- Mantenha componentes e hooks coesos em `presentation`, reutilizando utilidades de `shared` quando possível.
 
 ## 🧩 Scripts disponíveis
 
@@ -83,23 +70,13 @@ npm run format       # Prettier write
 npm run prepare      # Instala hooks do Husky
 ```
 
-## ✅ Ferramentas de qualidade
+## ✅ Qualidade e CI
 
 - `.eslintrc.cjs` configurado para React, Hooks e TypeScript.
-- `.prettierrc` com estilo consistente.
-- `lint-staged` para rodar ESLint + Prettier nos arquivos alterados.
-- Husky com hooks `pre-commit` e `commit-msg` para garantir lint e Conventional Commits.
-- `commitlint.config.cjs` estendendo `@commitlint/config-conventional`.
-
-## 🛠️ Workflow de CI
-
-Arquivo `.github/workflows/ci.yml` executa:
-
-1. Instalação das dependências (cache de npm).
-2. Lint (`npm run lint`).
-3. Build (`npm run build`).
-
-A estrutura já está pronta para adicionar testes automatizados futuramente.
+- `.prettierrc` garante estilo consistente.
+- `lint-staged` roda ESLint + Prettier nos arquivos alterados.
+- Hooks do Husky (`pre-commit` e `commit-msg`) aplicam lint e Conventional Commits.
+- GitHub Actions executa lint e build a cada push.
 
 ## ▶️ Uso rápido
 
@@ -109,7 +86,7 @@ npm run prepare # instala os hooks do Husky
 npm run dev
 ```
 
-Abra `http://localhost:5173` e teste os fluxos de autenticação. Roles de exemplo: `admin` e `user`.
+Abra `http://localhost:5173` e navegue pelos fluxos de autenticação. Roles de exemplo: `admin` e `user`.
 
 ## 📄 Licença
 

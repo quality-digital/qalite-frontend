@@ -1,11 +1,11 @@
 import type { AuthRepository } from '../../domain/repositories/AuthRepository';
-import type { AuthUser } from '../../domain/entities/auth';
 import type {
   AuthStateListener,
+  AuthUser,
   LoginPayload,
   RegisterPayload,
   UpdateProfilePayload,
-} from '../dto/AuthDto';
+} from '../../domain/entities/auth';
 import { firebaseAuthRepository } from '../../infrastructure/repositories/firebaseAuthRepository';
 
 export class AuthUseCases {

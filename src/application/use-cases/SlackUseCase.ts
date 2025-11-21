@@ -1,11 +1,11 @@
 import type { SlackRepository } from '../../domain/repositories/SlackRepository';
-import type { SlackTaskSummaryDTO } from '../dto/SlackDto';
+import type { SlackTaskSummaryPayload } from '../../domain/entities/slack';
 import { slackIntegrationRepository } from '../../infrastructure/repositories/firebaseSlackRepository';
 
 export class SlackUseCases {
   constructor(private readonly slackRepository: SlackRepository) {}
 
-  sendTaskSummary(payload: SlackTaskSummaryDTO): Promise<void> {
+  sendTaskSummary(payload: SlackTaskSummaryPayload): Promise<void> {
     return this.slackRepository.sendTaskSummary(payload);
   }
 }

@@ -1,15 +1,15 @@
 import type { LogRepository } from '../../domain/repositories/LogRepository';
-import type { ActivityLogDTO, ActivityLogInputDTO } from '../dto/ActivityLogDto';
+import type { ActivityLog, ActivityLogInput } from '../../domain/entities/activityLog';
 import { firebaseLogRepository } from '../../infrastructure/repositories/firebaseLogRepository';
 
 export class LogUseCases {
   constructor(private readonly logRepository: LogRepository) {}
 
-  record(input: ActivityLogInputDTO): Promise<void> {
+  record(input: ActivityLogInput): Promise<void> {
     return this.logRepository.record(input);
   }
 
-  listByOrganization(organizationId: string): Promise<ActivityLogDTO[]> {
+  listByOrganization(organizationId: string): Promise<ActivityLog[]> {
     return this.logRepository.listByOrganization(organizationId);
   }
 }

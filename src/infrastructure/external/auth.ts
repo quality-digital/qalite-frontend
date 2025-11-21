@@ -13,11 +13,12 @@ import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 
 import type {
   AuthStateListener,
+  AuthUser,
   LoginPayload,
   RegisterPayload,
+  Role,
   UpdateProfilePayload,
-} from '../../application/dto/AuthDto';
-import type { AuthUser, Role } from '../../domain/entities/auth';
+} from '../../domain/entities/auth';
 import { DEFAULT_ROLE } from '../../domain/entities/auth';
 import { firebaseAuth, firebaseFirestore, firebaseStorage } from '../database/firebase';
 

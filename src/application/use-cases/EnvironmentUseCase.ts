@@ -1,27 +1,27 @@
 import type { EnvironmentRepository } from '../../domain/repositories/EnvironmentRepository';
 import type {
-  CreateEnvironmentBugDTO,
-  CreateEnvironmentDTO,
-  EnvironmentBugDTO,
-  EnvironmentDTO,
-  EnvironmentRealtimeFiltersDTO,
-  EnvironmentScenarioPlatformDTO,
-  EnvironmentScenarioStatusDTO,
-  ExportEnvironmentPayloadDTO,
-  TransitionEnvironmentStatusDTO,
-  UpdateEnvironmentBugDTO,
-  UpdateEnvironmentDTO,
-} from '../dto/EnvironmentDto';
+  CreateEnvironmentBugInput,
+  CreateEnvironmentInput,
+  Environment,
+  EnvironmentBug,
+  EnvironmentRealtimeFilters,
+  EnvironmentScenarioPlatform,
+  EnvironmentScenarioStatus,
+  TransitionEnvironmentStatusParams,
+  UpdateEnvironmentBugInput,
+  UpdateEnvironmentInput,
+} from '../../domain/entities/environment';
+import type { UserSummary } from '../../domain/entities/user';
 import { firebaseEnvironmentRepository } from '../../infrastructure/repositories/firebaseEnvironmentRepository';
 
 export class EnvironmentUseCases {
   constructor(private readonly environmentRepository: EnvironmentRepository) {}
 
-  create(input: CreateEnvironmentDTO): Promise<EnvironmentDTO> {
+  create(input: CreateEnvironmentInput): Promise<Environment> {
     return this.environmentRepository.create(input);
   }
 
-  update(id: string, input: UpdateEnvironmentDTO): Promise<void> {
+  update(id: string, input: UpdateEnvironmentInput): Promise<void> {
     return this.environmentRepository.update(id, input);
   }
 
@@ -29,16 +29,13 @@ export class EnvironmentUseCases {
     return this.environmentRepository.delete(id);
   }
 
-  observeEnvironment(
-    id: string,
-    onChange: (environment: EnvironmentDTO | null) => void,
-  ): () => void {
+  observeEnvironment(id: string, onChange: (environment: Environment | null) => void): () => void {
     return this.environmentRepository.observeEnvironment(id, onChange);
   }
 
   observeAll(
-    filters: EnvironmentRealtimeFiltersDTO,
-    onChange: (environments: EnvironmentDTO[]) => void,
+    filters: EnvironmentRealtimeFilters,
+    onChange: (environments: Environment[]) => void,
   ): () => void {
     return this.environmentRepository.observeAll(filters, onChange);
   }
@@ -54,8 +51,8 @@ export class EnvironmentUseCases {
   updateScenarioStatus(
     environmentId: string,
     scenarioId: string,
-    status: EnvironmentScenarioStatusDTO,
-    platform?: EnvironmentScenarioPlatformDTO,
+    status: EnvironmentScenarioStatus,
+    platform?: EnvironmentScenarioPlatform,
   ): Promise<void> {
     return this.environmentRepository.updateScenarioStatus(
       environmentId,
@@ -69,7 +66,7 @@ export class EnvironmentUseCases {
     environmentId: string,
     scenarioId: string,
     evidence: File,
-    platform?: EnvironmentScenarioPlatformDTO,
+    platform?: EnvironmentScenarioPlatform,
   ): Promise<string> {
     return this.environmentRepository.uploadScenarioEvidence(
       environmentId,
@@ -79,15 +76,15 @@ export class EnvironmentUseCases {
     );
   }
 
-  observeBugs(environmentId: string, onChange: (bugs: EnvironmentBugDTO[]) => void): () => void {
+  observeBugs(environmentId: string, onChange: (bugs: EnvironmentBug[]) => void): () => void {
     return this.environmentRepository.observeBugs(environmentId, onChange);
   }
 
-  createBug(environmentId: string, bug: CreateEnvironmentBugDTO): Promise<EnvironmentBugDTO> {
+  createBug(environmentId: string, bug: CreateEnvironmentBugInput): Promise<EnvironmentBug> {
     return this.environmentRepository.createBug(environmentId, bug);
   }
 
-  updateBug(environmentId: string, bugId: string, input: UpdateEnvironmentBugDTO): Promise<void> {
+  updateBug(environmentId: string, bugId: string, input: UpdateEnvironmentBugInput): Promise<void> {
     return this.environmentRepository.updateBug(environmentId, bugId, input);
   }
 
@@ -95,22 +92,22 @@ export class EnvironmentUseCases {
     return this.environmentRepository.deleteBug(environmentId, bugId);
   }
 
-  transitionStatus(params: TransitionEnvironmentStatusDTO): Promise<void> {
+  transitionStatus(params: TransitionEnvironmentStatusParams): Promise<void> {
     return this.environmentRepository.transitionStatus(params);
   }
 
   exportAsPDF(
-    environment: EnvironmentDTO,
-    bugs?: EnvironmentBugDTO[],
-    participantProfiles?: ExportEnvironmentPayloadDTO['participantProfiles'],
+    environment: Environment,
+    bugs?: EnvironmentBug[],
+    participantProfiles?: UserSummary[],
   ): void {
     return this.environmentRepository.exportAsPDF(environment, bugs, participantProfiles);
   }
 
   copyAsMarkdown(
-    environment: EnvironmentDTO,
-    bugs?: EnvironmentBugDTO[],
-    participantProfiles?: ExportEnvironmentPayloadDTO['participantProfiles'],
+    environment: Environment,
+    bugs?: EnvironmentBug[],
+    participantProfiles?: UserSummary[],
   ): Promise<void> {
     return this.environmentRepository.copyAsMarkdown(environment, bugs, participantProfiles);
   }
