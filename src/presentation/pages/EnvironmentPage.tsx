@@ -196,7 +196,7 @@ export const EnvironmentPage = () => {
     };
   }, [environmentOrganization, setActiveOrganization]);
 
-  const { formattedTime, totalMs } = useTimeTracking(
+  const { formattedTime, totalMs, formattedStart, formattedEnd } = useTimeTracking(
     environment?.timeTracking ?? null,
     environment?.status === 'in_progress',
   );
@@ -472,6 +472,8 @@ export const EnvironmentPage = () => {
             suiteDescription={suiteDescription}
             scenarioCount={scenarioCount}
             formattedTime={formattedTime}
+            formattedStart={formattedStart}
+            formattedEnd={formattedEnd}
             urls={urls}
             participants={participantProfiles}
             bugsCount={bugs.length}

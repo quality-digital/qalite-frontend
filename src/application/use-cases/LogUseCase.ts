@@ -1,5 +1,5 @@
 import type { LogRepository } from '../../domain/repositories/LogRepository';
-import type { ActivityLogDTO, ActivityLogInputDTO } from '../dto/activityLog';
+import type { ActivityLogDTO, ActivityLogInputDTO } from '../dto/ActivityLogDto';
 import { firebaseLogRepository } from '../../infrastructure/repositories/firebaseLogRepository';
 
 export class LogUseCases {

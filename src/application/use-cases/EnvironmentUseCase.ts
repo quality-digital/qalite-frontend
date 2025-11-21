@@ -11,7 +11,7 @@ import type {
   TransitionEnvironmentStatusDTO,
   UpdateEnvironmentBugDTO,
   UpdateEnvironmentDTO,
-} from '../dto/environment';
+} from '../dto/EnvironmentDto';
 import { firebaseEnvironmentRepository } from '../../infrastructure/repositories/firebaseEnvironmentRepository';
 
 export class EnvironmentUseCases {

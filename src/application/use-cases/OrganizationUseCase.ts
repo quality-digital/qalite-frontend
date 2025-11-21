@@ -6,7 +6,7 @@ import type {
   OrganizationMemberDTO,
   RemoveUserFromOrganizationDTO,
   UpdateOrganizationDTO,
-} from '../dto/organization';
+} from '../dto/OrganizationDto';
 import { firebaseOrganizationRepository } from '../../infrastructure/repositories/firebaseOrganizationRepository';
 
 export class OrganizationUseCases {

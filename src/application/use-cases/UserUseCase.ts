@@ -1,5 +1,5 @@
 import type { UserRepository } from '../../domain/repositories/UserRepository';
-import type { UserSummaryDTO } from '../dto/user';
+import type { UserSummaryDTO } from '../dto/UserDto';
 import { firebaseUserRepository } from '../../infrastructure/repositories/firebaseUserRepository';
 
 export class UserUseCases {

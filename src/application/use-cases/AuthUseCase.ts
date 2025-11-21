@@ -5,7 +5,7 @@ import type {
   LoginPayload,
   RegisterPayload,
   UpdateProfilePayload,
-} from '../dto/auth';
+} from '../dto/AuthDto';
 import { firebaseAuthRepository } from '../../infrastructure/repositories/firebaseAuthRepository';
 
 export class AuthUseCases {

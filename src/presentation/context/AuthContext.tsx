@@ -8,7 +8,7 @@ import {
   useState,
 } from 'react';
 
-import type { UpdateProfilePayload } from '../../application/dto/auth';
+import type { UpdateProfilePayload } from '../../application/dto/AuthDto';
 import { authService } from '../../application/use-cases/AuthUseCase';
 import type { AuthUser, Role } from '../../domain/entities/auth';
 import { DEFAULT_ROLE } from '../../domain/entities/auth';
