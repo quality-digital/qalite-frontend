@@ -1,4 +1,4 @@
-import type { UserRepository } from '../../domain/repositories';
+import type { UserRepository } from '../../domain/repositories/UserRepository';
 import type { UserSummary } from '../../domain/entities/types';
 
 export class UserUseCases {

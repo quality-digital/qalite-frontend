@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 
 import type { EnvironmentScenario } from '../../../domain/entities/types';
 import type { StoreScenario, StoreSuite } from '../../../domain/entities/types';
-import { environmentService } from '../../../application/use-cases';
+import { environmentService } from '../../../application/use-cases/environment';
 import { Button } from '../Button';
 import { Modal } from '../Modal';
 import { SelectInput } from '../SelectInput';
@@ -42,6 +42,7 @@ const buildScenarioMap = (
       titulo: match.title,
       categoria: match.category,
       criticidade: match.criticality,
+      observacao: match.observation,
       automatizado: match.automation,
       status: 'pendente',
       statusMobile: 'pendente',

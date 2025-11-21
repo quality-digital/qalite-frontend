@@ -4,7 +4,7 @@ import type {
   EnvironmentScenarioPlatform,
   EnvironmentScenarioStatus,
 } from '../../domain/entities/types';
-import { environmentService } from '../../application/use-cases';
+import { environmentService } from '../../application/use-cases/environment';
 
 export const useScenarioEvidence = (environmentId: string | null | undefined) => {
   const [isUpdating, setIsUpdating] = useState(false);

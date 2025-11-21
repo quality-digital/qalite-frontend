@@ -1,0 +1,38 @@
+import type { EnvironmentRepository } from '../../domain/repositories/EnvironmentRepository';
+import {
+  addEnvironmentUser,
+  copyEnvironmentAsMarkdown,
+  createEnvironment,
+  createEnvironmentBug,
+  deleteEnvironment,
+  deleteEnvironmentBug,
+  observeEnvironment,
+  observeEnvironmentBugs,
+  observeEnvironments,
+  removeEnvironmentUser,
+  transitionEnvironmentStatus,
+  updateEnvironment,
+  updateEnvironmentBug,
+  updateScenarioStatus,
+  uploadScenarioEvidence,
+  exportEnvironmentAsPDF,
+} from '../external/environments';
+
+export const firebaseEnvironmentRepository: EnvironmentRepository = {
+  create: createEnvironment,
+  update: updateEnvironment,
+  delete: deleteEnvironment,
+  observeEnvironment,
+  observeAll: observeEnvironments,
+  addUser: addEnvironmentUser,
+  removeUser: removeEnvironmentUser,
+  updateScenarioStatus,
+  uploadScenarioEvidence,
+  observeBugs: observeEnvironmentBugs,
+  createBug: createEnvironmentBug,
+  updateBug: updateEnvironmentBug,
+  deleteBug: deleteEnvironmentBug,
+  transitionStatus: transitionEnvironmentStatus,
+  exportAsPDF: exportEnvironmentAsPDF,
+  copyAsMarkdown: copyEnvironmentAsMarkdown,
+};

@@ -1,4 +1,4 @@
-import type { EnvironmentRepository } from '../../domain/repositories';
+import type { EnvironmentRepository } from '../../domain/repositories/EnvironmentRepository';
 import type {
   CreateEnvironmentBugInput,
   CreateEnvironmentInput,

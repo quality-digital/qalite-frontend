@@ -4,7 +4,8 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { EnvironmentStatusError } from '../../shared/errors/firebaseErrors';
 import type { Environment, EnvironmentStatus, UserSummary } from '../../domain/entities/types';
 import type { SlackTaskSummaryPayload } from '../../infrastructure/external/slack';
-import { environmentService, slackService } from '../../application/use-cases';
+import { environmentService } from '../../application/use-cases/environment';
+import { slackService } from '../../application/use-cases/slack';
 import { Button } from '../components/Button';
 import { Layout } from '../components/Layout';
 import { useToast } from '../context/ToastContext';
@@ -436,19 +437,19 @@ export const EnvironmentPage = () => {
                     Concluir ambiente
                   </Button>
                 )}
-                {environment.status !== 'done' && (
+                {hasEnteredEnvironment && environment.status !== 'done' && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={handleLeaveEnvironment}
+                    isLoading={isLeavingEnvironment}
+                    loadingText="Saindo..."
+                  >
+                    Sair do ambiente
+                  </Button>
+                )}
+                {hasEnteredEnvironment && (
                   <>
-                    {hasEnteredEnvironment && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={handleLeaveEnvironment}
-                        isLoading={isLeavingEnvironment}
-                        loadingText="Saindo..."
-                      >
-                        Sair do ambiente
-                      </Button>
-                    )}
                     <Button type="button" variant="ghost" onClick={() => setIsEditOpen(true)}>
                       Editar
                     </Button>
@@ -522,11 +523,6 @@ export const EnvironmentPage = () => {
                 Enviar resumo para o Slack
               </Button>
             </div>
-            {isLocked && (
-              <p className="section-subtitle">
-                Ambiente concluído: compartilhamento bloqueado para novos acessos.
-              </p>
-            )}
           </div>
         </div>
 

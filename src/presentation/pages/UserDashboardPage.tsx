@@ -9,7 +9,7 @@ import { useOrganizationStores } from '../hooks/useOrganizationStores';
 import { UserAvatar } from '../components/UserAvatar';
 import { SimpleBarChart } from '../components/SimpleBarChart';
 import { BarChartIcon, SparklesIcon, StorefrontIcon, UsersGroupIcon } from '../components/icons';
-import { storeService } from '../../application/use-cases';
+import { storeService } from '../../application/use-cases/store';
 import { isAutomatedScenario } from '../../shared/utils/automation';
 
 export const UserDashboardPage = () => {

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 
 import type { Organization } from '../../domain/entities/types';
-import { organizationService, storeService } from '../../application/use-cases';
+import { organizationService } from '../../application/use-cases/organization';
+import { storeService } from '../../application/use-cases/store';
 
 export const useStoreOrganizationBranding = (storeId: string | null | undefined) => {
   const [organization, setOrganization] = useState<Organization | null>(null);

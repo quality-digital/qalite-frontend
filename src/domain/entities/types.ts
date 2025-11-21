@@ -184,6 +184,7 @@ export interface EnvironmentScenario {
   titulo: string;
   categoria: string;
   criticidade: string;
+  observacao: string;
   automatizado?: string;
   status: EnvironmentScenarioStatus;
   statusMobile?: EnvironmentScenarioStatus;
