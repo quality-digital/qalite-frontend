@@ -13,7 +13,7 @@ import type {
   StoreSuiteExportDTO,
   StoreSuiteInputDTO,
   UpdateStoreDTO,
-} from '../dto/store';
+} from '../dto/StoreDto';
 import { firebaseStoreRepository } from '../../infrastructure/repositories/firebaseStoreRepository';
 
 export class StoreUseCases {

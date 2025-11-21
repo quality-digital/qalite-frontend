@@ -1,5 +1,5 @@
 import type { SlackRepository } from '../../domain/repositories/SlackRepository';
-import type { SlackTaskSummaryDTO } from '../dto/slack';
+import type { SlackTaskSummaryDTO } from '../dto/SlackDto';
 import { slackIntegrationRepository } from '../../infrastructure/repositories/firebaseSlackRepository';
 
 export class SlackUseCases {

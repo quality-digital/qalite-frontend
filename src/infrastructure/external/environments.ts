@@ -36,6 +36,12 @@ import { firebaseFirestore, firebaseStorage } from '../database/firebase';
 import { EnvironmentStatusError } from '../../shared/errors/firebaseErrors';
 import { BUG_STATUS_LABEL } from '../../shared/config/environmentLabels';
 import { logActivity } from './logs';
+import {
+  formatDateTime,
+  formatDurationFromMs,
+  formatEndDateTime,
+  getElapsedMilliseconds,
+} from '../../shared/utils/time';
 
 const ENVIRONMENTS_COLLECTION = 'environments';
 const BUGS_SUBCOLLECTION = 'bugs';
@@ -795,6 +801,17 @@ const normalizeParticipants = (
   });
 };
 
+const buildTimeTrackingSummary = (environment: Environment) => {
+  const isRunning = environment.status === 'in_progress';
+  const totalMs = getElapsedMilliseconds(environment.timeTracking, isRunning, Date.now());
+
+  return {
+    start: formatDateTime(environment.timeTracking?.start ?? null),
+    end: formatEndDateTime(environment.timeTracking ?? null, isRunning),
+    total: formatDurationFromMs(totalMs),
+  };
+};
+
 export const exportEnvironmentAsPDF = (
   environment: Environment,
   bugs: EnvironmentBug[] = [],
@@ -805,6 +822,17 @@ export const exportEnvironmentAsPDF = (
   }
 
   const normalizedParticipants = normalizeParticipants(environment, participantProfiles);
+  const timeSummary = buildTimeTrackingSummary(environment);
+  const scenarioCount = Object.values(environment.scenarios ?? {}).length;
+  const urlList =
+    (environment.urls ?? []).length > 0
+      ? `<ul>${(environment.urls ?? [])
+          .map(
+            (url) =>
+              `<li><a href="${url}" target="_blank" rel="noreferrer noopener">${url}</a></li>`,
+          )
+          .join('')}</ul>`
+      : '<p>Nenhuma URL cadastrada.</p>';
   const scenarioRows = Object.values(environment.scenarios ?? {})
     .map((scenario) => {
       const statuses = getScenarioPlatformStatuses(scenario);
@@ -871,6 +899,9 @@ export const exportEnvironmentAsPDF = (
         <style>
           body { font-family: Arial, sans-serif; padding: 24px; }
           h1 { margin-bottom: 0; }
+          h2 { margin-top: 24px; }
+          .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; padding: 12px; background: #f5f7fb; border: 1px solid #e5e7eb; border-radius: 12px; }
+          .summary-grid strong { display: block; margin-top: 4px; }
           table { width: 100%; border-collapse: collapse; margin-top: 16px; }
           th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; }
         </style>
@@ -882,6 +913,39 @@ export const exportEnvironmentAsPDF = (
         ${environment.momento ? `<p>Momento: ${environment.momento}</p>` : ''}
         ${environment.release ? `<p>Release: ${environment.release}</p>` : ''}
         <p>Jira: ${environment.jiraTask || 'Não informado'}</p>
+        <h2>Resumo do ambiente</h2>
+        <div class="summary-grid">
+          <div>
+            <span>Início do teste</span>
+            <strong>${timeSummary.start}</strong>
+          </div>
+          <div>
+            <span>Término do teste</span>
+            <strong>${timeSummary.end}</strong>
+          </div>
+          <div>
+            <span>Tempo total</span>
+            <strong>${timeSummary.total}</strong>
+          </div>
+          <div>
+            <span>Suíte</span>
+            <strong>${environment.suiteName ?? 'Não informada'}</strong>
+          </div>
+          <div>
+            <span>Total de cenários</span>
+            <strong>${scenarioCount}</strong>
+          </div>
+          <div>
+            <span>Bugs registrados</span>
+            <strong>${bugs.length}</strong>
+          </div>
+          <div>
+            <span>Participantes</span>
+            <strong>${normalizedParticipants.length}</strong>
+          </div>
+        </div>
+        <h3>URLs monitoradas</h3>
+        ${urlList}
         <h2>Participantes</h2>
         <table class="participants-table">
           <thead>
@@ -944,6 +1008,8 @@ export const copyEnvironmentAsMarkdown = async (
   }
 
   const normalizedParticipants = normalizeParticipants(environment, participantProfiles);
+  const timeSummary = buildTimeTrackingSummary(environment);
+  const scenarioCount = Object.values(environment.scenarios ?? {}).length;
   const scenarioTableRows = Object.values(environment.scenarios ?? {})
     .map((scenario) => {
       const statuses = getScenarioPlatformStatuses(scenario);
@@ -981,6 +1047,13 @@ export const copyEnvironmentAsMarkdown = async (
 ${environment.momento ? `- Momento: ${environment.momento}\n` : ''}${
     environment.release ? `- Release: ${environment.release}\n` : ''
   }- Jira: ${environment.jiraTask || 'Não informado'}
+- Início do teste: ${timeSummary.start}
+- Término do teste: ${timeSummary.end}
+- Tempo total: ${timeSummary.total}
+- Suíte: ${environment.suiteName ?? 'Não informada'}
+- Total de cenários: ${scenarioCount}
+- Bugs registrados: ${bugs.length}
+- Participantes: ${normalizedParticipants.length}
 - URLs:\n${urls || '  - Nenhuma URL cadastrada'}
 
 ## Cenários

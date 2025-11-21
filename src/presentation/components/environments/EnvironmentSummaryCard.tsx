@@ -31,6 +31,8 @@ interface EnvironmentSummaryCardProps {
   suiteDescription: string;
   scenarioCount: number;
   formattedTime: string;
+  formattedStart: string;
+  formattedEnd: string;
   urls: string[];
   participants: UserSummary[];
   bugsCount: number;
@@ -43,6 +45,8 @@ export const EnvironmentSummaryCard = ({
   suiteDescription,
   scenarioCount,
   formattedTime,
+  formattedStart,
+  formattedEnd,
   urls,
   participants,
   bugsCount,
@@ -69,6 +73,14 @@ export const EnvironmentSummaryCard = ({
       </div>
 
       <div className="summary-card__meta-grid">
+        <div className="summary-card__meta-item">
+          <span className="summary-card__meta-label">Início do teste</span>
+          <strong>{formattedStart}</strong>
+        </div>
+        <div className="summary-card__meta-item">
+          <span className="summary-card__meta-label">Término do teste</span>
+          <strong>{formattedEnd}</strong>
+        </div>
         <div className="summary-card__meta-item">
           <span className="summary-card__meta-label">Tempo total</span>
           <strong>{formattedTime}</strong>

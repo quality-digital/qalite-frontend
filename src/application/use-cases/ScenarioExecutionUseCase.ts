@@ -3,7 +3,7 @@ import type {
   CreateScenarioExecutionDTO,
   ScenarioAverageMapDTO,
   ScenarioExecutionDTO,
-} from '../dto/scenarioExecution';
+} from '../dto/ScenarioExecutionDto';
 import { firebaseScenarioExecutionRepository } from '../../infrastructure/repositories/firebaseScenarioExecutionRepository';
 
 export class ScenarioExecutionUseCases {

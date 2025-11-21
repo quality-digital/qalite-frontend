@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import type { EnvironmentTimeTracking } from '../../domain/entities/environment';
-import { formatDurationFromMs } from '../../shared/utils/time';
+import {
+  formatDateTime,
+  formatDurationFromMs,
+  formatEndDateTime,
+  getElapsedMilliseconds,
+} from '../../shared/utils/time';
 
 export const useTimeTracking = (
   timeTracking: EnvironmentTimeTracking | null | undefined,
@@ -18,18 +23,15 @@ export const useTimeTracking = (
     return () => window.clearInterval(interval);
   }, [isRunning, timeTracking?.start]);
 
-  const totalMs = useMemo(() => {
-    if (!timeTracking) {
-      return 0;
-    }
+  const totalMs = useMemo(
+    () => getElapsedMilliseconds(timeTracking, isRunning, now),
+    [isRunning, now, timeTracking],
+  );
 
-    if (isRunning && timeTracking.start) {
-      const startedAt = new Date(timeTracking.start).getTime();
-      return timeTracking.totalMs + Math.max(0, now - startedAt);
-    }
-
-    return timeTracking.totalMs;
-  }, [isRunning, now, timeTracking]);
-
-  return { totalMs, formattedTime: formatDurationFromMs(totalMs) };
+  return {
+    totalMs,
+    formattedTime: formatDurationFromMs(totalMs),
+    formattedStart: formatDateTime(timeTracking?.start ?? null),
+    formattedEnd: formatEndDateTime(timeTracking, isRunning),
+  };
 };

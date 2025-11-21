@@ -21,7 +21,7 @@ export const PublicEnvironmentPage = () => {
     environment?.storeId ?? null,
   );
   const { setActiveOrganization } = useOrganizationBranding();
-  const { formattedTime } = useTimeTracking(
+  const { formattedTime, formattedStart, formattedEnd } = useTimeTracking(
     environment?.timeTracking ?? null,
     Boolean(environment?.status === 'in_progress'),
   );
@@ -86,6 +86,8 @@ export const PublicEnvironmentPage = () => {
             suiteDescription={suiteDescription}
             scenarioCount={scenarioCount}
             formattedTime={formattedTime}
+            formattedStart={formattedStart}
+            formattedEnd={formattedEnd}
             urls={urls}
             participants={participants}
             bugsCount={bugs.length}
