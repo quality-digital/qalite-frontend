@@ -1,4 +1,4 @@
-import type { StoreScenario } from '../../domain/entities/types';
+import type { StoreScenario } from '../../domain/entities/store';
 import type {
   StoreExportPayload,
   StoreSuiteExportPayload,

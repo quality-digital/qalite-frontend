@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import type {
   EnvironmentScenarioPlatform,
   EnvironmentScenarioStatus,
-} from '../../domain/entities/types';
+} from '../../domain/entities/environment';
 import { environmentService } from '../../application/use-cases/environment';
 
 export const useScenarioEvidence = (environmentId: string | null | undefined) => {

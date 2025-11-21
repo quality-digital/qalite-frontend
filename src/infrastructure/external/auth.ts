@@ -17,8 +17,8 @@ import type {
   RegisterPayload,
   UpdateProfilePayload,
 } from '../../application/dto/auth';
-import type { AuthUser, Role } from '../../domain/entities/types';
-import { DEFAULT_ROLE } from '../../domain/entities/types';
+import type { AuthUser, Role } from '../../domain/entities/auth';
+import { DEFAULT_ROLE } from '../../domain/entities/auth';
 import { firebaseAuth, firebaseFirestore, firebaseStorage } from '../database/firebase';
 
 const USERS_COLLECTION = 'users';

@@ -1,5 +1,5 @@
 import type { AuthRepository } from '../../domain/repositories/AuthRepository';
-import type { AuthUser } from '../../domain/entities/types';
+import type { AuthUser } from '../../domain/entities/auth';
 import type {
   AuthStateListener,
   LoginPayload,

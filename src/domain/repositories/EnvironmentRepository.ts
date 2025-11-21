@@ -9,8 +9,8 @@ import type {
   TransitionEnvironmentStatusParams,
   UpdateEnvironmentBugInput,
   UpdateEnvironmentInput,
-  UserSummary,
-} from '../entities/types';
+} from '../entities/environment';
+import type { UserSummary } from '../entities/user';
 
 export interface EnvironmentRepository {
   create: (input: CreateEnvironmentInput) => Promise<Environment>;

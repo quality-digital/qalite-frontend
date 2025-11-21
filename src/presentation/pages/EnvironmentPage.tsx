@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { EnvironmentStatusError } from '../../shared/errors/firebaseErrors';
-import type { Environment, EnvironmentStatus, UserSummary } from '../../domain/entities/types';
+import type { Environment, EnvironmentStatus } from '../../domain/entities/environment';
+import type { UserSummary } from '../../domain/entities/user';
 import type { SlackTaskSummaryPayload } from '../../infrastructure/external/slack';
 import { environmentService } from '../../application/use-cases/environment';
 import { slackService } from '../../application/use-cases/slack';
@@ -23,7 +24,7 @@ import { PageLoader } from '../components/PageLoader';
 import { useUserProfiles } from '../hooks/useUserProfiles';
 import { useEnvironmentBugs } from '../hooks/useEnvironmentBugs';
 import { EnvironmentBugModal } from '../components/environments/EnvironmentBugModal';
-import type { EnvironmentBug } from '../../domain/entities/types';
+import type { EnvironmentBug } from '../../domain/entities/environment';
 import { useEnvironmentDetails } from '../hooks/useEnvironmentDetails';
 import { useEnvironmentEngagement } from '../hooks/useEnvironmentEngagement';
 import { EnvironmentSummaryCard } from '../components/environments/EnvironmentSummaryCard';

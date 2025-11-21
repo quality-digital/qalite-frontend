@@ -1,6 +1,6 @@
 import { doc, getDoc } from 'firebase/firestore';
 
-import type { UserSummary } from '../../domain/entities/types';
+import type { UserSummary } from '../../domain/entities/user';
 import { firebaseFirestore } from '../database/firebase';
 
 const USERS_COLLECTION = 'users';

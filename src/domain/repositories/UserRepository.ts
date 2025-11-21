@@ -1,4 +1,4 @@
-import type { UserSummary } from '../entities/types';
+import type { UserSummary } from '../entities/user';
 
 export interface UserRepository {
   getSummariesByIds: (ids: string[]) => Promise<UserSummary[]>;

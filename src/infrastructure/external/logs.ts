@@ -10,7 +10,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 
-import type { ActivityLog, ActivityLogInput } from '../../domain/entities/types';
+import type { ActivityLog, ActivityLogInput } from '../../domain/entities/activityLog';
 import { getCurrentUser } from './auth';
 import { firebaseFirestore } from '../database/firebase';
 

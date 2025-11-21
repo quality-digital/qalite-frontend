@@ -15,30 +15,27 @@ import {
 } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 
-import {
-  type ActivityLog,
-  type CreateEnvironmentBugInput,
-  type CreateEnvironmentInput,
-  type Environment,
-  type EnvironmentBug,
-  type EnvironmentBugStatus,
-  type EnvironmentScenario,
-  type EnvironmentScenarioPlatform,
-  type EnvironmentScenarioStatus,
-  type EnvironmentStatus,
-  type EnvironmentTimeTracking,
-  type UpdateEnvironmentBugInput,
-  type UpdateEnvironmentInput,
-  type UserSummary,
-} from '../../domain/entities/types';
+import type { ActivityLog } from '../../domain/entities/activityLog';
+import type {
+  CreateEnvironmentBugInput,
+  CreateEnvironmentInput,
+  Environment,
+  EnvironmentBug,
+  EnvironmentBugStatus,
+  EnvironmentRealtimeFilters,
+  EnvironmentScenario,
+  EnvironmentScenarioPlatform,
+  EnvironmentScenarioStatus,
+  EnvironmentStatus,
+  EnvironmentTimeTracking,
+  UpdateEnvironmentBugInput,
+  UpdateEnvironmentInput,
+} from '../../domain/entities/environment';
+import type { UserSummary } from '../../domain/entities/user';
 import { firebaseFirestore, firebaseStorage } from '../database/firebase';
 import { EnvironmentStatusError } from '../../shared/errors/firebaseErrors';
 import { BUG_STATUS_LABEL } from '../../shared/config/environmentLabels';
 import { logActivity } from './logs';
-
-export interface EnvironmentRealtimeFilters {
-  storeId?: string;
-}
 
 const ENVIRONMENTS_COLLECTION = 'environments';
 const BUGS_SUBCOLLECTION = 'bugs';

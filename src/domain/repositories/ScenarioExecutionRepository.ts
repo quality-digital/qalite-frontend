@@ -1,4 +1,8 @@
-import type { CreateScenarioExecutionInput, ScenarioAverageMap, ScenarioExecution } from '../entities/types';
+import type {
+  CreateScenarioExecutionInput,
+  ScenarioAverageMap,
+  ScenarioExecution,
+} from '../entities/scenarioExecution';
 
 export interface ScenarioExecutionRepository {
   logExecution: (input: CreateScenarioExecutionInput) => Promise<void>;

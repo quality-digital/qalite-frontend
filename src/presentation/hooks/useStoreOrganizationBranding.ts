@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import type { Organization } from '../../domain/entities/types';
+import type { Organization } from '../../domain/entities/organization';
 import { organizationService } from '../../application/use-cases/organization';
 import { storeService } from '../../application/use-cases/store';
 

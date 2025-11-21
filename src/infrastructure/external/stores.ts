@@ -15,15 +15,21 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 
-import {
-  type Store,
-  type StoreCategory,
-  type StoreCategoryInput,
-  type StoreScenario,
-  type StoreScenarioInput,
-  type StoreSuite,
-  type StoreSuiteInput,
-} from '../../domain/entities/types';
+import type {
+  CreateStorePayload,
+  ImportScenariosResult,
+  ImportSuitesResult,
+  Store,
+  StoreCategory,
+  StoreCategoryInput,
+  StoreExportPayload,
+  StoreScenario,
+  StoreScenarioInput,
+  StoreSuite,
+  StoreSuiteExportPayload,
+  StoreSuiteInput,
+  UpdateStorePayload,
+} from '../../domain/entities/store';
 import { firebaseFirestore } from '../database/firebase';
 import { logActivity } from './logs';
 
@@ -56,60 +62,6 @@ const getStoreContext = async (
     storeName: (data.name as string | undefined) ?? '',
   };
 };
-
-export interface CreateStorePayload {
-  organizationId: string;
-  name: string;
-  site: string;
-  stage: string;
-}
-
-export interface UpdateStorePayload {
-  name: string;
-  site: string;
-  stage: string;
-}
-
-export interface ImportScenariosResult {
-  created: number;
-  skipped: number;
-  scenarios: StoreScenario[];
-}
-
-export interface ImportSuitesResult {
-  created: number;
-  skipped: number;
-  suites: StoreSuite[];
-}
-
-export interface StoreExportPayload {
-  store: {
-    id: string;
-    name: string;
-    site: string;
-    stage: string;
-    scenarioCount: number;
-  };
-  exportedAt: string;
-  scenarios: StoreScenario[];
-}
-
-export interface StoreSuiteExportPayload {
-  store: {
-    id: string;
-    name: string;
-    site: string;
-    stage: string;
-    scenarioCount: number;
-  };
-  exportedAt: string;
-  suites: Array<{
-    id: string;
-    name: string;
-    description: string;
-    scenarios: Array<{ id: string; title: string }>;
-  }>;
-}
 
 const timestampToDate = (value: unknown): Date | null => {
   if (value instanceof Timestamp) {

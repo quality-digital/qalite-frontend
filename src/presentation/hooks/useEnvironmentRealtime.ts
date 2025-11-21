@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import type { Environment } from '../../domain/entities/types';
+import type { Environment } from '../../domain/entities/environment';
 import { environmentService } from '../../application/use-cases/environment';
 import { useRealtimeResource } from './useRealtimeResource';
 

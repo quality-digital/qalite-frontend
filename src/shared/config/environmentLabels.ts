@@ -2,7 +2,7 @@ import type {
   EnvironmentBug,
   EnvironmentScenarioPlatform,
   EnvironmentStatus,
-} from '../../domain/entities/types';
+} from '../../domain/entities/environment';
 
 export const ENVIRONMENT_STATUS_LABEL: Record<EnvironmentStatus, string> = {
   backlog: 'Backlog',

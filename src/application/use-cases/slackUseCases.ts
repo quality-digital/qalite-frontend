@@ -1,5 +1,5 @@
 import type { SlackRepository } from '../../domain/repositories/SlackRepository';
-import type { SlackTaskSummaryPayload } from '../../domain/entities/types';
+import type { SlackTaskSummaryPayload } from '../../domain/entities/slack';
 
 export class SlackUseCases {
   constructor(private readonly slackRepository: SlackRepository) {}

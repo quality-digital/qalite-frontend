@@ -1,4 +1,4 @@
-import type { AuthUser, Role } from '../../domain/entities/types';
+import type { AuthUser, Role } from '../../domain/entities/auth';
 
 export interface RegisterPayload {
   email: string;
