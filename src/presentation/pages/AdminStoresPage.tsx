@@ -462,10 +462,15 @@ export const AdminStoresPage = () => {
 
   return (
     <Layout>
-      <section className="page-container">
+      <section className="page-container" data-testid="stores-page">
         <div className="page-header">
           <div>
-            <button type="button" className="link-button" onClick={() => navigate('/admin')}>
+            <button
+              type="button"
+              className="link-button"
+              onClick={() => navigate('/admin')}
+              data-testid="stores-back-button"
+            >
               &larr; Voltar
             </button>
             <h1 className="section-title">
@@ -481,11 +486,21 @@ export const AdminStoresPage = () => {
           </div>
           <div className="page-actions">
             {selectedOrganization && (
-              <Button type="button" variant="secondary" onClick={openOrganizationModal}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={openOrganizationModal}
+                data-testid="manage-organization-button"
+              >
                 Gerenciar organização
               </Button>
             )}
-            <Button type="button" onClick={openCreateModal} disabled={!selectedOrganizationId}>
+            <Button
+              type="button"
+              onClick={openCreateModal}
+              disabled={!selectedOrganizationId}
+              data-testid="new-store-button"
+            >
               Nova loja
             </Button>
           </div>
@@ -516,6 +531,7 @@ export const AdminStoresPage = () => {
                 <div
                   key={store.id}
                   className="card card-clickable"
+                  data-testid={`store-card-${store.id}`}
                   role="button"
                   tabIndex={0}
                   onClick={() => navigate(`/stores/${store.id}`)}
@@ -616,7 +632,7 @@ export const AdminStoresPage = () => {
         description="Informe os dados básicos da loja para disponibilizar os cenários."
       >
         {storeError && <p className="form-message form-message--error">{storeError}</p>}
-        <form className="form-grid" onSubmit={handleStoreSubmit}>
+        <form className="form-grid" onSubmit={handleStoreSubmit} data-testid="store-form">
           <TextInput
             id="store-name"
             label="Nome da loja"
@@ -626,6 +642,7 @@ export const AdminStoresPage = () => {
             }
             placeholder="Ex.: Loja QA"
             required
+            dataTestId="store-name-input"
           />
           <TextInput
             id="store-site"
@@ -635,9 +652,15 @@ export const AdminStoresPage = () => {
               setStoreForm((previous) => ({ ...previous, site: event.target.value }))
             }
             placeholder="https://minhaloja.com"
+            dataTestId="store-site-input"
           />
           <div className="form-actions">
-            <Button type="submit" isLoading={isSavingStore} loadingText="Salvando...">
+            <Button
+              type="submit"
+              isLoading={isSavingStore}
+              loadingText="Salvando..."
+              data-testid="save-store-button"
+            >
               Criar loja
             </Button>
             <Button
@@ -645,6 +668,7 @@ export const AdminStoresPage = () => {
               variant="ghost"
               onClick={closeStoreModal}
               disabled={isSavingStore}
+              data-testid="cancel-store-button"
             >
               Cancelar
             </Button>
@@ -662,7 +686,11 @@ export const AdminStoresPage = () => {
             <p className="form-message form-message--error">{organizationError}</p>
           )}
 
-          <form className="form-grid" onSubmit={handleOrganizationSubmit}>
+          <form
+            className="form-grid"
+            onSubmit={handleOrganizationSubmit}
+            data-testid="organization-settings-form"
+          >
             <TextInput
               id="organization-name"
               label="Nome da organização"
@@ -672,6 +700,7 @@ export const AdminStoresPage = () => {
               }
               placeholder="Ex.: Squad de Onboarding"
               required
+              dataTestId="organization-settings-name"
             />
             <TextInput
               id="organization-slack-webhook"
@@ -684,6 +713,7 @@ export const AdminStoresPage = () => {
                 }))
               }
               placeholder="https://hooks.slack.com/services/..."
+              dataTestId="organization-settings-slack-webhook"
             />
             <label className="upload-label" htmlFor="organization-update-logo">
               <span>Logo da organização</span>
@@ -693,6 +723,7 @@ export const AdminStoresPage = () => {
                 className="upload-input"
                 type="file"
                 accept="image/*"
+                data-testid="organization-settings-logo"
                 onChange={(event) =>
                   setOrganizationForm((previous) => ({
                     ...previous,
@@ -703,7 +734,12 @@ export const AdminStoresPage = () => {
               <span className="upload-hint">Envie um arquivo PNG, JPG ou SVG até 5MB.</span>
             </label>
             <div className="form-actions">
-              <Button type="submit" isLoading={isSavingOrganization} loadingText="Salvando...">
+              <Button
+                type="submit"
+                isLoading={isSavingOrganization}
+                loadingText="Salvando..."
+                data-testid="save-organization-settings"
+              >
                 Salvar alterações
               </Button>
               <Button
@@ -711,6 +747,7 @@ export const AdminStoresPage = () => {
                 variant="ghost"
                 onClick={closeOrganizationModal}
                 disabled={isSavingOrganization}
+                data-testid="cancel-organization-settings"
               >
                 Cancelar
               </Button>
@@ -737,7 +774,11 @@ export const AdminStoresPage = () => {
               </p>
             )}
 
-            <form className="organization-members-form" onSubmit={handleAddMember}>
+            <form
+              className="organization-members-form"
+              onSubmit={handleAddMember}
+              data-testid="organization-members-form"
+            >
               <TextInput
                 id="member-email"
                 label="Adicionar usuário por e-mail"
@@ -746,8 +787,14 @@ export const AdminStoresPage = () => {
                 onChange={(event) => setMemberEmail(event.target.value)}
                 placeholder="usuario@empresa.com"
                 required
+                dataTestId="organization-member-email"
               />
-              <Button type="submit" isLoading={isManagingMembers} loadingText="Adicionando...">
+              <Button
+                type="submit"
+                isLoading={isManagingMembers}
+                loadingText="Adicionando..."
+                data-testid="add-organization-member"
+              >
                 Adicionar usuário
               </Button>
             </form>
@@ -793,6 +840,7 @@ export const AdminStoresPage = () => {
               className="link-danger"
               onClick={() => void handleDeleteOrganization()}
               disabled={isSavingOrganization}
+              data-testid="delete-organization-button"
             >
               Excluir organização
             </button>

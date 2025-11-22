@@ -12,6 +12,7 @@ interface PasswordInputProps {
   disabled?: boolean;
   readOnly?: boolean;
   autoComplete?: string;
+  dataTestId?: string;
 }
 
 export const PasswordInput = ({
@@ -24,6 +25,7 @@ export const PasswordInput = ({
   disabled = false,
   readOnly = false,
   autoComplete,
+  dataTestId,
 }: PasswordInputProps) => {
   const [isVisible, setIsVisible] = useState(false);
   const toggleVisibility = () => setIsVisible((previous) => !previous);
@@ -45,6 +47,7 @@ export const PasswordInput = ({
           readOnly={readOnly}
           autoComplete={autoComplete}
           className="password-field-input"
+          data-testid={dataTestId}
         />
         <button
           type="button"

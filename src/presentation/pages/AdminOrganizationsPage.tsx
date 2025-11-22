@@ -102,7 +102,7 @@ export const AdminOrganizationsPage = () => {
 
   return (
     <Layout>
-      <section className="page-container">
+      <section className="page-container" data-testid="organizations-page">
         <div className="page-header">
           <div>
             <h1 className="section-title">Organizações cadastradas</h1>
@@ -111,7 +111,7 @@ export const AdminOrganizationsPage = () => {
             </p>
           </div>
           <div className="page-actions">
-            <Button type="button" onClick={openCreateModal}>
+            <Button type="button" onClick={openCreateModal} data-testid="new-organization-button">
               Nova organização
             </Button>
           </div>
@@ -136,6 +136,7 @@ export const AdminOrganizationsPage = () => {
                 <div
                   key={organization.id}
                   className="card card-clickable"
+                  data-testid={`organization-card-${organization.id}`}
                   role="button"
                   tabIndex={0}
                   onClick={() => navigate(`/admin/organizations?organizationId=${organization.id}`)}
@@ -169,7 +170,11 @@ export const AdminOrganizationsPage = () => {
 
       <Modal isOpen={isModalOpen} onClose={closeModal} title="Nova organização">
         {formError && <p className="form-message form-message--error">{formError}</p>}
-        <form className="form-grid" onSubmit={handleOrganizationSubmit}>
+        <form
+          className="form-grid"
+          onSubmit={handleOrganizationSubmit}
+          data-testid="organization-form"
+        >
           <TextInput
             id="organization-name"
             label="Nome da organização"
@@ -179,6 +184,7 @@ export const AdminOrganizationsPage = () => {
             }
             placeholder="Ex.: Squad de Onboarding"
             required
+            dataTestId="organization-name-input"
           />
           <TextInput
             id="organization-slack-webhook"
@@ -191,6 +197,7 @@ export const AdminOrganizationsPage = () => {
               }))
             }
             placeholder="https://hooks.slack.com/services/..."
+            dataTestId="organization-slack-webhook-input"
           />
           <label className="upload-label" htmlFor="organization-logo">
             <span>Logo da organização</span>
@@ -200,6 +207,7 @@ export const AdminOrganizationsPage = () => {
               className="upload-input"
               type="file"
               accept="image/*"
+              data-testid="organization-logo-input"
               onChange={(event) =>
                 setOrganizationForm((previous) => ({
                   ...previous,
@@ -210,7 +218,12 @@ export const AdminOrganizationsPage = () => {
             <span className="upload-hint">Formatos sugeridos: PNG, JPG ou SVG até 5MB.</span>
           </label>
           <div className="form-actions">
-            <Button type="submit" isLoading={isSavingOrganization} loadingText="Salvando...">
+            <Button
+              type="submit"
+              isLoading={isSavingOrganization}
+              loadingText="Salvando..."
+              data-testid="save-organization-button"
+            >
               Criar organização
             </Button>
             <Button
@@ -218,6 +231,7 @@ export const AdminOrganizationsPage = () => {
               variant="ghost"
               onClick={closeModal}
               disabled={isSavingOrganization}
+              data-testid="cancel-organization-button"
             >
               Cancelar
             </Button>

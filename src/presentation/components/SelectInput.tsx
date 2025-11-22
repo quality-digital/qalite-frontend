@@ -13,6 +13,7 @@ interface SelectInputProps {
   onChange?: (event: ChangeEvent<HTMLSelectElement>) => void;
   disabled?: boolean;
   required?: boolean;
+  dataTestId?: string;
 }
 
 export const SelectInput = ({
@@ -23,6 +24,7 @@ export const SelectInput = ({
   onChange = () => {},
   disabled = false,
   required = false,
+  dataTestId,
 }: SelectInputProps) => (
   <label htmlFor={id} className="field">
     <span className="field-label">{label}</span>
@@ -34,6 +36,7 @@ export const SelectInput = ({
       disabled={disabled}
       required={required}
       className="field-input"
+      data-testid={dataTestId}
     >
       {options.map((option) => (
         <option key={option.value} value={option.value}>

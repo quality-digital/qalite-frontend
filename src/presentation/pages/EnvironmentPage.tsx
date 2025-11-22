@@ -430,7 +430,7 @@ export const EnvironmentPage = () => {
 
   return (
     <Layout>
-      <section className="page-container environment-page">
+      <section className="page-container environment-page" data-testid="environment-page">
         <div className="environment-page__header">
           <div>
             <button type="button" className="link-button" onClick={() => navigate(-1)}>
@@ -453,18 +453,27 @@ export const EnvironmentPage = () => {
                 onClick={handleEnterEnvironment}
                 isLoading={isJoiningEnvironment}
                 loadingText="Entrando..."
+                data-testid="enter-environment-button"
               >
                 Entrar no ambiente
               </Button>
             ) : (
               <>
                 {environment.status === 'backlog' && (
-                  <Button type="button" onClick={() => handleStatusTransition('in_progress')}>
+                  <Button
+                    type="button"
+                    onClick={() => handleStatusTransition('in_progress')}
+                    data-testid="start-environment-button"
+                  >
                     Iniciar execução
                   </Button>
                 )}
                 {environment.status === 'in_progress' && (
-                  <Button type="button" onClick={() => handleStatusTransition('done')}>
+                  <Button
+                    type="button"
+                    onClick={() => handleStatusTransition('done')}
+                    data-testid="finish-environment-button"
+                  >
                     Concluir ambiente
                   </Button>
                 )}
@@ -475,16 +484,27 @@ export const EnvironmentPage = () => {
                     onClick={handleLeaveEnvironment}
                     isLoading={isLeavingEnvironment}
                     loadingText="Saindo..."
+                    data-testid="leave-environment-button"
                   >
                     Sair do ambiente
                   </Button>
                 )}
                 {hasEnteredEnvironment && (
                   <>
-                    <Button type="button" variant="ghost" onClick={() => setIsEditOpen(true)}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setIsEditOpen(true)}
+                      data-testid="edit-environment-button"
+                    >
                       Editar
                     </Button>
-                    <Button type="button" variant="ghost" onClick={() => setIsDeleteOpen(true)}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setIsDeleteOpen(true)}
+                      data-testid="delete-environment-button"
+                    >
                       Excluir
                     </Button>
                   </>
@@ -515,6 +535,7 @@ export const EnvironmentPage = () => {
                 variant="secondary"
                 onClick={() => handleCopyLink(shareLinks.invite)}
                 disabled={isShareDisabled}
+                data-testid="copy-invite-button"
               >
                 Convidar para o ambiente
               </Button>
@@ -523,6 +544,7 @@ export const EnvironmentPage = () => {
                 variant="secondary"
                 onClick={() => handleCopyLink(shareLinks.public)}
                 disabled={!canCopyPublicLink}
+                data-testid="copy-public-link-button"
               >
                 Copiar link público
               </Button>
@@ -531,6 +553,7 @@ export const EnvironmentPage = () => {
                 variant="ghost"
                 onClick={handleExportPDF}
                 disabled={isShareDisabled}
+                data-testid="export-environment-pdf"
               >
                 Exportar PDF
               </Button>
@@ -541,6 +564,7 @@ export const EnvironmentPage = () => {
                 disabled={isShareDisabled}
                 isLoading={isCopyingMarkdown}
                 loadingText="Copiando..."
+                data-testid="copy-markdown-button"
               >
                 Copiar Markdown
               </Button>
@@ -552,6 +576,7 @@ export const EnvironmentPage = () => {
                   disabled={isSendingSlackSummary}
                   isLoading={isSendingSlackSummary}
                   loadingText="Enviando..."
+                  data-testid="send-slack-summary"
                 >
                   Enviar resumo para o Slack
                 </Button>
