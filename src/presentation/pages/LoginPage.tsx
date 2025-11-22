@@ -68,7 +68,7 @@ export const LoginPage = () => {
       }
     >
       {formError && <p className="form-message form-message--error">{formError}</p>}
-      <form className="form-grid" onSubmit={handleSubmit}>
+      <form className="form-grid" onSubmit={handleSubmit} data-testid="login-form">
         <TextInput
           id="email"
           label="E-mail"
@@ -76,6 +76,7 @@ export const LoginPage = () => {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           required
+          dataTestId="login-email"
         />
         <p className="form-hint">Use um e-mail corporativo ({ALLOWED_EMAIL_DOMAINS_LABEL}).</p>
         <PasswordInput
@@ -85,8 +86,14 @@ export const LoginPage = () => {
           onChange={(event) => setPassword(event.target.value)}
           required
           autoComplete="current-password"
+          dataTestId="login-password"
         />
-        <Button type="submit" isLoading={isLoading} loadingText="Autenticando...">
+        <Button
+          type="submit"
+          isLoading={isLoading}
+          loadingText="Autenticando..."
+          data-testid="login-submit"
+        >
           Entrar
         </Button>
       </form>

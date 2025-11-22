@@ -14,6 +14,7 @@ interface TextInputProps {
   min?: number;
   max?: number;
   step?: number;
+  dataTestId?: string;
 }
 
 export const TextInput = ({
@@ -30,6 +31,7 @@ export const TextInput = ({
   min,
   max,
   step,
+  dataTestId,
 }: TextInputProps) => (
   <label htmlFor={id} className="field">
     <span className="field-label">{label}</span>
@@ -48,6 +50,7 @@ export const TextInput = ({
       max={max}
       step={step}
       className="field-input"
+      data-testid={dataTestId}
     />
   </label>
 );
