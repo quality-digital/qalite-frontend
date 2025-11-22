@@ -1456,6 +1456,21 @@ export const StoreSummaryPage = () => {
     }
   };
 
+  const handleBackClick = () => {
+    if (user?.role === 'admin') {
+      const targetOrganizationId = organization?.id ?? store?.organizationId;
+
+      navigate(
+        targetOrganizationId
+          ? `/admin/organizations?organizationId=${targetOrganizationId}`
+          : '/admin',
+      );
+      return;
+    }
+
+    navigate('/dashboard');
+  };
+
   if (isPreparingStoreView) {
     return (
       <Layout>
@@ -1472,11 +1487,7 @@ export const StoreSummaryPage = () => {
         <section className="page-container">
           <div className="page-header">
             <div>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => navigate(user?.role === 'admin' ? '/admin' : '/dashboard')}
-              >
+              <Button type="button" variant="ghost" onClick={handleBackClick}>
                 ← Voltar
               </Button>
               <h1 className="section-title">
