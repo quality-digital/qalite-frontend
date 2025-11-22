@@ -1254,11 +1254,6 @@ export const StoreSummaryPage = () => {
       return;
     }
 
-    if (!trimmedSuite.description) {
-      setSuiteFormError('Descreva o objetivo da suíte.');
-      return;
-    }
-
     if (trimmedSuite.scenarioIds.length === 0) {
       setSuiteFormError('Selecione ao menos um cenário para compor a suíte.');
       return;
@@ -2219,13 +2214,6 @@ export const StoreSummaryPage = () => {
                                   label="Nome da suíte"
                                   value={suiteForm.name}
                                   onChange={handleSuiteFormChange('name')}
-                                  required
-                                />
-                                <TextArea
-                                  id="suite-description"
-                                  label="Descrição"
-                                  value={suiteForm.description}
-                                  onChange={handleSuiteFormChange('description')}
                                   required
                                 />
                               </div>
