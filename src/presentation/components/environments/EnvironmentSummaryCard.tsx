@@ -28,7 +28,6 @@ interface EnvironmentSummaryCardProps {
   environment: Environment;
   progressPercentage: number;
   progressLabel: string;
-  suiteDescription: string;
   scenarioCount: number;
   formattedTime: string;
   formattedStart: string;
@@ -42,7 +41,6 @@ export const EnvironmentSummaryCard = ({
   environment,
   progressPercentage,
   progressLabel,
-  suiteDescription,
   scenarioCount,
   formattedTime,
   formattedStart,
@@ -130,17 +128,6 @@ export const EnvironmentSummaryCard = ({
             <strong>{environment.release}</strong>
           </div>
         )}
-        <div className="summary-card__meta-item summary-card__meta-item--full">
-          <span className="summary-card__meta-label">Suíte</span>
-          <strong>
-            {suiteDescription}
-            {scenarioCount > 0 && (
-              <span className="summary-card__meta-hint">
-                {scenarioCount} cenário{scenarioCount > 1 ? 's' : ''} vinculados
-              </span>
-            )}
-          </strong>
-        </div>
       </div>
 
       <div className="summary-card__meta-grid summary-card__meta-grid--columns">

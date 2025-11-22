@@ -34,7 +34,6 @@ interface SlackSummaryBuilderOptions {
   totalTimeMs: number;
   scenarioCount: number;
   executedScenariosCount: number;
-  suiteDescription: string;
   urls: string[];
   bugsCount: number;
   participantProfiles: UserSummary[];
@@ -98,6 +97,7 @@ const buildSlackTaskSummaryPayload = (
   environment: Environment,
   options: SlackSummaryBuilderOptions,
 ): SlackTaskSummaryPayload => {
+  const suiteName = environment.suiteName?.trim() || 'Suíte não informada';
   const attendees = buildAttendeesList(environment, options.participantProfiles);
   const attendeeList = attendees ?? [];
   const uniqueParticipantsCount = new Set(environment.participants ?? []).size;
@@ -123,7 +123,7 @@ const buildSlackTaskSummaryPayload = (
       executedScenariosMessage: formatExecutedScenariosMessage(options.executedScenariosCount),
       fix,
       jira: environment.jiraTask?.trim() || 'Não informado',
-      suiteName: options.suiteDescription,
+      suiteName,
       suiteDetails: buildSuiteDetails(options.scenarioCount),
       participantsCount,
       monitoredUrls,
@@ -170,7 +170,6 @@ export const EnvironmentPage = () => {
     progressLabel,
     scenarioCount,
     executedScenariosCount,
-    suiteDescription,
     headerMeta,
     urls,
     shareLinks,
@@ -299,7 +298,6 @@ export const EnvironmentPage = () => {
         totalTimeMs: totalMs,
         scenarioCount,
         executedScenariosCount,
-        suiteDescription,
         urls,
         bugsCount: bugs.length,
         participantProfiles,
@@ -333,7 +331,6 @@ export const EnvironmentPage = () => {
     scenarioCount,
     showToast,
     slackWebhookUrl,
-    suiteDescription,
     totalMs,
     urls,
   ]);
@@ -442,7 +439,7 @@ export const EnvironmentPage = () => {
             <div>
               <h1 className="section-title">{environment.identificador ?? 'Ambiente'}</h1>
               <p className="section-subtitle">
-                {environment.tipoAmbiente} · {environment.tipoTeste} · {suiteDescription}
+                {environment.tipoAmbiente} · {environment.tipoTeste}
               </p>
               {headerMeta.length > 0 && (
                 <p className="section-subtitle">{headerMeta.join(' · ')}</p>
@@ -502,7 +499,6 @@ export const EnvironmentPage = () => {
             environment={environment}
             progressPercentage={progressPercentage}
             progressLabel={progressLabel}
-            suiteDescription={suiteDescription}
             scenarioCount={scenarioCount}
             formattedTime={formattedTime}
             formattedStart={formattedStart}

@@ -26,15 +26,8 @@ export const PublicEnvironmentPage = () => {
     Boolean(environment?.status === 'in_progress'),
   );
   const { bugs, isLoading: isLoadingBugs } = useEnvironmentBugs(environment?.id ?? null);
-  const {
-    bugCountByScenario,
-    progressPercentage,
-    progressLabel,
-    scenarioCount,
-    suiteDescription,
-    headerMeta,
-    urls,
-  } = useEnvironmentDetails(environment, bugs);
+  const { bugCountByScenario, progressPercentage, progressLabel, scenarioCount, headerMeta, urls } =
+    useEnvironmentDetails(environment, bugs);
 
   useEffect(() => {
     setActiveOrganization(environmentOrganization ?? null);
@@ -72,7 +65,7 @@ export const PublicEnvironmentPage = () => {
           <div>
             <h1 className="section-title">{environment.identificador}</h1>
             <p className="section-subtitle">
-              {environment.tipoAmbiente} · {environment.tipoTeste} · {suiteDescription}
+              {environment.tipoAmbiente} · {environment.tipoTeste}
             </p>
             {headerMeta.length > 0 && <p className="section-subtitle">{headerMeta.join(' · ')}</p>}
           </div>
@@ -83,7 +76,6 @@ export const PublicEnvironmentPage = () => {
             environment={environment}
             progressPercentage={progressPercentage}
             progressLabel={progressLabel}
-            suiteDescription={suiteDescription}
             scenarioCount={scenarioCount}
             formattedTime={formattedTime}
             formattedStart={formattedStart}

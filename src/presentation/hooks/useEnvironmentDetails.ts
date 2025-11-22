@@ -25,7 +25,6 @@ interface UseEnvironmentDetailsResult {
   progressLabel: string;
   scenarioCount: number;
   executedScenariosCount: number;
-  suiteDescription: string;
   headerMeta: string[];
   urls: string[];
   shareLinks: {
@@ -134,7 +133,6 @@ export const useEnvironmentDetails = (
       ),
       scenarioCount: combinedScenarioStats.total,
       executedScenariosCount: combinedScenarioStats.concluded,
-      suiteDescription: environment?.suiteName ?? 'Suíte não informada',
       headerMeta: [
         ...(environment?.momento ? [`Momento: ${environment.momento}`] : []),
         ...(environment?.release ? [`Release: ${environment.release}`] : []),

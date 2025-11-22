@@ -3,7 +3,6 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import { ProtectedRoute, RoleProtectedRoute } from './ProtectedRoute';
 import { AppProviders } from '../providers/AppProviders';
-import { PageLoader } from '../components/PageLoader';
 
 const HomePage = lazy(() =>
   import('../pages/HomePage').then(({ HomePage }) => ({ default: HomePage })),
@@ -65,7 +64,7 @@ const AdminStoresPage = lazy(() =>
 export const AppRoutes = () => (
   <AppProviders>
     <BrowserRouter>
-      <Suspense fallback={<PageLoader message="Carregando conteúdo..." />}>
+      <Suspense fallback={null}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
