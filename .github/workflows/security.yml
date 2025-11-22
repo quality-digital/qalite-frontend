@@ -1,1 +1,13 @@
+name: Security
 
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  security:
+    name: Security
+    uses: quality-digital/reusable-workflows/.github/workflows/security.yml@main
+    secrets: inherit
