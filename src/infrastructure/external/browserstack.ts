@@ -39,7 +39,10 @@ export const listBrowserstackBuilds = async (
 
   if (!response.ok) {
     const message = await extractErrorMessage(response);
-    throw new Error(message ?? 'Não foi possível carregar as execuções do BrowserStack.');
+    throw new Error(
+      message ??
+        `Não foi possível carregar as execuções do BrowserStack. (${response.status} ${response.statusText})`,
+    );
   }
 
   return parseBuildsResponse(await response.json().catch(() => null));
@@ -59,12 +62,24 @@ const parseBuildsResponse = (data: unknown): BrowserstackBuild[] => {
 
 const extractErrorMessage = async (response: Response): Promise<string | null> => {
   try {
-    const data = await response.json();
+    const data = await response.clone().json();
     if (typeof data?.message === 'string') {
       return data.message;
     }
+    if (typeof data?.error === 'string') {
+      return data.error;
+    }
   } catch (error) {
-    console.warn('Não foi possível interpretar a resposta do BrowserStack:', error);
+    console.warn('Não foi possível interpretar a resposta JSON do BrowserStack:', error);
+  }
+
+  try {
+    const text = (await response.text()).trim();
+    if (text.length > 0) {
+      return text;
+    }
+  } catch (error) {
+    console.warn('Não foi possível interpretar a resposta em texto do BrowserStack:', error);
   }
 
   return null;
