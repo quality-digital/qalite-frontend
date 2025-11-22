@@ -203,58 +203,64 @@ export const EnvironmentPage = () => {
     environment?.status === 'in_progress',
   );
 
-  const handleStatusTransition = async (target: EnvironmentStatus) => {
-    if (!environment) {
-      return;
-    }
-
-    try {
-      await environmentService.transitionStatus({
-        environment,
-        targetStatus: target,
-        currentUserId: user?.uid ?? null,
-      });
-
-      showToast({
-        type: 'success',
-        message: target === 'done' ? 'Ambiente concluído.' : 'Status atualizado com sucesso.',
-      });
-    } catch (error) {
-      if (error instanceof EnvironmentStatusError && error.code === 'PENDING_SCENARIOS') {
-        showToast({
-          type: 'error',
-          message: 'Existem cenários pendentes ou em andamento. Conclua-os antes de finalizar.',
-        });
+  const handleStatusTransition = useCallback(
+    async (target: EnvironmentStatus) => {
+      if (!environment) {
         return;
       }
 
-      console.error(error);
-      showToast({ type: 'error', message: 'Não foi possível atualizar o status.' });
-    }
-  };
+      try {
+        await environmentService.transitionStatus({
+          environment,
+          targetStatus: target,
+          currentUserId: user?.uid ?? null,
+        });
 
-  const handleCopyLink = async (url: string) => {
-    if (!url) {
-      return;
-    }
+        showToast({
+          type: 'success',
+          message: target === 'done' ? 'Ambiente concluído.' : 'Status atualizado com sucesso.',
+        });
+      } catch (error) {
+        if (error instanceof EnvironmentStatusError && error.code === 'PENDING_SCENARIOS') {
+          showToast({
+            type: 'error',
+            message: 'Existem cenários pendentes ou em andamento. Conclua-os antes de finalizar.',
+          });
+          return;
+        }
 
-    try {
-      await copyToClipboard(url);
-      showToast({ type: 'success', message: 'Link copiado para a área de transferência.' });
-    } catch (error) {
-      console.error(error);
-      showToast({ type: 'error', message: 'Não foi possível copiar o link.' });
-    }
-  };
+        console.error(error);
+        showToast({ type: 'error', message: 'Não foi possível atualizar o status.' });
+      }
+    },
+    [environment, showToast, user?.uid],
+  );
 
-  const handleExportPDF = () => {
+  const handleCopyLink = useCallback(
+    async (url: string) => {
+      if (!url) {
+        return;
+      }
+
+      try {
+        await copyToClipboard(url);
+        showToast({ type: 'success', message: 'Link copiado para a área de transferência.' });
+      } catch (error) {
+        console.error(error);
+        showToast({ type: 'error', message: 'Não foi possível copiar o link.' });
+      }
+    },
+    [showToast],
+  );
+
+  const handleExportPDF = useCallback(() => {
     if (!environment) {
       return;
     }
     environmentService.exportAsPDF(environment, bugs, participantProfiles);
-  };
+  }, [bugs, environment, participantProfiles]);
 
-  const handleCopyMarkdown = async () => {
+  const handleCopyMarkdown = useCallback(async () => {
     if (!environment) {
       return;
     }
@@ -270,9 +276,9 @@ export const EnvironmentPage = () => {
     } finally {
       setIsCopyingMarkdown(false);
     }
-  };
+  }, [bugs, environment, participantProfiles, showToast]);
 
-  const handleSendSlackSummary = async () => {
+  const handleSendSlackSummary = useCallback(async () => {
     if (!environment) {
       return;
     }
@@ -318,29 +324,44 @@ export const EnvironmentPage = () => {
     } finally {
       setIsSendingSlackSummary(false);
     }
-  };
+  }, [
+    bugs.length,
+    environment,
+    executedScenariosCount,
+    formattedTime,
+    participantProfiles,
+    scenarioCount,
+    showToast,
+    slackWebhookUrl,
+    suiteDescription,
+    totalMs,
+    urls,
+  ]);
 
-  const openCreateBugModal = (scenarioId: string) => {
+  const openCreateBugModal = useCallback((scenarioId: string) => {
     setEditingBug(null);
     setDefaultBugScenarioId(scenarioId);
     setIsBugModalOpen(true);
-  };
+  }, []);
 
-  const handleEditBug = (bug: EnvironmentBug) => {
+  const handleEditBug = useCallback((bug: EnvironmentBug) => {
     setEditingBug(bug);
     setDefaultBugScenarioId(bug.scenarioId ?? null);
     setIsBugModalOpen(true);
-  };
+  }, []);
 
-  const closeBugModal = () => {
+  const closeBugModal = useCallback(() => {
     setIsBugModalOpen(false);
     setEditingBug(null);
     setDefaultBugScenarioId(null);
-  };
+  }, []);
 
-  const handleScenarioBugRequest = (scenarioId: string) => {
-    openCreateBugModal(scenarioId);
-  };
+  const handleScenarioBugRequest = useCallback(
+    (scenarioId: string) => {
+      openCreateBugModal(scenarioId);
+    },
+    [openCreateBugModal],
+  );
 
   const handleEnterEnvironment = useCallback(async () => {
     try {
