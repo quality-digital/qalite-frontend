@@ -13,12 +13,30 @@ interface OrganizationFormState {
   name: string;
   logoFile: File | null;
   slackWebhookUrl: string;
+  browserstackUsername: string;
+  browserstackPassword: string;
 }
 
 const initialOrganizationForm: OrganizationFormState = {
   name: '',
   logoFile: null,
   slackWebhookUrl: '',
+  browserstackUsername: '',
+  browserstackPassword: '',
+};
+
+const buildBrowserstackCredentialsPayload = ({
+  browserstackUsername,
+  browserstackPassword,
+}: OrganizationFormState) => {
+  const username = browserstackUsername.trim();
+  const password = browserstackPassword.trim();
+
+  if (!username && !password) {
+    return null;
+  }
+
+  return { username, password };
 };
 
 export const AdminOrganizationsPage = () => {
@@ -85,6 +103,7 @@ export const AdminOrganizationsPage = () => {
         description: '',
         logoFile: organizationForm.logoFile,
         slackWebhookUrl: organizationForm.slackWebhookUrl,
+        browserstackCredentials: buildBrowserstackCredentialsPayload(organizationForm),
       });
       setOrganizations((previous) => [...previous, created]);
       showToast({ type: 'success', message: 'Nova organização criada.' });
@@ -198,6 +217,33 @@ export const AdminOrganizationsPage = () => {
             }
             placeholder="https://hooks.slack.com/services/..."
             dataTestId="organization-slack-webhook-input"
+          />
+          <TextInput
+            id="organization-browserstack-username"
+            label="Usuário do BrowserStack"
+            value={organizationForm.browserstackUsername}
+            onChange={(event) =>
+              setOrganizationForm((previous) => ({
+                ...previous,
+                browserstackUsername: event.target.value,
+              }))
+            }
+            placeholder="username"
+            dataTestId="organization-browserstack-username-input"
+          />
+          <TextInput
+            id="organization-browserstack-password"
+            label="Senha do BrowserStack"
+            type="password"
+            value={organizationForm.browserstackPassword}
+            onChange={(event) =>
+              setOrganizationForm((previous) => ({
+                ...previous,
+                browserstackPassword: event.target.value,
+              }))
+            }
+            placeholder="password"
+            dataTestId="organization-browserstack-password-input"
           />
           <label className="upload-label" htmlFor="organization-logo">
             <span>Logo da organização</span>

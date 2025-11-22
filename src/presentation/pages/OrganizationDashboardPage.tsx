@@ -1,14 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import type { Organization } from '../../domain/entities/organization';
 import { organizationService } from '../../application/use-cases/OrganizationUseCase';
+import type { BrowserstackBuild } from '../../domain/entities/browserstack';
+import { browserstackService } from '../../application/use-cases/BrowserstackUseCase';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
 import { Layout } from '../components/Layout';
 import { UserAvatar } from '../components/UserAvatar';
 import { StoreManagementPanel } from '../components/StoreManagementPanel';
 import { OrganizationLogPanel } from '../components/OrganizationLogPanel';
+import { BrowserstackKanban } from '../components/browserstack/BrowserstackKanban';
 
 export const OrganizationDashboardPage = () => {
   const navigate = useNavigate();
@@ -16,7 +19,32 @@ export const OrganizationDashboardPage = () => {
   const { showToast } = useToast();
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [browserstackBuilds, setBrowserstackBuilds] = useState<BrowserstackBuild[]>([]);
+  const [isLoadingBrowserstack, setIsLoadingBrowserstack] = useState(false);
   const isAdmin = user?.role?.toLowerCase() === 'admin';
+
+  const loadBrowserstackBuilds = useCallback(async () => {
+    if (!organization?.browserstackCredentials) {
+      setBrowserstackBuilds([]);
+      return;
+    }
+
+    try {
+      setIsLoadingBrowserstack(true);
+      const builds = await browserstackService.listBuilds(organization.browserstackCredentials);
+      setBrowserstackBuilds(builds);
+    } catch (error) {
+      console.error(error);
+      setBrowserstackBuilds([]);
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível carregar as execuções do BrowserStack.';
+      showToast({ type: 'error', message });
+    } finally {
+      setIsLoadingBrowserstack(false);
+    }
+  }, [organization, showToast]);
 
   useEffect(() => {
     if (isInitializing) {
@@ -55,6 +83,20 @@ export const OrganizationDashboardPage = () => {
 
     void fetchOrganization();
   }, [isInitializing, navigate, showToast, user]);
+
+  useEffect(() => {
+    if (!organization?.browserstackCredentials) {
+      setBrowserstackBuilds([]);
+      return;
+    }
+
+    void loadBrowserstackBuilds();
+  }, [loadBrowserstackBuilds, organization]);
+
+  const hasBrowserstackCredentials = Boolean(
+    organization?.browserstackCredentials?.username &&
+      organization?.browserstackCredentials?.password,
+  );
 
   return (
     <Layout>
@@ -111,6 +153,25 @@ export const OrganizationDashboardPage = () => {
           )}
         </div>
       </section>
+
+      {!isLoading && organization && hasBrowserstackCredentials && (
+        <BrowserstackKanban
+          builds={browserstackBuilds}
+          isLoading={isLoadingBrowserstack}
+          onRefresh={loadBrowserstackBuilds}
+        />
+      )}
+
+      {!isLoading && organization && !hasBrowserstackCredentials && (
+        <div className="card">
+          <span className="badge">BrowserStack</span>
+          <h2 className="section-title">Conecte sua conta</h2>
+          <p className="section-subtitle">
+            Adicione usuário e senha do BrowserStack nas configurações da organização para
+            acompanhar as execuções automatizadas.
+          </p>
+        </div>
+      )}
 
       {!isLoading && organization && isAdmin && (
         <OrganizationLogPanel organizationId={organization.id} />

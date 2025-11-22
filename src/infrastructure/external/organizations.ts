@@ -18,6 +18,7 @@ import {
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 
 import type { Organization, OrganizationMember } from '../../domain/entities/organization';
+import type { BrowserstackCredentials } from '../../domain/entities/browserstack';
 import { firebaseFirestore, firebaseStorage } from '../database/firebase';
 import { logActivity } from './logs';
 
@@ -29,6 +30,7 @@ export interface CreateOrganizationPayload {
   description: string;
   logoFile?: File | null;
   slackWebhookUrl?: string | null;
+  browserstackCredentials?: BrowserstackCredentials | null;
 }
 
 export interface UpdateOrganizationPayload {
@@ -36,6 +38,7 @@ export interface UpdateOrganizationPayload {
   description: string;
   logoFile?: File | null;
   slackWebhookUrl?: string | null;
+  browserstackCredentials?: BrowserstackCredentials | null;
 }
 
 export interface AddUserToOrganizationPayload {
@@ -49,6 +52,35 @@ export interface RemoveUserFromOrganizationPayload {
 }
 
 const organizationsCollection = collection(firebaseFirestore, ORGANIZATIONS_COLLECTION);
+
+const normalizeBrowserstackCredentials = (
+  credentials: BrowserstackCredentials | null | undefined,
+): BrowserstackCredentials | null => {
+  const username = credentials?.username?.trim() || '';
+  const password = credentials?.password?.trim() || '';
+
+  if (!username && !password) {
+    return null;
+  }
+
+  return { username, password };
+};
+
+const parseBrowserstackCredentials = (value: unknown): BrowserstackCredentials | null => {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const credentials = value as BrowserstackCredentials;
+  const username = typeof credentials.username === 'string' ? credentials.username.trim() : '';
+  const password = typeof credentials.password === 'string' ? credentials.password.trim() : '';
+
+  if (!username && !password) {
+    return null;
+  }
+
+  return { username, password };
+};
 
 export const listOrganizations = async (): Promise<Organization[]> => {
   const snapshot = await getDocs(organizationsCollection);
@@ -76,12 +108,14 @@ export const createOrganization = async (
   const trimmedName = payload.name.trim();
   const trimmedDescription = payload.description.trim();
   const slackWebhookUrl = payload.slackWebhookUrl?.trim() || null;
+  const browserstackCredentials = normalizeBrowserstackCredentials(payload.browserstackCredentials);
 
   const docRef = await addDoc(organizationsCollection, {
     name: trimmedName,
     description: trimmedDescription,
     logoUrl: null,
     slackWebhookUrl,
+    browserstackCredentials,
     members: [],
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -117,6 +151,7 @@ export const updateOrganization = async (
     name: payload.name.trim(),
     description: payload.description.trim(),
     slackWebhookUrl: payload.slackWebhookUrl?.trim() || null,
+    browserstackCredentials: normalizeBrowserstackCredentials(payload.browserstackCredentials),
     updatedAt: serverTimestamp(),
   };
 
@@ -336,6 +371,7 @@ const mapOrganization = async (
     description: ((data?.description as string) ?? '').trim(),
     logoUrl: ((data?.logoUrl as string) ?? '').trim() || null,
     slackWebhookUrl: ((data?.slackWebhookUrl as string) ?? '').trim() || null,
+    browserstackCredentials: parseBrowserstackCredentials(data?.browserstackCredentials),
     members,
     memberIds,
     createdAt: timestampToDate(data?.createdAt),

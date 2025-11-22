@@ -26,6 +26,8 @@ interface OrganizationFormState {
   name: string;
   logoFile: File | null;
   slackWebhookUrl: string;
+  browserstackUsername: string;
+  browserstackPassword: string;
 }
 
 const initialStoreForm: StoreForm = {
@@ -37,6 +39,22 @@ const initialOrganizationForm: OrganizationFormState = {
   name: '',
   logoFile: null,
   slackWebhookUrl: '',
+  browserstackUsername: '',
+  browserstackPassword: '',
+};
+
+const buildBrowserstackCredentialsPayload = ({
+  browserstackUsername,
+  browserstackPassword,
+}: OrganizationFormState) => {
+  const username = browserstackUsername.trim();
+  const password = browserstackPassword.trim();
+
+  if (!username && !password) {
+    return null;
+  }
+
+  return { username, password };
 };
 
 export const AdminStoresPage = () => {
@@ -219,6 +237,8 @@ export const AdminStoresPage = () => {
       name: selectedOrganization.name,
       logoFile: null,
       slackWebhookUrl: selectedOrganization.slackWebhookUrl ?? '',
+      browserstackUsername: selectedOrganization.browserstackCredentials?.username ?? '',
+      browserstackPassword: selectedOrganization.browserstackCredentials?.password ?? '',
     });
     setOrganizationError(null);
     setMemberEmail('');
@@ -300,6 +320,7 @@ export const AdminStoresPage = () => {
         description: (selectedOrganization.description ?? '').trim(),
         logoFile: organizationForm.logoFile,
         slackWebhookUrl: organizationForm.slackWebhookUrl,
+        browserstackCredentials: buildBrowserstackCredentialsPayload(organizationForm),
       });
 
       setOrganizations((previous) =>
@@ -714,6 +735,33 @@ export const AdminStoresPage = () => {
               }
               placeholder="https://hooks.slack.com/services/..."
               dataTestId="organization-settings-slack-webhook"
+            />
+            <TextInput
+              id="organization-browserstack-username"
+              label="Usuário do BrowserStack"
+              value={organizationForm.browserstackUsername}
+              onChange={(event) =>
+                setOrganizationForm((previous) => ({
+                  ...previous,
+                  browserstackUsername: event.target.value,
+                }))
+              }
+              placeholder="username"
+              dataTestId="organization-settings-browserstack-username"
+            />
+            <TextInput
+              id="organization-browserstack-password"
+              label="Senha do BrowserStack"
+              type="password"
+              value={organizationForm.browserstackPassword}
+              onChange={(event) =>
+                setOrganizationForm((previous) => ({
+                  ...previous,
+                  browserstackPassword: event.target.value,
+                }))
+              }
+              placeholder="password"
+              dataTestId="organization-settings-browserstack-password"
             />
             <label className="upload-label" htmlFor="organization-update-logo">
               <span>Logo da organização</span>

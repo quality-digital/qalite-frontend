@@ -1,3 +1,5 @@
+import type { BrowserstackCredentials } from './browserstack';
+
 export interface OrganizationMember {
   uid: string;
   email: string;
@@ -11,6 +13,7 @@ export interface Organization {
   description: string;
   logoUrl: string | null;
   slackWebhookUrl: string | null;
+  browserstackCredentials: BrowserstackCredentials | null;
   members: OrganizationMember[];
   memberIds: string[];
   createdAt: Date | null;
@@ -22,6 +25,7 @@ export interface CreateOrganizationPayload {
   description: string;
   logoFile?: File | null;
   slackWebhookUrl?: string | null;
+  browserstackCredentials?: BrowserstackCredentials | null;
 }
 
 export interface UpdateOrganizationPayload {
@@ -29,6 +33,7 @@ export interface UpdateOrganizationPayload {
   description: string;
   logoFile?: File | null;
   slackWebhookUrl?: string | null;
+  browserstackCredentials?: BrowserstackCredentials | null;
 }
 
 export interface AddUserToOrganizationPayload {
