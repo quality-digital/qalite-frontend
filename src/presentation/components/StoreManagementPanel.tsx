@@ -612,7 +612,13 @@ export const StoreManagementPanel = ({
       bdd: scenarioForm.bdd.trim(),
     };
 
-    const hasEmptyField = Object.values(trimmedScenario).some((value) => value === '');
+    const requiredFields = [
+      trimmedScenario.title,
+      trimmedScenario.category,
+      trimmedScenario.automation,
+      trimmedScenario.criticality,
+    ];
+    const hasEmptyField = requiredFields.some((value) => value === '');
     if (hasEmptyField) {
       setScenarioFormError('Preencha todos os campos obrigatórios.');
       return;
@@ -668,8 +674,8 @@ export const StoreManagementPanel = ({
       category: scenario.category,
       automation: scenario.automation,
       criticality: scenario.criticality,
-      observation: scenario.observation,
-      bdd: scenario.bdd,
+      observation: scenario.observation ?? '',
+      bdd: scenario.bdd ?? '',
     });
     setEditingScenarioId(scenario.id);
     setScenarioFormError(null);
@@ -776,8 +782,8 @@ export const StoreManagementPanel = ({
         category: scenario.category,
         automation: scenario.automation,
         criticality: scenario.criticality,
-        observation: scenario.observation,
-        bdd: scenario.bdd,
+        observation: scenario.observation?.trim() ?? '',
+        bdd: scenario.bdd?.trim() ?? '',
       }));
 
       const result = await storeService.importScenarios(
@@ -1143,14 +1149,12 @@ export const StoreManagementPanel = ({
                   label="Observação"
                   value={scenarioForm.observation}
                   onChange={handleScenarioFormChange('observation')}
-                  required
                 />
                 <TextArea
                   id="scenario-bdd"
                   label="BDD"
                   value={scenarioForm.bdd}
                   onChange={handleScenarioFormChange('bdd')}
-                  required
                 />
                 <div className="scenario-form-actions">
                   <Button type="submit" isLoading={isSavingScenario} loadingText="Salvando...">
@@ -1233,49 +1237,59 @@ export const StoreManagementPanel = ({
                     </tr>
                   </thead>
                   <tbody>
-                    {displayedScenarios.map((scenario) => (
-                      <tr key={scenario.id}>
-                        <td>{scenario.title}</td>
-                        <td>{scenario.category}</td>
-                        <td>{scenario.automation}</td>
-                        <td>
-                          <span
-                            className={`criticality-badge ${getCriticalityClassName(scenario.criticality)}`}
-                          >
-                            {scenario.criticality}
-                          </span>
-                        </td>
-                        <td className="scenario-observation">{scenario.observation}</td>
-                        <td className="scenario-bdd">
-                          <button
-                            type="button"
-                            className="scenario-copy-button"
-                            onClick={() => void handleCopyBdd(scenario.bdd)}
-                          >
-                            Copiar BDD
-                          </button>
-                        </td>
-                        {canUseScenarioForm && (
-                          <td className="scenario-actions">
-                            <button
-                              type="button"
-                              onClick={() => handleEditScenario(scenario)}
-                              disabled={isSavingScenario}
+                    {displayedScenarios.map((scenario) => {
+                      const hasBdd = Boolean(scenario.bdd?.trim());
+
+                      return (
+                        <tr key={scenario.id}>
+                          <td>{scenario.title}</td>
+                          <td>{scenario.category}</td>
+                          <td>{scenario.automation}</td>
+                          <td>
+                            <span
+                              className={`criticality-badge ${getCriticalityClassName(scenario.criticality)}`}
                             >
-                              Editar
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => void handleDeleteScenario(scenario)}
-                              disabled={isSavingScenario}
-                              className="scenario-delete"
-                            >
-                              Excluir
-                            </button>
+                              {scenario.criticality}
+                            </span>
                           </td>
-                        )}
-                      </tr>
-                    ))}
+                          <td className="scenario-observation">
+                            {scenario.observation?.trim() || '—'}
+                          </td>
+                          <td className="scenario-bdd">
+                            {hasBdd ? (
+                              <button
+                                type="button"
+                                className="scenario-copy-button"
+                                onClick={() => void handleCopyBdd(scenario.bdd)}
+                              >
+                                Copiar BDD
+                              </button>
+                            ) : (
+                              <span className="scenario-bdd--empty">—</span>
+                            )}
+                          </td>
+                          {canUseScenarioForm && (
+                            <td className="scenario-actions">
+                              <button
+                                type="button"
+                                onClick={() => handleEditScenario(scenario)}
+                                disabled={isSavingScenario}
+                              >
+                                Editar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void handleDeleteScenario(scenario)}
+                                disabled={isSavingScenario}
+                                className="scenario-delete"
+                              >
+                                Excluir
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               )}

@@ -54,14 +54,19 @@ export const validateScenarioImportPayload = (payload: StoreExportPayload) => {
       'category',
       'automation',
       'criticality',
-      'observation',
-      'bdd',
     ];
 
     requiredScenarioFields.forEach((field) => {
       const value = scenario[field];
       if (typeof value !== 'string' || !value.trim()) {
         throw new Error(`Cenário inválido. O campo "${field}" é obrigatório.`);
+      }
+    });
+
+    ['observation', 'bdd'].forEach((field) => {
+      const value = scenario[field as 'observation' | 'bdd'];
+      if (value !== undefined && typeof value !== 'string') {
+        throw new Error(`Cenário inválido. O campo "${field}" deve ser um texto.`);
       }
     });
   });

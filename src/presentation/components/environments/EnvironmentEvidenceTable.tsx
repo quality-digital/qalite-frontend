@@ -252,6 +252,7 @@ export const EnvironmentEvidenceTable = ({
       return;
     }
 
+    const scenarioCount = Math.max(scenarioEntries.length, 1);
     const payload = {
       organizationId,
       storeId: environment.storeId,
@@ -260,7 +261,7 @@ export const EnvironmentEvidenceTable = ({
       scenarioTitle: scenario.titulo,
       qaId: user?.uid ?? null,
       qaName: user?.displayName || user?.email || null,
-      totalMs: Date.now() - startedAt,
+      totalMs: (Date.now() - startedAt) / scenarioCount,
       executedAt: new Date().toISOString(),
     };
 

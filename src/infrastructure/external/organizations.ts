@@ -28,12 +28,14 @@ export interface CreateOrganizationPayload {
   name: string;
   description: string;
   logoFile?: File | null;
+  slackWebhookUrl?: string | null;
 }
 
 export interface UpdateOrganizationPayload {
   name: string;
   description: string;
   logoFile?: File | null;
+  slackWebhookUrl?: string | null;
 }
 
 export interface AddUserToOrganizationPayload {
@@ -73,11 +75,13 @@ export const createOrganization = async (
 ): Promise<Organization> => {
   const trimmedName = payload.name.trim();
   const trimmedDescription = payload.description.trim();
+  const slackWebhookUrl = payload.slackWebhookUrl?.trim() || null;
 
   const docRef = await addDoc(organizationsCollection, {
     name: trimmedName,
     description: trimmedDescription,
     logoUrl: null,
+    slackWebhookUrl,
     members: [],
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -112,6 +116,7 @@ export const updateOrganization = async (
   const updatePayload: Record<string, unknown> = {
     name: payload.name.trim(),
     description: payload.description.trim(),
+    slackWebhookUrl: payload.slackWebhookUrl?.trim() || null,
     updatedAt: serverTimestamp(),
   };
 
@@ -330,6 +335,7 @@ const mapOrganization = async (
     name: ((data?.name as string) ?? '').trim(),
     description: ((data?.description as string) ?? '').trim(),
     logoUrl: ((data?.logoUrl as string) ?? '').trim() || null,
+    slackWebhookUrl: ((data?.slackWebhookUrl as string) ?? '').trim() || null,
     members,
     memberIds,
     createdAt: timestampToDate(data?.createdAt),

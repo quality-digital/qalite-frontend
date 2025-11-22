@@ -10,6 +10,7 @@ export interface Organization {
   name: string;
   description: string;
   logoUrl: string | null;
+  slackWebhookUrl: string | null;
   members: OrganizationMember[];
   memberIds: string[];
   createdAt: Date | null;
@@ -20,12 +21,14 @@ export interface CreateOrganizationPayload {
   name: string;
   description: string;
   logoFile?: File | null;
+  slackWebhookUrl?: string | null;
 }
 
 export interface UpdateOrganizationPayload {
   name: string;
   description: string;
   logoFile?: File | null;
+  slackWebhookUrl?: string | null;
 }
 
 export interface AddUserToOrganizationPayload {

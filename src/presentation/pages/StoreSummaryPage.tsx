@@ -969,7 +969,13 @@ export const StoreSummaryPage = () => {
       bdd: scenarioForm.bdd.trim(),
     };
 
-    const hasEmptyField = Object.values(trimmedScenario).some((value) => value === '');
+    const requiredFields = [
+      trimmedScenario.title,
+      trimmedScenario.category,
+      trimmedScenario.automation,
+      trimmedScenario.criticality,
+    ];
+    const hasEmptyField = requiredFields.some((value) => value === '');
     if (hasEmptyField) {
       setScenarioFormError('Preencha todos os campos obrigatórios.');
       return;
@@ -1020,8 +1026,8 @@ export const StoreSummaryPage = () => {
       category: scenario.category,
       automation: scenario.automation,
       criticality: scenario.criticality,
-      observation: scenario.observation,
-      bdd: scenario.bdd,
+      observation: scenario.observation ?? '',
+      bdd: scenario.bdd ?? '',
     });
     setEditingScenarioId(scenario.id);
     setScenarioFormError(null);
@@ -1130,8 +1136,8 @@ export const StoreSummaryPage = () => {
         category: scenario.category,
         automation: scenario.automation,
         criticality: scenario.criticality,
-        observation: scenario.observation,
-        bdd: scenario.bdd,
+        observation: scenario.observation?.trim() ?? '',
+        bdd: scenario.bdd?.trim() ?? '',
       }));
 
       const result = await storeService.importScenarios(store.id, scenariosPayload, strategy);
@@ -1740,14 +1746,12 @@ export const StoreSummaryPage = () => {
                       label="Observação"
                       value={scenarioForm.observation}
                       onChange={handleScenarioFormChange('observation')}
-                      required
                     />
                     <TextArea
                       id="scenario-bdd"
                       label="BDD"
                       value={scenarioForm.bdd}
                       onChange={handleScenarioFormChange('bdd')}
-                      required
                     />
                     <div className="scenario-form-actions">
                       <Button type="submit" isLoading={isSavingScenario} loadingText="Salvando...">
@@ -1954,6 +1958,7 @@ export const StoreSummaryPage = () => {
                               <tbody>
                                 {orderedFilteredScenarios.map((scenario) => {
                                   const timingInfo = getScenarioTimingInfo(scenario.id);
+                                  const hasBdd = Boolean(scenario.bdd?.trim());
                                   return (
                                     <tr key={scenario.id}>
                                       <td>{scenario.title}</td>
@@ -1976,16 +1981,20 @@ export const StoreSummaryPage = () => {
                                         {timingInfo.label}
                                       </td>
                                       <td className="scenario-observation">
-                                        {scenario.observation}
+                                        {scenario.observation?.trim() || '—'}
                                       </td>
                                       <td className="scenario-bdd">
-                                        <button
-                                          type="button"
-                                          className="scenario-copy-button"
-                                          onClick={() => void handleCopyBdd(scenario.bdd)}
-                                        >
-                                          Copiar BDD
-                                        </button>
+                                        {hasBdd ? (
+                                          <button
+                                            type="button"
+                                            className="scenario-copy-button"
+                                            onClick={() => void handleCopyBdd(scenario.bdd)}
+                                          >
+                                            Copiar BDD
+                                          </button>
+                                        ) : (
+                                          <span className="scenario-bdd--empty">—</span>
+                                        )}
                                       </td>
                                       {canManageScenarios && (
                                         <td className="scenario-actions">
@@ -2078,8 +2087,7 @@ export const StoreSummaryPage = () => {
                             <div className="suite-preview suite-preview--cards">
                               <div className="suite-preview-description">
                                 <p className="suite-description">
-                                  {selectedSuitePreview?.description ||
-                                    'Sem descrição adicionada para esta suíte.'}
+                                  {selectedSuitePreview?.description || 'Suíte não tem descrição.'}
                                 </p>
                               </div>
                               <div className="table-scroll-area">

@@ -25,4 +25,5 @@ export interface EnvironmentSummaryPayload {
 export interface SlackTaskSummaryPayload {
   environmentSummary: EnvironmentSummaryPayload;
   message?: string;
+  webhookUrl?: string | null;
 }

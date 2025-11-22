@@ -25,6 +25,7 @@ interface StoreForm {
 interface OrganizationFormState {
   name: string;
   logoFile: File | null;
+  slackWebhookUrl: string;
 }
 
 const initialStoreForm: StoreForm = {
@@ -35,6 +36,7 @@ const initialStoreForm: StoreForm = {
 const initialOrganizationForm: OrganizationFormState = {
   name: '',
   logoFile: null,
+  slackWebhookUrl: '',
 };
 
 export const AdminStoresPage = () => {
@@ -216,6 +218,7 @@ export const AdminStoresPage = () => {
     setOrganizationForm({
       name: selectedOrganization.name,
       logoFile: null,
+      slackWebhookUrl: selectedOrganization.slackWebhookUrl ?? '',
     });
     setOrganizationError(null);
     setMemberEmail('');
@@ -296,6 +299,7 @@ export const AdminStoresPage = () => {
         name: trimmedName,
         description: (selectedOrganization.description ?? '').trim(),
         logoFile: organizationForm.logoFile,
+        slackWebhookUrl: organizationForm.slackWebhookUrl,
       });
 
       setOrganizations((previous) =>
@@ -668,6 +672,18 @@ export const AdminStoresPage = () => {
               }
               placeholder="Ex.: Squad de Onboarding"
               required
+            />
+            <TextInput
+              id="organization-slack-webhook"
+              label="Webhook do Slack"
+              value={organizationForm.slackWebhookUrl}
+              onChange={(event) =>
+                setOrganizationForm((previous) => ({
+                  ...previous,
+                  slackWebhookUrl: event.target.value,
+                }))
+              }
+              placeholder="https://hooks.slack.com/services/..."
             />
             <label className="upload-label" htmlFor="organization-update-logo">
               <span>Logo da organização</span>

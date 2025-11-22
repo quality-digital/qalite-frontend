@@ -175,6 +175,8 @@ export const EnvironmentPage = () => {
     urls,
     shareLinks,
   } = useEnvironmentDetails(environment, bugs);
+  const slackWebhookUrl = environmentOrganization?.slackWebhookUrl?.trim() || null;
+  const canSendSlackSummary = Boolean(slackWebhookUrl);
   const inviteParam = searchParams.get('invite');
   const shouldAutoJoinFromInvite = inviteParam === 'true' || inviteParam === '1';
 
@@ -275,6 +277,14 @@ export const EnvironmentPage = () => {
       return;
     }
 
+    if (!slackWebhookUrl) {
+      showToast({
+        type: 'error',
+        message: 'Configure um webhook do Slack na organização para enviar o resumo.',
+      });
+      return;
+    }
+
     setIsSendingSlackSummary(true);
 
     try {
@@ -288,6 +298,8 @@ export const EnvironmentPage = () => {
         bugsCount: bugs.length,
         participantProfiles,
       });
+
+      payload.webhookUrl = slackWebhookUrl;
 
       await slackService.sendTaskSummary(payload);
 
@@ -515,16 +527,18 @@ export const EnvironmentPage = () => {
               >
                 Copiar Markdown
               </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={handleSendSlackSummary}
-                disabled={isSendingSlackSummary}
-                isLoading={isSendingSlackSummary}
-                loadingText="Enviando..."
-              >
-                Enviar resumo para o Slack
-              </Button>
+              {canSendSlackSummary && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={handleSendSlackSummary}
+                  disabled={isSendingSlackSummary}
+                  isLoading={isSendingSlackSummary}
+                  loadingText="Enviando..."
+                >
+                  Enviar resumo para o Slack
+                </Button>
+              )}
             </div>
           </div>
         </div>

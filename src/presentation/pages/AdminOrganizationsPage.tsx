@@ -12,11 +12,13 @@ import { Modal } from '../components/Modal';
 interface OrganizationFormState {
   name: string;
   logoFile: File | null;
+  slackWebhookUrl: string;
 }
 
 const initialOrganizationForm: OrganizationFormState = {
   name: '',
   logoFile: null,
+  slackWebhookUrl: '',
 };
 
 export const AdminOrganizationsPage = () => {
@@ -82,6 +84,7 @@ export const AdminOrganizationsPage = () => {
         name: trimmedName,
         description: '',
         logoFile: organizationForm.logoFile,
+        slackWebhookUrl: organizationForm.slackWebhookUrl,
       });
       setOrganizations((previous) => [...previous, created]);
       showToast({ type: 'success', message: 'Nova organização criada.' });
@@ -176,6 +179,18 @@ export const AdminOrganizationsPage = () => {
             }
             placeholder="Ex.: Squad de Onboarding"
             required
+          />
+          <TextInput
+            id="organization-slack-webhook"
+            label="Webhook do Slack"
+            value={organizationForm.slackWebhookUrl}
+            onChange={(event) =>
+              setOrganizationForm((previous) => ({
+                ...previous,
+                slackWebhookUrl: event.target.value,
+              }))
+            }
+            placeholder="https://hooks.slack.com/services/..."
           />
           <label className="upload-label" htmlFor="organization-logo">
             <span>Logo da organização</span>

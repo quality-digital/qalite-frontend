@@ -30,6 +30,8 @@ const ACTION_FILTERS: { value: ActivityLog['action'] | 'all'; label: string }[] 
   { value: 'participation', label: 'Participação' },
 ];
 
+const INITIAL_LOG_PAGE_SIZE = 5;
+
 const formatLogDate = (value: Date | null): string => {
   if (!value) {
     return 'Data indisponível';
@@ -48,6 +50,7 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [actionFilter, setActionFilter] = useState<ActivityLog['action'] | 'all'>('all');
   const [entityFilter, setEntityFilter] = useState<ActivityLog['entityType'] | 'all'>('all');
+  const [visibleCount, setVisibleCount] = useState(INITIAL_LOG_PAGE_SIZE);
 
   useEffect(() => {
     let isMounted = true;
@@ -86,6 +89,15 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
           (entityFilter === 'all' || log.entityType === entityFilter),
       ),
     [actionFilter, entityFilter, logs],
+  );
+
+  useEffect(() => {
+    setVisibleCount(INITIAL_LOG_PAGE_SIZE);
+  }, [actionFilter, entityFilter, logs]);
+
+  const displayedLogs = useMemo(
+    () => filteredLogs.slice(0, visibleCount),
+    [filteredLogs, visibleCount],
   );
 
   const toggleCollapse = () => setIsCollapsed((prev) => !prev);
@@ -197,7 +209,7 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
 
           {!isLoading && filteredLogs.length > 0 && (
             <ul className="activity-log-list">
-              {filteredLogs.map((log) => (
+              {displayedLogs.map((log) => (
                 <li key={log.id} className="activity-log-item">
                   <div className="activity-log-item__timeline" aria-hidden>
                     <span className={`activity-log-dot activity-log-dot--${log.action}`} />
@@ -221,6 +233,18 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
                 </li>
               ))}
             </ul>
+          )}
+
+          {!isLoading && filteredLogs.length > displayedLogs.length && (
+            <div className="organization-log-panel__actions">
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={() => setVisibleCount((previous) => previous + INITIAL_LOG_PAGE_SIZE)}
+              >
+                Ver mais
+              </button>
+            </div>
           )}
         </>
       )}
