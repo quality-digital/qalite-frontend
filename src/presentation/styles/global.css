@@ -1347,6 +1347,12 @@ button.store-summary-highlight:focus-visible {
   gap: 0.25rem;
 }
 
+.collapsible-section__icon {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+}
+
 .collapsible-section__title {
   margin: 0;
   font-weight: 600;

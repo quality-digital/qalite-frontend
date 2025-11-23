@@ -247,6 +247,11 @@ export const AdminOrganizationsPage = () => {
           <div className="collapsible-section">
             <div className="collapsible-section__header">
               <div className="collapsible-section__titles">
+                <img
+                  className="collapsible-section__icon"
+                  src="https://img.icons8.com/external-tal-revivo-color-tal-revivo/48/external-slack-replace-email-text-messaging-and-instant-messaging-for-your-team-logo-color-tal-revivo.png"
+                  alt="Slack"
+                />
                 <p className="collapsible-section__title">Webhook do Slack</p>
                 <p className="collapsible-section__description">
                   Deseja cadastrar um webhook para enviar notificações automáticas no Slack?
@@ -290,6 +295,11 @@ export const AdminOrganizationsPage = () => {
           <div className="collapsible-section">
             <div className="collapsible-section__header">
               <div className="collapsible-section__titles">
+                <img
+                  className="collapsible-section__icon"
+                  src="https://img.icons8.com/color/48/browser-stack.png"
+                  alt="BrowserStack"
+                />
                 <p className="collapsible-section__title">Credenciais do BrowserStack</p>
                 <p className="collapsible-section__description">
                   Habilite para adicionar as credenciais usadas nas integrações com o BrowserStack.

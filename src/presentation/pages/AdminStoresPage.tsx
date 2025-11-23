@@ -77,6 +77,9 @@ export const AdminStoresPage = () => {
   const [isOrganizationModalOpen, setIsOrganizationModalOpen] = useState(false);
   const [organizationForm, setOrganizationForm] =
     useState<OrganizationFormState>(initialOrganizationForm);
+  const [isOrganizationSlackSectionOpen, setIsOrganizationSlackSectionOpen] = useState(false);
+  const [isOrganizationBrowserstackSectionOpen, setIsOrganizationBrowserstackSectionOpen] =
+    useState(false);
   const [organizationError, setOrganizationError] = useState<string | null>(null);
   const [memberEmail, setMemberEmail] = useState('');
   const [memberError, setMemberError] = useState<string | null>(null);
@@ -277,13 +280,21 @@ export const AdminStoresPage = () => {
       return;
     }
 
+    const slackWebhookUrl = selectedOrganization.slackWebhookUrl ?? '';
+    const browserstackUsername = selectedOrganization.browserstackCredentials?.username ?? '';
+    const browserstackAccessKey = selectedOrganization.browserstackCredentials?.accessKey ?? '';
+
     setOrganizationForm({
       name: selectedOrganization.name,
       logoFile: null,
-      slackWebhookUrl: selectedOrganization.slackWebhookUrl ?? '',
-      browserstackUsername: selectedOrganization.browserstackCredentials?.username ?? '',
-      browserstackAccessKey: selectedOrganization.browserstackCredentials?.accessKey ?? '',
+      slackWebhookUrl,
+      browserstackUsername,
+      browserstackAccessKey,
     });
+    setIsOrganizationSlackSectionOpen(Boolean(slackWebhookUrl.trim()));
+    setIsOrganizationBrowserstackSectionOpen(
+      Boolean(browserstackUsername.trim() || browserstackAccessKey.trim()),
+    );
     setOrganizationError(null);
     setMemberEmail('');
     setMemberError(null);
@@ -295,7 +306,37 @@ export const AdminStoresPage = () => {
     setOrganizationError(null);
     setMemberEmail('');
     setMemberError(null);
+    setIsOrganizationSlackSectionOpen(false);
+    setIsOrganizationBrowserstackSectionOpen(false);
     setOrganizationForm(initialOrganizationForm);
+  };
+
+  const toggleOrganizationSlackSection = () => {
+    setIsOrganizationSlackSectionOpen((previous) => {
+      const nextValue = !previous;
+
+      if (!nextValue) {
+        setOrganizationForm((form) => ({ ...form, slackWebhookUrl: '' }));
+      }
+
+      return nextValue;
+    });
+  };
+
+  const toggleOrganizationBrowserstackSection = () => {
+    setIsOrganizationBrowserstackSectionOpen((previous) => {
+      const nextValue = !previous;
+
+      if (!nextValue) {
+        setOrganizationForm((form) => ({
+          ...form,
+          browserstackUsername: '',
+          browserstackAccessKey: '',
+        }));
+      }
+
+      return nextValue;
+    });
   };
 
   const handleStoreSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -359,12 +400,20 @@ export const AdminStoresPage = () => {
 
     try {
       setIsSavingOrganization(true);
+      const slackWebhookUrl = isOrganizationSlackSectionOpen
+        ? organizationForm.slackWebhookUrl.trim()
+        : '';
+
+      const browserstackCredentials = isOrganizationBrowserstackSectionOpen
+        ? buildBrowserstackCredentialsPayload(organizationForm)
+        : null;
+
       const updated = await organizationService.update(selectedOrganization.id, {
         name: trimmedName,
         description: (selectedOrganization.description ?? '').trim(),
         logoFile: organizationForm.logoFile,
-        slackWebhookUrl: organizationForm.slackWebhookUrl,
-        browserstackCredentials: buildBrowserstackCredentialsPayload(organizationForm),
+        slackWebhookUrl,
+        browserstackCredentials,
       });
 
       setOrganizations((previous) =>
@@ -784,46 +833,116 @@ export const AdminStoresPage = () => {
               required
               dataTestId="organization-settings-name"
             />
-            <TextInput
-              id="organization-slack-webhook"
-              label="Webhook do Slack"
-              value={organizationForm.slackWebhookUrl}
-              onChange={(event) =>
-                setOrganizationForm((previous) => ({
-                  ...previous,
-                  slackWebhookUrl: event.target.value,
-                }))
-              }
-              placeholder="https://hooks.slack.com/services/..."
-              dataTestId="organization-settings-slack-webhook"
-            />
-            <TextInput
-              id="organization-browserstack-username"
-              label="Usuário do BrowserStack"
-              value={organizationForm.browserstackUsername}
-              onChange={(event) =>
-                setOrganizationForm((previous) => ({
-                  ...previous,
-                  browserstackUsername: event.target.value,
-                }))
-              }
-              placeholder="username"
-              dataTestId="organization-settings-browserstack-username"
-            />
-            <TextInput
-              id="organization-browserstack-access-key"
-              label="Access key do BrowserStack"
-              type="password"
-              value={organizationForm.browserstackAccessKey}
-              onChange={(event) =>
-                setOrganizationForm((previous) => ({
-                  ...previous,
-                  browserstackAccessKey: event.target.value,
-                }))
-              }
-              placeholder="access key"
-              dataTestId="organization-settings-browserstack-access-key"
-            />
+            <div className="collapsible-section">
+              <div className="collapsible-section__header">
+                <div className="collapsible-section__titles">
+                  <img
+                    className="collapsible-section__icon"
+                    src="https://img.icons8.com/external-tal-revivo-color-tal-revivo/48/external-slack-replace-email-text-messaging-and-instant-messaging-for-your-team-logo-color-tal-revivo.png"
+                    alt="Slack"
+                  />
+                  <p className="collapsible-section__title">Webhook do Slack</p>
+                  <p className="collapsible-section__description">
+                    Deseja cadastrar um webhook para enviar notificações automáticas no Slack?
+                  </p>
+                </div>
+                <label className="collapsible-section__toggle">
+                  <input
+                    type="checkbox"
+                    checked={isOrganizationSlackSectionOpen}
+                    onChange={toggleOrganizationSlackSection}
+                    aria-expanded={isOrganizationSlackSectionOpen}
+                    aria-controls="organization-settings-slack-section"
+                  />
+                  <span>{isOrganizationSlackSectionOpen ? 'Ativado' : 'Desativado'}</span>
+                </label>
+              </div>
+              {isOrganizationSlackSectionOpen && (
+                <div
+                  className="collapsible-section__body"
+                  id="organization-settings-slack-section"
+                  data-testid="organization-settings-slack-section"
+                >
+                  <TextInput
+                    id="organization-slack-webhook"
+                    label="Webhook do Slack"
+                    value={organizationForm.slackWebhookUrl}
+                    onChange={(event) =>
+                      setOrganizationForm((previous) => ({
+                        ...previous,
+                        slackWebhookUrl: event.target.value,
+                      }))
+                    }
+                    placeholder="https://hooks.slack.com/services/..."
+                    dataTestId="organization-settings-slack-webhook"
+                  />
+                  <p className="form-hint">
+                    Cole a URL gerada pelo aplicativo de Incoming Webhooks.
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="collapsible-section">
+              <div className="collapsible-section__header">
+                <div className="collapsible-section__titles">
+                  <img
+                    className="collapsible-section__icon"
+                    src="https://img.icons8.com/color/48/browser-stack.png"
+                    alt="BrowserStack"
+                  />
+                  <p className="collapsible-section__title">Credenciais do BrowserStack</p>
+                  <p className="collapsible-section__description">
+                    Habilite para adicionar as credenciais usadas nas integrações com o
+                    BrowserStack.
+                  </p>
+                </div>
+                <label className="collapsible-section__toggle">
+                  <input
+                    type="checkbox"
+                    checked={isOrganizationBrowserstackSectionOpen}
+                    onChange={toggleOrganizationBrowserstackSection}
+                    aria-expanded={isOrganizationBrowserstackSectionOpen}
+                    aria-controls="organization-settings-browserstack-section"
+                  />
+                  <span>{isOrganizationBrowserstackSectionOpen ? 'Ativado' : 'Desativado'}</span>
+                </label>
+              </div>
+              {isOrganizationBrowserstackSectionOpen && (
+                <div
+                  className="collapsible-section__body"
+                  id="organization-settings-browserstack-section"
+                  data-testid="organization-settings-browserstack-section"
+                >
+                  <TextInput
+                    id="organization-browserstack-username"
+                    label="Usuário do BrowserStack"
+                    value={organizationForm.browserstackUsername}
+                    onChange={(event) =>
+                      setOrganizationForm((previous) => ({
+                        ...previous,
+                        browserstackUsername: event.target.value,
+                      }))
+                    }
+                    placeholder="username"
+                    dataTestId="organization-settings-browserstack-username"
+                  />
+                  <TextInput
+                    id="organization-browserstack-access-key"
+                    label="Access key do BrowserStack"
+                    type="password"
+                    value={organizationForm.browserstackAccessKey}
+                    onChange={(event) =>
+                      setOrganizationForm((previous) => ({
+                        ...previous,
+                        browserstackAccessKey: event.target.value,
+                      }))
+                    }
+                    placeholder="access key"
+                    dataTestId="organization-settings-browserstack-access-key"
+                  />
+                </div>
+              )}
+            </div>
             <label className="upload-label" htmlFor="organization-update-logo">
               <span>Logo da organização</span>
               <span className="upload-trigger">Atualizar logo</span>
