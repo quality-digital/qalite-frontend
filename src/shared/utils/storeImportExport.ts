@@ -40,14 +40,19 @@ const escapeHtml = (value: string) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-export const openPdfFromMarkdown = (content: string, title: string) => {
-  const printableWindow = window.open('', '_blank');
+export const openPdfFromMarkdown = (
+  content: string,
+  title: string,
+  targetWindow?: Window | null,
+) => {
+  const printableWindow = targetWindow ?? window.open('', '_blank');
 
   if (!printableWindow) {
     throw new Error('Não foi possível abrir a visualização para exportar em PDF.');
   }
 
   const escapedContent = escapeHtml(content);
+  printableWindow.document.open();
   printableWindow.document.write(`
     <!doctype html>
     <html lang="pt-BR">

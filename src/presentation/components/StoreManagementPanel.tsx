@@ -39,6 +39,8 @@ interface StoreManagementPanelProps {
   showScenarioForm?: boolean;
 }
 
+type ExportFormat = 'json' | 'markdown' | 'pdf';
+
 const emptyScenarioForm: StoreScenarioInput = {
   title: '',
   category: '',
@@ -70,7 +72,7 @@ export const StoreManagementPanel = ({
   const [scenarioFormError, setScenarioFormError] = useState<string | null>(null);
   const [isSavingScenario, setIsSavingScenario] = useState(false);
   const [editingScenarioId, setEditingScenarioId] = useState<string | null>(null);
-  const [isExporting, setIsExporting] = useState(false);
+  const [exportingFormat, setExportingFormat] = useState<ExportFormat | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [categoryError, setCategoryError] = useState<string | null>(null);
@@ -716,13 +718,32 @@ export const StoreManagementPanel = ({
     }
   };
 
-  const handleExport = async (format: 'json' | 'markdown' | 'pdf') => {
+  const handleExport = async (format: ExportFormat) => {
     if (!selectedStore) {
       return;
     }
 
+    let pdfWindow: Window | null = null;
+
+    if (format === 'pdf') {
+      pdfWindow = window.open('', '_blank');
+
+      if (!pdfWindow) {
+        showToast({
+          type: 'error',
+          message: 'Não foi possível abrir a visualização para exportar em PDF.',
+        });
+        return;
+      }
+
+      pdfWindow.document.write(
+        "<p style='font-family: Inter, system-ui, -apple-system, sans-serif; padding: 24px;'>Gerando PDF...</p>",
+      );
+      pdfWindow.document.close();
+    }
+
     try {
-      setIsExporting(true);
+      setExportingFormat(format);
       const data = await storeService.exportStore(selectedStore.id);
       const baseFileName = `${selectedStore.name.replace(/\s+/g, '_')}_cenarios`;
 
@@ -737,7 +758,7 @@ export const StoreManagementPanel = ({
 
       if (format === 'pdf') {
         const markdown = buildScenarioMarkdown(data);
-        openPdfFromMarkdown(markdown, `${selectedStore.name} - Cenários`);
+        openPdfFromMarkdown(markdown, `${selectedStore.name} - Cenários`, pdfWindow);
       }
 
       showToast({ type: 'success', message: 'Exportação concluída com sucesso.' });
@@ -746,8 +767,9 @@ export const StoreManagementPanel = ({
       const message =
         error instanceof Error ? error.message : 'Não foi possível exportar os cenários.';
       showToast({ type: 'error', message });
+      pdfWindow?.close();
     } finally {
-      setIsExporting(false);
+      setExportingFormat(null);
     }
   };
 
@@ -965,7 +987,7 @@ export const StoreManagementPanel = ({
                     type="button"
                     variant="ghost"
                     onClick={() => void handleExport('json')}
-                    isLoading={isExporting}
+                    isLoading={exportingFormat === 'json'}
                     loadingText="Exportando..."
                   >
                     Exportar JSON
@@ -974,7 +996,7 @@ export const StoreManagementPanel = ({
                     type="button"
                     variant="ghost"
                     onClick={() => void handleExport('markdown')}
-                    isLoading={isExporting}
+                    isLoading={exportingFormat === 'markdown'}
                     loadingText="Exportando..."
                   >
                     Exportar Markdown
@@ -983,7 +1005,7 @@ export const StoreManagementPanel = ({
                     type="button"
                     variant="ghost"
                     onClick={() => void handleExport('pdf')}
-                    isLoading={isExporting}
+                    isLoading={exportingFormat === 'pdf'}
                     loadingText="Exportando..."
                   >
                     Exportar PDF

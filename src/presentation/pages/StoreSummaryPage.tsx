@@ -83,6 +83,8 @@ interface StoreHighlight {
   onClick?: () => void;
 }
 
+type ExportFormat = 'json' | 'markdown' | 'pdf';
+
 const emptyScenarioFilters: ScenarioFilters = {
   search: '',
   category: '',
@@ -161,9 +163,9 @@ export const StoreSummaryPage = () => {
   const suiteListRef = useRef<HTMLDivElement | null>(null);
   const scenarioFileInputRef = useRef<HTMLInputElement | null>(null);
   const suiteFileInputRef = useRef<HTMLInputElement | null>(null);
-  const [isExportingScenarios, setIsExportingScenarios] = useState(false);
+  const [exportingScenarioFormat, setExportingScenarioFormat] = useState<ExportFormat | null>(null);
   const [isImportingScenarios, setIsImportingScenarios] = useState(false);
-  const [isExportingSuites, setIsExportingSuites] = useState(false);
+  const [exportingSuiteFormat, setExportingSuiteFormat] = useState<ExportFormat | null>(null);
   const [isImportingSuites, setIsImportingSuites] = useState(false);
   const storeSiteInfo = useMemo(() => normalizeStoreSite(store?.site), [store?.site]);
   const [isStoreSettingsOpen, setIsStoreSettingsOpen] = useState(false);
@@ -1072,13 +1074,32 @@ export const StoreSummaryPage = () => {
     }
   };
 
-  const handleScenarioExport = async (format: 'json' | 'markdown' | 'pdf') => {
+  const handleScenarioExport = async (format: ExportFormat) => {
     if (!store) {
       return;
     }
 
+    let pdfWindow: Window | null = null;
+
+    if (format === 'pdf') {
+      pdfWindow = window.open('', '_blank');
+
+      if (!pdfWindow) {
+        showToast({
+          type: 'error',
+          message: 'Não foi possível abrir a visualização para exportar em PDF.',
+        });
+        return;
+      }
+
+      pdfWindow.document.write(
+        "<p style='font-family: Inter, system-ui, -apple-system, sans-serif; padding: 24px;'>Gerando PDF...</p>",
+      );
+      pdfWindow.document.close();
+    }
+
     try {
-      setIsExportingScenarios(true);
+      setExportingScenarioFormat(format);
       const data = await storeService.exportStore(store.id);
       const baseFileName = `${store.name.replace(/\s+/g, '_')}_cenarios`;
 
@@ -1093,7 +1114,7 @@ export const StoreSummaryPage = () => {
 
       if (format === 'pdf') {
         const markdown = buildScenarioMarkdown(data);
-        openPdfFromMarkdown(markdown, `${store.name} - Cenários`);
+        openPdfFromMarkdown(markdown, `${store.name} - Cenários`, pdfWindow);
       }
 
       showToast({ type: 'success', message: 'Exportação de cenários concluída.' });
@@ -1104,8 +1125,9 @@ export const StoreSummaryPage = () => {
           ? error.message
           : 'Não foi possível exportar os cenários desta loja.';
       showToast({ type: 'error', message });
+      pdfWindow?.close();
     } finally {
-      setIsExportingScenarios(false);
+      setExportingScenarioFormat(null);
     }
   };
 
@@ -1352,13 +1374,32 @@ export const StoreSummaryPage = () => {
     }
   };
 
-  const handleSuiteExport = async (format: 'json' | 'markdown' | 'pdf') => {
+  const handleSuiteExport = async (format: ExportFormat) => {
     if (!store) {
       return;
     }
 
+    let pdfWindow: Window | null = null;
+
+    if (format === 'pdf') {
+      pdfWindow = window.open('', '_blank');
+
+      if (!pdfWindow) {
+        showToast({
+          type: 'error',
+          message: 'Não foi possível abrir a visualização para exportar em PDF.',
+        });
+        return;
+      }
+
+      pdfWindow.document.write(
+        "<p style='font-family: Inter, system-ui, -apple-system, sans-serif; padding: 24px;'>Gerando PDF...</p>",
+      );
+      pdfWindow.document.close();
+    }
+
     try {
-      setIsExportingSuites(true);
+      setExportingSuiteFormat(format);
       const data = await storeService.exportSuites(store.id);
       const baseFileName = `${store.name.replace(/\s+/g, '_')}_suites`;
 
@@ -1373,7 +1414,7 @@ export const StoreSummaryPage = () => {
 
       if (format === 'pdf') {
         const markdown = buildSuiteMarkdown(data);
-        openPdfFromMarkdown(markdown, `${store.name} - Suítes`);
+        openPdfFromMarkdown(markdown, `${store.name} - Suítes`, pdfWindow);
       }
 
       showToast({ type: 'success', message: 'Exportação de suítes concluída.' });
@@ -1382,8 +1423,9 @@ export const StoreSummaryPage = () => {
       const message =
         error instanceof Error ? error.message : 'Não foi possível exportar as suítes desta loja.';
       showToast({ type: 'error', message });
+      pdfWindow?.close();
     } finally {
-      setIsExportingSuites(false);
+      setExportingSuiteFormat(null);
     }
   };
 
@@ -1839,7 +1881,7 @@ export const StoreSummaryPage = () => {
                             type="button"
                             variant="ghost"
                             onClick={() => void handleScenarioExport('json')}
-                            isLoading={isExportingScenarios}
+                            isLoading={exportingScenarioFormat === 'json'}
                             loadingText="Exportando..."
                           >
                             Exportar JSON
@@ -1848,7 +1890,7 @@ export const StoreSummaryPage = () => {
                             type="button"
                             variant="ghost"
                             onClick={() => void handleScenarioExport('markdown')}
-                            isLoading={isExportingScenarios}
+                            isLoading={exportingScenarioFormat === 'markdown'}
                             loadingText="Exportando..."
                           >
                             Exportar Markdown
@@ -1857,7 +1899,7 @@ export const StoreSummaryPage = () => {
                             type="button"
                             variant="ghost"
                             onClick={() => void handleScenarioExport('pdf')}
-                            isLoading={isExportingScenarios}
+                            isLoading={exportingScenarioFormat === 'pdf'}
                             loadingText="Exportando..."
                           >
                             Exportar PDF
@@ -1893,7 +1935,7 @@ export const StoreSummaryPage = () => {
                             type="button"
                             variant="ghost"
                             onClick={() => void handleSuiteExport('json')}
-                            isLoading={isExportingSuites}
+                            isLoading={exportingSuiteFormat === 'json'}
                             loadingText="Exportando..."
                           >
                             Exportar JSON
@@ -1902,7 +1944,7 @@ export const StoreSummaryPage = () => {
                             type="button"
                             variant="ghost"
                             onClick={() => void handleSuiteExport('markdown')}
-                            isLoading={isExportingSuites}
+                            isLoading={exportingSuiteFormat === 'markdown'}
                             loadingText="Exportando..."
                           >
                             Exportar Markdown
@@ -1911,7 +1953,7 @@ export const StoreSummaryPage = () => {
                             type="button"
                             variant="ghost"
                             onClick={() => void handleSuiteExport('pdf')}
-                            isLoading={isExportingSuites}
+                            isLoading={exportingSuiteFormat === 'pdf'}
                             loadingText="Exportando..."
                           >
                             Exportar PDF
