@@ -489,7 +489,7 @@ export const EnvironmentPage = () => {
                     Sair do ambiente
                   </Button>
                 )}
-                {hasEnteredEnvironment && (
+                {hasEnteredEnvironment && environment.status !== 'done' && (
                   <>
                     <Button
                       type="button"

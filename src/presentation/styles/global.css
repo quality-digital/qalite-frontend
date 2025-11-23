@@ -3487,6 +3487,18 @@ button.store-summary-highlight:focus-visible {
   min-height: auto;
 }
 
+.environment-kanban-archived-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0.9rem;
+  align-items: stretch;
+}
+
+.environment-kanban-archived-list .environment-card {
+  margin-bottom: 0;
+  height: 100%;
+}
+
 .environment-kanban-archive-toggle {
   border: none;
   background: transparent;
@@ -5062,9 +5074,11 @@ button.store-summary-highlight:focus-visible {
 }
 
 .browserstack-kanban__columns {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  display: flex;
   gap: 1.15rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  align-items: stretch;
 }
 
 .browserstack-kanban__column {
@@ -5079,6 +5093,8 @@ button.store-summary-highlight:focus-visible {
   transition:
     transform var(--transition-base),
     box-shadow var(--transition-base);
+  min-width: 320px;
+  flex: 0 0 320px;
 }
 
 .browserstack-kanban__column:hover {
@@ -5226,15 +5242,9 @@ button.store-summary-highlight:focus-visible {
   color: var(--color-text-secondary);
 }
 
-.browserstack-build__duration {
+.browserstack-build__duration-text {
   color: var(--color-text-secondary);
   font-weight: 700;
-  font-size: 0.9rem;
-}
-
-.browserstack-build__status-label {
-  margin: 0;
-  color: var(--color-text-secondary);
   font-size: 0.9rem;
 }
 
@@ -5303,7 +5313,7 @@ button.store-summary-highlight:focus-visible {
   box-shadow: var(--shadow-xs);
 }
 
-[data-theme='dark'] .browserstack-build__duration {
+[data-theme='dark'] .browserstack-build__duration-text {
   color: var(--color-text-primary);
 }
 

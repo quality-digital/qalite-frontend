@@ -159,14 +159,12 @@ export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: Browserstac
                             )}
                           </div>
                         </div>
-                        <span className="browserstack-build__duration">
-                          {formatDurationFromMs(build.duration ?? 0)}
-                        </span>
+                        {build.duration != null && (
+                          <span className="browserstack-build__duration-text">
+                            {formatDurationFromMs(build.duration)}
+                          </span>
+                        )}
                       </header>
-
-                      {build.status && (
-                        <p className="browserstack-build__status-label">{build.status}</p>
-                      )}
 
                       {build.publicUrl && (
                         <a
@@ -175,7 +173,7 @@ export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: Browserstac
                           target="_blank"
                           rel="noreferrer"
                         >
-                          Ver build no BrowserStack
+                          Ver build →
                         </a>
                       )}
                     </article>

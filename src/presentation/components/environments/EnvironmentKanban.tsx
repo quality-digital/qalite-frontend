@@ -315,7 +315,10 @@ export const EnvironmentKanban = ({
                   Clique em “Maximizar” para visualizar os ambientes arquivados.
                 </p>
               ) : (
-                <div id="environment-kanban-archived-list">
+                <div
+                  id="environment-kanban-archived-list"
+                  className="environment-kanban-archived-list"
+                >
                   {archivedEnvironments.map((environment) => (
                     <EnvironmentCard
                       key={environment.id}
