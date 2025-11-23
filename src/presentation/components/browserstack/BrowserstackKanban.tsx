@@ -8,38 +8,54 @@ interface BrowserstackKanbanProps {
   onRefresh?: () => void;
 }
 
-const STATUS_ORDER = ['queued', 'running', 'passed', 'failed', 'error', 'stopped'];
-const STATUS_META: Record<
-  string,
-  { label: string; tone: 'info' | 'success' | 'danger' | 'muted' }
-> = {
-  queued: { label: 'Na fila', tone: 'info' },
-  running: { label: 'Em execução', tone: 'info' },
-  passed: { label: 'Concluído', tone: 'success' },
-  failed: { label: 'Falhou', tone: 'danger' },
-  error: { label: 'Erro', tone: 'danger' },
-  stopped: { label: 'Interrompido', tone: 'muted' },
-  unknown: { label: 'Desconhecido', tone: 'muted' },
+type NormalizedStatus = keyof typeof STATUS_META;
+const STATUS_META = {
+  em_espera: { label: 'Em espera', tone: 'info' as const },
+  em_andamento: { label: 'Em andamento', tone: 'info' as const },
+  concluido: { label: 'Concluído', tone: 'success' as const },
+  falhou: { label: 'Falhou', tone: 'danger' as const },
+};
+
+const STATUS_ORDER: NormalizedStatus[] = ['em_espera', 'em_andamento', 'concluido', 'falhou'];
+
+const normalizeStatus = (status?: string): NormalizedStatus => {
+  const normalized = (status ?? '').trim().toLowerCase();
+
+  if (['running', 'in progress', 'em andamento'].includes(normalized)) {
+    return 'em_andamento';
+  }
+
+  if (['passed', 'success', 'done', 'concluido'].includes(normalized)) {
+    return 'concluido';
+  }
+
+  if (['failed', 'error', 'stopped', 'interrupted', 'falhou'].includes(normalized)) {
+    return 'falhou';
+  }
+
+  return 'em_espera';
 };
 
 export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: BrowserstackKanbanProps) => {
-  const groupedBuilds = builds.reduce<Record<string, BrowserstackBuild[]>>((accumulator, build) => {
-    const normalizedStatus = (build.status ?? 'unknown').trim().toLowerCase();
-    const status = normalizedStatus || 'unknown';
-    accumulator[status] = accumulator[status] ?? [];
-    accumulator[status].push(build);
-    return accumulator;
-  }, {});
+  const groupedBuilds = builds.reduce<Partial<Record<NormalizedStatus, BrowserstackBuild[]>>>(
+    (accumulator, build) => {
+      const status = normalizeStatus(build.status);
+      accumulator[status] = accumulator[status] ?? [];
+      accumulator[status]?.push(build);
+      return accumulator;
+    },
+    {},
+  );
 
-  const columns = getOrderedColumns(groupedBuilds);
+  const columns = getOrderedColumns();
   const totalBuilds = builds.length;
   const summary =
     totalBuilds === 0
       ? []
       : columns.map((status) => ({
           status,
-          label: STATUS_META[status]?.label ?? status,
-          tone: STATUS_META[status]?.tone ?? 'muted',
+          label: STATUS_META[status].label,
+          tone: STATUS_META[status].tone,
           value: groupedBuilds[status]?.length ?? 0,
         }));
 
@@ -100,7 +116,7 @@ export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: Browserstac
         <div className="browserstack-kanban__columns">
           {columns.map((status) => {
             const entries = groupedBuilds[status] ?? [];
-            const statusMeta = STATUS_META[status] ?? { label: status, tone: 'muted' };
+            const statusMeta = STATUS_META[status];
 
             return (
               <div key={status} className="browserstack-kanban__column">
@@ -128,35 +144,29 @@ export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: Browserstac
                       <header className="browserstack-build__header">
                         <div>
                           <h5 className="browserstack-build__title">
-                            {build.name || build.buildTag || build.id}
+                            {build.name || build.buildTag || 'Build sem nome'}
                           </h5>
-                          {build.buildTag && (
-                            <span className="badge badge--muted">{build.buildTag}</span>
-                          )}
+                          <div className="browserstack-build__meta-row">
+                            <span
+                              className={`browserstack-build__pill browserstack-build__pill--${statusMeta.tone}`}
+                            >
+                              {statusMeta.label}
+                            </span>
+                            {build.buildTag && (
+                              <span className="browserstack-build__pill browserstack-build__pill--muted">
+                                {build.buildTag}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <p className="browserstack-build__meta">
-                          {statusMeta.label ?? build.status ?? 'Status'}
-                        </p>
+                        <span className="browserstack-build__duration">
+                          {formatDurationFromMs(build.duration ?? 0)}
+                        </span>
                       </header>
 
-                      <dl className="browserstack-build__details">
-                        <div>
-                          <dt>Duração</dt>
-                          <dd>{formatDurationFromMs(build.duration ?? 0)}</dd>
-                        </div>
-                        <div>
-                          <dt>Status</dt>
-                          <dd>{build.status || 'Desconhecido'}</dd>
-                        </div>
-                        <div>
-                          <dt>Tag do build</dt>
-                          <dd>{build.buildTag || 'N/A'}</dd>
-                        </div>
-                        <div>
-                          <dt>Identificador</dt>
-                          <dd>{build.id}</dd>
-                        </div>
-                      </dl>
+                      {build.status && (
+                        <p className="browserstack-build__status-label">{build.status}</p>
+                      )}
 
                       {build.publicUrl && (
                         <a
@@ -180,21 +190,6 @@ export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: Browserstac
   );
 };
 
-const getOrderedColumns = (groupedBuilds: Record<string, BrowserstackBuild[]>): string[] => {
-  const existingStatuses = new Set(Object.keys(groupedBuilds));
-  const columns: string[] = [];
-
-  STATUS_ORDER.forEach((status) => {
-    if (existingStatuses.has(status)) {
-      columns.push(status);
-      existingStatuses.delete(status);
-    }
-  });
-
-  const remaining = Array.from(existingStatuses).sort((a, b) => a.localeCompare(b));
-  if (remaining.length > 0) {
-    columns.push(...remaining);
-  }
-
-  return columns.length > 0 ? columns : ['unknown'];
+const getOrderedColumns = (): NormalizedStatus[] => {
+  return [...STATUS_ORDER];
 };

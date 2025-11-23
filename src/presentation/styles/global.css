@@ -3558,6 +3558,45 @@ button.store-summary-highlight:focus-visible {
   gap: 0.15rem;
 }
 
+[data-theme='dark'] .environment-kanban-summary-item {
+  background: linear-gradient(135deg, rgba(78, 141, 255, 0.12), rgba(111, 66, 193, 0.12));
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+[data-theme='dark'] .environment-kanban-summary-value {
+  color: var(--color-text-primary);
+}
+
+[data-theme='dark'] .environment-kanban-summary-label {
+  color: var(--color-text-secondary);
+}
+
+[data-theme='dark'] .environment-kanban-column {
+  background: linear-gradient(175deg, rgba(11, 17, 35, 0.92), rgba(8, 15, 30, 0.95));
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+[data-theme='dark'] .environment-kanban-column-count {
+  background: rgba(111, 66, 193, 0.24);
+  color: var(--color-text-primary);
+}
+
+[data-theme='dark'] .environment-kanban-archive-toggle {
+  color: var(--color-text-secondary);
+}
+
+[data-theme='dark'] .environment-card {
+  background: linear-gradient(150deg, rgba(12, 21, 45, 0.9), rgba(7, 15, 34, 0.9));
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-xs);
+}
+
+[data-theme='dark'] .environment-card:hover {
+  box-shadow: var(--shadow-sm);
+}
+
 .environment-card-status-dot {
   padding: 0.2rem 0.85rem;
   border-radius: 999px;
@@ -5032,14 +5071,11 @@ button.store-summary-highlight:focus-visible {
   border: 1px solid var(--color-border-strong);
   border-radius: 16px;
   padding: 1rem;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(243, 247, 255, 0.95));
+  background: var(--color-surface);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  box-shadow: var(--shadow-md);
-  position: relative;
-  overflow: hidden;
-  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-sm);
   transition:
     transform var(--transition-base),
     box-shadow var(--transition-base);
@@ -5063,7 +5099,7 @@ button.store-summary-highlight:focus-visible {
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--color-text-primary);
-  background: rgba(55, 125, 255, 0.14);
+  background: rgba(55, 125, 255, 0.12);
   border-radius: 999px;
   padding: 0.25rem 0.75rem;
 }
@@ -5119,14 +5155,14 @@ button.store-summary-highlight:focus-visible {
 }
 
 .browserstack-build {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(243, 247, 255, 0.85));
+  background: var(--color-surface-alt);
   border: 1px solid var(--color-border);
   border-radius: 14px;
   padding: 0.85rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-xs);
   transition:
     transform var(--transition-base),
     box-shadow var(--transition-base);
@@ -5150,32 +5186,56 @@ button.store-summary-highlight:focus-visible {
   color: var(--color-text-primary);
 }
 
-.browserstack-build__meta {
-  margin: 0;
-  color: var(--color-text-secondary);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-size: 0.8rem;
+.browserstack-build__meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+  flex-wrap: wrap;
 }
 
-.browserstack-build__details {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 0.4rem 0.75rem;
-  margin: 0;
-}
-
-.browserstack-build__details dt {
-  font-size: 0.8rem;
-  color: var(--color-text-secondary);
-  margin-bottom: 0.1rem;
-}
-
-.browserstack-build__details dd {
-  margin: 0;
-  font-weight: 600;
+.browserstack-build__pill {
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  border: 1px solid var(--color-border);
+  background: rgba(55, 125, 255, 0.08);
   color: var(--color-text-primary);
+}
+
+.browserstack-build__pill--success {
+  background: rgba(0, 210, 165, 0.1);
+  border-color: rgba(0, 210, 165, 0.25);
+}
+
+.browserstack-build__pill--danger {
+  background: rgba(255, 77, 109, 0.08);
+  border-color: rgba(255, 77, 109, 0.2);
+}
+
+.browserstack-build__pill--info {
+  background: rgba(55, 125, 255, 0.12);
+  border-color: rgba(55, 125, 255, 0.25);
+}
+
+.browserstack-build__pill--muted {
+  background: rgba(107, 114, 128, 0.08);
+  border-color: rgba(107, 114, 128, 0.2);
+  color: var(--color-text-secondary);
+}
+
+.browserstack-build__duration {
+  color: var(--color-text-secondary);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.browserstack-build__status-label {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
 }
 
 [data-theme='dark'] .browserstack-kanban__summary-total,
@@ -5210,9 +5270,9 @@ button.store-summary-highlight:focus-visible {
 }
 
 [data-theme='dark'] .browserstack-kanban__column {
-  background: linear-gradient(180deg, rgba(9, 24, 56, 0.96), rgba(6, 16, 38, 0.94));
+  background: linear-gradient(180deg, rgba(11, 17, 35, 0.92), rgba(8, 15, 30, 0.94));
   border-color: var(--color-border-strong);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
 }
 
 [data-theme='dark'] .browserstack-kanban__column:hover {
@@ -5238,16 +5298,33 @@ button.store-summary-highlight:focus-visible {
 }
 
 [data-theme='dark'] .browserstack-build {
-  background: linear-gradient(145deg, rgba(13, 24, 52, 0.95), rgba(5, 14, 33, 0.9));
+  background: linear-gradient(160deg, rgba(13, 24, 52, 0.92), rgba(5, 14, 33, 0.9));
   border-color: var(--color-border-strong);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-xs);
 }
 
-[data-theme='dark'] .browserstack-build__details dt {
-  color: var(--color-text-muted);
+[data-theme='dark'] .browserstack-build__duration {
+  color: var(--color-text-primary);
 }
 
-[data-theme='dark'] .browserstack-build__details dd {
+[data-theme='dark'] .browserstack-build__pill {
+  background: rgba(78, 141, 255, 0.12);
+  border-color: rgba(78, 141, 255, 0.35);
+}
+
+[data-theme='dark'] .browserstack-build__pill--success {
+  background: rgba(58, 211, 161, 0.12);
+  border-color: rgba(58, 211, 161, 0.35);
+}
+
+[data-theme='dark'] .browserstack-build__pill--danger {
+  background: rgba(255, 123, 159, 0.12);
+  border-color: rgba(255, 123, 159, 0.3);
+}
+
+[data-theme='dark'] .browserstack-build__pill--muted {
+  background: rgba(148, 163, 184, 0.12);
+  border-color: rgba(148, 163, 184, 0.3);
   color: var(--color-text-primary);
 }
 
