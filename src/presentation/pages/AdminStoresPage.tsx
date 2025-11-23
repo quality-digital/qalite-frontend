@@ -12,6 +12,7 @@ import { useOrganizationBranding } from '../context/OrganizationBrandingContext'
 import { useAuth } from '../hooks/useAuth';
 import { Layout } from '../components/Layout';
 import { Button } from '../components/Button';
+import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { TextInput } from '../components/TextInput';
 import { Modal } from '../components/Modal';
 import { UserAvatar } from '../components/UserAvatar';
@@ -67,6 +68,12 @@ export const AdminStoresPage = () => {
   const [memberError, setMemberError] = useState<string | null>(null);
   const [isSavingOrganization, setIsSavingOrganization] = useState(false);
   const [isManagingMembers, setIsManagingMembers] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    message: string;
+    description?: string;
+    onConfirm: () => Promise<void> | void;
+  } | null>(null);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [storeAutomationCounts, setStoreAutomationCounts] = useState<Record<string, number>>({});
   const [isLoadingAutomationStats, setIsLoadingAutomationStats] = useState(false);
   const [browserstackBuilds, setBrowserstackBuilds] = useState<BrowserstackBuild[]>([]);
@@ -380,25 +387,11 @@ export const AdminStoresPage = () => {
     }
   };
 
-  const handleDeleteOrganization = async () => {
-    if (!selectedOrganization) {
-      return;
-    }
-
-    const confirmation = window.confirm(
-      `Deseja remover a organização "${selectedOrganization.name}"? Os usuários serão desvinculados.`,
-    );
-
-    if (!confirmation) {
-      return;
-    }
-
+  const handleDeleteOrganization = async (organization: Organization) => {
     try {
       setIsSavingOrganization(true);
-      await organizationService.delete(selectedOrganization.id);
-      const remainingOrganizations = organizations.filter(
-        (item) => item.id !== selectedOrganization.id,
-      );
+      await organizationService.delete(organization.id);
+      const remainingOrganizations = organizations.filter((item) => item.id !== organization.id);
       setOrganizations(remainingOrganizations);
       setStores([]);
       closeOrganizationModal();
@@ -477,14 +470,6 @@ export const AdminStoresPage = () => {
       return;
     }
 
-    const confirmation = window.confirm(
-      `Remover ${member.displayName || member.email} da organização ${selectedOrganization.name}?`,
-    );
-
-    if (!confirmation) {
-      return;
-    }
-
     try {
       setIsManagingMembers(true);
       await organizationService.removeUser({
@@ -512,6 +497,52 @@ export const AdminStoresPage = () => {
       showToast({ type: 'error', message });
     } finally {
       setIsManagingMembers(false);
+    }
+  };
+
+  const openDeleteOrganizationModal = () => {
+    if (!selectedOrganization) {
+      return;
+    }
+
+    setDeleteConfirmation({
+      message: `Você deseja mesmo excluir a organização "${selectedOrganization.name}"?`,
+      description: 'Os usuários serão desvinculados.',
+      onConfirm: () => handleDeleteOrganization(selectedOrganization),
+    });
+  };
+
+  const openRemoveMemberModal = (member: OrganizationMember) => {
+    if (!selectedOrganization) {
+      return;
+    }
+
+    setDeleteConfirmation({
+      message: `Você deseja mesmo excluir ${member.displayName || member.email}?`,
+      description: `O usuário será removido da organização ${selectedOrganization.name}.`,
+      onConfirm: () => handleRemoveMember(member),
+    });
+  };
+
+  const closeDeleteConfirmation = () => {
+    if (isConfirmingDelete) {
+      return;
+    }
+
+    setDeleteConfirmation(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmation) {
+      return;
+    }
+
+    try {
+      setIsConfirmingDelete(true);
+      await deleteConfirmation.onConfirm();
+    } finally {
+      setIsConfirmingDelete(false);
+      setDeleteConfirmation(null);
     }
   };
 
@@ -934,7 +965,7 @@ export const AdminStoresPage = () => {
                     <button
                       type="button"
                       className="member-list-remove"
-                      onClick={() => void handleRemoveMember(member)}
+                      onClick={() => openRemoveMemberModal(member)}
                       disabled={isManagingMembers}
                     >
                       Remover
@@ -953,7 +984,7 @@ export const AdminStoresPage = () => {
             <button
               type="button"
               className="link-danger"
-              onClick={() => void handleDeleteOrganization()}
+              onClick={openDeleteOrganizationModal}
               disabled={isSavingOrganization}
               data-testid="delete-organization-button"
             >
@@ -962,6 +993,14 @@ export const AdminStoresPage = () => {
           </div>
         </Modal>
       )}
+      <ConfirmDeleteModal
+        isOpen={Boolean(deleteConfirmation)}
+        message={deleteConfirmation?.message}
+        description={deleteConfirmation?.description}
+        onClose={closeDeleteConfirmation}
+        onConfirm={handleConfirmDelete}
+        isConfirming={isConfirmingDelete}
+      />
     </Layout>
   );
 };

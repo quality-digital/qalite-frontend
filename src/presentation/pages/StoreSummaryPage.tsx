@@ -22,6 +22,7 @@ import { useToast } from '../context/ToastContext';
 import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
 import { Layout } from '../components/Layout';
 import { Button } from '../components/Button';
+import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { TextInput } from '../components/TextInput';
 import { TextArea } from '../components/TextArea';
 import { SelectInput } from '../components/SelectInput';
@@ -173,6 +174,12 @@ export const StoreSummaryPage = () => {
   const [storeSettingsError, setStoreSettingsError] = useState<string | null>(null);
   const [isUpdatingStore, setIsUpdatingStore] = useState(false);
   const [isDeletingStore, setIsDeletingStore] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    message: string;
+    description?: string;
+    onConfirm: () => Promise<void> | void;
+  } | null>(null);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const {
     environments,
     isLoading: isLoadingEnvironments,
@@ -587,14 +594,6 @@ export const StoreSummaryPage = () => {
       return;
     }
 
-    const confirmation = window.confirm(
-      `Deseja remover a loja "${store.name}"? Esta ação não pode ser desfeita.`,
-    );
-
-    if (!confirmation) {
-      return;
-    }
-
     try {
       setIsDeletingStore(true);
       await storeService.delete(store.id);
@@ -906,13 +905,6 @@ export const StoreSummaryPage = () => {
       return;
     }
 
-    const confirmation = window.confirm(
-      `Deseja remover a categoria "${category.name}"? Essa ação não pode ser desfeita.`,
-    );
-    if (!confirmation) {
-      return;
-    }
-
     try {
       setDeletingCategoryId(category.id);
       await storeService.deleteCategory(store.id, category.id);
@@ -1041,11 +1033,6 @@ export const StoreSummaryPage = () => {
 
   const handleDeleteScenario = async (scenario: StoreScenario) => {
     if (!store || !canManageScenarios) {
-      return;
-    }
-
-    const confirmation = window.confirm(`Deseja remover o cenário "${scenario.title}"?`);
-    if (!confirmation) {
       return;
     }
 
@@ -1350,11 +1337,6 @@ export const StoreSummaryPage = () => {
       return;
     }
 
-    const confirmation = window.confirm(`Deseja remover a suíte "${suite.name}"?`);
-    if (!confirmation) {
-      return;
-    }
-
     try {
       setIsSavingSuite(true);
       await storeService.deleteSuite(store.id, suite.id);
@@ -1371,6 +1353,74 @@ export const StoreSummaryPage = () => {
       showToast({ type: 'error', message });
     } finally {
       setIsSavingSuite(false);
+    }
+  };
+
+  const openDeleteStoreModal = () => {
+    if (!store || !canManageStoreSettings) {
+      return;
+    }
+
+    setDeleteConfirmation({
+      message: `Você deseja mesmo excluir a loja "${store.name}"?`,
+      description: 'Esta ação não pode ser desfeita.',
+      onConfirm: handleRemoveStore,
+    });
+  };
+
+  const openDeleteCategoryModal = (category: StoreCategory) => {
+    if (!store) {
+      return;
+    }
+
+    setDeleteConfirmation({
+      message: `Você deseja mesmo excluir a categoria "${category.name}"?`,
+      description: 'Essa ação não pode ser desfeita.',
+      onConfirm: () => handleDeleteCategory(category),
+    });
+  };
+
+  const openDeleteScenarioModal = (scenario: StoreScenario) => {
+    if (!store || !canManageScenarios) {
+      return;
+    }
+
+    setDeleteConfirmation({
+      message: `Você deseja mesmo excluir o cenário "${scenario.title}"?`,
+      onConfirm: () => handleDeleteScenario(scenario),
+    });
+  };
+
+  const openDeleteSuiteModal = (suite: StoreSuite) => {
+    if (!store || !canManageScenarios) {
+      return;
+    }
+
+    setDeleteConfirmation({
+      message: `Você deseja mesmo excluir a suíte "${suite.name}"?`,
+      onConfirm: () => handleDeleteSuite(suite),
+    });
+  };
+
+  const closeDeleteConfirmation = () => {
+    if (isConfirmingDelete) {
+      return;
+    }
+
+    setDeleteConfirmation(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmation) {
+      return;
+    }
+
+    try {
+      setIsConfirmingDelete(true);
+      await deleteConfirmation.onConfirm();
+    } finally {
+      setIsConfirmingDelete(false);
+      setDeleteConfirmation(null);
     }
   };
 
@@ -1806,7 +1856,7 @@ export const StoreSummaryPage = () => {
                                       <Button
                                         type="button"
                                         variant="secondary"
-                                        onClick={() => handleDeleteCategory(category)}
+                                        onClick={() => openDeleteCategoryModal(category)}
                                         disabled={
                                           deletingCategoryId === category.id || isCategoryUsed
                                         }
@@ -2149,7 +2199,7 @@ export const StoreSummaryPage = () => {
                                           </button>
                                           <button
                                             type="button"
-                                            onClick={() => void handleDeleteScenario(scenario)}
+                                            onClick={() => openDeleteScenarioModal(scenario)}
                                             disabled={isSavingScenario}
                                             className="scenario-delete"
                                           >
@@ -2308,7 +2358,7 @@ export const StoreSummaryPage = () => {
                               <Button
                                 type="button"
                                 variant="ghost"
-                                onClick={() => void handleDeleteSuite(selectedSuitePreview)}
+                                onClick={() => openDeleteSuiteModal(selectedSuitePreview)}
                                 disabled={isSavingSuite}
                                 className="suite-delete"
                               >
@@ -2652,7 +2702,7 @@ export const StoreSummaryPage = () => {
           <button
             type="button"
             className="link-danger"
-            onClick={() => void handleRemoveStore()}
+            onClick={openDeleteStoreModal}
             disabled={isDeletingStore}
             data-testid="delete-store-button"
           >
@@ -2660,6 +2710,14 @@ export const StoreSummaryPage = () => {
           </button>
         </div>
       </Modal>
+      <ConfirmDeleteModal
+        isOpen={Boolean(deleteConfirmation)}
+        message={deleteConfirmation?.message}
+        description={deleteConfirmation?.description}
+        onClose={closeDeleteConfirmation}
+        onConfirm={handleConfirmDelete}
+        isConfirming={isConfirmingDelete}
+      />
     </>
   );
 };

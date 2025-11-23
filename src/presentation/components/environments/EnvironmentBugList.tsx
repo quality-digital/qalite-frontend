@@ -1,8 +1,11 @@
+import { useState } from 'react';
+
 import type { Environment } from '../../../domain/entities/environment';
 import type { EnvironmentBug } from '../../../domain/entities/environment';
 import { environmentService } from '../../../application/use-cases/EnvironmentUseCase';
 import { useToast } from '../../context/ToastContext';
 import { BUG_STATUS_LABEL } from '../../../shared/config/environmentLabels';
+import { ConfirmDeleteModal } from '../ConfirmDeleteModal';
 
 interface EnvironmentBugListProps {
   environment: Environment;
@@ -23,24 +26,41 @@ export const EnvironmentBugList = ({
 }: EnvironmentBugListProps) => {
   const { showToast } = useToast();
   const isReadOnly = Boolean(isLocked);
+  const [bugToDelete, setBugToDelete] = useState<EnvironmentBug | null>(null);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   const handleDelete = async (bug: EnvironmentBug) => {
     if (isReadOnly) {
       return;
     }
 
-    const shouldDelete = window.confirm('Deseja realmente remover este bug?');
-    if (!shouldDelete) {
-      return;
-    }
-
     try {
+      setIsConfirmingDelete(true);
       await environmentService.deleteBug(environment.id, bug.id);
       showToast({ type: 'success', message: 'Bug removido com sucesso.' });
     } catch (error) {
       console.error(error);
       showToast({ type: 'error', message: 'Não foi possível remover o bug.' });
+    } finally {
+      setIsConfirmingDelete(false);
+      setBugToDelete(null);
     }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!bugToDelete) {
+      return;
+    }
+
+    await handleDelete(bugToDelete);
+  };
+
+  const closeDeleteModal = () => {
+    if (isConfirmingDelete) {
+      return;
+    }
+
+    setBugToDelete(null);
   };
 
   const getScenarioLabel = (scenarioId: string | null) => {
@@ -95,7 +115,7 @@ export const EnvironmentBugList = ({
                     <button
                       type="button"
                       className="link-button link-button--danger"
-                      onClick={() => handleDelete(bug)}
+                      onClick={() => setBugToDelete(bug)}
                       disabled={isReadOnly}
                     >
                       Remover
@@ -107,6 +127,17 @@ export const EnvironmentBugList = ({
           </tbody>
         </table>
       )}
+      <ConfirmDeleteModal
+        isOpen={Boolean(bugToDelete)}
+        message={
+          bugToDelete
+            ? `Você deseja mesmo excluir o bug "${bugToDelete.title}"?`
+            : 'Você deseja mesmo excluir?'
+        }
+        onClose={closeDeleteModal}
+        onConfirm={handleConfirmDelete}
+        isConfirming={isConfirmingDelete}
+      />
     </div>
   );
 };

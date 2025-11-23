@@ -10,6 +10,7 @@ import type { StoreExportPayload } from '../../infrastructure/external/stores';
 import { storeService } from '../../application/use-cases/StoreUseCase';
 import { useToast } from '../context/ToastContext';
 import { Button } from './Button';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { TextInput } from './TextInput';
 import { TextArea } from './TextArea';
 import { SelectInput } from './SelectInput';
@@ -71,6 +72,12 @@ export const StoreManagementPanel = ({
   const [scenarioForm, setScenarioForm] = useState<StoreScenarioInput>(emptyScenarioForm);
   const [scenarioFormError, setScenarioFormError] = useState<string | null>(null);
   const [isSavingScenario, setIsSavingScenario] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    message: string;
+    description?: string;
+    onConfirm: () => Promise<void> | void;
+  } | null>(null);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [editingScenarioId, setEditingScenarioId] = useState<string | null>(null);
   const [exportingFormat, setExportingFormat] = useState<ExportFormat | null>(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -413,14 +420,6 @@ export const StoreManagementPanel = ({
       return;
     }
 
-    const confirmation = window.confirm(
-      `Deseja remover a loja "${store.name}"? Todos os cenários vinculados serão excluídos.`,
-    );
-
-    if (!confirmation) {
-      return;
-    }
-
     try {
       setIsSavingStore(true);
       await storeService.delete(store.id);
@@ -554,13 +553,6 @@ export const StoreManagementPanel = ({
       return;
     }
 
-    const confirmation = window.confirm(
-      `Deseja remover a categoria "${category.name}"? Essa ação não pode ser desfeita.`,
-    );
-    if (!confirmation) {
-      return;
-    }
-
     try {
       setDeletingCategoryId(category.id);
       await storeService.deleteCategory(selectedStore.id, category.id);
@@ -691,11 +683,6 @@ export const StoreManagementPanel = ({
       return;
     }
 
-    const confirmation = window.confirm(`Deseja remover o cenário "${scenario.title}"?`);
-    if (!confirmation) {
-      return;
-    }
-
     try {
       setIsSavingScenario(true);
       await storeService.deleteScenario(selectedStore.id, scenario.id);
@@ -715,6 +702,59 @@ export const StoreManagementPanel = ({
       showToast({ type: 'error', message });
     } finally {
       setIsSavingScenario(false);
+    }
+  };
+
+  const openDeleteStoreModal = (store: Store) => {
+    setDeleteConfirmation({
+      message: `Você deseja mesmo excluir a loja "${store.name}"?`,
+      description: 'Todos os cenários vinculados serão excluídos.',
+      onConfirm: () => handleDeleteStore(store),
+    });
+  };
+
+  const openDeleteCategoryModal = (category: StoreCategory) => {
+    if (!selectedStore) {
+      return;
+    }
+
+    setDeleteConfirmation({
+      message: `Você deseja mesmo excluir a categoria "${category.name}"?`,
+      description: 'Essa ação não pode ser desfeita.',
+      onConfirm: () => handleDeleteCategory(category),
+    });
+  };
+
+  const openDeleteScenarioModal = (scenario: StoreScenario) => {
+    if (!selectedStore || !canManageScenarios) {
+      return;
+    }
+
+    setDeleteConfirmation({
+      message: `Você deseja mesmo excluir o cenário "${scenario.title}"?`,
+      onConfirm: () => handleDeleteScenario(scenario),
+    });
+  };
+
+  const closeDeleteConfirmation = () => {
+    if (isConfirmingDelete) {
+      return;
+    }
+
+    setDeleteConfirmation(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmation) {
+      return;
+    }
+
+    try {
+      setIsConfirmingDelete(true);
+      await deleteConfirmation.onConfirm();
+    } finally {
+      setIsConfirmingDelete(false);
+      setDeleteConfirmation(null);
     }
   };
 
@@ -916,7 +956,7 @@ export const StoreManagementPanel = ({
                       </button>
                       <button
                         type="button"
-                        onClick={() => void handleDeleteStore(store)}
+                        onClick={() => openDeleteStoreModal(store)}
                         disabled={isSavingStore}
                         className="store-list-delete"
                       >
@@ -1183,7 +1223,7 @@ export const StoreManagementPanel = ({
                                   <Button
                                     type="button"
                                     variant="secondary"
-                                    onClick={() => handleDeleteCategory(category)}
+                                    onClick={() => openDeleteCategoryModal(category)}
                                     disabled={deletingCategoryId === category.id || isCategoryUsed}
                                     isLoading={deletingCategoryId === category.id}
                                     loadingText="Removendo..."
@@ -1341,7 +1381,7 @@ export const StoreManagementPanel = ({
                               </button>
                               <button
                                 type="button"
-                                onClick={() => void handleDeleteScenario(scenario)}
+                                onClick={() => openDeleteScenarioModal(scenario)}
                                 disabled={isSavingScenario}
                                 className="scenario-delete"
                               >
@@ -1370,6 +1410,14 @@ export const StoreManagementPanel = ({
           </div>
         )}
       </div>
+      <ConfirmDeleteModal
+        isOpen={Boolean(deleteConfirmation)}
+        message={deleteConfirmation?.message}
+        description={deleteConfirmation?.description}
+        onClose={closeDeleteConfirmation}
+        onConfirm={handleConfirmDelete}
+        isConfirming={isConfirmingDelete}
+      />
     </section>
   );
 };
