@@ -9,7 +9,6 @@ on:
 jobs:
   trigger:
     runs-on: ubuntu-latest
-
     steps:
       - name: Trigger tests
         uses: peter-evans/repository-dispatch@v3
