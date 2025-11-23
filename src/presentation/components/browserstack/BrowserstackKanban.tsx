@@ -1,5 +1,4 @@
 import type { BrowserstackBuild } from '../../../domain/entities/browserstack';
-import { formatDurationFromMs } from '../../../shared/utils/time';
 import { Button } from '../Button';
 
 interface BrowserstackKanbanProps {
@@ -49,21 +48,11 @@ export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: Browserstac
 
   const columns = getOrderedColumns();
   const totalBuilds = builds.length;
-  const summary =
-    totalBuilds === 0
-      ? []
-      : columns.map((status) => ({
-          status,
-          label: STATUS_META[status].label,
-          tone: STATUS_META[status].tone,
-          value: groupedBuilds[status]?.length ?? 0,
-        }));
 
   return (
     <section className="browserstack-kanban">
       <header className="browserstack-kanban__header">
         <div>
-          <span className="badge">Execuções</span>
           <div className="browserstack-kanban__title-row">
             <img
               className="browserstack-kanban__brand"
@@ -72,10 +61,6 @@ export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: Browserstac
             />
             <h3 className="section-title">BrowserStack</h3>
           </div>
-          <p className="browserstack-kanban__description">
-            Visualize as execuções agrupadas por status e acesse o relatório público de cada build
-            usando suas credenciais pessoais configuradas no perfil.
-          </p>
         </div>
 
         {onRefresh && (
@@ -84,24 +69,6 @@ export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: Browserstac
           </Button>
         )}
       </header>
-
-      <div className="browserstack-kanban__summary" aria-live="polite">
-        <div className="browserstack-kanban__summary-total">
-          <span className="browserstack-kanban__summary-value">{totalBuilds}</span>
-          <span className="browserstack-kanban__summary-label">Execuções encontradas</span>
-        </div>
-        <div className="browserstack-kanban__summary-grid">
-          {summary.map((item) => (
-            <div
-              key={item.status}
-              className={`browserstack-kanban__summary-chip browserstack-kanban__summary-chip--${item.tone}`}
-            >
-              <span className="browserstack-kanban__summary-value">{item.value}</span>
-              <span className="browserstack-kanban__summary-label">{item.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {isLoading ? (
         <p className="section-subtitle">Buscando execuções no BrowserStack...</p>
@@ -159,11 +126,6 @@ export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: Browserstac
                             )}
                           </div>
                         </div>
-                        {build.duration != null && (
-                          <span className="browserstack-build__duration-text">
-                            {formatDurationFromMs(build.duration)}
-                          </span>
-                        )}
                       </header>
 
                       {build.publicUrl && (
