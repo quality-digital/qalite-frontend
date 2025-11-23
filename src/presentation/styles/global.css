@@ -1324,6 +1324,63 @@ button.store-summary-highlight:focus-visible {
   gap: 1.25rem;
 }
 
+.collapsible-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  background: var(--color-surface-alt);
+}
+
+.collapsible-section__header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.collapsible-section__titles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.collapsible-section__title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.collapsible-section__description {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.collapsible-section__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.collapsible-section__toggle input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--color-primary);
+}
+
+.collapsible-section__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
 .form-message {
   margin: 0;
   padding: 0.85rem 1rem;
