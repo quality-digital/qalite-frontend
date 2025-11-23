@@ -5,12 +5,9 @@ export interface BrowserstackCredentials {
 
 export interface BrowserstackBuild {
   id: string;
-  name?: string;
-  status?: string;
-  duration?: number;
-  buildTag?: string;
-  publicUrl?: string;
-  devices?: unknown[];
-  createdAt?: string;
-  startedAt?: string;
+  name: string;
+  status: string;
+  duration: number;
+  buildTag: string;
+  publicUrl: string;
 }

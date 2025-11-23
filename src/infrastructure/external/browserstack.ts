@@ -49,15 +49,40 @@ export const listBrowserstackBuilds = async (
 };
 
 const parseBuildsResponse = (data: unknown): BrowserstackBuild[] => {
-  if (Array.isArray(data)) {
-    return data;
+  const builds: unknown[] | undefined = Array.isArray(data)
+    ? data
+    : Array.isArray((data as { builds?: unknown })?.builds)
+      ? (data as { builds: unknown[] }).builds
+      : undefined;
+
+  if (!builds) {
+    return [];
   }
 
-  if (data && typeof data === 'object' && Array.isArray((data as { builds?: unknown }).builds)) {
-    return (data as { builds: BrowserstackBuild[] }).builds;
+  return builds
+    .map((build) => sanitizeBuild(build))
+    .filter((build): build is BrowserstackBuild => Boolean(build?.id));
+};
+
+const sanitizeBuild = (build: unknown): BrowserstackBuild | null => {
+  if (!build || typeof build !== 'object') {
+    return null;
   }
 
-  return [];
+  const { id, name, status, duration, buildTag, publicUrl } = build as Record<string, unknown>;
+
+  if (typeof id !== 'string' || id.trim().length === 0) {
+    return null;
+  }
+
+  return {
+    id,
+    name: typeof name === 'string' ? name : '',
+    status: typeof status === 'string' ? status : 'unknown',
+    duration: typeof duration === 'number' && Number.isFinite(duration) ? duration : 0,
+    buildTag: typeof buildTag === 'string' ? buildTag : '',
+    publicUrl: typeof publicUrl === 'string' ? publicUrl : '',
+  };
 };
 
 const extractErrorMessage = async (response: Response): Promise<string | null> => {

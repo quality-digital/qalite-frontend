@@ -1,5 +1,5 @@
 import type { BrowserstackBuild } from '../../../domain/entities/browserstack';
-import { formatDateTime, formatDurationFromMs } from '../../../shared/utils/time';
+import { formatDurationFromMs } from '../../../shared/utils/time';
 import { Button } from '../Button';
 
 interface BrowserstackKanbanProps {
@@ -24,8 +24,8 @@ const STATUS_META: Record<
 
 export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: BrowserstackKanbanProps) => {
   const groupedBuilds = builds.reduce<Record<string, BrowserstackBuild[]>>((accumulator, build) => {
-    const normalizedStatus = (build.status ?? 'unknown').toLowerCase();
-    const status = normalizedStatus.trim() || 'unknown';
+    const normalizedStatus = (build.status ?? 'unknown').trim().toLowerCase();
+    const status = normalizedStatus || 'unknown';
     accumulator[status] = accumulator[status] ?? [];
     accumulator[status].push(build);
     return accumulator;
@@ -120,7 +120,7 @@ export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: Browserstac
                       <header className="browserstack-build__header">
                         <div>
                           <h5 className="browserstack-build__title">
-                            {build.name ?? build.buildTag ?? build.id}
+                            {build.name || build.buildTag || build.id}
                           </h5>
                           {build.buildTag && (
                             <span className="badge badge--muted">{build.buildTag}</span>
@@ -137,16 +137,16 @@ export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: Browserstac
                           <dd>{formatDurationFromMs(build.duration ?? 0)}</dd>
                         </div>
                         <div>
-                          <dt>Iniciado</dt>
-                          <dd>{formatDateTime(build.startedAt)}</dd>
+                          <dt>Status</dt>
+                          <dd>{build.status || 'Desconhecido'}</dd>
                         </div>
                         <div>
-                          <dt>Criado</dt>
-                          <dd>{formatDateTime(build.createdAt)}</dd>
+                          <dt>Tag do build</dt>
+                          <dd>{build.buildTag || 'N/A'}</dd>
                         </div>
                         <div>
-                          <dt>Dispositivos</dt>
-                          <dd>{Array.isArray(build.devices) ? build.devices.length : 0}</dd>
+                          <dt>Identificador</dt>
+                          <dd>{build.id}</dd>
                         </div>
                       </dl>
 
