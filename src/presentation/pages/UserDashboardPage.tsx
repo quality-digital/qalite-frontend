@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../hooks/useAuth';
@@ -8,17 +8,24 @@ import { EmptyState } from '../components/EmptyState';
 import { useOrganizationStores } from '../hooks/useOrganizationStores';
 import { UserAvatar } from '../components/UserAvatar';
 import { SimpleBarChart } from '../components/SimpleBarChart';
+import { BrowserstackKanban } from '../components/browserstack/BrowserstackKanban';
 import { BarChartIcon, SparklesIcon, StorefrontIcon, UsersGroupIcon } from '../components/icons';
+import { useToast } from '../context/ToastContext';
 import { storeService } from '../../application/use-cases/StoreUseCase';
+import { browserstackService } from '../../application/use-cases/BrowserstackUseCase';
+import type { BrowserstackBuild } from '../../domain/entities/browserstack';
 import { isAutomatedScenario } from '../../shared/utils/automation';
 
 export const UserDashboardPage = () => {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const { user, isInitializing } = useAuth();
   const organizationId = user?.organizationId ?? null;
   const { organization, stores, isLoading, status } = useOrganizationStores(organizationId);
   const [storeAutomationCounts, setStoreAutomationCounts] = useState<Record<string, number>>({});
   const [isLoadingAutomationStats, setIsLoadingAutomationStats] = useState(false);
+  const [browserstackBuilds, setBrowserstackBuilds] = useState<BrowserstackBuild[]>([]);
+  const [isLoadingBrowserstack, setIsLoadingBrowserstack] = useState(false);
 
   useEffect(() => {
     if (isInitializing) {
@@ -126,6 +133,44 @@ export const UserDashboardPage = () => {
       })),
     [stores, storeAutomationCounts],
   );
+
+  const hasBrowserstackCredentials = useMemo(
+    () =>
+      Boolean(
+        organization?.browserstackCredentials?.username &&
+          organization?.browserstackCredentials?.accessKey,
+      ),
+    [
+      organization?.browserstackCredentials?.accessKey,
+      organization?.browserstackCredentials?.username,
+    ],
+  );
+
+  const loadBrowserstackBuilds = useCallback(async () => {
+    if (!hasBrowserstackCredentials || !organization?.browserstackCredentials) {
+      setBrowserstackBuilds([]);
+      return;
+    }
+
+    try {
+      setIsLoadingBrowserstack(true);
+      const builds = await browserstackService.listBuilds(organization.browserstackCredentials);
+      setBrowserstackBuilds(builds);
+    } catch (error) {
+      console.error(error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível carregar as execuções do BrowserStack.';
+      showToast({ type: 'error', message });
+    } finally {
+      setIsLoadingBrowserstack(false);
+    }
+  }, [hasBrowserstackCredentials, organization?.browserstackCredentials, showToast]);
+
+  useEffect(() => {
+    void loadBrowserstackBuilds();
+  }, [loadBrowserstackBuilds]);
 
   return (
     <Layout>
@@ -244,6 +289,27 @@ export const UserDashboardPage = () => {
           </div>
         )}
       </section>
+
+      {organization && (
+        <section className="page-container">
+          {hasBrowserstackCredentials ? (
+            <BrowserstackKanban
+              builds={browserstackBuilds}
+              isLoading={isLoadingBrowserstack}
+              onRefresh={loadBrowserstackBuilds}
+            />
+          ) : (
+            <div className="card">
+              <span className="badge">BrowserStack</span>
+              <h2 className="section-title">Acompanhe execuções automatizadas</h2>
+              <p className="section-subtitle">
+                Solicite a um administrador que conecte o BrowserStack nas configurações da
+                organização para visualizar o quadro Kanban de execuções.
+              </p>
+            </div>
+          )}
+        </section>
+      )}
     </Layout>
   );
 };

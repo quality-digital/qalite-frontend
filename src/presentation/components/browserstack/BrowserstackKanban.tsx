@@ -9,14 +9,17 @@ interface BrowserstackKanbanProps {
 }
 
 const STATUS_ORDER = ['queued', 'running', 'passed', 'failed', 'error', 'stopped'];
-const STATUS_LABEL: Record<string, string> = {
-  queued: 'Na fila',
-  running: 'Em execução',
-  passed: 'Concluído',
-  failed: 'Falhou',
-  error: 'Erro',
-  stopped: 'Interrompido',
-  unknown: 'Desconhecido',
+const STATUS_META: Record<
+  string,
+  { label: string; tone: 'info' | 'success' | 'danger' | 'muted' }
+> = {
+  queued: { label: 'Na fila', tone: 'info' },
+  running: { label: 'Em execução', tone: 'info' },
+  passed: { label: 'Concluído', tone: 'success' },
+  failed: { label: 'Falhou', tone: 'danger' },
+  error: { label: 'Erro', tone: 'danger' },
+  stopped: { label: 'Interrompido', tone: 'muted' },
+  unknown: { label: 'Desconhecido', tone: 'muted' },
 };
 
 export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: BrowserstackKanbanProps) => {
@@ -30,6 +33,15 @@ export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: Browserstac
 
   const columns = getOrderedColumns(groupedBuilds);
   const totalBuilds = builds.length;
+  const summary =
+    totalBuilds === 0
+      ? []
+      : columns.map((status) => ({
+          status,
+          label: STATUS_META[status]?.label ?? status,
+          tone: STATUS_META[status]?.tone ?? 'muted',
+          value: groupedBuilds[status]?.length ?? 0,
+        }));
 
   return (
     <section className="browserstack-kanban">
@@ -49,6 +61,24 @@ export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: Browserstac
         )}
       </header>
 
+      <div className="browserstack-kanban__summary" aria-live="polite">
+        <div className="browserstack-kanban__summary-total">
+          <span className="browserstack-kanban__summary-value">{totalBuilds}</span>
+          <span className="browserstack-kanban__summary-label">Execuções encontradas</span>
+        </div>
+        <div className="browserstack-kanban__summary-grid">
+          {summary.map((item) => (
+            <div
+              key={item.status}
+              className={`browserstack-kanban__summary-chip browserstack-kanban__summary-chip--${item.tone}`}
+            >
+              <span className="browserstack-kanban__summary-value">{item.value}</span>
+              <span className="browserstack-kanban__summary-label">{item.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {isLoading ? (
         <p className="section-subtitle">Buscando execuções no BrowserStack...</p>
       ) : totalBuilds === 0 ? (
@@ -62,12 +92,25 @@ export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: Browserstac
         <div className="browserstack-kanban__columns">
           {columns.map((status) => {
             const entries = groupedBuilds[status] ?? [];
-            const title = STATUS_LABEL[status] ?? status;
+            const statusMeta = STATUS_META[status] ?? { label: status, tone: 'muted' };
 
             return (
               <div key={status} className="browserstack-kanban__column">
                 <div className="browserstack-kanban__column-header">
-                  <h4>{title}</h4>
+                  <div className="browserstack-kanban__column-title">
+                    <span
+                      className={`browserstack-kanban__status-dot browserstack-kanban__status-dot--${statusMeta.tone}`}
+                      aria-hidden
+                    />
+                    <div>
+                      <h4>{statusMeta.label}</h4>
+                      <p className="browserstack-kanban__column-subtitle">
+                        {entries.length > 0
+                          ? 'Cards ordenados pela criação mais recente'
+                          : 'Sem execuções neste status'}
+                      </p>
+                    </div>
+                  </div>
                   <span className="browserstack-kanban__column-count">{entries.length}</span>
                 </div>
 
@@ -84,7 +127,7 @@ export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: Browserstac
                           )}
                         </div>
                         <p className="browserstack-build__meta">
-                          {STATUS_LABEL[status] ?? build.status ?? 'Status'}
+                          {statusMeta.label ?? build.status ?? 'Status'}
                         </p>
                       </header>
 
