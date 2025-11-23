@@ -48,7 +48,13 @@ export const DeleteEnvironmentModal = ({
         <strong>{environment?.identificador ?? 'sem identificador'}</strong>?
       </p>
       <div className="modal-actions">
-        <Button type="button" variant="ghost" onClick={onClose} disabled={isDeleting}>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onClose}
+          disabled={isDeleting}
+          data-testid="cancel-delete-environment"
+        >
           Cancelar
         </Button>
         <Button
@@ -56,6 +62,7 @@ export const DeleteEnvironmentModal = ({
           onClick={handleDelete}
           isLoading={isDeleting}
           loadingText="Excluindo..."
+          data-testid="confirm-delete-environment"
         >
           Confirmar exclusão
         </Button>

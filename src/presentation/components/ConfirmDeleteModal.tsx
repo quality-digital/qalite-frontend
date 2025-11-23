@@ -25,10 +25,22 @@ export const ConfirmDeleteModal = ({
   <Modal isOpen={isOpen} onClose={onClose} title="Confirmar exclusão" description={description}>
     <p>{message}</p>
     <div className="modal-actions">
-      <Button type="button" variant="ghost" onClick={onClose} disabled={isConfirming}>
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={onClose}
+        disabled={isConfirming}
+        data-testid="cancel-delete-button"
+      >
         {cancelText}
       </Button>
-      <Button type="button" onClick={onConfirm} isLoading={isConfirming} loadingText="Excluindo...">
+      <Button
+        type="button"
+        onClick={onConfirm}
+        isLoading={isConfirming}
+        loadingText="Excluindo..."
+        data-testid="confirm-delete-button"
+      >
         {confirmText}
       </Button>
     </div>
