@@ -2844,20 +2844,20 @@ button.store-summary-highlight:focus-visible {
 }
 
 .suite-scenario-table-wrapper {
-  max-height: 360px;
-  border-radius: 1.5rem;
-  padding: 0.35rem;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
+  max-height: none;
+  border-radius: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
 }
 
 .suite-scenario-table-wrapper.table-scroll-area {
-  overflow-y: auto;
-  padding-bottom: 0.35rem;
+  overflow-y: visible;
+  padding-bottom: 0.5rem;
 }
 
 .suite-scenario-table {
-  min-width: 640px;
+  min-width: 720px;
 }
 
 .suite-scenario-table tr.is-selected td {
