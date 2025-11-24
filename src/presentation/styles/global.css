@@ -158,13 +158,13 @@ a.text-link:hover {
 }
 
 .app-brand-logo {
-  width: 40px;
-  height: 40px;
+  width: 52px;
+  height: 52px;
   object-fit: contain;
   border-radius: 0.75rem;
   background: #fff;
   border: 1px solid var(--color-border);
-  padding: 0.35rem;
+  padding: 0.5rem;
 }
 
 .app-brand-name {
@@ -416,12 +416,12 @@ a.text-link:hover {
 }
 
 .auth-page__brand-logo {
-  width: 42px;
-  height: 42px;
+  width: 60px;
+  height: 60px;
   border-radius: 0.9rem;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(147, 197, 253, 0.35));
   border: 1px solid rgba(255, 255, 255, 0.25);
-  padding: 0.4rem;
+  padding: 0.6rem;
   box-shadow: var(--shadow-sm);
 }
 
@@ -432,25 +432,19 @@ a.text-link:hover {
 .auth-page__panel-brand {
   display: flex;
   justify-content: center;
-}
-
-.auth-page__brand--panel {
   background: linear-gradient(135deg, rgba(5, 23, 60, 0.04), rgba(29, 94, 216, 0.08));
   border: 1px solid var(--color-border);
   border-radius: 1.1rem;
   padding: 0.9rem 1.1rem;
-  color: var(--color-text-primary);
-  text-transform: none;
-  letter-spacing: normal;
   box-shadow: var(--shadow-sm);
 }
 
-.auth-page__brand-logo--panel {
-  width: 56px;
-  height: 56px;
+.auth-page__panel-logo {
+  width: 72px;
+  height: 72px;
   background: linear-gradient(135deg, rgba(0, 63, 145, 0.06), rgba(0, 148, 255, 0.12));
   border: 1px solid var(--color-border);
-  padding: 0.5rem;
+  padding: 0.7rem;
 }
 
 .auth-page__brand-text {

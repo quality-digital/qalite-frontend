@@ -5,8 +5,9 @@ import { useOrganizationBranding } from '../context/OrganizationBrandingContext'
 import { Button } from './Button';
 import { UserAvatar } from './UserAvatar';
 import { LogoutIcon, UserIcon } from './icons';
+import qliteLogo from '../assets/logo.png';
 
-const DEFAULT_LOGO_PATH = '/logo.png';
+const DEFAULT_LOGO_PATH = qliteLogo;
 
 interface LayoutProps {
   children: ReactNode;
