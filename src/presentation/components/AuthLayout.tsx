@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
+import qliteLogo from '../assets/logo.png';
 
-const DEFAULT_LOGO_PATH = '/logo.png';
+const DEFAULT_LOGO_PATH = qliteLogo;
 
 interface AuthLayoutProps {
   title: string;
@@ -22,7 +23,6 @@ export const AuthLayout = ({
       <header className="auth-page__topbar">
         <div className="auth-page__brand">
           <img src={DEFAULT_LOGO_PATH} alt="Logo QaLite" className="auth-page__brand-logo" />
-          <span className="auth-page__brand-name">QaLite</span>
         </div>
       </header>
     )}
@@ -35,10 +35,6 @@ export const AuthLayout = ({
               alt="Logo QaLite"
               className="auth-page__brand-logo auth-page__brand-logo--panel"
             />
-            <div className="auth-page__brand-text">
-              <span className="auth-page__brand-name">QaLite</span>
-              <span className="auth-page__brand-tagline">Quality Assurance Lite</span>
-            </div>
           </div>
         </div>
         <div className="auth-page__panel-header">
