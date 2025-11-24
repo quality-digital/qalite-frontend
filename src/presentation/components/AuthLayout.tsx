@@ -29,13 +29,7 @@ export const AuthLayout = ({
     <div className="auth-page__body">
       <section className="auth-page__panel">
         <div className="auth-page__panel-brand">
-          <div className="auth-page__brand auth-page__brand--panel">
-            <img
-              src={DEFAULT_LOGO_PATH}
-              alt="Logo QaLite"
-              className="auth-page__brand-logo auth-page__brand-logo--panel"
-            />
-          </div>
+          <img src={DEFAULT_LOGO_PATH} alt="Logo QaLite" className="auth-page__panel-logo" />
         </div>
         <div className="auth-page__panel-header">
           <h2>{title}</h2>
