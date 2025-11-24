@@ -397,15 +397,9 @@ export const AdminStoresPage = () => {
       closeOrganizationModal();
       showToast({ type: 'success', message: 'Organização removida com sucesso.' });
 
-      if (remainingOrganizations.length === 0) {
-        setSelectedOrganizationId('');
-        setSearchParams({});
-        navigate('/admin');
-      } else {
-        const fallbackId = remainingOrganizations[0].id;
-        setSelectedOrganizationId(fallbackId);
-        setSearchParams({ organizationId: fallbackId });
-      }
+      setSelectedOrganizationId('');
+      setSearchParams({});
+      navigate('/admin');
     } catch (error) {
       console.error(error);
       const message =
