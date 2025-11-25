@@ -5,6 +5,7 @@ import type { Organization } from '../../domain/entities/organization';
 import { organizationService } from '../../application/use-cases/OrganizationUseCase';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
+import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
 import { Layout } from '../components/Layout';
 import { UserAvatar } from '../components/UserAvatar';
 import { StoreManagementPanel } from '../components/StoreManagementPanel';
@@ -14,6 +15,7 @@ export const OrganizationDashboardPage = () => {
   const navigate = useNavigate();
   const { user, isInitializing } = useAuth();
   const { showToast } = useToast();
+  const { setActiveOrganization } = useOrganizationBranding();
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const isAdmin = user?.role?.toLowerCase() === 'admin';
@@ -55,6 +57,14 @@ export const OrganizationDashboardPage = () => {
 
     void fetchOrganization();
   }, [isInitializing, navigate, showToast, user]);
+
+  useEffect(() => {
+    setActiveOrganization(organization ?? null);
+
+    return () => {
+      setActiveOrganization(null);
+    };
+  }, [organization, setActiveOrganization]);
 
   return (
     <Layout>

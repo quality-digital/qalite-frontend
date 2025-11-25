@@ -11,6 +11,7 @@ import { SimpleBarChart } from '../components/SimpleBarChart';
 import { BrowserstackKanban } from '../components/browserstack/BrowserstackKanban';
 import { BarChartIcon, SparklesIcon, StorefrontIcon, UsersGroupIcon } from '../components/icons';
 import { useToast } from '../context/ToastContext';
+import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
 import { storeService } from '../../application/use-cases/StoreUseCase';
 import { browserstackService } from '../../application/use-cases/BrowserstackUseCase';
 import type { BrowserstackBuild } from '../../domain/entities/browserstack';
@@ -22,6 +23,7 @@ export const UserDashboardPage = () => {
   const { user, isInitializing } = useAuth();
   const organizationId = user?.organizationId ?? null;
   const { organization, stores, isLoading, status } = useOrganizationStores(organizationId);
+  const { setActiveOrganization } = useOrganizationBranding();
   const [storeAutomationCounts, setStoreAutomationCounts] = useState<Record<string, number>>({});
   const [isLoadingAutomationStats, setIsLoadingAutomationStats] = useState(false);
   const [browserstackBuilds, setBrowserstackBuilds] = useState<BrowserstackBuild[]>([]);
@@ -47,6 +49,14 @@ export const UserDashboardPage = () => {
       return;
     }
   }, [isInitializing, navigate, user]);
+
+  useEffect(() => {
+    setActiveOrganization(organization ?? null);
+
+    return () => {
+      setActiveOrganization(null);
+    };
+  }, [organization, setActiveOrganization]);
 
   useEffect(() => {
     if (stores.length === 0) {
