@@ -16,18 +16,6 @@ const downloadTextFile = (content: string, fileName: string, mimeType: string) =
   URL.revokeObjectURL(url);
 };
 
-export const downloadJsonFile = (data: unknown, fileName: string) => {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-};
-
 export const downloadMarkdownFile = (content: string, fileName: string) => {
   downloadTextFile(content, fileName, 'text/markdown');
 };
