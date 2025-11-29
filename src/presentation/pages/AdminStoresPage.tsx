@@ -275,16 +275,12 @@ export const AdminStoresPage = () => {
     });
     setIsOrganizationSlackSectionOpen(Boolean(slackWebhookUrl.trim()));
     setOrganizationError(null);
-    setMemberEmail('');
-    setMemberError(null);
     setIsOrganizationModalOpen(true);
   };
 
   const closeOrganizationModal = () => {
     setIsOrganizationModalOpen(false);
     setOrganizationError(null);
-    setMemberEmail('');
-    setMemberError(null);
     setIsOrganizationSlackSectionOpen(false);
     setOrganizationForm(initialOrganizationForm);
   };
