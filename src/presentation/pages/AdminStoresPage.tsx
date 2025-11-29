@@ -66,8 +66,6 @@ export const AdminStoresPage = () => {
     useState<OrganizationFormState>(initialOrganizationForm);
   const [isOrganizationSlackSectionOpen, setIsOrganizationSlackSectionOpen] = useState(false);
   const [organizationError, setOrganizationError] = useState<string | null>(null);
-  const [memberEmail, setMemberEmail] = useState('');
-  const [memberError, setMemberError] = useState<string | null>(null);
   const [isSavingOrganization, setIsSavingOrganization] = useState(false);
   const [isManagingMembers, setIsManagingMembers] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
@@ -277,16 +275,12 @@ export const AdminStoresPage = () => {
     });
     setIsOrganizationSlackSectionOpen(Boolean(slackWebhookUrl.trim()));
     setOrganizationError(null);
-    setMemberEmail('');
-    setMemberError(null);
     setIsOrganizationModalOpen(true);
   };
 
   const closeOrganizationModal = () => {
     setIsOrganizationModalOpen(false);
     setOrganizationError(null);
-    setMemberEmail('');
-    setMemberError(null);
     setIsOrganizationSlackSectionOpen(false);
     setOrganizationForm(initialOrganizationForm);
   };
@@ -413,55 +407,6 @@ export const AdminStoresPage = () => {
       showToast({ type: 'error', message });
     } finally {
       setIsSavingOrganization(false);
-    }
-  };
-
-  const handleAddMember = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setMemberError(null);
-
-    if (!selectedOrganization) {
-      return;
-    }
-
-    const trimmedEmail = memberEmail.trim();
-    if (!trimmedEmail) {
-      setMemberError('Informe o e-mail do usuário.');
-      return;
-    }
-
-    try {
-      setIsManagingMembers(true);
-      const member = await organizationService.addUser({
-        organizationId: selectedOrganization.id,
-        userEmail: trimmedEmail,
-      });
-
-      setOrganizations((previous) =>
-        previous.map((organization) => {
-          if (organization.id !== selectedOrganization.id) {
-            return organization;
-          }
-
-          const hasMember = organization.memberIds.includes(member.uid);
-          return {
-            ...organization,
-            members: hasMember ? organization.members : [...organization.members, member],
-            memberIds: hasMember ? organization.memberIds : [...organization.memberIds, member.uid],
-          };
-        }),
-      );
-
-      setMemberEmail('');
-      showToast({ type: 'success', message: 'Usuário adicionado à organização.' });
-    } catch (error) {
-      console.error(error);
-      const message =
-        error instanceof Error ? error.message : 'Não foi possível adicionar o usuário.';
-      setMemberError(message);
-      showToast({ type: 'error', message });
-    } finally {
-      setIsManagingMembers(false);
     }
   };
 
@@ -920,9 +865,7 @@ export const AdminStoresPage = () => {
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <h3 className="text-lg font-semibold text-primary">Membros vinculados</h3>
-                <p className="section-subtitle">
-                  Adicione usuários pelo e-mail cadastrado no QaLite.
-                </p>
+                <p className="section-subtitle">Visualize e gerencie os usuários da organização.</p>
               </div>
               <span className="badge">
                 {selectedOrganization.members.length} membro
@@ -930,42 +873,8 @@ export const AdminStoresPage = () => {
               </span>
             </div>
 
-            {memberError && (
-              <p className="form-message form-message--error" style={{ marginTop: '1rem' }}>
-                {memberError}
-              </p>
-            )}
-
-            <form
-              className="organization-members-form"
-              onSubmit={handleAddMember}
-              data-testid="organization-members-form"
-            >
-              <TextInput
-                id="member-email"
-                label="Adicionar usuário por e-mail"
-                type="email"
-                value={memberEmail}
-                onChange={(event) => setMemberEmail(event.target.value)}
-                placeholder="usuario@empresa.com"
-                required
-                dataTestId="organization-member-email"
-              />
-              <Button
-                type="submit"
-                isLoading={isManagingMembers}
-                loadingText="Adicionando..."
-                data-testid="add-organization-member"
-              >
-                Adicionar usuário
-              </Button>
-            </form>
-
             {selectedOrganization.members.length === 0 ? (
-              <p className="section-subtitle">
-                Nenhum usuário vinculado ainda. Adicione membros utilizando o e-mail cadastrado no
-                QaLite.
-              </p>
+              <p className="section-subtitle">Nenhum usuário vinculado ainda.</p>
             ) : (
               <ul className="member-list">
                 {selectedOrganization.members.map((member) => (
