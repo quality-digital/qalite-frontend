@@ -45,12 +45,14 @@ import {
   openPdfFromMarkdown,
   buildScenarioMarkdown,
   buildSuiteMarkdown,
+  downloadScenarioWorkbook,
+  downloadSuiteWorkbook,
   validateScenarioImportPayload,
   validateSuiteImportPayload,
 } from '../../shared/utils/storeImportExport';
 import { isAutomatedScenario } from '../../shared/utils/automation';
 import { formatDurationFromMs } from '../../shared/utils/time';
-import type { ScenarioAverageMap } from '../../infrastructure/external/scenarioExecutions';
+import type { ScenarioAverageMap } from '../../domain/entities/scenarioExecution';
 
 const emptyScenarioForm: StoreScenarioInput = {
   title: '',
@@ -82,7 +84,7 @@ interface StoreHighlight {
   onClick?: () => void;
 }
 
-type ExportFormat = 'markdown' | 'pdf' | 'json';
+type ExportFormat = 'markdown' | 'pdf' | 'json' | 'xlsx';
 
 const emptyScenarioFilters: ScenarioFilters = {
   search: '',
@@ -1103,6 +1105,10 @@ export const StoreSummaryPage = () => {
         downloadJsonFile(jsonContent, `${baseFileName}.json`);
       }
 
+      if (format === 'xlsx') {
+        downloadScenarioWorkbook(data, `${baseFileName}.xlsx`);
+      }
+
       showToast({ type: 'success', message: 'Exportação de cenários concluída.' });
     } catch (error) {
       console.error(error);
@@ -1444,6 +1450,10 @@ export const StoreSummaryPage = () => {
       if (format === 'json') {
         const jsonContent = JSON.stringify(data, null, 2);
         downloadJsonFile(jsonContent, `${baseFileName}.json`);
+      }
+
+      if (format === 'xlsx') {
+        downloadSuiteWorkbook(data, `${baseFileName}.xlsx`);
       }
 
       showToast({ type: 'success', message: 'Exportação de suítes concluída.' });
@@ -1900,6 +1910,15 @@ export const StoreSummaryPage = () => {
                           <Button
                             type="button"
                             variant="ghost"
+                            onClick={() => void handleScenarioExport('xlsx')}
+                            isLoading={exportingScenarioFormat === 'xlsx'}
+                            loadingText="Exportando..."
+                          >
+                            Exportar Excel
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
                             onClick={() => void handleScenarioExport('markdown')}
                             isLoading={exportingScenarioFormat === 'markdown'}
                             loadingText="Exportando..."
@@ -1953,6 +1972,15 @@ export const StoreSummaryPage = () => {
                             loadingText="Exportando..."
                           >
                             Exportar JSON
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => void handleSuiteExport('xlsx')}
+                            isLoading={exportingSuiteFormat === 'xlsx'}
+                            loadingText="Exportando..."
+                          >
+                            Exportar Excel
                           </Button>
                           <Button
                             type="button"

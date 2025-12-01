@@ -27,6 +27,7 @@ import {
   downloadMarkdownFile,
   openPdfFromMarkdown,
   buildScenarioMarkdown,
+  downloadScenarioWorkbook,
 } from '../../shared/utils/storeImportExport';
 
 interface StoreManagementPanelProps {
@@ -37,7 +38,7 @@ interface StoreManagementPanelProps {
   showScenarioForm?: boolean;
 }
 
-type ExportFormat = 'markdown' | 'pdf';
+type ExportFormat = 'markdown' | 'pdf' | 'xlsx';
 
 const emptyScenarioForm: StoreScenarioInput = {
   title: '',
@@ -787,6 +788,10 @@ export const StoreManagementPanel = ({
         downloadMarkdownFile(markdown, `${baseFileName}.md`);
       }
 
+      if (format === 'xlsx') {
+        downloadScenarioWorkbook(data, `${baseFileName}.xlsx`);
+      }
+
       if (format === 'pdf') {
         const markdown = buildScenarioMarkdown(data);
         openPdfFromMarkdown(markdown, `${selectedStore.name} - Cenários`, pdfWindow);
@@ -939,6 +944,15 @@ export const StoreManagementPanel = ({
                     loadingText="Exportando..."
                   >
                     Exportar Markdown
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => void handleExport('xlsx')}
+                    isLoading={exportingFormat === 'xlsx'}
+                    loadingText="Exportando..."
+                  >
+                    Exportar Excel
                   </Button>
                   <Button
                     type="button"
