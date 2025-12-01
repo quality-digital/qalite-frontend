@@ -50,44 +50,44 @@
 
 [data-theme='dark'] {
   color-scheme: dark;
-  --color-background: #030712;
-  --color-surface: #060c1af0;
-  --color-surface-alt: #090820f0;
-  --color-surface-hover: rgba(148, 163, 184, 0.08);
-  --color-surface-muted: #060c1a;
-  --color-border: rgba(96, 122, 179, 0.24);
-  --color-border-strong: rgba(125, 150, 206, 0.34);
-  --color-text: #f8fafc;
-  --color-text-primary: #f8fafc;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted: rgba(226, 232, 240, 0.7);
-  --color-link: #e0f2fe;
-  --color-link-hover: #f8fafc;
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-primary-soft: rgba(37, 99, 235, 0.26);
-  --color-primary-strong: #1e3a8a;
+  --color-background: radial-gradient(circle at 20% 20%, #182338 0%, #0c1424 38%, #070f1d 100%);
+  --color-surface: rgba(17, 25, 40, 0.94);
+  --color-surface-alt: rgba(21, 31, 49, 0.92);
+  --color-surface-hover: rgba(255, 255, 255, 0.05);
+  --color-surface-muted: #0f172a;
+  --color-border: rgba(148, 163, 184, 0.22);
+  --color-border-strong: rgba(148, 163, 184, 0.32);
+  --color-text: #e2e8f0;
+  --color-text-primary: #e2e8f0;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: rgba(226, 232, 240, 0.78);
+  --color-link: #93c5fd;
+  --color-link-hover: #bfdbfe;
+  --color-primary: #60a5fa;
+  --color-primary-hover: #3b82f6;
+  --color-primary-soft: rgba(96, 165, 250, 0.22);
+  --color-primary-strong: #1d4ed8;
   --color-on-primary: #f8fafc;
-  --color-success: #bbf7d0;
-  --color-success-bg: rgba(34, 197, 94, 0.2);
-  --color-danger: #1e3a8a;
-  --color-danger-bg: rgba(30, 64, 175, 0.18);
-  --color-info: rgba(226, 232, 240, 0.94);
-  --color-info-bg: rgba(37, 99, 235, 0.22);
-  --color-alert: #fde68a;
-  --color-alert-bg: rgba(234, 179, 8, 0.24);
-  --color-ring: rgba(37, 99, 235, 0.35);
-  --shadow-sm: 0 18px 40px rgba(2, 6, 16, 0.55);
-  --shadow-md: 0 28px 60px rgba(2, 6, 16, 0.65);
-  --shadow-lg: 0 40px 92px rgba(2, 6, 16, 0.75);
-  --table-surface: #060c1af0;
-  --table-header-bg: rgba(37, 99, 235, 0.2);
-  --table-header-text: #f8fafc;
-  --table-row-alt: rgba(148, 163, 184, 0.08);
-  --table-border-stronger: rgba(125, 150, 206, 0.34);
-  --table-row-border: rgba(96, 122, 179, 0.24);
-  --table-text: #f8fafc;
-  --table-shadow: 0 28px 70px rgba(2, 6, 16, 0.55);
+  --color-success: #befae3;
+  --color-success-bg: rgba(52, 211, 153, 0.22);
+  --color-danger: #a5b4fc;
+  --color-danger-bg: rgba(99, 102, 241, 0.2);
+  --color-info: #c7d2fe;
+  --color-info-bg: rgba(96, 165, 250, 0.24);
+  --color-alert: #fcd34d;
+  --color-alert-bg: rgba(234, 179, 8, 0.26);
+  --color-ring: rgba(96, 165, 250, 0.4);
+  --shadow-sm: 0 18px 40px rgba(3, 7, 18, 0.55);
+  --shadow-md: 0 28px 60px rgba(3, 7, 18, 0.65);
+  --shadow-lg: 0 40px 92px rgba(3, 7, 18, 0.75);
+  --table-surface: rgba(17, 25, 40, 0.94);
+  --table-header-bg: rgba(96, 165, 250, 0.18);
+  --table-header-text: #e2e8f0;
+  --table-row-alt: rgba(255, 255, 255, 0.04);
+  --table-border-stronger: rgba(148, 163, 184, 0.32);
+  --table-row-border: rgba(148, 163, 184, 0.22);
+  --table-text: #e2e8f0;
+  --table-shadow: 0 28px 70px rgba(3, 7, 18, 0.58);
 }
 
 *,
@@ -1654,24 +1654,54 @@ button.store-summary-highlight:focus-visible {
 
 .theme-toggle {
   border: 1px solid var(--color-border);
-  background: var(--color-surface);
+  background: linear-gradient(135deg, var(--color-surface-alt) 0%, var(--color-surface) 100%);
   border-radius: 999px;
-  width: 2.75rem;
+  min-width: 3.5rem;
   height: 2.75rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.15rem;
+  gap: 0.65rem;
+  padding: 0.5rem 0.9rem;
+  font-size: 1rem;
+  color: var(--color-text-primary);
   cursor: pointer;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease,
-    background var(--transition-base);
+    background var(--transition-base),
+    border-color var(--transition-base);
 }
 
-.theme-toggle:hover {
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
   transform: translateY(-2px);
   box-shadow: var(--shadow-sm);
+  border-color: var(--color-primary);
+}
+
+.theme-toggle:focus-visible {
+  outline: 3px solid var(--color-ring);
+  outline-offset: 3px;
+}
+
+.theme-toggle__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 1.05rem;
+}
+
+.theme-toggle__label {
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.01em;
 }
 
 .toast-viewport {
