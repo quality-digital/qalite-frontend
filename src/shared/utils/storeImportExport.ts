@@ -4,7 +4,7 @@ import type {
   StoreSuiteExportPayload,
 } from '../../infrastructure/external/stores';
 
-const downloadTextFile = (content: string, fileName: string, mimeType: string) => {
+export const downloadTextFile = (content: string, fileName: string, mimeType: string) => {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -18,6 +18,10 @@ const downloadTextFile = (content: string, fileName: string, mimeType: string) =
 
 export const downloadMarkdownFile = (content: string, fileName: string) => {
   downloadTextFile(content, fileName, 'text/markdown');
+};
+
+export const downloadJsonFile = (content: string, fileName: string) => {
+  downloadTextFile(content, fileName, 'application/json');
 };
 
 const escapeHtml = (value: string) =>
