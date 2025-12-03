@@ -43,7 +43,13 @@
       "invalidEmail": "Enter a valid email.",
       "passwordTooShort": "Password must have at least {{min}} characters.",
       "passwordMismatch": "Passwords do not match.",
-      "genericError": "Unable to create your account. Please try again."
+      "genericError": "Unable to create your account. Please try again.",
+      "registerSuccesfull": "Account created successfully! Check your corporate email to activate your access.",
+      "emailNotVerified": "Confirm your corporate email to access the system. We've sent a new verification link to your inbox.",
+      "welcomeBack": "Welcome back, {{name}}!",
+      "logoutSuccess": "You've signed out safely.",
+      "resetPasswordSuccess": "We’ve sent an email with instructions to reset your password.",
+      "updateProfileSuccess": "Profile updated successfully."
     },
 
     "forgotPassword": {

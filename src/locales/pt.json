@@ -43,7 +43,13 @@
       "invalidEmail": "Informe um e-mail válido.",
       "passwordTooShort": "A senha deve ter pelo menos {{min}} caracteres.",
       "passwordMismatch": "As senhas não conferem.",
-      "genericError": "Não foi possível criar sua conta. Tente novamente."
+      "genericError": "Não foi possível criar sua conta. Tente novamente.",
+      "registerSuccesfull": "Conta criada com sucesso! Verifique seu e-mail corporativo para liberar o acesso.",
+      "emailNotVerified": "Confirme seu e-mail corporativo para acessar o sistema. Reenviamos o link de verificação para sua caixa de entrada.",
+      "welcomeBack": "Bem-vindo de volta, {{name}}!",
+      "logoutSuccess": "Você saiu com segurança.",
+      "resetPasswordSuccess": "Enviamos um e-mail com instruções para redefinir sua senha.",
+      "updateProfileSuccess": "Perfil atualizado com sucesso."
     },
 
     "forgotPassword": {
