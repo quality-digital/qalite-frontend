@@ -16,6 +16,7 @@ import { storeService } from '../../application/use-cases/StoreUseCase';
 import { browserstackService } from '../../application/use-cases/BrowserstackUseCase';
 import type { BrowserstackBuild } from '../../domain/entities/browserstack';
 import { isAutomatedScenario } from '../../shared/utils/automation';
+import { useTranslation } from 'react-i18next';
 
 export const UserDashboardPage = () => {
   const navigate = useNavigate();
@@ -28,6 +29,9 @@ export const UserDashboardPage = () => {
   const [isLoadingAutomationStats, setIsLoadingAutomationStats] = useState(false);
   const [browserstackBuilds, setBrowserstackBuilds] = useState<BrowserstackBuild[]>([]);
   const [isLoadingBrowserstack, setIsLoadingBrowserstack] = useState(false);
+
+  const { t } = useTranslation();
+  const { i18n } = useTranslation();
 
   useEffect(() => {
     if (isInitializing) {
@@ -181,14 +185,14 @@ export const UserDashboardPage = () => {
       <section className="page-container">
         <div className="page-header">
           <div>
-            <span className="badge">Biblioteca de lojas</span>
-            <h1 className="section-title">Selecione uma loja para revisar seus cenários</h1>
+            <span className="badge">{t("userPage.badge")}</span>
+            <h1 className="section-title">{t("userPage.storeTitle")}</h1>
             <p className="section-subtitle">{subtitle}</p>
           </div>
         </div>
 
         {isLoading ? (
-          <p className="section-subtitle">Carregando lojas disponíveis...</p>
+          <p className="section-subtitle">{t("userPage.loadingTitle")}</p>
         ) : stores.length === 0 ? (
           <EmptyState
             title={emptyStateTitle}
@@ -196,11 +200,11 @@ export const UserDashboardPage = () => {
             action={
               isError ? (
                 <Button type="button" variant="secondary" onClick={() => window.location.reload()}>
-                  Tentar novamente
+                  {t("userPage.reload")}
                 </Button>
               ) : (
                 <Button type="button" variant="secondary" onClick={() => navigate('/profile')}>
-                  Revisar perfil
+                  {t("userPage.profile")}
                 </Button>
               )
             }
@@ -238,20 +242,20 @@ export const UserDashboardPage = () => {
                       <UsersGroupIcon className="icon icon--lg" />
                     </span>
                     <div>
-                      <h3>Colaboradores da organização</h3>
+                      <h3>{t("userPage.users")}</h3>
                       <p className="section-subtitle">
-                        Visualize rapidamente quem tem acesso a esta organização.
+                        {t("userPage.userSubtitle")}
                       </p>
                     </div>
                   </div>
                   <span className="badge">
-                    {organization.members.length} colaborad
-                    {organization.members.length === 1 ? 'or' : 'ores'}
+                    {organization.members.length} {t("userPage.usersCount")}
+                    {organization.members.length === 1 ? t("userPage.oneUser") : t("userPage.moreUsers")}
                   </span>
                 </div>
                 {organization.members.length === 0 ? (
                   <p className="section-subtitle">
-                    Nenhum colaborador vinculado. Aguarde um administrador convidar novos membros.
+                    {t("userPage.members")}
                   </p>
                 ) : (
                   <ul className="collaborator-list">
@@ -305,10 +309,9 @@ export const UserDashboardPage = () => {
           ) : (
             <div className="card">
               <span className="badge">BrowserStack</span>
-              <h2 className="section-title">Acompanhe execuções automatizadas</h2>
+              <h2 className="section-title">{t("userPage.browserstackTitle")}</h2>
               <p className="section-subtitle">
-                Adicione suas credenciais do BrowserStack no perfil para visualizar o quadro Kanban
-                de execuções.
+                {t("userPage.browserstackSubtitle")}
               </p>
             </div>
           )}
