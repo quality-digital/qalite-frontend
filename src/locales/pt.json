@@ -7,11 +7,11 @@
     "roleAdmin": "Administrador",
     "login": "Entrar",
     "register": "Criar conta",
-
     "info": "Informação",
     "success": "Sucesso",
     "error": "Erro",
     "alert": "Alerta",
+    "backToHome": "Voltar para o início",
 
     "loginPage": {
       "title": "Entre na sua conta",
@@ -78,6 +78,10 @@
       "members": "Nenhum colaborador vinculado. Aguarde um administrador convidar novos membros.",
       "browserstackTitle": "Acompanhe execuções automatizadas",
       "browserstackSubtitle": "Adicione suas credenciais do BrowserStack no perfil para visualizar o quadro Kanban de execuções."
+    },
+
+    "forbiddenPage": {
+      "description": "Você não tem permissão para acessar esta página. Entre em contato com o administrador ou volte ao início."
     },
 
     "firebaseErrors": {
