@@ -1,0 +1,26 @@
+{
+    "translation": {
+        "user": "Colaborador",
+        "greeting": "Olá", 
+        "profile": "Perfil", 
+        "logout": "Sair", 
+        "roleAdmin": "Administrador", 
+        "login": "Entrar",
+        "register": "Criar conta",
+        "userPage": {
+            "badge": "Biblioteca de lojas",
+            "storeTitle": "Selecione uma loja para revisar seus cenários",
+            "loadingTitle": "Carregando lojas disponíveis...",
+            "reload": "Tentar novamente",
+            "profile": "Revisar perfil",
+            "users": "Colaboradores da organização",
+            "userSubtitle": "Visualize rapidamente quem tem acesso a esta organização.",
+            "usersCount": "colaborad",
+            "oneUser": "or",
+            "moreUsers": "ores",
+            "members": "Nenhum colaborador vinculado. Aguarde um administrador convidar novos membros.",
+            "browserstackTitle": "Acompanhe execuções automatizadas",
+            "browserstackSubtitle": "Adicione suas credenciais do BrowserStack no perfil para visualizar o quadro Kanban de execuções."
+        }
+    }
+}

@@ -1,0 +1,26 @@
+{
+  "translation": {
+    "greeting": "Hello",
+    "profile": "Profile",
+    "logout": "Logout",
+    "roleAdmin": "Admin",
+    "roleUser": "User",
+    "login": "Sign in",
+    "register": "Create account",
+    "userPage": {
+      "badge": "Store Catalog",
+      "storeTitle": "Select a store to review its scenarios",
+      "loadingTitle": "Loading available stores...",
+      "reload": "Try again",
+      "profile": "Revisar perfil",
+      "users": "Organization Users",
+      "userSubtitle": "See who has access to this organization.",
+      "usersCount": "user",
+      "oneUser": "",
+      "moreUsers": "s",
+      "userPage.members": "No users associated. Wait for an administrator to invite new members.",
+      "browserstackTitle": "Follow automated runs",
+      "browserstackSubtitle": "Add your BrowserStack credentials to your profile to view executions Kanban board."
+    }
+  }
+}

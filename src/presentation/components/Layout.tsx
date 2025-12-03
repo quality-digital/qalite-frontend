@@ -6,6 +6,7 @@ import { Button } from './Button';
 import { UserAvatar } from './UserAvatar';
 import { LogoutIcon, UserIcon } from './icons';
 import qliteLogo from '../assets/logo.png';
+import { useTranslation } from 'react-i18next';
 
 interface LayoutProps {
   children: ReactNode;
@@ -19,6 +20,13 @@ export const Layout = ({ children }: LayoutProps) => {
   const brandSource = activeOrganization;
   const brandName = brandSource?.name || 'QaLite';
   const brandLogo = brandSource?.logoUrl || (brandName === 'QaLite' ? qliteLogo : null);
+
+  const { t } = useTranslation();
+  const { i18n } = useTranslation();
+
+  function changeLang(lang) {
+    i18n.changeLanguage(lang);
+  }
 
   return (
     <div className="app-shell">
@@ -37,13 +45,17 @@ export const Layout = ({ children }: LayoutProps) => {
               <div className="header-user-info">
                 <UserAvatar name={displayName} photoURL={user.photoURL} size="sm" />
                 <div className="user-context">
-                  <span className="user-greeting">Olá,</span>
+                  <span className="user-greeting">{t('greeting')},</span>
                   <span className="user-name">{displayName}</span>
                   <span className="user-role">
-                    {user.role === 'admin' ? 'Administrador' : 'Colaborador'}
+                  {user.role === "admin" ? t("roleAdmin") : t("roleUser")}
                   </span>
                 </div>
               </div>
+              <select onChange={(e) => changeLang(e.target.value)} value={i18n.language}>
+                <option value="pt">Pt 🇧🇷</option>
+                <option value="en">En 🇺🇸 </option>
+              </select>
               <div className="header-user-actions">
                 <button
                   type="button"
@@ -51,21 +63,21 @@ export const Layout = ({ children }: LayoutProps) => {
                   onClick={() => navigate('/profile')}
                 >
                   <UserIcon aria-hidden className="icon" />
-                  <span>Perfil</span>
+                  <span>{t('profile')}</span>
                 </button>
                 <Button type="button" variant="ghost" onClick={() => void logout()}>
                   <LogoutIcon aria-hidden className="icon" />
-                  Sair
+                  {t('logout')}
                 </Button>
               </div>
             </div>
           ) : (
             <div className="header-auth">
               <Link to="/login" className="text-link">
-                Entrar
+                {t("login")}
               </Link>
               <Button type="button" onClick={() => navigate('/register')}>
-                Criar conta
+                {t("register")}
               </Button>
             </div>
           )}
@@ -75,3 +87,18 @@ export const Layout = ({ children }: LayoutProps) => {
     </div>
   );
 };
+
+export default function LanguageSwitcher() {
+  const { i18n } = useTranslation();
+
+  function changeLang(lang) {
+    i18n.changeLanguage(lang);
+  }
+
+  return (
+    <select onChange={(e) => changeLang(e.target.value)} value={i18n.language}>
+      <option value="pt">🇧🇷 Português</option>
+      <option value="en">🇺🇸 English</option>
+    </select>
+  );
+}
