@@ -9,4 +9,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- [feat/translation-loginPage] - Translating login flow
+- [feat/translation-loginPage] - translating login flow
