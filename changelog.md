@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- [feat/translation-environmentPage] - translating environmentPage
 - [feat/translation-homepage] - translating homepage
 - [feat/translation-adminStorePage] - translating adminStorePage
 - [feat/translation-adminPage] - translating adminPage

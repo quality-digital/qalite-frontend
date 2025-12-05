@@ -6,6 +6,7 @@ import { environmentService } from '../../../application/use-cases/EnvironmentUs
 import { useToast } from '../../context/ToastContext';
 import { BUG_STATUS_LABEL } from '../../../shared/config/environmentLabels';
 import { ConfirmDeleteModal } from '../ConfirmDeleteModal';
+import { useTranslation } from 'react-i18next';
 
 interface EnvironmentBugListProps {
   environment: Environment;
@@ -25,6 +26,8 @@ export const EnvironmentBugList = ({
   showActions = true,
 }: EnvironmentBugListProps) => {
   const { showToast } = useToast();
+  const { t: translation } = useTranslation();
+
   const isReadOnly = Boolean(isLocked);
   const [bugToDelete, setBugToDelete] = useState<EnvironmentBug | null>(null);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
@@ -37,10 +40,16 @@ export const EnvironmentBugList = ({
     try {
       setIsConfirmingDelete(true);
       await environmentService.deleteBug(environment.id, bug.id);
-      showToast({ type: 'success', message: 'Bug removido com sucesso.' });
+      showToast({
+        type: 'success',
+        message: translation('environmentBugList.bugRemovedSuccess'),
+      });
     } catch (error) {
       console.error(error);
-      showToast({ type: 'error', message: 'Não foi possível remover o bug.' });
+      showToast({
+        type: 'error',
+        message: translation('environmentBugList.bugRemovedError'),
+      });
     } finally {
       setIsConfirmingDelete(false);
       setBugToDelete(null);
@@ -65,30 +74,34 @@ export const EnvironmentBugList = ({
 
   const getScenarioLabel = (scenarioId: string | null) => {
     if (!scenarioId) {
-      return 'Não vinculado';
+      return translation('environmentBugList.notLinked');
     }
 
-    return environment.scenarios?.[scenarioId]?.titulo ?? 'Cenário removido';
+    return (
+      environment.scenarios?.[scenarioId]?.titulo ||
+      translation('environmentBugList.scenarioRemoved')
+    );
   };
 
   return (
     <div className="environment-bugs">
       <div className="environment-bugs__header">
-        <h3 className="section-title">Registro de bugs</h3>
+        <h3 className="section-title">{translation('environmentBugList.bugRegistry')}</h3>
       </div>
+
       {isLoading ? (
-        <p className="section-subtitle">Carregando bugs...</p>
+        <p className="section-subtitle">{translation('environmentBugList.loadingBugs')}</p>
       ) : bugs.length === 0 ? (
-        <p className="section-subtitle">Nenhum bug registrado neste ambiente.</p>
+        <p className="section-subtitle">{translation('environmentBugList.noBugs')}</p>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
-              <th>Título</th>
-              <th>Status</th>
-              <th>Cenário</th>
-              <th>Descrição</th>
-              {showActions && <th>Ações</th>}
+              <th>{translation('environmentBugList.title')}</th>
+              <th>{translation('environmentBugList.status')}</th>
+              <th>{translation('environmentBugList.scenario')}</th>
+              <th>{translation('environmentBugList.description')}</th>
+              {showActions && <th>{translation('environmentBugList.actions')}</th>}
             </tr>
           </thead>
           <tbody>
@@ -101,7 +114,7 @@ export const EnvironmentBugList = ({
                   </span>
                 </td>
                 <td>{getScenarioLabel(bug.scenarioId)}</td>
-                <td>{bug.description || 'Sem descrição'}</td>
+                <td>{bug.description || translation('environmentBugList.noDescription')}</td>
                 {showActions && (
                   <td className="environment-bugs__actions">
                     <button
@@ -110,7 +123,7 @@ export const EnvironmentBugList = ({
                       onClick={() => onEdit(bug)}
                       disabled={isReadOnly}
                     >
-                      Editar
+                      {translation('environmentBugList.edit')}
                     </button>
                     <button
                       type="button"
@@ -118,7 +131,7 @@ export const EnvironmentBugList = ({
                       onClick={() => setBugToDelete(bug)}
                       disabled={isReadOnly}
                     >
-                      Remover
+                      {translation('environmentBugList.remove')}
                     </button>
                   </td>
                 )}
@@ -131,8 +144,8 @@ export const EnvironmentBugList = ({
         isOpen={Boolean(bugToDelete)}
         message={
           bugToDelete
-            ? `Você deseja mesmo excluir o bug "${bugToDelete.title}"?`
-            : 'Você deseja mesmo excluir?'
+            ? translation('environmentBugList.confirmDeleteWithName', { title: bugToDelete.title })
+            : translation('environmentBugList.confirmDelete')
         }
         onClose={closeDeleteModal}
         onConfirm={handleConfirmDelete}

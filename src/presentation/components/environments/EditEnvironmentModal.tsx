@@ -12,6 +12,7 @@ import {
   TEST_TYPES_BY_ENVIRONMENT,
   requiresReleaseField,
 } from '../../constants/environmentOptions';
+import { useTranslation } from 'react-i18next';
 
 interface EditEnvironmentModalProps {
   isOpen: boolean;
@@ -24,6 +25,8 @@ export const EditEnvironmentModal = ({
   onClose,
   environment,
 }: EditEnvironmentModalProps) => {
+  const { t: translation } = useTranslation();
+
   const [identificador, setIdentificador] = useState('');
   const [urls, setUrls] = useState('');
   const [jiraTask, setJiraTask] = useState('');
@@ -89,12 +92,12 @@ export const EditEnvironmentModal = ({
     }
 
     if (momentoOptions.length > 0 && !momento) {
-      setFormError('Selecione o momento do ambiente.');
+      setFormError(translation('editEnvironmentModal.selectMomentError'));
       return;
     }
 
     if (shouldDisplayReleaseField && !release.trim()) {
-      setFormError('Informe a release para este ambiente.');
+      setFormError(translation('editEnvironmentModal.missingReleaseError'));
       return;
     }
 
@@ -120,7 +123,7 @@ export const EditEnvironmentModal = ({
       onClose();
     } catch (error) {
       console.error(error);
-      setFormError('Não foi possível atualizar o ambiente.');
+      setFormError(translation('editEnvironmentModal.updateEnvironmentError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -130,14 +133,14 @@ export const EditEnvironmentModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Editar ambiente"
-      description="Atualize as informações necessárias."
+      title={translation('editEnvironmentModal.editEnvironment')}
+      description={translation('editEnvironmentModal.updateInfo')}
     >
       <form className="environment-form" onSubmit={handleSubmit}>
         {formError && <p className="form-message form-message--error">{formError}</p>}
         <TextInput
           id="identificadorEditar"
-          label="Identificador"
+          label={translation('editEnvironmentModal.identifier')}
           value={identificador}
           onChange={(event) => setIdentificador(event.target.value)}
           required
@@ -145,21 +148,21 @@ export const EditEnvironmentModal = ({
         />
         <TextArea
           id="urlsEditar"
-          label="URLs"
+          label={translation('editEnvironmentModal.urls')}
           value={urls}
           onChange={(event) => setUrls(event.target.value)}
           disabled={isLocked}
         />
         <TextInput
           id="jiraEditar"
-          label="Jira Task"
+          label={translation('editEnvironmentModal.jiraTask')}
           value={jiraTask}
           onChange={(event) => setJiraTask(event.target.value)}
           disabled={isLocked}
         />
         <SelectInput
           id="tipoAmbienteEditar"
-          label="Tipo de ambiente"
+          label={translation('editEnvironmentModal.environmentType')}
           value={tipoAmbiente}
           onChange={(event) => setTipoAmbiente(event.target.value)}
           disabled={isLocked}
@@ -171,39 +174,48 @@ export const EditEnvironmentModal = ({
         />
         <SelectInput
           id="tipoTesteEditar"
-          label="Tipo de teste"
+          label={translation('editEnvironmentModal.testType')}
           value={tipoTeste}
           onChange={(event) => setTipoTeste(event.target.value)}
           disabled={isLocked}
-          options={tipoTesteOptions.map((option) => ({ value: option, label: option }))}
+          options={tipoTesteOptions.map((option) => ({
+            value: option,
+            label: option,
+          }))}
         />
         {momentoOptions.length > 0 && (
           <SelectInput
             id="momentoEditar"
-            label="Momento/Quando"
+            label={translation('editEnvironmentModal.moment')}
             value={momento}
             onChange={(event) => setMomento(event.target.value)}
             disabled={isLocked}
-            options={momentoOptions.map((option) => ({ value: option, label: option }))}
+            options={momentoOptions.map((option) => ({
+              value: option,
+              label: option,
+            }))}
           />
         )}
         {shouldDisplayReleaseField && (
           <TextInput
             id="releaseEditar"
-            label="Release"
+            label={translation('editEnvironmentModal.release')}
             value={release}
             onChange={(event) => setRelease(event.target.value)}
             disabled={isLocked}
           />
         )}
-        <p className="environment-suite-preview">Cenários associados: {suiteSummary}</p>
+
+        <p className="environment-suite-preview">
+          {translation('editEnvironmentModal.suiteSummary')} {suiteSummary}
+        </p>
         <Button
           type="submit"
           disabled={isLocked}
           isLoading={isSubmitting}
-          loadingText="Salvando..."
+          loadingText={translation('editEnvironmentModal.saving')}
         >
-          Salvar alterações
+          {translation('editEnvironmentModal.saveChanges')}
         </Button>
       </form>
     </Modal>
