@@ -43,7 +43,7 @@ interface SlackSummaryBuilderOptions {
 
 const formatExecutedScenariosMessage = (
   count: number,
-  translation: (key: string, opts?: TOptions ) => string,
+  translation: (key: string, opts?: TOptions) => string,
 ) => {
   if (count === 0) {
     return translation('dynamic.executedScenarios.none');
@@ -56,9 +56,10 @@ const formatExecutedScenariosMessage = (
   return translation('dynamic.executedScenarios.many', { count });
 };
 
-const buildSuiteDetails = (count: number, translation: (key: string, opts?: TOptions ) => string) => {
-
- 
+const buildSuiteDetails = (
+  count: number,
+  translation: (key: string, opts?: TOptions) => string,
+) => {
   if (count === 0) {
     return translation('dynamic.suite.none');
   }
@@ -119,7 +120,8 @@ const buildSlackTaskSummaryPayload = (
   const monitoredUrls = (options.urls ?? []).filter(
     (url) => typeof url === 'string' && url.trim().length > 0,
   );
-  const taskIdentifier = environment.identificador?.trim() || translation('dynamic.identifierFallback');
+  const taskIdentifier =
+    environment.identificador?.trim() || translation('dynamic.identifierFallback');
   const normalizedEnvironmentType = environment.tipoAmbiente?.trim().toUpperCase();
   const isWorkspaceEnvironment = normalizedEnvironmentType === 'WS';
   const fix = {
@@ -253,6 +255,7 @@ export const EnvironmentPage = () => {
         showToast({ type: 'error', message: translation('environment.statusUpdateError') });
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [environment, showToast, user?.uid],
   );
 
@@ -270,6 +273,7 @@ export const EnvironmentPage = () => {
         showToast({ type: 'error', message: translation('environment.copyError') });
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [showToast],
   );
 
@@ -296,66 +300,74 @@ export const EnvironmentPage = () => {
     } finally {
       setIsCopyingMarkdown(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bugs, environment, participantProfiles, showToast]);
 
-  const handleSendSlackSummary = useCallback(async () => {
-    if (!environment) {
-      return;
-    }
+  const handleSendSlackSummary = useCallback(
+    async () => {
+      if (!environment) {
+        return;
+      }
 
-    if (!slackWebhookUrl) {
-      showToast({
-        type: 'error',
-        message: translation('environment.slack.noWebhook'),
-      });
-      return;
-    }
+      if (!slackWebhookUrl) {
+        showToast({
+          type: 'error',
+          message: translation('environment.slack.noWebhook'),
+        });
+        return;
+      }
 
-    setIsSendingSlackSummary(true);
+      setIsSendingSlackSummary(true);
 
-    try {
-      const payload = buildSlackTaskSummaryPayload(environment, {
-        formattedTime,
-        totalTimeMs: totalMs,
-        scenarioCount,
-        executedScenariosCount,
-        urls,
-        bugsCount: bugs.length,
-        participantProfiles,
-      }, translation);
+      try {
+        const payload = buildSlackTaskSummaryPayload(
+          environment,
+          {
+            formattedTime,
+            totalTimeMs: totalMs,
+            scenarioCount,
+            executedScenariosCount,
+            urls,
+            bugsCount: bugs.length,
+            participantProfiles,
+          },
+          translation,
+        );
 
-      payload.webhookUrl = slackWebhookUrl;
+        payload.webhookUrl = slackWebhookUrl;
 
-      await slackService.sendTaskSummary(payload);
+        await slackService.sendTaskSummary(payload);
 
-      showToast({
-        type: 'success',
-        message: translation('environment.slack.success'),
-      });
-    } catch (error) {
-      console.error(error);
-      const errorMessage =
-        error instanceof Error ? error.message : translation('environment.slack.error');
-      showToast({
-        type: 'error',
-        message: errorMessage,
-      });
-    } finally {
-      setIsSendingSlackSummary(false);
-    }
-  }, [
-    bugs.length,
-    environment,
-    executedScenariosCount,
-    formattedTime,
-    participantProfiles,
-    scenarioCount,
-    showToast,
-    slackWebhookUrl,
-    totalMs,
-    urls,
- 
-  ]);
+        showToast({
+          type: 'success',
+          message: translation('environment.slack.success'),
+        });
+      } catch (error) {
+        console.error(error);
+        const errorMessage =
+          error instanceof Error ? error.message : translation('environment.slack.error');
+        showToast({
+          type: 'error',
+          message: errorMessage,
+        });
+      } finally {
+        setIsSendingSlackSummary(false);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      bugs.length,
+      environment,
+      executedScenariosCount,
+      formattedTime,
+      participantProfiles,
+      scenarioCount,
+      showToast,
+      slackWebhookUrl,
+      totalMs,
+      urls,
+    ],
+  );
 
   const openCreateBugModal = useCallback((scenarioId: string) => {
     setEditingBug(null);
@@ -391,6 +403,7 @@ export const EnvironmentPage = () => {
       showToast({ type: 'error', message: translation('environment.enterError') });
       return false;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enterEnvironment, showToast]);
 
   const handleLeaveEnvironment = useCallback(async () => {
@@ -401,6 +414,7 @@ export const EnvironmentPage = () => {
       console.error(error);
       showToast({ type: 'error', message: translation('environment.leaveError') });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leaveEnvironment, showToast]);
 
   useEffect(() => {
@@ -463,7 +477,8 @@ export const EnvironmentPage = () => {
                 {environment.identificador ?? translation('environment.anonymousEnvironment')}
               </h1>
               <p className="section-subtitle">
-                {environment.tipoAmbiente} {translation('environment.typeSeparator')} {environment.tipoTeste}
+                {environment.tipoAmbiente} {translation('environment.typeSeparator')}{' '}
+                {environment.tipoTeste}
               </p>
               {headerMeta.length > 0 && (
                 <p className="section-subtitle">
@@ -621,8 +636,6 @@ export const EnvironmentPage = () => {
           <div className="environment-evidence__header">
             <h3 className="section-title">{translation('environment.scenarios.title')}</h3>
           </div>
-
-          compónente EnvironmentEvidenceTable
           <EnvironmentEvidenceTable
             environment={environment}
             isLocked={Boolean(isScenarioLocked)}
@@ -632,8 +645,6 @@ export const EnvironmentPage = () => {
           />
         </div>
 
-
-        Componente EnvironmentBugList
         <EnvironmentBugList
           environment={environment}
           bugs={bugs}
@@ -643,14 +654,12 @@ export const EnvironmentPage = () => {
         />
       </section>
 
-      component EditEnvironmentModal
       <EditEnvironmentModal
         isOpen={isEditOpen}
         onClose={() => setIsEditOpen(false)}
         environment={environment ?? null}
       />
 
-      component DeleteEnvironmentModal
       <DeleteEnvironmentModal
         isOpen={isDeleteOpen}
         onClose={() => setIsDeleteOpen(false)}
@@ -658,7 +667,6 @@ export const EnvironmentPage = () => {
         onDeleted={() => navigate(-1)}
       />
       {environment && (
-        
         <EnvironmentBugModal
           environment={environment}
           isOpen={isBugModalOpen}

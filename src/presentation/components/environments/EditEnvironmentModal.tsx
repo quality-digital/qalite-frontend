@@ -37,8 +37,6 @@ export const EditEnvironmentModal = ({
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-
-  console.log(translation('editEnvironmentModal.selectMomentError'))
   useEffect(() => {
     if (!environment) {
       return;
