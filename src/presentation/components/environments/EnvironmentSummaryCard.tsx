@@ -2,6 +2,7 @@ import type { Environment } from '../../../domain/entities/environment';
 import type { UserSummary } from '../../../domain/entities/user';
 import { ENVIRONMENT_STATUS_LABEL } from '../../../shared/config/environmentLabels';
 import { getReadableUserName, getUserInitials } from '../../utils/userDisplay';
+import { useTranslation } from 'react-i18next';
 
 const buildJiraLink = (value: string | null | undefined): string | null => {
   if (!value) {
@@ -49,12 +50,20 @@ export const EnvironmentSummaryCard = ({
   participants,
   bugsCount,
 }: EnvironmentSummaryCardProps) => {
+  const { t: translation } = useTranslation();
+
   const visibleParticipants = participants.slice(0, 4);
   const remainingParticipants = participants.length - visibleParticipants.length;
+
   const visibleUrls = urls.slice(0, 3);
   const remainingUrls = urls.length - visibleUrls.length;
+
   const isWsEnvironment = environment.tipoAmbiente?.toUpperCase() === 'WS';
-  const bugLabel = isWsEnvironment ? 'Storyfix registrados' : 'Bugs registrados';
+
+  const bugLabel = isWsEnvironment
+    ? translation('environmentSummary.storyfix')
+    : translation('environmentSummary.bugs');
+
   const jiraTask = environment.jiraTask?.trim() ?? '';
   const jiraUrl = buildJiraLink(jiraTask);
 
@@ -72,34 +81,50 @@ export const EnvironmentSummaryCard = ({
 
       <div className="summary-card__meta-grid">
         <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">Início do teste</span>
+          <span className="summary-card__meta-label">
+            {translation('environmentSummary.start')}
+          </span>
           <strong>{formattedStart}</strong>
         </div>
+
         <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">Término do teste</span>
+          <span className="summary-card__meta-label">{translation('environmentSummary.end')}</span>
           <strong>{formattedEnd}</strong>
         </div>
+
         <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">Tempo total</span>
+          <span className="summary-card__meta-label">
+            {translation('environmentSummary.totalTime')}
+          </span>
           <strong>{formattedTime}</strong>
         </div>
+
         <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">Cenários</span>
+          <span className="summary-card__meta-label">
+            {translation('environmentSummary.scenarios')}
+          </span>
+
           <strong>{scenarioCount}</strong>
+
           <span className="summary-card__meta-hint">
             {scenarioCount === 0
-              ? 'Nenhum cenário executado'
+              ? translation('environmentSummary.noScenarios')
               : scenarioCount === 1
-                ? '1 cenário executado'
-                : `${scenarioCount} cenários executados`}
+                ? translation('environmentSummary.oneScenario')
+                : translation('environmentSummary.multipleScenarios', {
+                    count: scenarioCount,
+                  })}
           </span>
         </div>
+
         <div className="summary-card__meta-item">
           <span className="summary-card__meta-label">{bugLabel}</span>
           <strong>{bugsCount}</strong>
         </div>
+
         <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">Jira</span>
+          <span className="summary-card__meta-label">{translation('environmentSummary.jira')}</span>
+
           {jiraUrl ? (
             <a
               href={jiraUrl}
@@ -110,7 +135,7 @@ export const EnvironmentSummaryCard = ({
               {jiraTask}
             </a>
           ) : (
-            <strong>{jiraTask || 'Não informado'}</strong>
+            <strong>{jiraTask || translation('environmentSummary.notInformed')}</strong>
           )}
         </div>
       </div>
@@ -118,13 +143,18 @@ export const EnvironmentSummaryCard = ({
       <div className="summary-card__meta-grid summary-card__meta-grid--columns">
         {environment.momento && (
           <div className="summary-card__meta-item">
-            <span className="summary-card__meta-label">Momento</span>
+            <span className="summary-card__meta-label">
+              {translation('environmentSummary.moment')}
+            </span>
             <strong>{environment.momento}</strong>
           </div>
         )}
+
         {environment.release && (
           <div className="summary-card__meta-item">
-            <span className="summary-card__meta-label">Release</span>
+            <span className="summary-card__meta-label">
+              {translation('environmentSummary.release')}
+            </span>
             <strong>{environment.release}</strong>
           </div>
         )}
@@ -132,22 +162,28 @@ export const EnvironmentSummaryCard = ({
 
       <div className="summary-card__meta-grid summary-card__meta-grid--columns">
         <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">Participantes</span>
+          <span className="summary-card__meta-label">
+            {translation('environmentSummary.participants')}
+          </span>
+
           <strong>{participants.length}</strong>
+
           <span className="summary-card__meta-hint">
-            {participants.length === 0
-              ? 'Nenhum participante'
-              : participants.length === 1
-                ? '1 participante ativo'
-                : `${participants.length} participantes ativos`}
+            {participants.length === 0 && translation('environmentSummary.noParticipants')}
+            {participants.length === 1 && translation('environmentSummary.oneParticipant')}
+            {participants.length > 1 &&
+              translation('environmentSummary.multipleParticipants', {
+                count: participants.length,
+              })}
           </span>
         </div>
       </div>
 
       <div className="summary-card__chips-group">
-        <span className="summary-card__meta-label">URLs monitoradas</span>
+        <span className="summary-card__meta-label">{translation('environmentSummary.urls')}</span>
+
         {visibleUrls.length === 0 ? (
-          <p className="summary-card__empty">Nenhuma URL adicionada.</p>
+          <p className="summary-card__empty">{translation('environmentSummary.noUrls')}</p>
         ) : (
           <div className="summary-card__chip-row">
             {visibleUrls.map((url) => (
@@ -169,9 +205,12 @@ export const EnvironmentSummaryCard = ({
       </div>
 
       <div className="summary-card__participants">
-        <span className="summary-card__meta-label">Quem está participando</span>
+        <span className="summary-card__meta-label">
+          {translation('environmentSummary.whoIsParticipating')}
+        </span>
+
         {visibleParticipants.length === 0 ? (
-          <p className="summary-card__empty">Nenhum participante registrado.</p>
+          <p className="summary-card__empty">{translation('environmentSummary.noParticipants')}</p>
         ) : (
           <ul className="summary-card__avatar-list">
             {visibleParticipants.map((participant) => {

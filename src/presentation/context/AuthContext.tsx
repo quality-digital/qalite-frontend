@@ -13,6 +13,7 @@ import type { AuthUser, Role, UpdateProfilePayload } from '../../domain/entities
 import { DEFAULT_ROLE } from '../../domain/entities/auth';
 import { mapFirebaseError } from '../../shared/errors/firebaseErrors';
 import { useToast } from './ToastContext';
+import { useTranslation } from 'react-i18next';
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -42,6 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { showToast } = useToast();
+  const { t: translation } = useTranslation();
 
   const runAuthAction = useCallback(
     async <T,>(action: () => Promise<T>, options: AuthActionOptions<T> = {}): Promise<T> => {
@@ -102,8 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const authenticatedUser = await runAuthAction(() => authService.login({ email, password }));
 
       if (!authenticatedUser.isEmailVerified) {
-        const message =
-          'Confirme seu e-mail corporativo para acessar o sistema. Reenviamos o link de verificação para sua caixa de entrada.';
+        const message = translation('registerPage.emailNotVerified');
         setError(message);
         showToast({ type: 'error', message });
         await signOutSilently();
@@ -111,14 +112,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       setUser(authenticatedUser);
+
+      const firstName = authenticatedUser.displayName.split(' ')[0] || translation('roleUser');
+
       showToast({
         type: 'success',
-        message: `Bem-vindo de volta, ${authenticatedUser.displayName.split(' ')[0] || 'usuário'}!`,
+        message: translation('registerPage.welcomeBack', { name: firstName }),
       });
 
       return authenticatedUser;
     },
-    [runAuthAction, showToast, signOutSilently],
+    [runAuthAction, showToast, signOutSilently, translation],
   );
 
   const register = useCallback(
@@ -139,30 +143,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       showToast({
         type: 'success',
-        message:
-          'Conta criada com sucesso! Verifique seu e-mail corporativo para liberar o acesso.',
+        message: translation('registerPage.registerSuccesfull'),
       });
 
       return registeredUser;
     },
-    [runAuthAction, showToast, signOutSilently],
+    [runAuthAction, showToast, signOutSilently, translation],
   );
 
   const logout = useCallback(
     () =>
       runAuthAction(() => authService.logout(), {
         onSuccess: () => setUser(null),
-        successMessage: 'Você saiu com segurança.',
+        successMessage: translation('registerPage.logoutSuccess'),
       }),
-    [runAuthAction],
+    [runAuthAction, translation],
   );
 
   const resetPassword = useCallback(
     (email: string) =>
       runAuthAction(() => authService.sendPasswordReset(email), {
-        successMessage: 'Enviamos um e-mail com instruções para redefinir sua senha.',
+        successMessage: translation('registerPage.resetPasswordSuccess'),
       }),
-    [runAuthAction],
+    [runAuthAction, translation],
   );
 
   const hasRole = useCallback((roles: Role[]) => authService.hasRequiredRole(user, roles), [user]);
@@ -171,9 +174,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     (payload: UpdateProfilePayload) =>
       runAuthAction(() => authService.updateProfile(payload), {
         onSuccess: (updated) => setUser(updated),
-        successMessage: 'Perfil atualizado com sucesso.',
+        successMessage: translation('registerPage.updateProfileSuccess'),
       }),
-    [runAuthAction],
+    [runAuthAction, translation],
   );
 
   const value = useMemo<AuthContextValue>(

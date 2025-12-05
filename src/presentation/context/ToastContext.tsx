@@ -7,7 +7,8 @@ import {
   useRef,
   useState,
 } from 'react';
-
+import { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 export type ToastType = 'info' | 'success' | 'error' | 'alert';
 
 export interface ToastOptions {
@@ -33,12 +34,12 @@ const DEFAULT_DURATION = 4500;
 
 const generateId = () => Math.random().toString(36).slice(2, 10);
 
-const toastTitles: Record<ToastType, string> = {
-  info: 'Informação',
-  success: 'Sucesso',
-  error: 'Erro',
-  alert: 'Alerta',
-};
+export const getToastTitles = (translation: TFunction) => ({
+  info: translation('info'),
+  success: translation('success'),
+  error: translation('error'),
+  alert: translation('alert'),
+});
 
 const toastIcons: Record<ToastType, JSX.Element> = {
   info: (
@@ -77,6 +78,7 @@ const toastIcons: Record<ToastType, JSX.Element> = {
 
 export const ToastProvider = ({ children }: { children: ReactNode }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
+
   const timers = useRef(new Map<string, number>());
 
   const dismissToast = useCallback((id: string) => {
@@ -137,7 +139,10 @@ export const useToast = () => {
 };
 
 const ToastViewport = () => {
+  const { t: translation } = useTranslation();
   const { toasts, dismissToast } = useToast();
+
+  const optionsStatus = getToastTitles(translation);
 
   return (
     <div className="toast-viewport" role="region" aria-live="polite" aria-label="Notificações">
@@ -147,7 +152,7 @@ const ToastViewport = () => {
             {toastIcons[toast.type]}
           </div>
           <div className="toast-body">
-            <span className="toast-title">{toastTitles[toast.type]}</span>
+            <span className="toast-title">{optionsStatus[toast.type]}</span>
             <span className="toast-message">{toast.message}</span>
           </div>
           <button

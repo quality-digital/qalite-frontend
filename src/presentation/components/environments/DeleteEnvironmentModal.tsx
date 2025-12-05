@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { Environment } from '../../../domain/entities/environment';
 import { environmentService } from '../../../application/use-cases/EnvironmentUseCase';
@@ -18,6 +19,8 @@ export const DeleteEnvironmentModal = ({
   environment,
   onDeleted,
 }: DeleteEnvironmentModalProps) => {
+  const { t: translation } = useTranslation();
+
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,18 +37,26 @@ export const DeleteEnvironmentModal = ({
       onClose();
     } catch (err) {
       console.error(err);
-      setError('Não foi possível excluir este ambiente.');
+      setError(translation('deleteEnvironmentModal.deleteEnvironmentError'));
     } finally {
       setIsDeleting(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Excluir ambiente">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={translation('deleteEnvironmentModal.deleteEnvironment')}
+    >
       {error && <p className="form-message form-message--error">{error}</p>}
+
       <p>
-        Esta ação é permanente. Deseja excluir o ambiente{' '}
-        <strong>{environment?.identificador ?? 'sem identificador'}</strong>?
+        {translation('deleteEnvironmentModal.deleteEnvironmentWarning')}{' '}
+        <strong>
+          {environment?.identificador ?? translation('deleteEnvironmentModal.noIdentifier')}
+        </strong>
+        ?
       </p>
       <div className="modal-actions">
         <Button
@@ -55,16 +66,17 @@ export const DeleteEnvironmentModal = ({
           disabled={isDeleting}
           data-testid="cancel-delete-environment"
         >
-          Cancelar
+          {translation('deleteEnvironmentModal.cancel')}
         </Button>
+
         <Button
           type="button"
           onClick={handleDelete}
           isLoading={isDeleting}
-          loadingText="Excluindo..."
+          loadingText={translation('deleteEnvironmentModal.deleting')}
           data-testid="confirm-delete-environment"
         >
-          Confirmar exclusão
+          {translation('deleteEnvironmentModal.confirmDelete')}
         </Button>
       </div>
     </Modal>

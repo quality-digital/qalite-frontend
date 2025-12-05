@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import { EnvironmentStatusError } from '../../shared/errors/firebaseErrors';
 import type { Environment, EnvironmentStatus } from '../../domain/entities/environment';
@@ -28,6 +29,7 @@ import type { EnvironmentBug } from '../../domain/entities/environment';
 import { useEnvironmentDetails } from '../hooks/useEnvironmentDetails';
 import { useEnvironmentEngagement } from '../hooks/useEnvironmentEngagement';
 import { EnvironmentSummaryCard } from '../components/environments/EnvironmentSummaryCard';
+import { TOptions } from 'i18next';
 
 interface SlackSummaryBuilderOptions {
   formattedTime: string;
@@ -39,55 +41,67 @@ interface SlackSummaryBuilderOptions {
   participantProfiles: UserSummary[];
 }
 
-const formatExecutedScenariosMessage = (count: number) => {
+const formatExecutedScenariosMessage = (
+  count: number,
+  translation: (key: string, opts?: TOptions) => string,
+) => {
   if (count === 0) {
-    return 'Nenhum cenário executado';
+    return translation('dynamic.executedScenarios.none');
   }
 
   if (count === 1) {
-    return '1 cenário executado';
+    return translation('dynamic.executedScenarios.one');
   }
 
-  return `${count} cenários executados`;
+  return translation('dynamic.executedScenarios.many', { count });
 };
 
-const buildSuiteDetails = (count: number) => {
+const buildSuiteDetails = (
+  count: number,
+  translation: (key: string, opts?: TOptions) => string,
+) => {
   if (count === 0) {
-    return 'Nenhum cenário vinculado';
+    return translation('dynamic.suite.none');
   }
 
-  return `${count} cenário${count > 1 ? 's' : ''} vinculados`;
+  return translation('dynamic.suite.many', { count });
 };
 
 const mapProfileToAttendee = (
   profile: UserSummary | undefined,
   fallbackId: string | null,
   index: number,
+  translation: (key: string, opts?: TOptions) => string,
 ) => {
-  const fallbackName = fallbackId ? `Participante ${fallbackId}` : `Participante ${index + 1}`;
+  const fallbackName = fallbackId
+    ? translation('dynamic.fallbackParticipant', { id: fallbackId })
+    : translation('dynamic.fallbackParticipant', { id: index + 1 });
   const trimmedName = profile?.displayName?.trim();
 
   return {
     name: trimmedName || profile?.email || fallbackName,
-    email: profile?.email ?? 'Não informado',
+    email: profile?.email ?? translation('dynamic.noEmail'),
   };
 };
 
 const buildAttendeesList = (
   environment: Environment,
   participantProfiles: UserSummary[],
+  translation: (key: string, opts?: TOptions) => string,
 ): SlackTaskSummaryPayload['environmentSummary']['attendees'] => {
   const participantIds = Array.from(new Set(environment.participants ?? []));
   const profileMap = new Map(participantProfiles.map((profile) => [profile.id, profile]));
   const attendees = participantIds.map((participantId, index) =>
-    mapProfileToAttendee(profileMap.get(participantId), participantId, index),
+    mapProfileToAttendee(profileMap.get(participantId), participantId, index, translation),
   );
 
   const knownParticipants = new Set(participantIds);
   participantProfiles
     .filter((profile) => !knownParticipants.has(profile.id))
     .forEach((profile, index) => {
-      attendees.push(mapProfileToAttendee(profile, profile.id, participantIds.length + index));
+      attendees.push(
+        mapProfileToAttendee(profile, profile.id, participantIds.length + index, translation),
+      );
     });
 
   return attendees;
@@ -96,16 +110,18 @@ const buildAttendeesList = (
 const buildSlackTaskSummaryPayload = (
   environment: Environment,
   options: SlackSummaryBuilderOptions,
+  translation: (key: string, opts?: TOptions) => string,
 ): SlackTaskSummaryPayload => {
-  const suiteName = environment.suiteName?.trim() || 'Suíte não informada';
-  const attendees = buildAttendeesList(environment, options.participantProfiles);
+  const suiteName = environment.suiteName?.trim() || translation('dynamic.suiteNameFallback');
+  const attendees = buildAttendeesList(environment, options.participantProfiles, translation);
   const attendeeList = attendees ?? [];
   const uniqueParticipantsCount = new Set(environment.participants ?? []).size;
   const participantsCount = uniqueParticipantsCount || attendeeList.length;
   const monitoredUrls = (options.urls ?? []).filter(
     (url) => typeof url === 'string' && url.trim().length > 0,
   );
-  const taskIdentifier = environment.identificador?.trim() || 'Não informado';
+  const taskIdentifier =
+    environment.identificador?.trim() || translation('dynamic.identifierFallback');
   const normalizedEnvironmentType = environment.tipoAmbiente?.trim().toUpperCase();
   const isWorkspaceEnvironment = normalizedEnvironmentType === 'WS';
   const fix = {
@@ -120,11 +136,14 @@ const buildSlackTaskSummaryPayload = (
       totalTimeMs: options.totalTimeMs,
       scenariosCount: options.scenarioCount,
       executedScenariosCount: options.executedScenariosCount,
-      executedScenariosMessage: formatExecutedScenariosMessage(options.executedScenariosCount),
+      executedScenariosMessage: formatExecutedScenariosMessage(
+        options.executedScenariosCount,
+        translation,
+      ),
       fix,
-      jira: environment.jiraTask?.trim() || 'Não informado',
+      jira: environment.jiraTask?.trim() || translation('dynamic.identifierFallback'),
       suiteName,
-      suiteDetails: buildSuiteDetails(options.scenarioCount),
+      suiteDetails: buildSuiteDetails(options.scenarioCount, translation),
       participantsCount,
       monitoredUrls,
       attendees: attendeeList,
@@ -174,6 +193,7 @@ export const EnvironmentPage = () => {
     urls,
     shareLinks,
   } = useEnvironmentDetails(environment, bugs);
+  const { t: translation } = useTranslation();
   const slackWebhookUrl = environmentOrganization?.slackWebhookUrl?.trim() || null;
   const canSendSlackSummary = Boolean(slackWebhookUrl);
   const inviteParam = searchParams.get('invite');
@@ -217,21 +237,25 @@ export const EnvironmentPage = () => {
 
         showToast({
           type: 'success',
-          message: target === 'done' ? 'Ambiente concluído.' : 'Status atualizado com sucesso.',
+          message:
+            target === 'done'
+              ? translation('environment.environmentDone')
+              : translation('environment.statusUpdated'),
         });
       } catch (error) {
         if (error instanceof EnvironmentStatusError && error.code === 'PENDING_SCENARIOS') {
           showToast({
             type: 'error',
-            message: 'Existem cenários pendentes ou em andamento. Conclua-os antes de finalizar.',
+            message: translation('environment.pendingScenariosError'),
           });
           return;
         }
 
         console.error(error);
-        showToast({ type: 'error', message: 'Não foi possível atualizar o status.' });
+        showToast({ type: 'error', message: translation('environment.statusUpdateError') });
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [environment, showToast, user?.uid],
   );
 
@@ -243,12 +267,13 @@ export const EnvironmentPage = () => {
 
       try {
         await copyToClipboard(url);
-        showToast({ type: 'success', message: 'Link copiado para a área de transferência.' });
+        showToast({ type: 'success', message: translation('environment.copySuccess') });
       } catch (error) {
         console.error(error);
-        showToast({ type: 'error', message: 'Não foi possível copiar o link.' });
+        showToast({ type: 'error', message: translation('environment.copyError') });
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [showToast],
   );
 
@@ -268,72 +293,81 @@ export const EnvironmentPage = () => {
 
     try {
       await environmentService.copyAsMarkdown(environment, bugs, participantProfiles);
-      showToast({ type: 'success', message: 'Markdown copiado para a área de transferência.' });
+      showToast({ type: 'success', message: translation('environment.copyMarkdownSuccess') });
     } catch (error) {
       console.error(error);
-      showToast({ type: 'error', message: 'Não foi possível copiar o Markdown.' });
+      showToast({ type: 'error', message: translation('environment.copyMarkdownError') });
     } finally {
       setIsCopyingMarkdown(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bugs, environment, participantProfiles, showToast]);
 
-  const handleSendSlackSummary = useCallback(async () => {
-    if (!environment) {
-      return;
-    }
+  const handleSendSlackSummary = useCallback(
+    async () => {
+      if (!environment) {
+        return;
+      }
 
-    if (!slackWebhookUrl) {
-      showToast({
-        type: 'error',
-        message: 'Configure um webhook do Slack na organização para enviar o resumo.',
-      });
-      return;
-    }
+      if (!slackWebhookUrl) {
+        showToast({
+          type: 'error',
+          message: translation('environment.slack.noWebhook'),
+        });
+        return;
+      }
 
-    setIsSendingSlackSummary(true);
+      setIsSendingSlackSummary(true);
 
-    try {
-      const payload = buildSlackTaskSummaryPayload(environment, {
-        formattedTime,
-        totalTimeMs: totalMs,
-        scenarioCount,
-        executedScenariosCount,
-        urls,
-        bugsCount: bugs.length,
-        participantProfiles,
-      });
+      try {
+        const payload = buildSlackTaskSummaryPayload(
+          environment,
+          {
+            formattedTime,
+            totalTimeMs: totalMs,
+            scenarioCount,
+            executedScenariosCount,
+            urls,
+            bugsCount: bugs.length,
+            participantProfiles,
+          },
+          translation,
+        );
 
-      payload.webhookUrl = slackWebhookUrl;
+        payload.webhookUrl = slackWebhookUrl;
 
-      await slackService.sendTaskSummary(payload);
+        await slackService.sendTaskSummary(payload);
 
-      showToast({
-        type: 'success',
-        message: 'Resumo enviado para o Slack com sucesso.',
-      });
-    } catch (error) {
-      console.error(error);
-      const errorMessage =
-        error instanceof Error ? error.message : 'Não foi possível enviar o resumo para o Slack.';
-      showToast({
-        type: 'error',
-        message: errorMessage,
-      });
-    } finally {
-      setIsSendingSlackSummary(false);
-    }
-  }, [
-    bugs.length,
-    environment,
-    executedScenariosCount,
-    formattedTime,
-    participantProfiles,
-    scenarioCount,
-    showToast,
-    slackWebhookUrl,
-    totalMs,
-    urls,
-  ]);
+        showToast({
+          type: 'success',
+          message: translation('environment.slack.success'),
+        });
+      } catch (error) {
+        console.error(error);
+        const errorMessage =
+          error instanceof Error ? error.message : translation('environment.slack.error');
+        showToast({
+          type: 'error',
+          message: errorMessage,
+        });
+      } finally {
+        setIsSendingSlackSummary(false);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      bugs.length,
+      environment,
+      executedScenariosCount,
+      formattedTime,
+      participantProfiles,
+      scenarioCount,
+      showToast,
+      slackWebhookUrl,
+      totalMs,
+      urls,
+    ],
+  );
 
   const openCreateBugModal = useCallback((scenarioId: string) => {
     setEditingBug(null);
@@ -366,19 +400,21 @@ export const EnvironmentPage = () => {
       return true;
     } catch (error) {
       console.error(error);
-      showToast({ type: 'error', message: 'Não foi possível entrar no ambiente.' });
+      showToast({ type: 'error', message: translation('environment.enterError') });
       return false;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enterEnvironment, showToast]);
 
   const handleLeaveEnvironment = useCallback(async () => {
     try {
       await leaveEnvironment();
-      showToast({ type: 'success', message: 'Você saiu do ambiente.' });
+      showToast({ type: 'success', message: translation('environment.leaveSuccess') });
     } catch (error) {
       console.error(error);
-      showToast({ type: 'error', message: 'Não foi possível sair do ambiente.' });
+      showToast({ type: 'error', message: translation('environment.leaveError') });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leaveEnvironment, showToast]);
 
   useEffect(() => {
@@ -409,7 +445,7 @@ export const EnvironmentPage = () => {
     return (
       <Layout>
         <div className="page-container">
-          <PageLoader message="Carregando dados do ambiente..." />
+          <PageLoader message={translation('environment.loading')} />
         </div>
       </Layout>
     );
@@ -420,9 +456,9 @@ export const EnvironmentPage = () => {
       <Layout>
         <section className="page-container environment-page">
           <button type="button" className="link-button" onClick={() => navigate(-1)}>
-            &larr; Voltar
+            {translation('environment.back')}
           </button>
-          <p className="section-subtitle">Ambiente não encontrado.</p>
+          <p className="section-subtitle">{translation('environment.notFound')}</p>
         </section>
       </Layout>
     );
@@ -434,15 +470,20 @@ export const EnvironmentPage = () => {
         <div className="environment-page__header">
           <div>
             <button type="button" className="link-button" onClick={() => navigate(-1)}>
-              &larr; Voltar
+              {translation('environment.back')}
             </button>
             <div>
-              <h1 className="section-title">{environment.identificador ?? 'Ambiente'}</h1>
+              <h1 className="section-title">
+                {environment.identificador ?? translation('environment.anonymousEnvironment')}
+              </h1>
               <p className="section-subtitle">
-                {environment.tipoAmbiente} · {environment.tipoTeste}
+                {environment.tipoAmbiente} {translation('environment.typeSeparator')}{' '}
+                {environment.tipoTeste}
               </p>
               {headerMeta.length > 0 && (
-                <p className="section-subtitle">{headerMeta.join(' · ')}</p>
+                <p className="section-subtitle">
+                  {headerMeta.join(` ${translation('environment.typeSeparator')} `)}
+                </p>
               )}
             </div>
           </div>
@@ -452,10 +493,10 @@ export const EnvironmentPage = () => {
                 type="button"
                 onClick={handleEnterEnvironment}
                 isLoading={isJoiningEnvironment}
-                loadingText="Entrando..."
+                loadingText={translation('environment.entering')}
                 data-testid="enter-environment-button"
               >
-                Entrar no ambiente
+                {translation('environment.enter')}
               </Button>
             ) : (
               <>
@@ -465,7 +506,7 @@ export const EnvironmentPage = () => {
                     onClick={() => handleStatusTransition('in_progress')}
                     data-testid="start-environment-button"
                   >
-                    Iniciar execução
+                    {translation('environment.startExecution')}
                   </Button>
                 )}
                 {environment.status === 'in_progress' && (
@@ -474,7 +515,7 @@ export const EnvironmentPage = () => {
                     onClick={() => handleStatusTransition('done')}
                     data-testid="finish-environment-button"
                   >
-                    Concluir ambiente
+                    {translation('environment.finishEnvironment')}
                   </Button>
                 )}
                 {hasEnteredEnvironment && environment.status !== 'done' && (
@@ -483,10 +524,10 @@ export const EnvironmentPage = () => {
                     variant="ghost"
                     onClick={handleLeaveEnvironment}
                     isLoading={isLeavingEnvironment}
-                    loadingText="Saindo..."
+                    loadingText={translation('environment.leaving')}
                     data-testid="leave-environment-button"
                   >
-                    Sair do ambiente
+                    {translation('environment.leave')}
                   </Button>
                 )}
                 {hasEnteredEnvironment && environment.status !== 'done' && (
@@ -497,7 +538,7 @@ export const EnvironmentPage = () => {
                       onClick={() => setIsEditOpen(true)}
                       data-testid="edit-environment-button"
                     >
-                      Editar
+                      {translation('environment.edit')}
                     </Button>
                     <Button
                       type="button"
@@ -505,7 +546,7 @@ export const EnvironmentPage = () => {
                       onClick={() => setIsDeleteOpen(true)}
                       data-testid="delete-environment-button"
                     >
-                      Excluir
+                      {translation('environment.delete')}
                     </Button>
                   </>
                 )}
@@ -528,7 +569,7 @@ export const EnvironmentPage = () => {
             bugsCount={bugs.length}
           />
           <div className="summary-card">
-            <h3>Compartilhamento e exportação</h3>
+            <h3>{translation('environment.actions.shareExport')}</h3>
             <div className="share-actions">
               <Button
                 type="button"
@@ -537,7 +578,7 @@ export const EnvironmentPage = () => {
                 disabled={isShareDisabled}
                 data-testid="copy-invite-button"
               >
-                Convidar para o ambiente
+                {translation('environment.share.invite')}
               </Button>
               <Button
                 type="button"
@@ -546,7 +587,7 @@ export const EnvironmentPage = () => {
                 disabled={!canCopyPublicLink}
                 data-testid="copy-public-link-button"
               >
-                Copiar link público
+                {translation('environment.share.publicLink')}
               </Button>
               <Button
                 type="button"
@@ -555,7 +596,7 @@ export const EnvironmentPage = () => {
                 disabled={isShareDisabled}
                 data-testid="export-environment-pdf"
               >
-                Exportar PDF
+                {translation('environment.exportPDF')}
               </Button>
               <Button
                 type="button"
@@ -563,10 +604,10 @@ export const EnvironmentPage = () => {
                 onClick={handleCopyMarkdown}
                 disabled={isShareDisabled}
                 isLoading={isCopyingMarkdown}
-                loadingText="Copiando..."
+                loadingText={translation('environment.copying')}
                 data-testid="copy-markdown-button"
               >
-                Copiar Markdown
+                {translation('environment.copyMarkdown')}
               </Button>
               {canSendSlackSummary && (
                 <Button
@@ -575,7 +616,7 @@ export const EnvironmentPage = () => {
                   onClick={handleSendSlackSummary}
                   disabled={isSendingSlackSummary}
                   isLoading={isSendingSlackSummary}
-                  loadingText="Enviando..."
+                  loadingText={translation('environment.slack.sending')}
                   data-testid="send-slack-summary"
                 >
                   <img
@@ -584,7 +625,7 @@ export const EnvironmentPage = () => {
                     alt=""
                     aria-hidden
                   />
-                  Enviar resumo para o Slack
+                  {translation('environment.slack.sendSummary')}
                 </Button>
               )}
             </div>
@@ -593,7 +634,7 @@ export const EnvironmentPage = () => {
 
         <div className="environment-evidence">
           <div className="environment-evidence__header">
-            <h3 className="section-title">Cenários e evidências</h3>
+            <h3 className="section-title">{translation('environment.scenarios.title')}</h3>
           </div>
           <EnvironmentEvidenceTable
             environment={environment}
@@ -618,6 +659,7 @@ export const EnvironmentPage = () => {
         onClose={() => setIsEditOpen(false)}
         environment={environment ?? null}
       />
+
       <DeleteEnvironmentModal
         isOpen={isDeleteOpen}
         onClose={() => setIsDeleteOpen(false)}
