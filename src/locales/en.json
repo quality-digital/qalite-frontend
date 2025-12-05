@@ -3,6 +3,7 @@
     "greeting": "Hello",
     "profile": "Profile",
     "logout": "Logout",
+    "scenarios": "{{count}} cenários",
     "roleAdmin": "Admin",
     "roleUser": "User",
     "login": "Sign in",
@@ -11,8 +12,9 @@
     "success": "Success",
     "error": "Error",
     "alert": "Alert",
+    "back": "Voltar",
     "backToHome": "Back to homepage",
-
+    "saveChanges": "Save changes",
     "loginPage": {
       "title": "Sign in to your account",
       "emailLabel": "Email",
@@ -26,7 +28,6 @@
       "fieldRequired": "Enter email and password to continue.",
       "genericError": "Authentication failed. Try again."
     },
-
     "registerPage": {
       "title": "Create your account",
       "nameLabel": "Full name",
@@ -51,7 +52,6 @@
       "resetPasswordSuccess": "We’ve sent an email with instructions to reset your password.",
       "updateProfileSuccess": "Profile updated successfully."
     },
-
     "forgotPassword": {
       "title": "Recover your access",
       "emailLabel": "Email",
@@ -63,7 +63,6 @@
       "success": "Check your email to reset your password.",
       "error": "The recovery link could not be sent. Please try again."
     },
-
     "userPage": {
       "badge": "Store Catalog",
       "storeTitle": "Select a store to review its scenarios",
@@ -79,11 +78,9 @@
       "browserstackTitle": "Follow automated runs",
       "browserstackSubtitle": "Add your BrowserStack credentials to your profile to view executions Kanban board."
     },
-
     "forbiddenPage": {
       "description": "You do not have permission to access this page. Contact the administrator or return to the homepage."
     },
-
     "adminOrganizationsPage": {
       "title": "Registered organizations",
       "subtitle": "Manage organizations and keep members updated in one place.",
@@ -140,7 +137,141 @@
         "loadOrganizations": "Unable to load organizations."
       }
     },
-
+    "storesPage": {
+      "back": "Voltar",
+      "title": "Lojas da organização {{name}}",
+      "titleWithoutName": "Lojas da organização",
+      "lockedOrganization": "Para trocar a organização, utilize o botão Voltar e selecione outra opção.",
+      "chooseOrganization": "Escolha uma organização para visualizar e administrar suas lojas.",
+      "loadingStores": "Carregando lojas vinculadas...",
+      "emptyTitle": "Nenhuma loja cadastrada",
+      "emptySubtitle": "Utilize o botão acima para cadastrar a primeira loja desta organização.",
+      "newStore": "Nova loja",
+      "manageOrganization": "Gerenciar organização",
+      "openStore": "Abrir loja",
+      "scenarios": "{{count}} cenários"
+    },
+    "storeForm": {
+      "error.selectOrganization": "Selecione uma organização antes de cadastrar a loja.",
+      "error.name": "Informe o nome da loja.",
+      "error.site": "Informe o site da loja.",
+      "success.created": "Nova loja cadastrada.",
+      "error.generic": "Não foi possível salvar a loja."
+    },
+    "organization": {
+      "modalTitle": "Gerenciar organização",
+      "error.name": "Informe um nome para a organização.",
+      "success.updated": "Organização atualizada com sucesso.",
+      "error.generic": "Não foi possível salvar a organização.",
+      "delete.confirmTitle": "Você deseja mesmo excluir a organização \"{{name}}\"?",
+      "delete.confirmDescription": "Os usuários serão desvinculados.",
+      "success.deleted": "Organização removida com sucesso.",
+      "error.delete": "Não foi possível remover a organização."
+    },
+    "members": {
+      "error.email": "Informe o e-mail do usuário.",
+      "success.added": "Usuário adicionado à organização.",
+      "error.add": "Não foi possível adicionar o usuário.",
+      "success.removed": "Usuário removido da organização.",
+      "error.remove": "Não foi possível remover o usuário.",
+      "delete.confirmTitle": "Você deseja mesmo excluir {{name}}?",
+      "delete.confirmDescription": "O usuário será removido da organização {{organization}}."
+    },
+    "browserstack": {
+      "error.load": "Não foi possível carregar as execuções do BrowserStack."
+    },
+    "automation": {
+      "error.loadStats": "Não foi possível carregar os cenários automatizados por loja."
+    },
+    "AdminStoresPage": {
+      "no-members-message": "No users linked yet. Add members using the email registered in QaLite",
+      "stores-page": "Store Administration Page",
+      "stores-back-button": "← Back",
+      "stores-title-org-selected": "Stores of the organization {{organizationName}}",
+      "stores-title-no-org-selected": "Stores of the organization",
+      "stores-subtitle-locked": "To change the organization, use the Back button and select another option.",
+      "stores-subtitle-unlocked": "Choose an organization to view and manage its stores.",
+      "manage-organization-button": "Manage organization",
+      "new-store-button": "New store",
+      "loading-stores": "Loading linked stores...",
+      "no-stores-title": "No stores registered",
+      "no-stores-subtitle": "Use the button above to register the first store for this organization.",
+      "store-card-scenarios-badge": "{{scenarioCount}} scenarios",
+      "store-card-open-hint": "Open store",
+      "store-card-arrow-hint": "→",
+      "collaborators-card-title": "Organization collaborators",
+      "collaborators-card-subtitle": "Quickly view who has access to this organization.",
+      "collaborators-count-singular": "1 collaborator",
+      "collaborators-count-plural": "{{count}} collaborators",
+      "no-collaborators-subtitle": "No collaborators linked. Use the “Manage organization” button to invite new members.",
+      "chart-scenarios-title": "Scenarios by store",
+      "chart-scenarios-description": "Total scenarios registered in each store of this organization.",
+      "chart-scenarios-empty-message": "Register stores and scenarios to view this chart.",
+      "chart-automated-title": "Automated scenarios",
+      "chart-automated-description": "Comparison of scenarios marked as automated per store.",
+      "chart-automated-empty-message": "We have not yet identified automated scenarios in the stores of this organization.",
+      "browserstack-card-badge": "BrowserStack",
+      "browserstack-card-title": "Connect your account",
+      "browserstack-card-subtitle": "Add your BrowserStack username and access key to your profile to track automated executions.",
+      "toast-error-load-orgs": "Could not load organizations.",
+      "toast-error-load-stores": "Could not load the stores for this organization.",
+      "toast-error-load-automation-stats": "Could not load automated scenarios by store.",
+      "toast-error-load-browserstack": "Could not load BrowserStack executions.",
+      "toast-success-store-created": "New store registered.",
+      "toast-error-save-store": "Could not save the store.",
+      "toast-success-org-updated": "Organization successfully updated.",
+      "toast-error-save-org": "Could not save the organization.",
+      "toast-success-org-removed": "Organization successfully removed.",
+      "toast-error-remove-org": "Could not remove the organization.",
+      "toast-success-member-added": "User added to the organization.",
+      "toast-error-add-member": "Could not add the user.",
+      "toast-success-member-removed": "User removed from the organization.",
+      "toast-error-remove-member": "Could not remove the user.",
+      "modal-store-title": "New store",
+      "modal-store-description": "Enter the basic store details to make the scenarios available.",
+      "form-error-no-org-selected": "Select an organization before registering the store.",
+      "form-error-no-store-name": "Enter the store name.",
+      "form-error-no-store-site": "Enter the store site URL.",
+      "store-name-label": "Store name",
+      "store-name-placeholder": "Ex: QA Store",
+      "store-site-label": "Site URL",
+      "store-site-placeholder": "https://mystore.com",
+      "save-button-saving": "Saving...",
+      "save-store-button": "Create store",
+      "cancel-store-button": "Cancel",
+      "modal-org-title": "Manage {{organizationName}}",
+      "org-name-label": "Organization name",
+      "org-name-placeholder": "Ex: Onboarding Squad",
+      "org-email-domain-label": "Organization email domain",
+      "org-email-domain-placeholder": "@example.com",
+      "org-email-domain-hint": "Enter the domain (with or without @). Users with this email are automatically included.",
+      "org-slack-section-title": "Slack Webhook",
+      "org-slack-section-description": "Do you want to register a webhook to send automatic notifications to Slack?",
+      "org-slack-toggle-on": "Enabled",
+      "org-slack-toggle-off": "Disabled",
+      "org-slack-webhook-label": "Slack Webhook",
+      "org-slack-webhook-placeholder": "https://hooks.slack.com/services/...",
+      "org-slack-webhook-hint": "Paste the URL generated by the Incoming Webhooks app.",
+      "org-logo-label": "Organization logo",
+      "org-logo-trigger": "Update logo",
+      "org-logo-hint": "Upload a PNG, JPG, or SVG file up to 5MB.",
+      "confirm-delete-org-message": "Are you sure you want to delete the organization \"{{organizationName}}\"?",
+      "confirm-delete-org-description": "Users will be unlinked.",
+      "confirm-remove-member-message": "Are you sure you want to remove {{memberName}}?",
+      "confirm-remove-member-description": "The user will be removed from the organization {{organizationName}}.",
+      "form-error-no-org-name": "Enter a name for the organization.",
+      "form-error-no-member-email": "Enter the user's email.",
+      "org-slack-added-user": "Add users by the email registered in QaLite.",
+      "org-vinculed-members": "Linked members",
+      "org-added-user": "Add user",
+      "org-added-user-to-email": "Add user by email",
+      "org-email-placeholder": "user@company.com",
+      "org-button-addeding": "Adding...",
+      "org-remove-user": "Remove",
+      "org-danger-zone": "Danger Zone",
+      "org-remove-org-and-users": "Remove the organization and unlink all users.",
+      "org-remove-organization": "Delete organization"
+    },
     "firebaseErrors": {
       "auth/invalid-email": "Invalid email. Please check the address provided.",
       "auth/invalid-credential": "Incorrect email or password. Please verify your information.",
