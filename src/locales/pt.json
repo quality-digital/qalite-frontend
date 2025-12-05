@@ -84,6 +84,63 @@
       "description": "Você não tem permissão para acessar esta página. Entre em contato com o administrador ou volte ao início."
     },
 
+    "adminOrganizationsPage": {
+      "title": "Organizações cadastradas",
+      "subtitle": "Gerencie as organizações e mantenha os membros atualizados em um só lugar.",
+      "actions": {
+        "newOrganization": "Nova organização",
+        "create": "Criar organização",
+        "cancel": "Cancelar",
+        "saving": "Salvando..."
+      },
+      "loading": "Carregando organizações do Firestore...",
+      "empty": {
+        "title": "Nenhuma organização cadastrada",
+        "description": "Utilize o botão acima para cadastrar a primeira organização."
+      },
+      "viewStores": "Ver lojas",
+      "members": {
+        "one": "membro",
+        "other": "membros"
+      },
+      "modal": {
+        "title": "Nova organização"
+      },
+      "form": {
+        "name": {
+          "label": "Nome da organização",
+          "placeholder": "Ex.: Squad de Onboarding"
+        },
+        "emailDomain": {
+          "label": "Domínio de e-mail da organização",
+          "placeholder": "@exemplo.com",
+          "hint": "Informe o domínio (com ou sem @). Usuários com esse e-mail serão vinculados automaticamente."
+        },
+        "slack": {
+          "title": "Webhook do Slack",
+          "description": "Deseja cadastrar um webhook para enviar notificações automáticas no Slack?",
+          "enabled": "Ativado",
+          "disabled": "Desativado",
+          "webhookLabel": "Webhook do Slack",
+          "webhookPlaceholder": "https://hooks.slack.com/services/...",
+          "hint": "Cole a URL gerada pelo aplicativo de Incoming Webhooks."
+        },
+        "logo": {
+          "label": "Logo da organização",
+          "button": "Selecionar arquivo",
+          "hint": "Formatos sugeridos: PNG, JPG ou SVG até 5MB."
+        }
+      },
+      "success": {
+        "created": "Nova organização criada."
+      },
+      "errors": {
+        "generic": "Não foi possível salvar a organização.",
+        "nameRequired": "Informe um nome para a organização.",
+        "loadOrganizations": "Não foi possível carregar as organizações."
+      }
+    },
+
     "firebaseErrors": {
       "auth/invalid-email": "E-mail inválido. Revise o endereço informado.",
       "auth/invalid-credential": "E-mail ou senha incorretos. Confira os dados informados.",
