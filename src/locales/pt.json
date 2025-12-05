@@ -13,6 +13,7 @@
     "error": "Erro",
     "alert": "Alerta",
     "back": "Voltar",
+    "loadingAccess": "Carregando Acesso...",
     "backToHome": "Voltar para o início",
     "saveChanges": "Salvar alterações",
     "loginPage": {
@@ -28,6 +29,7 @@
       "fieldRequired": "Informe e-mail e senha para continuar.",
       "genericError": "Não foi possível autenticar. Tente novamente."
     },
+
     "registerPage": {
       "title": "Crie sua conta",
       "nameLabel": "Nome completo",

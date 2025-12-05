@@ -13,6 +13,7 @@
     "error": "Error",
     "alert": "Alert",
     "back": "Voltar",
+    "loadingAccess": "Loading access...",
     "backToHome": "Back to homepage",
     "saveChanges": "Save changes",
     "loginPage": {
