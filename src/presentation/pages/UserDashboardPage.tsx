@@ -31,7 +31,6 @@ export const UserDashboardPage = () => {
   const [isLoadingBrowserstack, setIsLoadingBrowserstack] = useState(false);
 
   const { t } = useTranslation();
-  const { i18n } = useTranslation();
 
   useEffect(() => {
     if (isInitializing) {
@@ -112,23 +111,23 @@ export const UserDashboardPage = () => {
 
   const subtitle = useMemo(() => {
     if (organization?.name) {
-      return `Você está colaborando com ${organization.name}. Selecione uma loja para continuar.`;
+      return t("userPage.organizationName", { org: organization.name }), t("selectStore");
     }
 
     if (status === 'error') {
-      return 'Não conseguimos carregar as lojas. Tente novamente ou fale com o administrador.';
+      return t("userPage.loadingError");
     }
 
-    return 'Escolha uma das lojas disponíveis para revisar as suítes de cenários.';
+    return t("userPage.chooseStore");
   }, [organization?.name, status]);
 
   const isError = status === 'error';
   const emptyStateTitle = isError
-    ? 'Não foi possível carregar as lojas'
-    : 'Nenhuma loja disponível ainda';
+    ? t("userPage.loadingStores")
+    : t("userPage.unavailableStores");
   const emptyStateDescription = isError
-    ? 'Atualize a página ou tente novamente mais tarde. Se o problema persistir, contate o administrador.'
-    : 'Peça para um administrador adicionar lojas à sua organização ou volte mais tarde.';
+    ? t("userPage.updatePage")
+    : t("userPage.addStores");
 
   const scenariosPerStoreData = useMemo(
     () =>
@@ -169,7 +168,7 @@ export const UserDashboardPage = () => {
       const message =
         error instanceof Error
           ? error.message
-          : 'Não foi possível carregar as execuções do BrowserStack.';
+          : t("userPage.errorBrowserstack");
       showToast({ type: 'error', message });
     } finally {
       setIsLoadingBrowserstack(false);
@@ -278,17 +277,17 @@ export const UserDashboardPage = () => {
 
             <section className="organization-charts-grid">
               <SimpleBarChart
-                title="Cenários por loja"
-                description="Total de cenários cadastrados em cada loja desta organização."
+                title={t("userPage.storeScenarios")}
+                description={t("userPage.totalScenarios")}
                 data={scenariosPerStoreData}
-                emptyMessage="Cadastre lojas e cenários para visualizar este gráfico."
+                emptyMessage={t("userPage.emptyStores")}
                 icon={<BarChartIcon aria-hidden className="icon icon--lg" />}
               />
               <SimpleBarChart
-                title="Cenários automatizados"
-                description="Comparativo de cenários marcados como automatizados por loja."
+                title={t("userPage.automatedScenarios")}
+                description={t("userPage.scenariosDescription")}
                 data={automatedScenariosPerStoreData}
-                emptyMessage="Ainda não identificamos cenários automatizados nas lojas desta organização."
+                emptyMessage={t("userPage.emptyScenarios")}
                 isLoading={isLoadingAutomationStats}
                 variant="info"
                 icon={<SparklesIcon aria-hidden className="icon icon--lg" />}

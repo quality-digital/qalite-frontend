@@ -1,24 +1,29 @@
 import { Layout } from '../components/Layout';
+import { useTranslation } from 'react-i18next';
 
-export const NoOrganizationPage = () => (
-  <Layout>
+export const NoOrganizationPage = () => {
+
+  const { t } = useTranslation();
+
+  return (
+    <Layout>
     <section className="list-grid">
       <div className="card">
-        <span className="badge">Configuração pendente</span>
-        <h1 className="section-title">Você ainda não está vinculado a uma organização</h1>
+        <span className="badge">{t('noOrganization.badge')}</span>
+        <h1 className="section-title">{t('noOrganization.title')}</h1>
         <p className="section-subtitle">
-          Entre em contato com um administrador para configurar o domínio do seu e-mail ou associar
-          sua conta a uma equipe e liberar os recursos do QaLite.
+          {t('noOrganization.subtitle')}
         </p>
       </div>
       <div className="card">
-        <h2 className="text-xl font-semibold text-primary">O que você pode fazer agora?</h2>
+        <h2 className="text-xl font-semibold text-primary">{t('noOrganization.steps')}</h2>
         <ul className="mt-4 list-disc pl-5 text-sm text-muted">
-          <li>Garanta que seus dados de perfil estejam atualizados em &quot;Perfil&quot;.</li>
-          <li>Confirme com o administrador responsável o e-mail da sua conta.</li>
-          <li>Assim que for convidado, faça login novamente para acessar sua organização.</li>
+          <li>{t('noOrganization.update')} &quot;{t('profile')}&quot;.</li>
+          <li>{t('noOrganization.confirm')}</li>
+          <li>{t('noOrganization.invite')}</li>
         </ul>
       </div>
     </section>
   </Layout>
-);
+  );
+};

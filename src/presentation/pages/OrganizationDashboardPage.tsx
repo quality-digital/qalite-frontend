@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import type { Organization } from '../../domain/entities/organization';
 import { organizationService } from '../../application/use-cases/OrganizationUseCase';
@@ -19,6 +20,8 @@ export const OrganizationDashboardPage = () => {
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const isAdmin = user?.role?.toLowerCase() === 'admin';
+
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (isInitializing) {
@@ -41,7 +44,7 @@ export const OrganizationDashboardPage = () => {
         const data = await organizationService.getById(user.organizationId as string);
 
         if (!data) {
-          showToast({ type: 'error', message: 'Organização não encontrada.' });
+          showToast({ type: 'error', message: t('organizationPage.notFound') });
           navigate('/no-organization', { replace: true });
           return;
         }
@@ -49,7 +52,7 @@ export const OrganizationDashboardPage = () => {
         setOrganization(data);
       } catch (error) {
         console.error(error);
-        showToast({ type: 'error', message: 'Não foi possível carregar sua organização.' });
+        showToast({ type: 'error', message: t('organizationPage.loadingError') });
       } finally {
         setIsLoading(false);
       }
@@ -70,14 +73,14 @@ export const OrganizationDashboardPage = () => {
     <Layout>
       <section className="list-grid">
         <div className="card">
-          <span className="badge">Minha organização</span>
+          <span className="badge">{t('organizationPage.badge')}</span>
           {isLoading ? (
-            <p className="section-subtitle">Carregando informações...</p>
+            <p className="section-subtitle">{t('organizationPage.loading')}</p>
           ) : (
             <>
-              <h1 className="section-title">{organization?.name ?? 'Organização'}</h1>
+              <h1 className="section-title">{organization?.name ?? t('organizationPage.title')}</h1>
               <p className="section-subtitle">
-                {organization?.description || 'Mantenha o time alinhado e colabore com eficiência.'}
+                {organization?.description || t('organizationPage.subtitle')}
               </p>
             </>
           )}
@@ -85,21 +88,20 @@ export const OrganizationDashboardPage = () => {
 
         <div className="card">
           <div className="flex items-center justify-between flex-wrap gap-4">
-            <h2 className="text-xl font-semibold text-primary">Membros</h2>
+            <h2 className="text-xl font-semibold text-primary">{t('organizationPage.members')}</h2>
             {!isLoading && (
               <span className="badge">
-                {organization?.members.length ?? 0} membro
+                {organization?.members.length ?? 0} {t('organizationPage.member')}
                 {(organization?.members.length ?? 0) === 1 ? '' : 's'}
               </span>
             )}
           </div>
 
-          {isLoading && <p className="section-subtitle">Sincronizando com o Firestore...</p>}
+          {isLoading && <p className="section-subtitle">{t('organizationPage.syncing')}</p>}
 
           {!isLoading && (organization?.members.length ?? 0) === 0 && (
             <p className="section-subtitle">
-              Nenhum membro foi associado a esta organização ainda. Assim que alguém fizer login com
-              um e-mail do domínio configurado, ele aparecerá automaticamente aqui.
+              {t('organizationPage.empty')}
             </p>
           )}
 
