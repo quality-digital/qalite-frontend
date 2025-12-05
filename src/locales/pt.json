@@ -1,0 +1,106 @@
+{
+  "translation": {
+    "user": "Colaborador",
+    "greeting": "Olá",
+    "profile": "Perfil",
+    "logout": "Sair",
+    "roleAdmin": "Administrador",
+    "login": "Entrar",
+    "register": "Criar conta",
+
+    "info": "Informação",
+    "success": "Sucesso",
+    "error": "Erro",
+    "alert": "Alerta",
+
+    "loginPage": {
+      "title": "Entre na sua conta",
+      "emailLabel": "E-mail",
+      "emailHint": "Se o domínio do seu e-mail já estiver configurado, você será incluído automaticamente na organização ao entrar.",
+      "passwordLabel": "Senha",
+      "submit": "Entrar",
+      "loading": "Autenticando...",
+      "forgotPassword": "Esqueci minha senha",
+      "noAccount": "Ainda não tem conta?",
+      "createNow": "Crie agora",
+      "fieldRequired": "Informe e-mail e senha para continuar.",
+      "genericError": "Não foi possível autenticar. Tente novamente."
+    },
+
+    "registerPage": {
+      "title": "Crie sua conta",
+      "nameLabel": "Nome completo",
+      "emailLabel": "E-mail",
+      "emailHint": "Cadastre seu e-mail corporativo para ser vinculado automaticamente à organização correta.",
+      "passwordLabel": "Senha",
+      "confirmPasswordLabel": "Confirme a senha",
+      "passwordRule": "Senha com no mínimo {{min}} caracteres.",
+      "submit": "Cadastrar",
+      "loading": "Criando conta...",
+      "haveAccount": "Já tem conta?",
+      "loginHere": "Entre com suas credenciais",
+      "allFieldsRequired": "Todos os campos são obrigatórios.",
+      "invalidEmail": "Informe um e-mail válido.",
+      "passwordTooShort": "A senha deve ter pelo menos {{min}} caracteres.",
+      "passwordMismatch": "As senhas não conferem.",
+      "genericError": "Não foi possível criar sua conta. Tente novamente.",
+      "registerSuccesfull": "Conta criada com sucesso! Verifique seu e-mail corporativo para liberar o acesso.",
+      "emailNotVerified": "Confirme seu e-mail corporativo para acessar o sistema. Reenviamos o link de verificação para sua caixa de entrada.",
+      "welcomeBack": "Bem-vindo de volta, {{name}}!",
+      "logoutSuccess": "Você saiu com segurança.",
+      "resetPasswordSuccess": "Enviamos um e-mail com instruções para redefinir sua senha.",
+      "updateProfileSuccess": "Perfil atualizado com sucesso."
+    },
+
+    "forgotPassword": {
+      "title": "Recupere seu acesso",
+      "emailLabel": "E-mail",
+      "submit": "Enviar link de recuperação",
+      "loading": "Enviando...",
+      "backToLogin": "Lembrou a senha?",
+      "backToLoginLink": "Voltar para login",
+      "emptyEmail": "Informe o e-mail cadastrado.",
+      "success": "Verifique seu e-mail para redefinir a senha.",
+      "error": "Não foi possível enviar o link de recuperação. Tente novamente."
+    },
+
+    "userPage": {
+      "badge": "Biblioteca de lojas",
+      "storeTitle": "Selecione uma loja para revisar seus cenários",
+      "loadingTitle": "Carregando lojas disponíveis...",
+      "reload": "Tentar novamente",
+      "profile": "Revisar perfil",
+      "users": "Colaboradores da organização",
+      "userSubtitle": "Visualize rapidamente quem tem acesso a esta organização.",
+      "usersCount": "colaborad",
+      "oneUser": "or",
+      "moreUsers": "ores",
+      "members": "Nenhum colaborador vinculado. Aguarde um administrador convidar novos membros.",
+      "browserstackTitle": "Acompanhe execuções automatizadas",
+      "browserstackSubtitle": "Adicione suas credenciais do BrowserStack no perfil para visualizar o quadro Kanban de execuções."
+    },
+
+    "firebaseErrors": {
+      "auth/invalid-email": "E-mail inválido. Revise o endereço informado.",
+      "auth/invalid-credential": "E-mail ou senha incorretos. Confira os dados informados.",
+      "auth/invalid-login-credentials": "E-mail ou senha incorretos. Confira os dados informados.",
+      "auth/user-disabled": "Esta conta foi desativada. Entre em contato com o suporte.",
+      "auth/user-not-found": "Não encontramos uma conta para este e-mail.",
+      "auth/wrong-password": "Senha incorreta. Tente novamente.",
+      "auth/missing-email": "Informe um e-mail corporativo para continuar.",
+      "auth/missing-password": "Informe sua senha para continuar.",
+      "auth/email-already-in-use": "Este e-mail já está em uso.",
+      "auth/weak-password": "Sua senha precisa ter pelo menos 6 caracteres.",
+      "auth/operation-not-allowed": "Tipo de login temporariamente indisponível.",
+      "auth/account-exists-with-different-credential": "Já existe uma conta com este e-mail usando outro método de acesso.",
+      "auth/too-many-requests": "Muitas tentativas. Aguarde um instante e tente de novo.",
+      "auth/network-request-failed": "Erro de rede. Verifique sua conexão com a internet.",
+      "auth/requires-recent-login": "Faça login novamente para concluir esta ação.",
+      "storage/unauthorized": "Você não tem permissão para enviar este arquivo.",
+      "storage/retry-limit-exceeded": "Não conseguimos finalizar o upload. Tente novamente em breve.",
+      "storage/canceled": "Upload cancelado.",
+      "firestore/unavailable": "Serviço temporariamente indisponível. Tente novamente em instantes.",
+      "fallbackMessage": "Não foi possível concluir a operação. Tente novamente."
+    }
+  }
+}

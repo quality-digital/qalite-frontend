@@ -1,0 +1,106 @@
+{
+  "translation": {
+    "greeting": "Hello",
+    "profile": "Profile",
+    "logout": "Logout",
+    "roleAdmin": "Admin",
+    "roleUser": "User",
+    "login": "Sign in",
+    "register": "Create account",
+
+    "info": "Information",
+    "success": "Success",
+    "error": "Error",
+    "alert": "Alert",
+
+    "loginPage": {
+      "title": "Sign in to your account",
+      "emailLabel": "Email",
+      "emailHint": "If your email domain is already configured, you will be automatically included in the organization.",
+      "passwordLabel": "Password",
+      "submit": "Sign in",
+      "loading": "Authenticating...",
+      "forgotPassword": "Forgot my password",
+      "noAccount": "Don't have an account?",
+      "createNow": "Create now",
+      "fieldRequired": "Enter email and password to continue.",
+      "genericError": "Authentication failed. Try again."
+    },
+
+    "registerPage": {
+      "title": "Create your account",
+      "nameLabel": "Full name",
+      "emailLabel": "Email",
+      "emailHint": "Register with your corporate email to be automatically linked to the correct organization.",
+      "passwordLabel": "Password",
+      "confirmPasswordLabel": "Confirm password",
+      "passwordRule": "Password must have at least {{min}} characters.",
+      "submit": "Register",
+      "loading": "Creating account...",
+      "haveAccount": "Already have an account?",
+      "loginHere": "Log in with your credentials",
+      "allFieldsRequired": "All fields are required.",
+      "invalidEmail": "Enter a valid email.",
+      "passwordTooShort": "Password must have at least {{min}} characters.",
+      "passwordMismatch": "Passwords do not match.",
+      "genericError": "Unable to create your account. Please try again.",
+      "registerSuccesfull": "Account created successfully! Check your corporate email to activate your access.",
+      "emailNotVerified": "Confirm your corporate email to access the system. We've sent a new verification link to your inbox.",
+      "welcomeBack": "Welcome back, {{name}}!",
+      "logoutSuccess": "You've signed out safely.",
+      "resetPasswordSuccess": "We’ve sent an email with instructions to reset your password.",
+      "updateProfileSuccess": "Profile updated successfully."
+    },
+
+    "forgotPassword": {
+      "title": "Recover your access",
+      "emailLabel": "Email",
+      "submit": "Send recovery link",
+      "loading": "Sending...",
+      "backToLogin": "Remembered your password?",
+      "backToLoginLink": "Back to login",
+      "emptyEmail": "Enter the registered email.",
+      "success": "Check your email to reset your password.",
+      "error": "The recovery link could not be sent. Please try again."
+    },
+
+    "userPage": {
+      "badge": "Store Catalog",
+      "storeTitle": "Select a store to review its scenarios",
+      "loadingTitle": "Loading available stores...",
+      "reload": "Try again",
+      "profile": "Revisar perfil",
+      "users": "Organization Users",
+      "userSubtitle": "See who has access to this organization.",
+      "usersCount": "user",
+      "oneUser": "",
+      "moreUsers": "s",
+      "userPage.members": "No users associated. Wait for an administrator to invite new members.",
+      "browserstackTitle": "Follow automated runs",
+      "browserstackSubtitle": "Add your BrowserStack credentials to your profile to view executions Kanban board."
+    },
+
+    "firebaseErrors": {
+      "auth/invalid-email": "Invalid email. Please check the address provided.",
+      "auth/invalid-credential": "Incorrect email or password. Please verify your information.",
+      "auth/invalid-login-credentials": "Incorrect email or password. Please verify your information.",
+      "auth/user-disabled": "This account has been disabled. Contact support for assistance.",
+      "auth/user-not-found": "We couldn’t find an account associated with this email.",
+      "auth/wrong-password": "Incorrect password. Please try again.",
+      "auth/missing-email": "Enter your corporate email to continue.",
+      "auth/missing-password": "Enter your password to continue.",
+      "auth/email-already-in-use": "This email is already in use.",
+      "auth/weak-password": "Your password must contain at least 6 characters.",
+      "auth/operation-not-allowed": "This login method is temporarily unavailable.",
+      "auth/account-exists-with-different-credential": "An account with this email already exists using another login method.",
+      "auth/too-many-requests": "Too many attempts. Please wait a moment and try again.",
+      "auth/network-request-failed": "Network error. Check your internet connection.",
+      "auth/requires-recent-login": "You need to log in again to complete this action.",
+      "storage/unauthorized": "You do not have permission to upload this file.",
+      "storage/retry-limit-exceeded": "We were unable to complete the upload. Please try again soon.",
+      "storage/canceled": "Upload canceled.",
+      "firestore/unavailable": "Service temporarily unavailable. Please try again in a moment.",
+      "fallbackMessage": "The operation could not be completed. Please try again."
+    }
+  }
+}

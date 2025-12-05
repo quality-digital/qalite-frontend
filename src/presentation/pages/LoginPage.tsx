@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '../hooks/useAuth';
 import { AuthLayout } from '../components/AuthLayout';
@@ -8,6 +9,7 @@ import { TextInput } from '../components/TextInput';
 import { PasswordInput } from '../components/PasswordInput';
 
 export const LoginPage = () => {
+  const { t: translation } = useTranslation();
   const navigate = useNavigate();
   const { login, isLoading } = useAuth();
   const [email, setEmail] = useState('');
@@ -21,7 +23,7 @@ export const LoginPage = () => {
     const normalizedEmail = email.trim();
 
     if (!normalizedEmail || !password) {
-      setFormError('Informe e-mail e senha para continuar.');
+      setFormError(translation('loginPage.fieldRequired'));
       return;
     }
 
@@ -41,56 +43,56 @@ export const LoginPage = () => {
       navigate('/no-organization', { replace: true });
     } catch (err) {
       console.error(err);
-      const message =
-        err instanceof Error ? err.message : 'Não foi possível autenticar. Tente novamente.';
+      const message = err instanceof Error ? err.message : translation('loginPage.genericError');
       setFormError(message);
     }
   };
 
   return (
     <AuthLayout
-      title="Entre na sua conta"
-      hideHeader
+      title={translation('loginPage.title')}
       footer={
         <div className="auth-links">
-          <Link to="/forgot-password">Esqueci minha senha</Link>
+          <Link to="/forgot-password">{translation('loginPage.forgotPassword')}</Link>
           <span>
-            Ainda não tem conta? <Link to="/register">Crie agora</Link>
+            {translation('loginPage.noAccount')}{' '}
+            <Link to="/register">{translation('loginPage.createNow')}</Link>
           </span>
         </div>
       }
     >
       {formError && <p className="form-message form-message--error">{formError}</p>}
+
       <form className="form-grid" onSubmit={handleSubmit} data-testid="login-form">
         <TextInput
           id="email"
-          label="E-mail"
+          label={translation('loginPage.emailLabel')}
           type="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           required
           dataTestId="login-email"
         />
-        <p className="form-hint">
-          Se o domínio do seu e-mail já estiver configurado, você será incluído automaticamente na
-          organização ao entrar.
-        </p>
+
+        <p className="form-hint">{translation('loginPage.emailHint')}</p>
+
         <PasswordInput
           id="password"
-          label="Senha"
+          label={translation('loginPage.passwordLabel')}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           required
           autoComplete="current-password"
           dataTestId="login-password"
         />
+
         <Button
           type="submit"
           isLoading={isLoading}
-          loadingText="Autenticando..."
+          loadingText={translation('loginPage.loading')}
           data-testid="login-submit"
         >
-          Entrar
+          {translation('loginPage.submit')}
         </Button>
       </form>
     </AuthLayout>
