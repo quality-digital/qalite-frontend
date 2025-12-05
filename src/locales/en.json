@@ -7,11 +7,11 @@
     "roleUser": "User",
     "login": "Sign in",
     "register": "Create account",
-
     "info": "Information",
     "success": "Success",
     "error": "Error",
     "alert": "Alert",
+    "backToHome": "Back to homepage",
 
     "loginPage": {
       "title": "Sign in to your account",
@@ -78,6 +78,10 @@
       "userPage.members": "No users associated. Wait for an administrator to invite new members.",
       "browserstackTitle": "Follow automated runs",
       "browserstackSubtitle": "Add your BrowserStack credentials to your profile to view executions Kanban board."
+    },
+
+    "forbiddenPage": {
+      "description": "You do not have permission to access this page. Contact the administrator or return to the homepage."
     },
 
     "firebaseErrors": {
