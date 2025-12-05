@@ -13,7 +13,6 @@ import {
   where,
   type QueryConstraint,
 } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 
 import type { ActivityLog } from '../../domain/entities/activityLog';
 import type {
@@ -32,7 +31,7 @@ import type {
   UpdateEnvironmentInput,
 } from '../../domain/entities/environment';
 import type { UserSummary } from '../../domain/entities/user';
-import { firebaseFirestore, firebaseStorage } from '../database/firebase';
+import { firebaseFirestore } from '../database/firebase';
 import { EnvironmentStatusError } from '../../shared/errors/firebaseErrors';
 import { BUG_STATUS_LABEL } from '../../shared/config/environmentLabels';
 import { logActivity } from './logs';
@@ -46,17 +45,6 @@ import {
 const ENVIRONMENTS_COLLECTION = 'environments';
 const BUGS_SUBCOLLECTION = 'bugs';
 const STORES_COLLECTION = 'stores';
-const ACCEPTED_EVIDENCE_TYPES = [
-  'image/png',
-  'image/jpeg',
-  'image/gif',
-  'image/webp',
-  'application/pdf',
-  'video/mp4',
-  'video/quicktime',
-  'application/zip',
-  'application/x-zip-compressed',
-];
 const environmentsCollection = collection(firebaseFirestore, ENVIRONMENTS_COLLECTION);
 
 const getStoreOrganizationContext = async (
@@ -515,10 +503,21 @@ export const updateScenarioStatus = async (
 export const uploadScenarioEvidence = async (
   environmentId: string,
   scenarioId: string,
-  file: File,
+  evidenceLink: string,
 ): Promise<string> => {
-  if (!ACCEPTED_EVIDENCE_TYPES.includes(file.type)) {
-    throw new Error('Formato de arquivo não suportado.');
+  const trimmedLink = evidenceLink.trim();
+  if (!trimmedLink) {
+    throw new Error('Informe um link válido para a evidência.');
+  }
+
+  try {
+    const parsedUrl = new URL(trimmedLink);
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      throw new Error('Informe um link válido para a evidência.');
+    }
+  } catch (error) {
+    console.error(error);
+    throw new Error('Informe um link válido para a evidência.');
   }
 
   const environmentRef = doc(firebaseFirestore, ENVIRONMENTS_COLLECTION, environmentId);
@@ -530,21 +529,17 @@ export const uploadScenarioEvidence = async (
       )
     : null;
 
-  const path = `environments/${environmentId}/scenarios/${scenarioId}/${Date.now()}-${file.name}`;
-  const storageRef = ref(firebaseStorage, path);
-  await uploadBytes(storageRef, file);
-  const url = await getDownloadURL(storageRef);
-  await updateScenarioField(environmentId, scenarioId, { evidenciaArquivoUrl: url });
+  await updateScenarioField(environmentId, scenarioId, { evidenciaArquivoUrl: trimmedLink });
 
   if (environment) {
     await logEnvironmentActivity(
       environment.storeId,
       environmentId,
       'attachment',
-      `Evidência adicionada ao cenário ${scenarioId} - ${environment.identificador || environmentId}`,
+      `Evidência vinculada ao cenário ${scenarioId} - ${environment.identificador || environmentId}`,
     );
   }
-  return url;
+  return trimmedLink;
 };
 
 export const observeEnvironmentBugs = (

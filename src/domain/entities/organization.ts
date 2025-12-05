@@ -21,7 +21,6 @@ export interface Organization {
 export interface CreateOrganizationPayload {
   name: string;
   description: string;
-  logoFile?: File | null;
   slackWebhookUrl?: string | null;
   emailDomain?: string | null;
 }
@@ -29,7 +28,6 @@ export interface CreateOrganizationPayload {
 export interface UpdateOrganizationPayload {
   name: string;
   description: string;
-  logoFile?: File | null;
   slackWebhookUrl?: string | null;
   emailDomain?: string | null;
 }

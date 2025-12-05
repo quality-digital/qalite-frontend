@@ -12,14 +12,12 @@ import { useTranslation } from 'react-i18next';
 
 interface OrganizationFormState {
   name: string;
-  logoFile: File | null;
   slackWebhookUrl: string;
   emailDomain: string;
 }
 
 const initialOrganizationForm: OrganizationFormState = {
   name: '',
-  logoFile: null,
   slackWebhookUrl: '',
   emailDomain: '',
 };
@@ -61,7 +59,7 @@ export const AdminOrganizationsPage = () => {
     };
 
     void fetchOrganizations();
-  }, [showToast, translation]);
+  }, [showToast]);
 
   const openCreateModal = () => {
     setOrganizationForm(initialOrganizationForm);
@@ -110,7 +108,6 @@ export const AdminOrganizationsPage = () => {
       const created = await organizationService.create({
         name: trimmedName,
         description: '',
-        logoFile: organizationForm.logoFile,
         slackWebhookUrl,
         emailDomain,
       });

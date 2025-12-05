@@ -1,16 +1,17 @@
-# name: Cypress Tests
-# on:
-#   push:
-#     branches: [ main ]
-#   pull_request:
-#     branches: [ main ]
-# jobs:
-#   trigger:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Trigger tests
-#         uses: peter-evans/repository-dispatch@v3
-#         with:
-#           token:  ${{ secrets.GH_PAT }}
-#           repository: sntooosk/qalite-cypress-e2e-automation
-#           event-type: qalite-cypress-trigger
+name: Cypress Tests Trigger
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GH_PAT }}
+          repository: sntooosk/qalite-cypress-e2e-automation
+          event-type: qalite-cypress-trigger

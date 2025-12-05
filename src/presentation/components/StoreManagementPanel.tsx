@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 
 import type {
   Store,
@@ -6,7 +6,6 @@ import type {
   StoreScenario,
   StoreScenarioInput,
 } from '../../domain/entities/store';
-import type { StoreExportPayload } from '../../infrastructure/external/stores';
 import { storeService } from '../../application/use-cases/StoreUseCase';
 import { useToast } from '../context/ToastContext';
 import { Button } from './Button';
@@ -25,11 +24,10 @@ import {
   type ScenarioSortConfig,
 } from './ScenarioColumnSortControl';
 import {
-  downloadJsonFile,
   downloadMarkdownFile,
   openPdfFromMarkdown,
   buildScenarioMarkdown,
-  validateScenarioImportPayload,
+  downloadScenarioWorkbook,
 } from '../../shared/utils/storeImportExport';
 
 interface StoreManagementPanelProps {
@@ -40,7 +38,7 @@ interface StoreManagementPanelProps {
   showScenarioForm?: boolean;
 }
 
-type ExportFormat = 'json' | 'markdown' | 'pdf';
+type ExportFormat = 'markdown' | 'pdf' | 'xlsx';
 
 const emptyScenarioForm: StoreScenarioInput = {
   title: '',
@@ -80,7 +78,6 @@ export const StoreManagementPanel = ({
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [editingScenarioId, setEditingScenarioId] = useState<string | null>(null);
   const [exportingFormat, setExportingFormat] = useState<ExportFormat | null>(null);
-  const [isImporting, setIsImporting] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [categoryError, setCategoryError] = useState<string | null>(null);
   const [categories, setCategories] = useState<StoreCategory[]>([]);
@@ -94,7 +91,6 @@ export const StoreManagementPanel = ({
   const [isCategoryListCollapsed, setIsCategoryListCollapsed] = useState(true);
   const [isScenarioTableCollapsed, setIsScenarioTableCollapsed] = useState(false);
   const [scenarioSort, setScenarioSort] = useState<ScenarioSortConfig | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const canUseScenarioForm = canManageScenarios && showScenarioForm !== false;
   const canToggleCategoryList =
     !isLoadingCategories && !isSyncingLegacyCategories && categories.length > 0;
@@ -787,13 +783,13 @@ export const StoreManagementPanel = ({
       const data = await storeService.exportStore(selectedStore.id);
       const baseFileName = `${selectedStore.name.replace(/\s+/g, '_')}_cenarios`;
 
-      if (format === 'json') {
-        downloadJsonFile(data, `${baseFileName}.json`);
-      }
-
       if (format === 'markdown') {
         const markdown = buildScenarioMarkdown(data);
         downloadMarkdownFile(markdown, `${baseFileName}.md`);
+      }
+
+      if (format === 'xlsx') {
+        downloadScenarioWorkbook(data, `${baseFileName}.xlsx`);
       }
 
       if (format === 'pdf') {
@@ -810,89 +806,6 @@ export const StoreManagementPanel = ({
       pdfWindow?.close();
     } finally {
       setExportingFormat(null);
-    }
-  };
-
-  const handleImportClick = () => {
-    if (!selectedStore || !canManageScenarios) {
-      return;
-    }
-
-    fileInputRef.current?.click();
-  };
-
-  const handleImportFile = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-
-    if (!file || !selectedStore) {
-      return;
-    }
-
-    try {
-      setIsImporting(true);
-      const content = await file.text();
-      const parsed = JSON.parse(content) as StoreExportPayload;
-
-      validateImportPayload(parsed);
-
-      const importedStoreName = parsed.store.name.trim().toLowerCase();
-      const selectedStoreName = selectedStore.name.trim().toLowerCase();
-
-      if (
-        parsed.store.id &&
-        parsed.store.id !== selectedStore.id &&
-        importedStoreName !== selectedStoreName
-      ) {
-        throw new Error('O arquivo selecionado pertence a outra loja.');
-      }
-
-      if (parsed.scenarios.length === 0) {
-        showToast({ type: 'info', message: 'Nenhum cenário encontrado para importar.' });
-        return;
-      }
-
-      const shouldReplace = window.confirm(
-        'Deseja sobrescrever os cenários atuais? Clique em Cancelar para mesclar com os existentes.',
-      );
-
-      const strategy = shouldReplace ? 'replace' : 'merge';
-      const scenariosPayload = parsed.scenarios.map((scenario) => ({
-        title: scenario.title,
-        category: scenario.category,
-        automation: scenario.automation,
-        criticality: scenario.criticality,
-        observation: scenario.observation?.trim() ?? '',
-        bdd: scenario.bdd?.trim() ?? '',
-      }));
-
-      const result = await storeService.importScenarios(
-        selectedStore.id,
-        scenariosPayload,
-        strategy,
-      );
-      setScenarios(result.scenarios);
-      setStores((previous) =>
-        previous.map((store) =>
-          store.id === selectedStore.id
-            ? { ...store, scenarioCount: result.scenarios.length }
-            : store,
-        ),
-      );
-
-      const feedbackMessage =
-        result.strategy === 'replace'
-          ? `Cenários substituídos com sucesso (${result.scenarios.length} itens).`
-          : `Importação concluída. ${result.created} novo(s) cenário(s) adicionados, ${result.skipped} ignorados.`;
-
-      showToast({ type: 'success', message: feedbackMessage });
-    } catch (error) {
-      console.error(error);
-      const message =
-        error instanceof Error ? error.message : 'Não foi possível importar o arquivo selecionado.';
-      showToast({ type: 'error', message });
-    } finally {
-      setIsImporting(false);
     }
   };
 
@@ -1026,20 +939,20 @@ export const StoreManagementPanel = ({
                   <Button
                     type="button"
                     variant="ghost"
-                    onClick={() => void handleExport('json')}
-                    isLoading={exportingFormat === 'json'}
-                    loadingText="Exportando..."
-                  >
-                    Exportar JSON
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
                     onClick={() => void handleExport('markdown')}
                     isLoading={exportingFormat === 'markdown'}
                     loadingText="Exportando..."
                   >
                     Exportar Markdown
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => void handleExport('xlsx')}
+                    isLoading={exportingFormat === 'xlsx'}
+                    loadingText="Exportando..."
+                  >
+                    Exportar Excel
                   </Button>
                   <Button
                     type="button"
@@ -1051,26 +964,6 @@ export const StoreManagementPanel = ({
                     Exportar PDF
                   </Button>
                 </div>
-                {canManageScenarios && (
-                  <div className="store-action-group">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={handleImportClick}
-                      isLoading={isImporting}
-                      loadingText="Importando..."
-                    >
-                      Importar JSON
-                    </Button>
-                  </div>
-                )}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="application/json"
-                  className="hidden"
-                  onChange={handleImportFile}
-                />
               </div>
             </div>
 
@@ -1421,5 +1314,3 @@ export const StoreManagementPanel = ({
     </section>
   );
 };
-
-const validateImportPayload = validateScenarioImportPayload;

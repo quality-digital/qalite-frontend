@@ -9,7 +9,6 @@ import {
   updateProfile as firebaseUpdateProfile,
 } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 
 import type {
   AuthStateListener,
@@ -22,10 +21,9 @@ import type {
 import type { BrowserstackCredentials } from '../../domain/entities/browserstack';
 import { DEFAULT_ROLE } from '../../domain/entities/auth';
 import { addUserToOrganizationByEmailDomain } from './organizations';
-import { firebaseAuth, firebaseFirestore, firebaseStorage } from '../database/firebase';
+import { firebaseAuth, firebaseFirestore } from '../database/firebase';
 
 const USERS_COLLECTION = 'users';
-const USER_AVATAR_FILE = 'avatar.jpg';
 const AUTH_COOKIE_NAME = 'firebase:authUser';
 
 const persistFirebaseAuthCookie = (firebaseUser: FirebaseUser | null): void => {
@@ -69,7 +67,7 @@ export const registerUser = async ({ role, ...payload }: RegisterPayload): Promi
       displayName: normalizedDisplayName,
       firstName,
       lastName,
-      photoURL: user.photoURL ?? null,
+      photoURL: null,
       organizationId: null,
       browserstackCredentials: null,
       isNew: true,
@@ -88,7 +86,7 @@ export const registerUser = async ({ role, ...payload }: RegisterPayload): Promi
     uid: user.uid,
     email: user.email ?? '',
     displayName: normalizedDisplayName || payload.email,
-    photoURL: user.photoURL ?? null,
+    photoURL: null,
   });
 
   return mapToAuthUser(user, {
@@ -111,7 +109,7 @@ export const loginUser = async ({ email, password }: LoginPayload): Promise<Auth
     uid: credential.user.uid,
     email: credential.user.email ?? email,
     displayName: credential.user.displayName ?? email,
-    photoURL: credential.user.photoURL ?? null,
+    photoURL: null,
   });
 
   return mapToAuthUser(credential.user, {
@@ -150,7 +148,7 @@ export const onAuthStateChanged = (listener: AuthStateListener): (() => void) =>
       uid: user.uid,
       email: user.email ?? '',
       displayName: user.displayName ?? user.email ?? '',
-      photoURL: user.photoURL ?? null,
+      photoURL: null,
     });
 
     listener(
@@ -197,11 +195,7 @@ export const updateUserProfile = async (payload: UpdateProfilePayload): Promise<
   }
 
   const currentProfile = await fetchUserProfile(user.uid);
-
-  let photoURL = currentProfile.photoURL ?? user.photoURL ?? null;
-  if (payload.photoFile) {
-    photoURL = await uploadProfilePhoto(user.uid, payload.photoFile);
-  }
+  const photoURL = null;
 
   const trimmedFirstName = payload.firstName.trim();
   const trimmedLastName = payload.lastName.trim();
@@ -210,7 +204,7 @@ export const updateUserProfile = async (payload: UpdateProfilePayload): Promise<
 
   await firebaseUpdateProfile(user, {
     displayName: displayName || undefined,
-    photoURL: photoURL ?? undefined,
+    photoURL,
   });
 
   await persistUserProfile(
@@ -265,7 +259,7 @@ const mapToAuthUser = (user: FirebaseUser, profile: StoredProfile): AuthUser => 
     role: profile.role,
     organizationId: profile.organizationId ?? null,
     browserstackCredentials: profile.browserstackCredentials ?? null,
-    photoURL: profile.photoURL ?? user.photoURL ?? undefined,
+    photoURL: profile.photoURL ?? null,
     accessToken: user.refreshToken,
     isEmailVerified: user.emailVerified,
   };
@@ -330,12 +324,6 @@ const fetchUserProfile = async (uid: string): Promise<StoredProfile> => {
     organizationId: null,
     browserstackCredentials: null,
   };
-};
-
-const uploadProfilePhoto = async (uid: string, file: File): Promise<string> => {
-  const storageRef = ref(firebaseStorage, `${USERS_COLLECTION}/${uid}/${USER_AVATAR_FILE}`);
-  await uploadBytes(storageRef, file);
-  return getDownloadURL(storageRef);
 };
 
 const extractNameParts = (fullName: string): { firstName: string; lastName: string } => {

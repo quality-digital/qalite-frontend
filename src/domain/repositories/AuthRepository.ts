@@ -16,7 +16,6 @@ export interface AuthRepository {
   updateProfile: (payload: {
     firstName: string;
     lastName: string;
-    photoFile?: File | null;
     browserstackCredentials?: AuthUser['browserstackCredentials'];
   }) => Promise<AuthUser>;
 }

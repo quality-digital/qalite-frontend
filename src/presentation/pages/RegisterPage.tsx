@@ -64,7 +64,7 @@ export const RegisterPage = () => {
       setFormError(message);
     }
   };
-  console.log(translation('registerPage.nameLabel'));
+
   return (
     <AuthLayout
       title={translation('registerPage.title')}

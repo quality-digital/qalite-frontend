@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 
 import { useAuth } from '../hooks/useAuth';
 import { Alert } from '../components/Alert';
@@ -10,8 +10,6 @@ import { ThemeToggle } from '../components/ThemeToggle';
 import { UserAvatar } from '../components/UserAvatar';
 import { ThemeIcon } from '../components/icons';
 
-const MAX_PHOTO_SIZE = 5 * 1024 * 1024; // 5MB
-
 export const ProfilePage = () => {
   const { user, updateProfile, isLoading } = useAuth();
   const [firstName, setFirstName] = useState('');
@@ -19,8 +17,6 @@ export const ProfilePage = () => {
   const [browserstackUsername, setBrowserstackUsername] = useState('');
   const [browserstackAccessKey, setBrowserstackAccessKey] = useState('');
   const [isBrowserstackSectionOpen, setIsBrowserstackSectionOpen] = useState(false);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -37,44 +33,6 @@ export const ProfilePage = () => {
     user?.firstName,
     user?.lastName,
   ]);
-
-  useEffect(() => {
-    if (!photoFile) {
-      setPhotoPreview(user?.photoURL ?? null);
-    }
-  }, [user?.photoURL, photoFile]);
-
-  useEffect(
-    () => () => {
-      if (photoPreview && photoPreview.startsWith('blob:')) {
-        URL.revokeObjectURL(photoPreview);
-      }
-    },
-    [photoPreview],
-  );
-
-  const handlePhotoChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      setPhotoFile(null);
-      setPhotoPreview(user?.photoURL ?? null);
-      return;
-    }
-
-    if (file.size > MAX_PHOTO_SIZE) {
-      setLocalError('Selecione uma imagem de até 5MB.');
-      return;
-    }
-
-    setLocalError(null);
-    setPhotoFile(file);
-    setPhotoPreview((previous) => {
-      if (previous && previous.startsWith('blob:')) {
-        URL.revokeObjectURL(previous);
-      }
-      return URL.createObjectURL(file);
-    });
-  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -105,10 +63,8 @@ export const ProfilePage = () => {
       await updateProfile({
         firstName: trimmedFirstName,
         lastName: trimmedLastName,
-        photoFile,
         browserstackCredentials,
       });
-      setPhotoFile(null);
       if (!isBrowserstackSectionOpen) {
         setBrowserstackUsername('');
         setBrowserstackAccessKey('');
@@ -135,26 +91,14 @@ export const ProfilePage = () => {
         <span className="badge">Seu perfil</span>
         <h1 className="section-title">Atualize suas informações pessoais</h1>
         <p className="section-subtitle">
-          Ajuste nome e foto de perfil e veja as mudanças refletidas imediatamente em todos os seus
-          acessos.
+          Ajuste seu nome e veja as mudanças refletidas imediatamente em todos os seus acessos.
         </p>
 
         {localError && <Alert type="error" message={localError} />}
 
         <form className="profile-editor" onSubmit={handleSubmit}>
           <div className="profile-header">
-            <UserAvatar name={fullName} photoURL={photoPreview || undefined} />
-            <label className="upload-label">
-              <span>Foto de perfil</span>
-              <span className="upload-trigger">Selecionar nova foto</span>
-              <input
-                className="upload-input"
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoChange}
-              />
-              <span className="upload-hint">Formatos suportados: JPG, PNG ou WEBP (até 5MB).</span>
-            </label>
+            <UserAvatar name={fullName} />
           </div>
 
           <TextInput

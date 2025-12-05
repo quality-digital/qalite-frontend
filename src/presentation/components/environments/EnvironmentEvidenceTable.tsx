@@ -1,4 +1,4 @@
-import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import {
   Environment,
@@ -63,6 +63,7 @@ export const EnvironmentEvidenceTable = ({
   const [categoryFilter, setCategoryFilter] = useState('');
   const [criticalityFilter, setCriticalityFilter] = useState('');
   const [scenarioStartTimes, setScenarioStartTimes] = useState<Record<string, number>>({});
+  const [evidenceLinks, setEvidenceLinks] = useState<Record<string, string>>({});
   const environmentStartTimestamp = useMemo(() => {
     if (!environment?.timeTracking?.start) {
       return null;
@@ -124,6 +125,18 @@ export const EnvironmentEvidenceTable = ({
       return hasChanges ? next : previous;
     });
   }, [environment?.scenarios, environmentStartTimestamp]);
+
+  useEffect(() => {
+    const nextLinks: Record<string, string> = {};
+    Object.entries(environment.scenarios ?? {}).forEach(([scenarioId, data]) => {
+      nextLinks[scenarioId] = data.evidenciaArquivoUrl ?? '';
+    });
+    setEvidenceLinks(nextLinks);
+  }, [environment.scenarios]);
+
+  const handleEvidenceLinkChange = (scenarioId: string, link: string) => {
+    setEvidenceLinks((previous) => ({ ...previous, [scenarioId]: link }));
+  };
   const scenarioEntries = useMemo(() => {
     const entries = Object.entries(environment.scenarios ?? {});
 
@@ -278,14 +291,21 @@ export const EnvironmentEvidenceTable = ({
     }
   };
 
-  const handleFileChange = async (scenarioId: string, event: ChangeEvent<HTMLInputElement>) => {
-    if (!event.target.files || event.target.files.length === 0) {
+  const handleEvidenceSave = async (scenarioId: string) => {
+    const link = (evidenceLinks[scenarioId] ?? '').trim();
+
+    if (!link) {
+      showToast({ type: 'error', message: 'Informe um link válido para a evidência.' });
       return;
     }
 
-    const file = event.target.files[0];
-    await handleEvidenceUpload(scenarioId, file);
-    event.target.value = '';
+    try {
+      await handleEvidenceUpload(scenarioId, link);
+      showToast({ type: 'success', message: 'Link de evidência salvo com sucesso.' });
+    } catch (error) {
+      console.error(error);
+      showToast({ type: 'error', message: 'Não foi possível salvar o link da evidência.' });
+    }
   };
 
   if (scenarioEntries.length === 0) {
@@ -412,17 +432,29 @@ export const EnvironmentEvidenceTable = ({
                         Abrir evidência
                       </a>
                     ) : (
-                      <span className="section-subtitle">Sem arquivo</span>
+                      <span className="section-subtitle">Sem evidência</span>
                     )}
                     {!isReadOnly && (
-                      <label className="environment-upload">
+                      <div className="scenario-evidence-actions">
                         <input
-                          type="file"
-                          accept="image/*,application/pdf,video/mp4,video/quicktime,application/zip,application/x-zip-compressed"
-                          onChange={(event) => handleFileChange(scenarioId, event)}
+                          type="url"
+                          className="scenario-evidence-input"
+                          value={evidenceLinks[scenarioId] ?? ''}
+                          onChange={(event) =>
+                            handleEvidenceLinkChange(scenarioId, event.target.value)
+                          }
+                          placeholder="https://exemplo.com/evidencia"
+                          aria-label={`Link da evidência do cenário ${data.titulo}`}
                         />
-                        <span>Enviar arquivo</span>
-                      </label>
+                        <button
+                          type="button"
+                          className="scenario-evidence-save"
+                          onClick={() => handleEvidenceSave(scenarioId)}
+                          disabled={isUpdating}
+                        >
+                          Salvar link
+                        </button>
+                      </div>
                     )}
                   </div>
                 </td>

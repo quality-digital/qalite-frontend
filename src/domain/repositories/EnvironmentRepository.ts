@@ -35,8 +35,7 @@ export interface EnvironmentRepository {
   uploadScenarioEvidence: (
     environmentId: string,
     scenarioId: string,
-    evidence: File,
-    platform?: EnvironmentScenarioPlatform,
+    evidenceLink: string,
   ) => Promise<string>;
   observeBugs: (environmentId: string, onChange: (bugs: EnvironmentBug[]) => void) => () => void;
   createBug: (environmentId: string, bug: CreateEnvironmentBugInput) => Promise<EnvironmentBug>;

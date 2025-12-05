@@ -65,14 +65,12 @@ export class EnvironmentUseCases {
   uploadScenarioEvidence(
     environmentId: string,
     scenarioId: string,
-    evidence: File,
-    platform?: EnvironmentScenarioPlatform,
+    evidenceLink: string,
   ): Promise<string> {
     return this.environmentRepository.uploadScenarioEvidence(
       environmentId,
       scenarioId,
-      evidence,
-      platform,
+      evidenceLink,
     );
   }
 

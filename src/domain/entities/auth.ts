@@ -36,6 +36,5 @@ export type AuthStateListener = (user: AuthUser | null) => void;
 export interface UpdateProfilePayload {
   firstName: string;
   lastName: string;
-  photoFile?: File | null;
   browserstackCredentials?: BrowserstackCredentials | null;
 }

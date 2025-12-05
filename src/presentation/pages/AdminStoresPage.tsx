@@ -4,9 +4,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { Organization, OrganizationMember } from '../../domain/entities/organization';
 import type { Store } from '../../domain/entities/store';
 import type { BrowserstackBuild } from '../../domain/entities/browserstack';
+import type { UserSummary } from '../../domain/entities/user';
 import { organizationService } from '../../application/use-cases/OrganizationUseCase';
 import { storeService } from '../../application/use-cases/StoreUseCase';
 import { browserstackService } from '../../application/use-cases/BrowserstackUseCase';
+import { userService } from '../../application/use-cases/UserUseCase';
 import { useToast } from '../context/ToastContext';
 import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
 import { useAuth } from '../hooks/useAuth';
@@ -30,7 +32,6 @@ interface StoreForm {
 
 interface OrganizationFormState {
   name: string;
-  logoFile: File | null;
   slackWebhookUrl: string;
   emailDomain: string;
 }
@@ -42,7 +43,6 @@ const initialStoreForm: StoreForm = {
 
 const initialOrganizationForm: OrganizationFormState = {
   name: '',
-  logoFile: null,
   slackWebhookUrl: '',
   emailDomain: '',
 };
@@ -67,10 +67,11 @@ export const AdminStoresPage = () => {
     useState<OrganizationFormState>(initialOrganizationForm);
   const [isOrganizationSlackSectionOpen, setIsOrganizationSlackSectionOpen] = useState(false);
   const [organizationError, setOrganizationError] = useState<string | null>(null);
-  const [memberEmail, setMemberEmail] = useState('');
-  const [memberError, setMemberError] = useState<string | null>(null);
   const [isSavingOrganization, setIsSavingOrganization] = useState(false);
   const [isManagingMembers, setIsManagingMembers] = useState(false);
+  const [newMemberEmail, setNewMemberEmail] = useState('');
+  const [userSuggestions, setUserSuggestions] = useState<UserSummary[]>([]);
+  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     message: string;
     description?: string;
@@ -112,7 +113,7 @@ export const AdminStoresPage = () => {
     };
 
     void fetchOrganizations();
-  }, [searchParams, showToast, translation]);
+  }, [searchParams, showToast]);
 
   useEffect(() => {
     if (!selectedOrganizationId) {
@@ -139,7 +140,7 @@ export const AdminStoresPage = () => {
     };
 
     void fetchStores();
-  }, [selectedOrganizationId, setSearchParams, showToast, translation]);
+  }, [selectedOrganizationId, setSearchParams, showToast]);
 
   const selectedOrganization = useMemo(
     () => organizations.find((organization) => organization.id === selectedOrganizationId) ?? null,
@@ -197,7 +198,41 @@ export const AdminStoresPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [selectedOrganizationId, stores, showToast, translation]);
+  }, [selectedOrganizationId, stores, showToast]);
+
+  useEffect(() => {
+    const searchTerm = newMemberEmail.trim();
+
+    if (!searchTerm) {
+      setUserSuggestions([]);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      const fetchSuggestions = async () => {
+        try {
+          setIsSearchingUsers(true);
+          const results = await userService.searchByTerm(searchTerm);
+          const filteredResults = selectedOrganization
+            ? results.filter((user) => !selectedOrganization.memberIds.includes(user.id))
+            : results;
+
+          setUserSuggestions(filteredResults);
+        } catch (error) {
+          console.error(error);
+          setUserSuggestions([]);
+        } finally {
+          setIsSearchingUsers(false);
+        }
+      };
+
+      void fetchSuggestions();
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [newMemberEmail, selectedOrganization]);
 
   const hasBrowserstackCredentials = useMemo(
     () =>
@@ -227,7 +262,7 @@ export const AdminStoresPage = () => {
     } finally {
       setIsLoadingBrowserstack(false);
     }
-  }, [hasBrowserstackCredentials, showToast, user?.browserstackCredentials, translation]);
+  }, [hasBrowserstackCredentials, showToast, user?.browserstackCredentials]);
 
   useEffect(() => {
     void loadBrowserstackBuilds();
@@ -273,24 +308,21 @@ export const AdminStoresPage = () => {
 
     setOrganizationForm({
       name: selectedOrganization.name,
-      logoFile: null,
       slackWebhookUrl,
       emailDomain,
     });
     setIsOrganizationSlackSectionOpen(Boolean(slackWebhookUrl.trim()));
     setOrganizationError(null);
-    setMemberEmail('');
-    setMemberError(null);
     setIsOrganizationModalOpen(true);
   };
 
   const closeOrganizationModal = () => {
     setIsOrganizationModalOpen(false);
     setOrganizationError(null);
-    setMemberEmail('');
-    setMemberError(null);
     setIsOrganizationSlackSectionOpen(false);
     setOrganizationForm(initialOrganizationForm);
+    setNewMemberEmail('');
+    setUserSuggestions([]);
   };
 
   const toggleOrganizationSlackSection = () => {
@@ -380,7 +412,6 @@ export const AdminStoresPage = () => {
       const updated = await organizationService.update(selectedOrganization.id, {
         name: trimmedName,
         description: (selectedOrganization.description ?? '').trim(),
-        logoFile: organizationForm.logoFile,
         slackWebhookUrl,
         emailDomain,
       });
@@ -434,20 +465,33 @@ export const AdminStoresPage = () => {
     }
   };
 
-  const handleAddMember = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setMemberError(null);
-
+  const handleAddMember = async () => {
     if (!selectedOrganization) {
       return;
     }
 
-    const trimmedEmail = memberEmail.trim();
+    const trimmedEmail = newMemberEmail.trim();
     if (!trimmedEmail) {
-      setMemberError(translation('AdminStoresPage.form-error-no-member-email'));
+
+      setOrganizationError('Informe um e-mail para adicionar.');
+
       return;
+
     }
 
+    const normalizedEmail = trimmedEmail.toLowerCase();
+
+    if (
+
+      selectedOrganization.members.some((member) => member.email.toLowerCase() === normalizedEmail)
+
+    ) {
+
+      setOrganizationError('Usuário já está vinculado à organização.');
+
+      return;
+
+    }
     try {
       setIsManagingMembers(true);
       const member = await organizationService.addUser({
@@ -456,21 +500,20 @@ export const AdminStoresPage = () => {
       });
 
       setOrganizations((previous) =>
-        previous.map((organization) => {
-          if (organization.id !== selectedOrganization.id) {
-            return organization;
-          }
-
-          const hasMember = organization.memberIds.includes(member.uid);
-          return {
-            ...organization,
-            members: hasMember ? organization.members : [...organization.members, member],
-            memberIds: hasMember ? organization.memberIds : [...organization.memberIds, member.uid],
-          };
-        }),
+        previous.map((organization) =>
+          organization.id === selectedOrganization.id
+            ? {
+              ...organization,
+              members: [...organization.members, member],
+              memberIds: [...organization.memberIds, member.uid],
+            }
+            : organization,
+        ),
       );
 
-      setMemberEmail('');
+      setNewMemberEmail('');
+      setUserSuggestions([]);
+      setOrganizationError(null);
       showToast({
         type: 'success',
         message: translation('AdminStoresPage.toast-success-member-added'),
@@ -481,7 +524,7 @@ export const AdminStoresPage = () => {
         error instanceof Error
           ? error.message
           : translation('AdminStoresPage.toast-error-add-member');
-      setMemberError(message);
+      setNewMemberEmail(message);
       showToast({ type: 'error', message });
     } finally {
       setIsManagingMembers(false);
@@ -504,10 +547,10 @@ export const AdminStoresPage = () => {
         previous.map((organization) =>
           organization.id === selectedOrganization.id
             ? {
-                ...organization,
-                members: organization.members.filter((item) => item.uid !== member.uid),
-                memberIds: organization.memberIds.filter((item) => item !== member.uid),
-              }
+              ...organization,
+              members: organization.members.filter((item) => item.uid !== member.uid),
+              memberIds: organization.memberIds.filter((item) => item !== member.uid),
+            }
             : organization,
         ),
       );
@@ -603,8 +646,8 @@ export const AdminStoresPage = () => {
             <h1 className="section-title">
               {selectedOrganization
                 ? translation('AdminStoresPage.stores-title-org-selected', {
-                    organizationName: selectedOrganization.name,
-                  })
+                  organizationName: selectedOrganization.name,
+                })
                 : translation('AdminStoresPage.stores-title-no-org-selected')}
             </h1>
             <p className="section-subtitle">
@@ -710,8 +753,8 @@ export const AdminStoresPage = () => {
                       {selectedOrganization.members.length === 1
                         ? translation('AdminStoresPage.collaborators-count-singular')
                         : translation('AdminStoresPage.collaborators-count-plural', {
-                            count: selectedOrganization.members.length,
-                          })}
+                          count: selectedOrganization.members.length,
+                        })}
                     </span>
                   </div>
                   {selectedOrganization.members.length === 0 ? (
@@ -967,36 +1010,57 @@ export const AdminStoresPage = () => {
               </span>
             </div>
 
-            {memberError && (
-              <p className="form-message form-message--error" style={{ marginTop: '1rem' }}>
-                {memberError}
-              </p>
-            )}
-
-            <form
-              className="organization-members-form"
-              onSubmit={handleAddMember}
-              data-testid="organization-members-form"
-            >
+            <div className="member-invite-grid">
               <TextInput
-                id="member-email"
+                id="organization-add-member"
                 label={translation('AdminStoresPage.org-added-user-to-email')}
-                type="email"
-                value={memberEmail}
-                onChange={(event) => setMemberEmail(event.target.value)}
+                value={newMemberEmail}
+                onChange={(event) => setNewMemberEmail(event.target.value)}
                 placeholder={translation('AdminStoresPage.org-email-placeholder')}
-                required
-                dataTestId="organization-member-email"
+                autoComplete="email"
+                dataTestId="organization-add-member-input"
               />
               <Button
-                type="submit"
+                type="button"
+                onClick={handleAddMember}
                 isLoading={isManagingMembers}
                 loadingText={translation('AdminStoresPage.org-button-addeding')}
                 data-testid="add-organization-member"
               >
                 {translation('AdminStoresPage.org-added-user')}
               </Button>
-            </form>
+            </div>
+            <p className="form-hint">
+              Convide qualquer usuário existente pelo e-mail, mesmo que não corresponda ao domínio
+              configurado.
+            </p>
+            {isSearchingUsers && <p className="form-hint">Buscando sugestões...</p>}
+            {!isSearchingUsers && userSuggestions.length > 0 && (
+              <ul className="suggestion-list" role="listbox" aria-label="Sugestões de usuários">
+                {userSuggestions.map((suggestion) => (
+                  <li key={suggestion.id}>
+                    <button
+                      type="button"
+                      className="suggestion-option"
+                      onClick={() => setNewMemberEmail(suggestion.email)}
+                    >
+                      <UserAvatar
+                        name={suggestion.displayName || suggestion.email}
+                        photoURL={suggestion.photoURL ?? undefined}
+                        size="sm"
+                      />
+                      <div className="suggestion-option__details">
+                        <span className="suggestion-option__name">
+                          {suggestion.displayName || suggestion.email}
+                        </span>
+                        <span className="suggestion-option__email">{suggestion.email}</span>
+                      </div>
+                      <span className="suggestion-option__hint">Usar e-mail</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
 
             {selectedOrganization.members.length === 0 ? (
               <p className="section-subtitle">

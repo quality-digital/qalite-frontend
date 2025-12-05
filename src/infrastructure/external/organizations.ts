@@ -15,11 +15,10 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 
 import type { Organization, OrganizationMember } from '../../domain/entities/organization';
 import { getNormalizedEmailDomain, normalizeEmailDomain } from '../../shared/utils/email';
-import { firebaseFirestore, firebaseStorage } from '../database/firebase';
+import { firebaseFirestore } from '../database/firebase';
 import { logActivity } from './logs';
 
 const ORGANIZATIONS_COLLECTION = 'organizations';
@@ -28,7 +27,6 @@ const USERS_COLLECTION = 'users';
 export interface CreateOrganizationPayload {
   name: string;
   description: string;
-  logoFile?: File | null;
   slackWebhookUrl?: string | null;
   emailDomain?: string | null;
 }
@@ -36,7 +34,6 @@ export interface CreateOrganizationPayload {
 export interface UpdateOrganizationPayload {
   name: string;
   description: string;
-  logoFile?: File | null;
   slackWebhookUrl?: string | null;
   emailDomain?: string | null;
 }
@@ -92,14 +89,6 @@ export const createOrganization = async (
     updatedAt: serverTimestamp(),
   });
 
-  if (payload.logoFile) {
-    const logoUrl = await uploadOrganizationLogo(docRef.id, payload.logoFile);
-    await updateDoc(docRef, {
-      logoUrl,
-      updatedAt: serverTimestamp(),
-    });
-  }
-
   await logActivity({
     organizationId: docRef.id,
     entityId: docRef.id,
@@ -125,11 +114,6 @@ export const updateOrganization = async (
     emailDomain: normalizeEmailDomain(payload.emailDomain),
     updatedAt: serverTimestamp(),
   };
-
-  if (payload.logoFile) {
-    const logoUrl = await uploadOrganizationLogo(id, payload.logoFile);
-    updatePayload.logoUrl = logoUrl;
-  }
 
   await updateDoc(organizationRef, updatePayload);
 
@@ -481,16 +465,4 @@ const fetchMembers = async (memberIds: string[]): Promise<OrganizationMember[]> 
   );
 
   return members.filter((member): member is OrganizationMember => Boolean(member));
-};
-
-const uploadOrganizationLogo = async (organizationId: string, file: File): Promise<string> => {
-  const extension = file.name.split('.').pop();
-  const sanitizedExtension = extension ? extension.toLowerCase().replace(/[^a-z0-9]/g, '') : '';
-  const fileName = sanitizedExtension ? `logo.${sanitizedExtension}` : 'logo';
-  const storageRef = ref(
-    firebaseStorage,
-    `${ORGANIZATIONS_COLLECTION}/${organizationId}/${fileName}`,
-  );
-  await uploadBytes(storageRef, file);
-  return getDownloadURL(storageRef);
 };

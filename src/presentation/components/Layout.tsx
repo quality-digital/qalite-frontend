@@ -19,7 +19,7 @@ export const Layout = ({ children }: LayoutProps) => {
   const displayName = user?.displayName || user?.email || '';
   const brandSource = activeOrganization;
   const brandName = brandSource?.name || 'QaLite';
-  const brandLogo = brandSource?.logoUrl || (brandName === 'QaLite' ? qliteLogo : null);
+  const brandLogo = qliteLogo;
 
   const { t } = useTranslation();
   const { i18n } = useTranslation();
@@ -32,11 +32,7 @@ export const Layout = ({ children }: LayoutProps) => {
     <div className="app-shell">
       <header className="app-header">
         <Link to="/" className="app-brand" aria-label={`Página inicial da ${brandName}`}>
-          {brandLogo ? (
-            <img src={brandLogo} alt={`Logo da ${brandName}`} className="app-brand-logo" />
-          ) : (
-            <span className="app-logo">{brandName}</span>
-          )}
+          <img src={brandLogo} alt="Logo da QaLite" className="app-brand-logo" />
           <span className="app-brand-name">{brandSource?.name || brandName}</span>
         </Link>
         <nav className="header-actions">
