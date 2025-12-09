@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface SimpleBarChartDataPoint {
   label: string;
@@ -34,6 +35,7 @@ export const SimpleBarChart = ({
 }: SimpleBarChartProps) => {
   const maxValue = data.reduce((max, item) => Math.max(max, item.value), 0);
   const variantClass = getVariantClass(variant);
+  const { t } = useTranslation();
 
   return (
     <section className={`card simple-bar-chart ${variantClass}`}>
@@ -45,7 +47,7 @@ export const SimpleBarChart = ({
             </span>
           )}
           <div>
-            <span className="badge">Visão geral</span>
+            <span className="badge">{t('simpleChart.badge')}</span>
             <h3>{title}</h3>
           </div>
         </div>
@@ -53,7 +55,7 @@ export const SimpleBarChart = ({
       </div>
 
       {isLoading ? (
-        <p className="section-subtitle">Carregando dados...</p>
+        <p className="section-subtitle">{t('simpleChart.loading')}</p>
       ) : data.length === 0 ? (
         <p className="section-subtitle">{emptyMessage}</p>
       ) : (

@@ -1,5 +1,6 @@
 import { Modal } from './Modal';
 import { Button } from './Button';
+import { useTranslation } from 'react-i18next';
 
 interface ConfirmDeleteModalProps {
   isOpen: boolean;
@@ -12,17 +13,19 @@ interface ConfirmDeleteModalProps {
   isConfirming?: boolean;
 }
 
+const { t } = useTranslation();
+
 export const ConfirmDeleteModal = ({
   isOpen,
   onClose,
   onConfirm,
-  message = 'Você deseja mesmo excluir?',
+  message = t('confirmDeleteModal.message'),
   description,
-  confirmText = 'Confirmar exclusão',
-  cancelText = 'Cancelar',
+  confirmText = t('confirmDeleteModal.confirmText'),
+  cancelText = t('confirmDeleteModal.cancelText'),
   isConfirming = false,
 }: ConfirmDeleteModalProps) => (
-  <Modal isOpen={isOpen} onClose={onClose} title="Confirmar exclusão" description={description}>
+  <Modal isOpen={isOpen} onClose={onClose} title={t('confirmDeleteModal.confirmText')} description={description}>
     <p>{message}</p>
     <div className="modal-actions">
       <Button
@@ -38,7 +41,7 @@ export const ConfirmDeleteModal = ({
         type="button"
         onClick={onConfirm}
         isLoading={isConfirming}
-        loadingText="Excluindo..."
+        loadingText={t('confirmDeleteModal.loadingText')}
         data-testid="confirm-delete-button"
       >
         {confirmText}

@@ -4,6 +4,7 @@ import type { ActivityLog } from '../../domain/entities/activityLog';
 import { logService } from '../../application/use-cases/LogUseCase';
 import { useToast } from '../context/ToastContext';
 import { ActivityIcon, ChevronDownIcon, FilterIcon } from './icons';
+import { useTranslation } from 'react-i18next';
 
 interface OrganizationLogPanelProps {
   organizationId: string;
@@ -34,7 +35,7 @@ const INITIAL_LOG_PAGE_SIZE = 5;
 
 const formatLogDate = (value: Date | null): string => {
   if (!value) {
-    return 'Data indisponível';
+    return t('logPanel.dateUnavailable');
   }
 
   return new Intl.DateTimeFormat('pt-BR', {
@@ -51,6 +52,7 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
   const [actionFilter, setActionFilter] = useState<ActivityLog['action'] | 'all'>('all');
   const [entityFilter, setEntityFilter] = useState<ActivityLog['entityType'] | 'all'>('all');
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOG_PAGE_SIZE);
+  const { t } = useTranslation();
 
   useEffect(() => {
     let isMounted = true;
@@ -65,7 +67,7 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
       } catch (error) {
         console.error(error);
         if (isMounted) {
-          showToast({ type: 'error', message: 'Não foi possível carregar os logs de atividade.' });
+          showToast({ type: 'error', message: t('logPanel.errorLoading') });
         }
       } finally {
         if (isMounted) {
@@ -105,17 +107,17 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
   const renderActionLabel = (action: ActivityLog['action']) => {
     switch (action) {
       case 'create':
-        return 'Criação';
+        return t('logPanel.actionCreate');
       case 'update':
-        return 'Atualização';
+        return t('logPanel.actionUpdate');
       case 'delete':
-        return 'Exclusão';
+        return t('logPanel.actionDelete');
       case 'status_change':
-        return 'Status';
+        return t('logPanel.actionStatusChange');
       case 'attachment':
-        return 'Anexo';
+        return t('logPanel.actionAttachment');
       case 'participation':
-        return 'Participação';
+        return t('logPanel.actionParticipation');
       default:
         return action;
     }
@@ -123,7 +125,28 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
 
   const renderEntityLabel = (entity: ActivityLog['entityType']) => {
     const option = ENTITY_FILTERS.find((filter) => filter.value === entity);
-    return option?.label ?? entity;
+    if (!option) return entity;
+
+    switch (option.value) {
+      case 'all':
+        return t('logPanel.entityAll');
+      case 'organization':
+        return t('logPanel.entityOrganization');
+      case 'store':
+        return t('logPanel.entityStore');
+      case 'scenario':
+        return t('logPanel.entityScenario');
+      case 'suite':
+        return t('logPanel.entitySuite');
+      case 'environment':
+        return t('logPanel.entityEnvironment');
+      case 'environment_bug':
+        return t('logPanel.entityEnvironmentBug');
+      case 'environment_participant':
+        return t('logPanel.entityEnvironmentParticipant');
+      default:
+        return entity;
+    }
   };
 
   return (
@@ -137,14 +160,14 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
           </span>
           <div>
             <div className="organization-log-panel__title-row">
-              <span className="badge">Auditoria</span>
+              <span className="badge">{t('logPanel.headerAudit')}</span>
               <span className="badge badge--muted">
-                {logs.length} registro{logs.length === 1 ? '' : 's'}
+                {logs.length} t('logPanel.headerRecords')
               </span>
             </div>
-            <h2 className="text-xl font-semibold text-primary">Logs da organização</h2>
+            <h2 className="text-xl font-semibold text-primary">{t('logPanel.titleMain')}</h2>
             <p className="section-subtitle">
-              Registro das ações realizadas em ambientes, lojas, cenários e suítes.
+              {t('logPanel.titleSubtitle')}
             </p>
           </div>
         </div>
@@ -154,7 +177,7 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
           type="button"
           onClick={toggleCollapse}
         >
-          {isCollapsed ? 'Mostrar' : 'Ocultar'}
+          {isCollapsed ? t('logPanel.buttonShow') : t('logPanel.buttonHide')}
           <ChevronDownIcon
             className={`icon icon--rotate ${isCollapsed ? '' : 'icon--rotate-180'}`}
             aria-hidden
@@ -167,11 +190,11 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
           <div className="organization-log-panel__filters">
             <div className="filter-chip" aria-hidden>
               <FilterIcon className="icon" />
-              <span>Filtros</span>
+              <span>{t('logPanel.filterLabel')}</span>
             </div>
 
             <label className="form-field">
-              <span className="form-label">Entidade</span>
+              <span className="form-label">{t('logPanel.filterEntity')}</span>
               <select
                 className="organization-log-panel__select"
                 value={entityFilter}
@@ -186,7 +209,7 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
             </label>
 
             <label className="form-field">
-              <span className="form-label">Ação</span>
+              <span className="form-label">{t('logPanel.filterAction')}</span>
               <select
                 className="organization-log-panel__select"
                 value={actionFilter}
@@ -201,10 +224,10 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
             </label>
           </div>
 
-          {isLoading && <p className="section-subtitle">Sincronizando atividades...</p>}
+          {isLoading && <p className="section-subtitle">{t('logPanel.stateLoading')}</p>}
 
           {!isLoading && filteredLogs.length === 0 && (
-            <p className="section-subtitle">Nenhum log encontrado para os filtros selecionados.</p>
+            <p className="section-subtitle">{t('logPanel.stateEmpty')}</p>
           )}
 
           {!isLoading && filteredLogs.length > 0 && (
@@ -242,7 +265,7 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
                 className="button button-secondary"
                 onClick={() => setVisibleCount((previous) => previous + INITIAL_LOG_PAGE_SIZE)}
               >
-                Ver mais
+                {t('logPanel.listMore')}
               </button>
             </div>
           )}

@@ -9,6 +9,7 @@ import { TextInput } from '../components/TextInput';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { UserAvatar } from '../components/UserAvatar';
 import { ThemeIcon } from '../components/icons';
+import { useTranslation } from 'react-i18next';
 
 const MAX_PHOTO_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -22,6 +23,7 @@ export const ProfilePage = () => {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     setFirstName(user?.firstName ?? '');
@@ -62,7 +64,7 @@ export const ProfilePage = () => {
     }
 
     if (file.size > MAX_PHOTO_SIZE) {
-      setLocalError('Selecione uma imagem de até 5MB.');
+      setLocalError(t("profilePage.errorSize"));
       return;
     }
 
@@ -83,12 +85,12 @@ export const ProfilePage = () => {
     const trimmedFirstName = firstName.trim();
     const trimmedLastName = lastName.trim();
     if (!trimmedFirstName) {
-      setLocalError('Informe seu nome para continuar.');
+      setLocalError(t("profilePage.name"));
       return;
     }
 
     if (!trimmedLastName) {
-      setLocalError('Informe seu sobrenome para continuar.');
+      setLocalError(t("profilePage.lastname"));
       return;
     }
 
@@ -124,19 +126,18 @@ export const ProfilePage = () => {
     <Layout>
       <section className="card profile-card">
         <div className="profile-toolbar">
-          <BackButton label="Voltar" />
+          <BackButton label={t('back')} />
           <div className="profile-theme">
             <ThemeIcon aria-hidden className="icon" />
-            <span>Modo de exibição</span>
+            <span>{t('profilePage.displayMode')}</span>
             <ThemeToggle />
           </div>
         </div>
 
-        <span className="badge">Seu perfil</span>
-        <h1 className="section-title">Atualize suas informações pessoais</h1>
+        <span className="badge">{t('profilePage.badge')}</span>
+        <h1 className="section-title">{t('profilePage.title')}</h1>
         <p className="section-subtitle">
-          Ajuste nome e foto de perfil e veja as mudanças refletidas imediatamente em todos os seus
-          acessos.
+          {t('profilePage.subtitle')}
         </p>
 
         {localError && <Alert type="error" message={localError} />}
@@ -145,21 +146,21 @@ export const ProfilePage = () => {
           <div className="profile-header">
             <UserAvatar name={fullName} photoURL={photoPreview || undefined} />
             <label className="upload-label">
-              <span>Foto de perfil</span>
-              <span className="upload-trigger">Selecionar nova foto</span>
+              <span>{t('profilePage.photo')}</span>
+              <span className="upload-trigger">{t('profilePage.newPhoto')}</span>
               <input
                 className="upload-input"
                 type="file"
                 accept="image/*"
                 onChange={handlePhotoChange}
               />
-              <span className="upload-hint">Formatos suportados: JPG, PNG ou WEBP (até 5MB).</span>
+              <span className="upload-hint">{t('profilePage.formats')}</span>
             </label>
           </div>
 
           <TextInput
             id="firstName"
-            label="Nome"
+            label={t('name')}
             value={firstName}
             onChange={(event) => setFirstName(event.target.value)}
             required
@@ -167,7 +168,7 @@ export const ProfilePage = () => {
 
           <TextInput
             id="lastName"
-            label="Sobrenome"
+            label={t('lastName')}
             value={lastName}
             onChange={(event) => setLastName(event.target.value)}
             required
@@ -191,10 +192,9 @@ export const ProfilePage = () => {
                   src="https://img.icons8.com/color/48/browser-stack.png"
                   alt="BrowserStack"
                 />
-                <p className="collapsible-section__title">Credenciais do BrowserStack</p>
+                <p className="collapsible-section__title">{t('profilePage.browserstackTitle')}</p>
                 <p className="collapsible-section__description">
-                  As integrações usam credenciais pessoais. Ative apenas se precisar atualizar seus
-                  dados.
+                  {t('profilePage.browserstackDescription')}
                 </p>
               </div>
               <label className="collapsible-section__toggle">
@@ -214,36 +214,35 @@ export const ProfilePage = () => {
                   aria-expanded={isBrowserstackSectionOpen}
                   aria-controls="profile-browserstack-section"
                 />
-                <span>{isBrowserstackSectionOpen ? 'Ativado' : 'Desativado'}</span>
+                <span>{isBrowserstackSectionOpen ? t('profilePage.enabled') : t('profilePage.disabled')}</span>
               </label>
             </div>
             {isBrowserstackSectionOpen && (
               <div className="collapsible-section__body" id="profile-browserstack-section">
                 <TextInput
                   id="browserstack-username"
-                  label="Usuário do BrowserStack"
+                  label={t('profilePage.browserstackUser')}
                   value={browserstackUsername}
                   onChange={(event) => setBrowserstackUsername(event.target.value)}
                   placeholder="username"
                 />
                 <TextInput
                   id="browserstack-access-key"
-                  label="Access key do BrowserStack"
+                  label={t('profilePage.browserstackPassword')}
                   type="password"
                   value={browserstackAccessKey}
                   onChange={(event) => setBrowserstackAccessKey(event.target.value)}
                   placeholder="access key"
                 />
                 <p className="form-hint">
-                  Armazenamos as credenciais apenas para uso nas suas integrações pessoais com o
-                  BrowserStack.
+                  {t('profilePage.browserstackText')}
                 </p>
               </div>
             )}
           </div>
 
-          <Button type="submit" isLoading={isLoading} loadingText="Salvando...">
-            Salvar alterações
+          <Button type="submit" isLoading={isLoading} loadingText={t('profilePage.loadingText')}>
+            {t('profilePage.saveButton')}
           </Button>
         </form>
       </section>

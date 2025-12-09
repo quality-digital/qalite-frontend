@@ -2,6 +2,8 @@ import { ChangeEvent, useState } from 'react';
 
 import { EyeIcon, EyeSlashIcon } from './icons';
 
+import { useTranslation } from 'react-i18next';
+
 interface PasswordInputProps {
   id: string;
   label: string;
@@ -30,6 +32,7 @@ export const PasswordInput = ({
   const [isVisible, setIsVisible] = useState(false);
   const toggleVisibility = () => setIsVisible((previous) => !previous);
   const fieldClassName = `password-field${disabled ? ' password-field--disabled' : ''}`;
+  const { t } = useTranslation();
 
   return (
     <label htmlFor={id} className="field">
@@ -53,7 +56,7 @@ export const PasswordInput = ({
           type="button"
           className="password-field-toggle"
           onClick={toggleVisibility}
-          aria-label={isVisible ? 'Ocultar senha' : 'Mostrar senha'}
+          aria-label={isVisible ? t('passwordInput.hide') : t('passwordInput.show')}
           aria-pressed={isVisible}
           disabled={disabled}
         >
