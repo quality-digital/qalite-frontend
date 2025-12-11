@@ -48,7 +48,7 @@ export const Layout = ({ children }: LayoutProps) => {
                   </span>
                 </div>
               </div>
-              <select onChange={(e) => changeLang(e.target.value)} value={i18n.language}>
+              <select className="language-switch" onChange={(e) => changeLang(e.target.value)} value={i18n.language}>
                 <option value="pt">Pt 🇧🇷</option>
                 <option value="en">En 🇺🇸 </option>
               </select>

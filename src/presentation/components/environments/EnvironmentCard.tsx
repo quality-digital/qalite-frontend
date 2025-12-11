@@ -1,9 +1,11 @@
 import type { DragEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { Environment } from '../../../domain/entities/environment';
 import type { UserSummary } from '../../../domain/entities/user';
 import { getReadableUserName, getUserInitials } from '../../utils/userDisplay';
 import { ENVIRONMENT_STATUS_LABEL } from '../../../shared/config/environmentLabels';
+import { TEST_TYPES_BY_ENVIRONMENT } from '../../constants/environmentOptions';
 
 interface EnvironmentCardProps {
   environment: Environment;
@@ -22,8 +24,9 @@ export const EnvironmentCard = ({
   draggable = false,
   onDragStart,
 }: EnvironmentCardProps) => {
+  const { t } = useTranslation();
   const isLocked = environment.status === 'done';
-  const displaySuiteName = suiteName ?? 'Suíte não informada';
+  const displaySuiteName = suiteName ?? t('environmentCard.displaySuiteName');
   const hasParticipants = participants.length > 0;
   const visibleParticipants = participants.slice(0, 3);
   const hiddenParticipantsCount = Math.max(participants.length - visibleParticipants.length, 0);
@@ -51,12 +54,12 @@ export const EnvironmentCard = ({
       <div className="environment-card-header">
         <div className="environment-card-title">
           <span className="environment-card-identifier">{environment.identificador}</span>
-          <span className="environment-card-type">{environment.tipoTeste}</span>
+          <span className="environment-card-type">{t(environment.tipoTeste)}</span>
         </div>
         <span
           className={`environment-card-status-dot environment-card-status-dot--${environment.status}`}
         >
-          {ENVIRONMENT_STATUS_LABEL[environment.status]}
+          {t(ENVIRONMENT_STATUS_LABEL[environment.status])}
         </span>
       </div>
 
@@ -67,7 +70,7 @@ export const EnvironmentCard = ({
 
       <div className="environment-card-stats">
         <div className="environment-card-stat">
-          <span className="environment-card-stat-label">Cenários</span>
+          <span className="environment-card-stat-label">{t('scenarios')}</span>
           <strong className="environment-card-stat-value">{totalScenariosWithPlatforms}</strong>
         </div>
         <div className="environment-card-stat">
@@ -112,11 +115,11 @@ export const EnvironmentCard = ({
               )}
             </ul>
             <span className="environment-card-participants-label">
-              {participants.length} participante{participants.length > 1 ? 's' : ''}
+              {participants.length} {t('environmentCard.participant')}{participants.length > 1 ? 's' : ''}
             </span>
           </>
         ) : (
-          <span className="environment-card-avatars__placeholder">Sem participantes</span>
+          <span className="environment-card-avatars__placeholder">{t('environmentCard.noParticipants')}</span>
         )}
       </div>
     </div>

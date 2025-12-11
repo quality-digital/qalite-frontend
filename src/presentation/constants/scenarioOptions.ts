@@ -1,13 +1,13 @@
 export const AUTOMATION_OPTIONS = [
-  { value: 'Automatizado', label: 'Automatizado' },
-  { value: 'Não automatizado', label: 'Não automatizado' },
+  { value: 'Automatizado', label: 'scenarioOptions.automated' },
+  { value: 'Não automatizado', label: 'scenarioOptions.notAutomated' },
 ];
 
 export const CRITICALITY_OPTIONS = [
-  { value: 'Baixa', label: 'Baixa' },
-  { value: 'Média', label: 'Média' },
-  { value: 'Alta', label: 'Alta' },
-  { value: 'Crítica', label: 'Crítica' },
+  { value: 'Baixa', label: 'scenarioOptions.low' },
+  { value: 'Média', label: 'scenarioOptions.medium' },
+  { value: 'Alta', label: 'scenarioOptions.high' },
+  { value: 'Crítica', label: 'scenarioOptions.critical' },
 ];
 
 const CRITICALITY_CLASS_MAP: Record<string, string> = {

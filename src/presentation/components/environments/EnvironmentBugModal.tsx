@@ -1,4 +1,5 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { Environment } from '../../../domain/entities/environment';
 import type { EnvironmentBug, EnvironmentBugStatus } from '../../../domain/entities/environment';
@@ -16,9 +17,9 @@ interface EnvironmentBugModalProps {
 }
 
 const STATUS_OPTIONS: { value: EnvironmentBugStatus; label: string }[] = [
-  { value: 'aberto', label: 'Aberto' },
-  { value: 'em_andamento', label: 'Em andamento' },
-  { value: 'resolvido', label: 'Resolvido' },
+  { value: 'aberto', label: 'environmentBugModal.open' },
+  { value: 'em_andamento', label: 'environmentBugModal.progress' },
+  { value: 'resolvido', label: 'environmentBugModal.resolved' },
 ];
 
 export const EnvironmentBugModal = ({
@@ -28,6 +29,7 @@ export const EnvironmentBugModal = ({
   onClose,
   initialScenarioId,
 }: EnvironmentBugModalProps) => {
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -37,10 +39,10 @@ export const EnvironmentBugModal = ({
 
   const scenarioLabel = useMemo(() => {
     if (!scenarioId) {
-      return 'Nenhum cenário selecionado';
+      return t('environmentBugModal.noScenario');
     }
 
-    return environment.scenarios?.[scenarioId]?.titulo ?? 'Cenário removido';
+    return environment.scenarios?.[scenarioId]?.titulo ?? t('environmentBugModal.deletedScenario');
   }, [environment.scenarios, scenarioId]);
 
   useEffect(() => {
@@ -76,72 +78,72 @@ export const EnvironmentBugModal = ({
     try {
       if (bug) {
         await environmentService.updateBug(environment.id, bug.id, payload);
-        showToast({ type: 'success', message: 'Bug atualizado com sucesso.' });
+        showToast({ type: 'success', message: t('environmentBugModal.bugUpdated') });
       } else {
         await environmentService.createBug(environment.id, payload);
-        showToast({ type: 'success', message: 'Bug registrado com sucesso.' });
+        showToast({ type: 'success', message: t('environmentBugModal.bugRegister') });
       }
 
       onClose();
     } catch (error) {
       console.error(error);
-      showToast({ type: 'error', message: 'Não foi possível salvar o bug.' });
+      showToast({ type: 'error', message: t('environmentBugModal.bugUnsaved') });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} title={bug ? 'Editar bug' : 'Registrar bug'} onClose={onClose}>
+    <Modal isOpen={isOpen} title={bug ? t('environmentBugModal.bugEdit') : t('environmentBugModal.bugCreate')} onClose={onClose}>
       <form className="environment-bug-form" onSubmit={handleSubmit}>
         <div className="environment-bug-form__grid">
           <label>
-            <span>Cenário relacionado</span>
+            <span>{t('environmentBugModal.related')}</span>
             <input type="text" value={scenarioLabel} readOnly disabled />
           </label>
           <label>
-            <span>Status</span>
+            <span>{t('environmentBugModal.status')}</span>
             <select
               value={status}
               onChange={(event) => setStatus(event.target.value as EnvironmentBugStatus)}
             >
               {STATUS_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
-                  {option.label}
+                  {t(option.label)}
                 </option>
               ))}
             </select>
           </label>
         </div>
         <label>
-          <span>Título</span>
+          <span>{t('environmentBugModal.title')}</span>
           <input
             type="text"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             required
-            placeholder="Descreva o problema em poucas palavras"
+            placeholder={t('environmentBugModal.problem')}
           />
         </label>
         <label>
-          <span>Descrição</span>
+          <span>{t('environmentBugModal.description')}</span>
           <textarea
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            placeholder="Compartilhe o que foi observado ao executar o cenário"
+            placeholder={t('environmentBugModal.bugDescription')}
           />
         </label>
         <div className="modal-actions">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
-            Cancelar
+            {t('cancel')}
           </Button>
           <Button
             type="submit"
             disabled={isSubmitting}
             isLoading={isSubmitting}
-            loadingText="Salvando..."
+            loadingText={t('saving')}
           >
-            {bug ? 'Salvar alterações' : 'Registrar bug'}
+            {bug ? t('saveChanges') : t('environmentBugModal.bugCreate')}
           </Button>
         </div>
       </form>

@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { EnvironmentScenario } from '../../../domain/entities/environment';
 import type { StoreScenario, StoreSuite } from '../../../domain/entities/store';
@@ -72,6 +73,7 @@ export const CreateEnvironmentModal = ({
   const [suiteId, setSuiteId] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t } = useTranslation();
 
   const selectedSuite = useMemo(
     () => suites.find((suite) => suite.id === suiteId),
@@ -114,17 +116,17 @@ export const CreateEnvironmentModal = ({
     event.preventDefault();
 
     if (!identificador.trim()) {
-      setFormError('Informe um identificador para o ambiente.');
+      setFormError(t('createEnvironment.identifier'));
       return;
     }
 
     if (momentoOptions.length > 0 && !momento) {
-      setFormError('Selecione o momento do ambiente.');
+      setFormError(t('createEnvironment.moment'));
       return;
     }
 
     if (shouldDisplayReleaseField && !release.trim()) {
-      setFormError('Informe a release para este ambiente.');
+      setFormError(t('createEnvironment.release'));
       return;
     }
 
@@ -163,7 +165,7 @@ export const CreateEnvironmentModal = ({
       onClose();
     } catch (error) {
       console.error(error);
-      setFormError('Não foi possível criar o ambiente. Tente novamente.');
+      setFormError(t('createEnvironment.createError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -173,21 +175,21 @@ export const CreateEnvironmentModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Criar ambiente"
-      description="Preencha os campos para iniciar um novo ambiente de teste."
+      title={t('createEnvironment.create')}
+      description={t('createEnvironment.description')}
     >
       <form className="environment-form" onSubmit={handleSubmit}>
         {formError && <p className="form-message form-message--error">{formError}</p>}
         <TextInput
           id="identificador"
-          label="Identificador"
+          label={t('createEnvironment.id')}
           value={identificador}
           onChange={(event) => setIdentificador(event.target.value)}
           required
         />
         <TextArea
           id="urls"
-          label="URLs (uma por linha)"
+          label={t('createEnvironment.urls')}
           value={urls}
           onChange={(event) => setUrls(event.target.value)}
           placeholder="https://exemplo.com"
@@ -200,7 +202,7 @@ export const CreateEnvironmentModal = ({
         />
         <SelectInput
           id="tipoAmbiente"
-          label="Tipo de ambiente"
+          label={t('createEnvironment.environmentType')}
           value={tipoAmbiente}
           onChange={(event) => setTipoAmbiente(event.target.value)}
           options={[
@@ -211,28 +213,28 @@ export const CreateEnvironmentModal = ({
         />
         <SelectInput
           id="tipoTeste"
-          label="Tipo de teste"
+          label={t('createEnvironment.testType')}
           value={tipoTeste}
           onChange={(event) => setTipoTeste(event.target.value)}
-          options={tipoTesteOptions.map((option) => ({ value: option, label: option }))}
+          options={tipoTesteOptions.map((option) => ({ value: option, label: t(option) }))}
         />
         <SelectInput
           id="suiteId"
-          label="Suite existente"
+          label={t('createEnvironment.suiteId')}
           value={suiteId}
           onChange={(event) => setSuiteId(event.target.value)}
           options={[
-            { value: '', label: 'Nenhuma' },
+            { value: '', label: t('createEnvironment.none') },
             ...suites.map((suite) => ({ value: suite.id, label: suite.name })),
           ]}
         />
         {momentoOptions.length > 0 && (
           <SelectInput
             id="momento"
-            label="Momento/Quando"
+            label={t('createEnvironment.setMoment')}
             value={momento}
             onChange={(event) => setMomento(event.target.value)}
-            options={momentoOptions.map((option) => ({ value: option, label: option }))}
+            options={momentoOptions.map((option) => ({ value: option, label: t(option) }))}
           />
         )}
         {shouldDisplayReleaseField && (
@@ -246,13 +248,13 @@ export const CreateEnvironmentModal = ({
         {selectedSuite && (
           <div className="environment-suite-preview">
             <p>
-              Cenários carregados da suíte <strong>{selectedSuite.name}</strong>: {totalCenarios}
+            {t('createEnvironment.scenariosLoaded')} <strong>{selectedSuite.name}</strong>: {totalCenarios}
             </p>
           </div>
         )}
 
-        <Button type="submit" isLoading={isSubmitting} loadingText="Salvando...">
-          Criar ambiente
+        <Button type="submit" isLoading={isSubmitting} loadingText={t('saving')}>
+          {t('createEnvironment.create')}
         </Button>
       </form>
     </Modal>

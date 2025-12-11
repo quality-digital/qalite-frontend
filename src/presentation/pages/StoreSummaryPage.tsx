@@ -309,13 +309,25 @@ export const StoreSummaryPage = () => {
   }, [availableCategories]);
 
   const automationSelectOptions = useMemo(
-    () => [{ value: '', label: t('storeSummary.selectAutomation') }, ...AUTOMATION_OPTIONS],
-    [],
+    () => [
+      { value: '', label: t('storeSummary.selectAutomation') },
+      ...AUTOMATION_OPTIONS.map(opt => ({
+        ...opt,
+        label: t(opt.label),
+      })),
+    ],
+    [t]
   );
 
   const criticalitySelectOptions = useMemo(
-    () => [{ value: '', label: t('storeSummary.selectCriticality') }, ...CRITICALITY_OPTIONS],
-    [],
+    () => [
+      { value: '', label: t('storeSummary.selectCriticality') },
+      ...CRITICALITY_OPTIONS.map(opt => ({
+        ...opt,
+        label: t(opt.label),
+      })),
+    ],
+    [t]
   );
 
   const categoryFilterOptions = useMemo(
@@ -2197,6 +2209,7 @@ export const StoreSummaryPage = () => {
                                             type="button"
                                             onClick={() => handleEditScenario(scenario)}
                                             disabled={isSavingScenario}
+                                            className="edit-button"
                                           >
                                             {t('edit')}
                                           </button>
@@ -2204,7 +2217,7 @@ export const StoreSummaryPage = () => {
                                             type="button"
                                             onClick={() => openDeleteScenarioModal(scenario)}
                                             disabled={isSavingScenario}
-                                            className="scenario-delete"
+                                            className="scenario-delete delete-button"
                                           >
                                             {t('storeSummary.deleteScenario')}
                                           </button>

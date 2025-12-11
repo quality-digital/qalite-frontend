@@ -1269,7 +1269,8 @@ button.store-summary-highlight:focus-visible {
   color: var(--color-text-secondary);
 }
 
-.field-input {
+.field-input, 
+.language-switch {
   border-radius: 1rem;
   border: 1px solid var(--color-border);
   padding: 0.85rem 1rem;
@@ -1280,6 +1281,10 @@ button.store-summary-highlight:focus-visible {
     border-color var(--transition-base),
     box-shadow var(--transition-base),
     background var(--transition-base);
+}
+
+.language-switch{
+  padding: 0.6rem 1.1rem;
 }
 
 .password-field {
@@ -2806,6 +2811,11 @@ button.store-summary-highlight:focus-visible {
 .scenario-actions button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.delete-button, 
+.edit-button {
+  padding: inherit;
 }
 
 .scenario-actions button:hover:not(:disabled) {

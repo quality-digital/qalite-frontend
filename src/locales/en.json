@@ -26,11 +26,12 @@
     "loadingAccess": "Loading access...",
     "backToHome": "Back to homepage",
     "saveChanges": "Save changes",
+    "saving": "Saving...",
     "confirmDeleteModal": {
       "message": "Are you sure you want to delete?",
       "confirmText": "Confirm deletion",
       "cancelText": "Cancel",
-      "loadingText": "Deleting..."
+      "loading": "Deleting..."
     },
     "logPanel": {
       "errorLoading": "Failed to load activity logs.",
@@ -76,7 +77,68 @@
       "dark": "Dark"
     },
     "scenarioOptions": {
-      "notAutomated": "Not automated"
+      "automated": "Automated",
+      "notAutomated": "Not automated",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical"
+    },
+    "environmentOptions": {
+      "smokeTest": "Smoke-test",
+      "seo": "SEO",
+      "performance": "Performance",
+      "smoke": "Smoke",
+      "regressive": "Regressive",
+      "pre": "Pre-deploy",
+      "post": "Post-deploy",
+      "prod": "Prod"
+    },
+    "environmentLabels": {
+      "backlog": "Backlog",
+      "progress": "In progress",
+      "done": "Completed",
+      "open": "Open",
+      "resolved": "Resolved"
+    },
+    "environmentBugModal": {
+      "progress": "In progress",
+      "open": "Open",
+      "resolved": "Resolved",
+      "noScenario": "No scenario selected.",
+      "deletedScenario": "Scenario removed",
+      "bugUpdated": "Bug updated successfully.",
+      "bugRegister": "Bug registered successfully.",
+      "bugUnsaved": "Unable to save the bug.",
+      "bugEdit": "Edit bug",
+      "bugCreate": "Register bug",
+      "related": "Related scenario",
+      "status": "Status",
+      "title": "Title",
+      "problem": "Describe the problem in a few words",
+      "description": "Description",
+      "bugDescription": "Share what was observed when executing the scenario"
+    },
+    "environmentCard": {
+      "displaySuiteName": "Suite not provided",
+      "participant": "participant",
+      "noParticipants": "No participants"
+    },
+    "createEnvironment": {
+      "identifier": "Enter an identifier for the environment.",
+      "moment": "Select the environment moment.",
+      "release": "Enter the release for this environment.",
+      "createError": "Unable to create the environment. Please try again.",
+      "create": "Create environment",
+      "description": "Fill in the fields to start a new test environment.",
+      "id": "Identifier",
+      "urls": "URLs (one per line)",
+      "environmentType": "Environment type",
+      "testType": "Test type",
+      "suiteId": "Existing suite",
+      "none": "None",
+      "setMoment": "Moment/When",
+      "scenariosLoaded": "Scenarios loaded from the suite"
     },
     "environmentKanban": {
     "progress": "In progress",

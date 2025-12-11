@@ -25,12 +25,13 @@
     "loadingAccess": "Carregando Acesso...",
     "backToHome": "Voltar para o início",
     "saveChanges": "Salvar alterações",
+    "saving": "Salvando...",
     "suites": "Suítes",
     "confirmDeleteModal": {
       "message": "Você deseja mesmo excluir?",
       "confirmText": "Confirmar exclusão",
       "cancelText": "Cancelar",
-      "loadingText": "Excluindo..."
+      "loading": "Excluindo..."
     },
     "logPanel": {
       "errorLoading": "Não foi possível carregar os logs de atividade.",
@@ -76,7 +77,68 @@
       "dark": "Modo escuro"
     },
     "scenarioOptions": {
-      "notAutomated": "Not automated"
+      "automated": "Automatizado",
+      "notAutomated": "Não automatizado",
+      "low": "Baixa",
+      "medium": "Média",
+      "high": "Alta",
+      "critical": "Crítica"
+    },
+    "environmentOptions": {
+      "smokeTest": "Smoke-test",
+      "seo": "SEO",
+      "performance": "Performance",
+      "smoke": "Smoke",
+      "regressive": "Regressivo",
+      "pre": "Pré-deploy",
+      "post": "Pós-deploy",
+      "prod": "Prod"
+    },
+    "environmentLabels": {
+      "backlog": "Backlog",
+      "progress":"Em andamento",
+      "done": "Concluído",
+      "open": "Aberto",
+      "resolved": "Resolvido"
+    },
+    "environmentBugModal": {
+      "progress":"Em andamento",
+      "open": "Aberto",
+      "resolved": "Resolvido",
+      "noScenario":"Nenhum cenário selecionado.",
+      "deletedScenario": "Cenário removido",
+      "bugUpdated": "Bug atualizado com sucesso.",
+      "bugRegister": "Bug registrado com sucesso.",
+      "bugUnsaved": "Não foi possível salvar o bug.",
+      "bugEdit": "Editar bug",
+      "bugCreate": "Registrar bug",
+      "related": "Cenário relacionado",
+      "status": "Status",
+      "title": "Título",
+      "problem": "Descreva o problema em poucas palavras",
+      "description": "Descrição",
+      "bugDescription": "Compartilhe o que foi observado ao executar o cenário"
+    },
+    "environmentCard": {
+      "displaySuiteName": "Suíte não informada",
+      "participant": "participante",
+      "noParticipants":"Sem participantes"
+    },
+    "createEnvironment": {
+      "identifier": "Informe um identificador para o ambiente.",
+      "moment": "Selecione o momento do ambiente.",
+      "release": "Informe a release para este ambiente.",
+      "createError": "Não foi possível criar o ambiente. Tente novamente.",
+      "create": "Criar ambiente",
+      "description": "Preencha os campos para iniciar um novo ambiente de teste.",
+      "id": "Identificador",
+      "urls": "URLs (uma por linha)",
+      "environmentType": "Tipo de ambiente",
+      "testType":"Tipo de teste",
+      "suiteId": "Suite existente",
+      "none": "Nenhuma",
+      "setMoment": "Momento/Quando",
+      "scenariosLoaded": "Cenários carregados da suíte"
     },
     "environmentKanban": {
       "progress": "Em andamento",

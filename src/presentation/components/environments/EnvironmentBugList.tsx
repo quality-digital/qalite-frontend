@@ -110,7 +110,7 @@ export const EnvironmentBugList = ({
                 <td>{bug.title}</td>
                 <td>
                   <span className={`bug-status bug-status--${bug.status}`}>
-                    {BUG_STATUS_LABEL[bug.status]}
+                    {translation(BUG_STATUS_LABEL[bug.status])}
                   </span>
                 </td>
                 <td>{getScenarioLabel(bug.scenarioId)}</td>

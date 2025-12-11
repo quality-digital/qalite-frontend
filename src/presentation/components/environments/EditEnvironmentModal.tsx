@@ -180,7 +180,7 @@ export const EditEnvironmentModal = ({
           disabled={isLocked}
           options={tipoTesteOptions.map((option) => ({
             value: option,
-            label: option,
+            label: translation(option),
           }))}
         />
         {momentoOptions.length > 0 && (
@@ -192,7 +192,7 @@ export const EditEnvironmentModal = ({
             disabled={isLocked}
             options={momentoOptions.map((option) => ({
               value: option,
-              label: option,
+              label: translation(option),
             }))}
           />
         )}

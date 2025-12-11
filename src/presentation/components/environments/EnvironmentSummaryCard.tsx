@@ -71,7 +71,7 @@ export const EnvironmentSummaryCard = ({
     <div className="summary-card summary-card--environment summary-card--compact">
       <div className="summary-card__minimal-header">
         <span className={`status-pill status-pill--${environment.status}`}>
-          {ENVIRONMENT_STATUS_LABEL[environment.status]}
+          {translation(ENVIRONMENT_STATUS_LABEL[environment.status])}
         </span>
         <div className="summary-card__progress-inline" aria-live="polite">
           <span className="summary-card__progress-value">{progressPercentage}%</span>
