@@ -44,7 +44,7 @@ export const Layout = ({ children }: LayoutProps) => {
                   <span className="user-greeting">{t('greeting')},</span>
                   <span className="user-name">{displayName}</span>
                   <span className="user-role">
-                  {user.role === "admin" ? t("roleAdmin") : t("roleUser")}
+                  {user.role === 'admin' ? t('roleAdmin') : t('roleUser')}
                   </span>
                 </div>
               </div>
