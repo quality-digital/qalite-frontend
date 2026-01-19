@@ -1,28 +1,7 @@
-import type {
-  StoreExportPayload,
-  StoreScenario,
-  StoreSuiteExportPayload,
-} from '../../domain/entities/store';
-
-export const downloadTextFile = (content: string, fileName: string, mimeType: string) => {
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-};
-
-export const downloadMarkdownFile = (content: string, fileName: string) => {
-  downloadTextFile(content, fileName, 'text/markdown');
-};
-
-export const downloadJsonFile = (content: string, fileName: string) => {
-  downloadTextFile(content, fileName, 'application/json');
-};
+import type { StoreExportPayload, StoreScenario } from '../../domain/entities/store';
+import { formatDateTime } from './time';
+import i18n from '../../lib/i18n';
+import { normalizeAutomationEnum, normalizeCriticalityEnum } from './scenarioEnums';
 
 const textEncoder = new TextEncoder();
 
@@ -302,8 +281,6 @@ const downloadBlobFile = (blob: Blob, fileName: string) => {
   URL.revokeObjectURL(url);
 };
 
-const formatDateTime = (value: string) => new Date(value).toLocaleString('pt-BR');
-
 const createWorkbookBlob = (sheets: WorksheetDefinition[], exportedAt: string) => {
   const workbookContent = buildWorkbookZip(sheets, exportedAt);
   const normalizedBuffer = new Uint8Array(workbookContent).buffer;
@@ -340,40 +317,6 @@ const buildScenarioSheets = (payload: StoreExportPayload): WorksheetDefinition[]
   ];
 };
 
-const buildSuiteSheets = (payload: StoreSuiteExportPayload): WorksheetDefinition[] => {
-  const summaryRows: string[][] = [
-    ['Loja', payload.store.name],
-    ['Site', payload.store.site],
-    ['Ambiente', payload.store.stage || 'Não informado'],
-    ['Quantidade de suítes', `${payload.suites.length}`],
-    ['Quantidade de cenários', `${payload.store.scenarioCount}`],
-    ['Exportado em', formatDateTime(payload.exportedAt)],
-  ];
-
-  const suiteRows: string[][] = [
-    ['#', 'Suíte', 'Descrição', 'Qtd. de cenários', 'Cenários'],
-    ...payload.suites.map((suite: StoreSuiteExportPayload['suites'][number], index: number) => [
-      `${index + 1}`,
-      suite.name || '—',
-      suite.description || '—',
-      `${suite.scenarios.length}`,
-      suite.scenarios
-        .map(
-          (
-            scenario: StoreSuiteExportPayload['suites'][number]['scenarios'][number],
-            scenarioIndex: number,
-          ) => `${scenarioIndex + 1}. ${scenario.title || '—'}`,
-        )
-        .join('\n'),
-    ]),
-  ];
-
-  return [
-    { name: 'Resumo', rows: summaryRows },
-    { name: 'Suítes', rows: suiteRows },
-  ];
-};
-
 const escapeHtml = (value: string) =>
   value
     .replace(/&/g, '&amp;')
@@ -382,105 +325,190 @@ const escapeHtml = (value: string) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-export const openPdfFromMarkdown = (
-  content: string,
+const URL_PATTERN = /\b((https?:\/\/|www\.)[^\s]+|[a-z0-9.-]+\.[a-z]{2,}(?:\/[^\s]*)?)/gi;
+
+const buildHref = (value: string) => (/^https?:\/\//i.test(value) ? value : `https://${value}`);
+
+const linkifyHtml = (value: string) => {
+  if (!value) {
+    return '';
+  }
+
+  let result = '';
+  let lastIndex = 0;
+  const regex = new RegExp(URL_PATTERN);
+
+  value.replace(regex, (match, _value, _protocol, offset: number) => {
+    if (offset > lastIndex) {
+      result += escapeHtml(value.slice(lastIndex, offset));
+    }
+
+    const href = buildHref(match);
+    result += `<a href="${escapeHtml(href)}" target="_blank" rel="noreferrer noopener">${escapeHtml(match)}</a>`;
+    lastIndex = offset + match.length;
+    return match;
+  });
+
+  if (lastIndex < value.length) {
+    result += escapeHtml(value.slice(lastIndex));
+  }
+
+  return result || escapeHtml(value);
+};
+
+const formatAutomationLabel = (value: string | null | undefined, t: (key: string) => string) => {
+  const normalized = normalizeAutomationEnum(value);
+  if (normalized === 'AUTOMATED') {
+    return t('scenarioOptions.automated');
+  }
+  if (normalized === 'NOT_AUTOMATED') {
+    return t('scenarioOptions.notAutomated');
+  }
+  return value?.trim() || t('storeSummary.emptyValue');
+};
+
+const formatCriticalityLabel = (value: string | null | undefined, t: (key: string) => string) => {
+  const normalized = normalizeCriticalityEnum(value);
+  if (normalized === 'LOW') {
+    return t('scenarioOptions.low');
+  }
+  if (normalized === 'MEDIUM') {
+    return t('scenarioOptions.medium');
+  }
+  if (normalized === 'HIGH') {
+    return t('scenarioOptions.high');
+  }
+  if (normalized === 'CRITICAL') {
+    return t('scenarioOptions.critical');
+  }
+  return value?.trim() || t('storeSummary.emptyValue');
+};
+
+const buildExternalLink = (value: string | null | undefined) => {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+  if (trimmed.includes('.')) {
+    return `https://${trimmed}`;
+  }
+  return null;
+};
+
+export const openScenarioPdf = (
+  payload: StoreExportPayload,
   title: string,
   targetWindow?: Window | null,
 ) => {
+  const t = i18n.t.bind(i18n);
   const printableWindow = targetWindow ?? window.open('', '_blank');
 
   if (!printableWindow) {
-    throw new Error('Não foi possível abrir a visualização para exportar em PDF.');
+    throw new Error(t('storeSummary.pdfOpenError'));
   }
 
-  const escapedContent = escapeHtml(content);
-  printableWindow.document.open();
-  printableWindow.document.write(`
+  const scenarioRows = payload.scenarios
+    .map((scenario, index) => {
+      const observation = scenario.observation?.trim() || t('storeSummary.emptyValue');
+      const bdd = scenario.bdd?.trim() || t('storeSummary.emptyValue');
+      const automation = formatAutomationLabel(scenario.automation, t);
+      const criticality = formatCriticalityLabel(scenario.criticality, t);
+
+      return `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${linkifyHtml(scenario.title || t('storeSummary.emptyValue'))}</td>
+          <td>${linkifyHtml(scenario.category || t('storeSummary.emptyValue'))}</td>
+          <td>${escapeHtml(automation)}</td>
+          <td>${escapeHtml(criticality)}</td>
+          <td>${linkifyHtml(observation)}</td>
+          <td>${linkifyHtml(bdd)}</td>
+        </tr>
+      `;
+    })
+    .join('');
+
+  const siteHref = buildExternalLink(payload.store.site);
+  const siteLabel = payload.store.site?.trim() || t('storeSummary.notProvided');
+  const siteValue = siteHref
+    ? `<a href="${escapeHtml(siteHref)}" target="_blank" rel="noreferrer noopener">${escapeHtml(
+        siteLabel,
+      )}</a>`
+    : escapeHtml(siteLabel);
+
+  const content = `
     <!doctype html>
-    <html lang="pt-BR">
+    <html lang="${escapeHtml(i18n.language || 'pt-BR')}">
       <head>
         <meta charset="UTF-8" />
         <title>${escapeHtml(title)}</title>
         <style>
           body { font-family: 'Inter', system-ui, -apple-system, sans-serif; padding: 24px; }
-          pre { white-space: pre-wrap; word-break: break-word; font-size: 14px; line-height: 1.5; }
-          h1 { margin-bottom: 12px; }
+          h1 { margin-bottom: 4px; }
+          .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 16px 0; padding: 12px; background: #f5f7fb; border: 1px solid #e5e7eb; border-radius: 12px; }
+          .summary-grid span { color: #6b7280; font-size: 12px; }
+          .summary-grid strong { display: block; margin-top: 4px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+          th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; vertical-align: top; }
+          th { background: #f9fafb; }
         </style>
       </head>
       <body>
-        <pre>${escapedContent}</pre>
+        <h1>${escapeHtml(title)}</h1>
+        <div class="summary-grid">
+          <div>
+            <span>${escapeHtml(t('storeSummary.store'))}</span>
+            <strong>${linkifyHtml(payload.store.name)}</strong>
+          </div>
+          <div>
+            <span>${escapeHtml(t('storeSummary.siteLabel'))}</span>
+            <strong>${siteValue}</strong>
+          </div>
+          <div>
+            <span>${escapeHtml(t('storeSummary.environmentLabel'))}</span>
+            <strong>${escapeHtml(payload.store.stage || t('storeSummary.notInformed'))}</strong>
+          </div>
+          <div>
+            <span>${escapeHtml(t('storeSummary.scenarioCountLabel'))}</span>
+            <strong>${payload.scenarios.length}</strong>
+          </div>
+          <div>
+            <span>${escapeHtml(t('storeSummary.exportedAtLabel'))}</span>
+            <strong>${escapeHtml(formatDateTime(payload.exportedAt))}</strong>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>${escapeHtml(t('storeSummary.title'))}</th>
+              <th>${escapeHtml(t('storeSummary.category'))}</th>
+              <th>${escapeHtml(t('storeSummary.automation'))}</th>
+              <th>${escapeHtml(t('storeSummary.criticality'))}</th>
+              <th>${escapeHtml(t('storeSummary.observation'))}</th>
+              <th>${escapeHtml(t('storeSummary.bdd'))}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              scenarioRows ||
+              `<tr><td colspan="7">${escapeHtml(t('storeSummary.noScenariosRegistered'))}</td></tr>`
+            }
+          </tbody>
+        </table>
       </body>
     </html>
-  `);
+  `;
 
+  printableWindow.document.open();
+  printableWindow.document.write(content);
   printableWindow.document.close();
   printableWindow.focus();
   printableWindow.print();
 };
-
-const buildScenarioSummary = (payload: StoreExportPayload) => {
-  const scenarioLines = payload.scenarios.map((scenario: StoreScenario, index: number) =>
-    [
-      `### ${index + 1}. ${scenario.title}`,
-      `- Categoria: ${scenario.category}`,
-      `- Automação: ${scenario.automation}`,
-      `- Criticidade: ${scenario.criticality}`,
-      scenario.observation ? `- Observação: ${scenario.observation}` : '- Observação: —',
-      scenario.bdd ? `- BDD:\n\n${scenario.bdd}` : '- BDD: —',
-    ].join('\n'),
-  );
-
-  return [
-    `# Massa de cenários - ${payload.store.name}`,
-    `- Loja: ${payload.store.name}`,
-    `- Site: ${payload.store.site}`,
-    `- Ambiente: ${payload.store.stage || 'Não informado'}`,
-    `- Quantidade de cenários: ${payload.scenarios.length}`,
-    `- Exportado em: ${new Date(payload.exportedAt).toLocaleString('pt-BR')}`,
-    '',
-    '## Cenários',
-    ...scenarioLines,
-  ].join('\n\n');
-};
-
-const buildSuiteSummary = (payload: StoreSuiteExportPayload) => {
-  const suiteLines = payload.suites.map(
-    (suite: StoreSuiteExportPayload['suites'][number], index: number) => {
-      const scenarioList = suite.scenarios
-        .map(
-          (
-            scenario: StoreSuiteExportPayload['suites'][number]['scenarios'][number],
-            scenarioIndex: number,
-          ) => `  ${scenarioIndex + 1}. ${scenario.title || '—'}`,
-        )
-        .join('\n');
-
-      return [
-        `### ${index + 1}. ${suite.name}`,
-        suite.description ? `- Descrição: ${suite.description}` : '- Descrição: —',
-        '- Cenários:',
-        scenarioList || '  —',
-      ].join('\n');
-    },
-  );
-
-  return [
-    `# Suítes de testes - ${payload.store.name}`,
-    `- Loja: ${payload.store.name}`,
-    `- Site: ${payload.store.site}`,
-    `- Ambiente: ${payload.store.stage || 'Não informado'}`,
-    `- Quantidade de suítes: ${payload.suites.length}`,
-    `- Quantidade de cenários: ${payload.store.scenarioCount}`,
-    `- Exportado em: ${new Date(payload.exportedAt).toLocaleString('pt-BR')}`,
-    '',
-    '## Suítes',
-    ...suiteLines,
-  ].join('\n\n');
-};
-
-export const buildScenarioMarkdown = (payload: StoreExportPayload) => buildScenarioSummary(payload);
-
-export const buildSuiteMarkdown = (payload: StoreSuiteExportPayload) => buildSuiteSummary(payload);
 
 export const downloadScenarioWorkbook = (payload: StoreExportPayload, fileName: string) => {
   const workbookBlob = createWorkbookBlob(
@@ -488,110 +516,4 @@ export const downloadScenarioWorkbook = (payload: StoreExportPayload, fileName: 
     new Date(payload.exportedAt).toISOString(),
   );
   downloadBlobFile(workbookBlob, fileName);
-};
-
-export const downloadSuiteWorkbook = (payload: StoreSuiteExportPayload, fileName: string) => {
-  const workbookBlob = createWorkbookBlob(
-    buildSuiteSheets(payload),
-    new Date(payload.exportedAt).toISOString(),
-  );
-  downloadBlobFile(workbookBlob, fileName);
-};
-
-export const validateScenarioImportPayload = (payload: StoreExportPayload) => {
-  if (!payload || typeof payload !== 'object') {
-    throw new Error('Arquivo inválido.');
-  }
-
-  if (!payload.store || typeof payload.store !== 'object') {
-    throw new Error('Arquivo não possui informações da loja.');
-  }
-
-  const requiredStoreFields: (keyof StoreExportPayload['store'])[] = [
-    'id',
-    'name',
-    'site',
-    'scenarioCount',
-  ];
-  requiredStoreFields.forEach((field) => {
-    if (field === 'scenarioCount') {
-      if (typeof payload.store.scenarioCount !== 'number') {
-        throw new Error('Quantidade de cenários inválida.');
-      }
-      return;
-    }
-
-    if (typeof payload.store[field] !== 'string') {
-      throw new Error('Dados da loja estão incompletos.');
-    }
-  });
-
-  if (!Array.isArray(payload.scenarios)) {
-    throw new Error('Estrutura de cenários inválida.');
-  }
-
-  payload.scenarios.forEach((scenario: StoreScenario) => {
-    const requiredScenarioFields: (keyof StoreScenario)[] = [
-      'title',
-      'category',
-      'automation',
-      'criticality',
-    ];
-
-    requiredScenarioFields.forEach((field) => {
-      const value = scenario[field];
-      if (typeof value !== 'string' || !value.trim()) {
-        throw new Error(`Cenário inválido. O campo "${field}" é obrigatório.`);
-      }
-    });
-
-    ['observation', 'bdd'].forEach((field) => {
-      const value = scenario[field as 'observation' | 'bdd'];
-      if (value !== undefined && typeof value !== 'string') {
-        throw new Error(`Cenário inválido. O campo "${field}" deve ser um texto.`);
-      }
-    });
-  });
-};
-
-export const validateSuiteImportPayload = (payload: StoreSuiteExportPayload) => {
-  if (!payload || typeof payload !== 'object') {
-    throw new Error('Arquivo inválido.');
-  }
-
-  if (!payload.store || typeof payload.store !== 'object') {
-    throw new Error('Arquivo não possui informações da loja.');
-  }
-
-  if (!Array.isArray(payload.suites)) {
-    throw new Error('Estrutura de suítes inválida.');
-  }
-
-  payload.suites.forEach((suite: StoreSuiteExportPayload['suites'][number]) => {
-    if (typeof suite.name !== 'string' || !suite.name.trim()) {
-      throw new Error('O nome da suíte é obrigatório.');
-    }
-
-    if (typeof suite.description !== 'string') {
-      throw new Error('A descrição da suíte é obrigatória.');
-    }
-
-    if (!Array.isArray(suite.scenarios)) {
-      throw new Error(`Estrutura de cenários inválida na suíte "${suite.name}".`);
-    }
-
-    suite.scenarios.forEach((scenario) => {
-      if (!scenario || typeof scenario !== 'object') {
-        throw new Error('Cenário inválido encontrado na importação de suítes.');
-      }
-
-      if (typeof scenario.title !== 'string' || !scenario.title.trim()) {
-        throw new Error('Cenário inválido. O título é obrigatório.');
-      }
-
-      if (scenario.id !== null && scenario.id !== undefined && typeof scenario.id !== 'string') {
-        throw new Error('Identificador do cenário inválido.');
-      }
-    });
-  });
 };

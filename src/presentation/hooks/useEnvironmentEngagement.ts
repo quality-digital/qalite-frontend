@@ -117,7 +117,7 @@ export const useEnvironmentEngagement = (
   const isScenarioLocked = environment?.status !== 'in_progress' || !hasEnteredEnvironment;
   const isInteractionLocked = !hasEnteredEnvironment || isLocked;
 
-  const canShare = hasEnteredEnvironment;
+  const canShare = hasEnteredEnvironment || isLocked;
 
   return {
     hasEnteredEnvironment,

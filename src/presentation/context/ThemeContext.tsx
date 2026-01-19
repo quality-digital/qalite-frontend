@@ -3,53 +3,88 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
 } from 'react';
+
+import type { ThemePreference } from '../../domain/entities/auth';
+import {
+  getDeviceLanguagePreference,
+  getStoredLanguagePreference,
+  getStoredThemePreference,
+  persistPreferencesLocally,
+} from '../../shared/config/userPreferences';
 
 type Theme = 'light' | 'dark';
 
 interface ThemeContextValue {
   theme: Theme;
-  toggleTheme: () => void;
+  preference: ThemePreference;
+  setPreference: (preference: ThemePreference) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-const THEME_STORAGE_KEY = 'qalite-theme';
+const resolveTheme = (preference: ThemePreference): Theme => {
+  if (preference !== 'system') {
+    return preference;
+  }
 
-const getPreferredTheme = (): Theme => {
   if (typeof window === 'undefined') {
     return 'light';
   }
 
-  const stored = window.localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-  if (stored === 'light' || stored === 'dark') {
-    return stored;
-  }
-
-  const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-  return prefersDark ? 'dark' : 'light';
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 };
 
+const getInitialPreference = (): ThemePreference => getStoredThemePreference() ?? 'system';
+
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [theme, setTheme] = useState<Theme>(getPreferredTheme);
+  const [preference, setPreference] = useState<ThemePreference>(getInitialPreference);
+  const [theme, setTheme] = useState<Theme>(() => resolveTheme(getInitialPreference()));
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    setTheme(resolveTheme(preference));
+
     if (typeof document !== 'undefined') {
-      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.setAttribute('data-theme', resolveTheme(preference));
     }
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(THEME_STORAGE_KEY, theme);
-    }
-  }, [theme]);
 
-  const toggleTheme = useCallback(() => {
-    setTheme((previous) => (previous === 'light' ? 'dark' : 'light'));
+    persistPreferencesLocally({
+      theme: preference,
+      language: getStoredLanguagePreference() ?? getDeviceLanguagePreference() ?? 'en',
+    });
+
+    if (typeof window === 'undefined' || preference !== 'system') {
+      return;
+    }
+
+    const media = window.matchMedia?.('(prefers-color-scheme: dark)');
+    if (!media) {
+      return;
+    }
+
+    const listener = () => {
+      const nextTheme = resolveTheme('system');
+      setTheme(nextTheme);
+      if (typeof document !== 'undefined') {
+        document.documentElement.setAttribute('data-theme', nextTheme);
+      }
+    };
+
+    media.addEventListener?.('change', listener);
+    return () => media.removeEventListener?.('change', listener);
+  }, [preference]);
+
+  const handleSetPreference = useCallback((nextPreference: ThemePreference) => {
+    setPreference(nextPreference);
   }, []);
 
-  const value = useMemo<ThemeContextValue>(() => ({ theme, toggleTheme }), [theme, toggleTheme]);
+  const value = useMemo<ThemeContextValue>(
+    () => ({ theme, preference, setPreference: handleSetPreference }),
+    [handleSetPreference, preference, theme],
+  );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };

@@ -17,11 +17,17 @@ import type {
   RegisterPayload,
   Role,
   UpdateProfilePayload,
+  UserPreferences,
 } from '../../domain/entities/auth';
 import type { BrowserstackCredentials } from '../../domain/entities/browserstack';
-import { DEFAULT_ROLE } from '../../domain/entities/auth';
+import { DEFAULT_ROLE, DEFAULT_USER_PREFERENCES } from '../../domain/entities/auth';
 import { addUserToOrganizationByEmailDomain } from './organizations';
 import { firebaseAuth, firebaseFirestore } from '../database/firebase';
+import {
+  getStoredLanguagePreference,
+  getStoredThemePreference,
+  normalizeUserPreferences,
+} from '../../shared/config/userPreferences';
 
 const USERS_COLLECTION = 'users';
 const AUTH_COOKIE_NAME = 'firebase:authUser';
@@ -70,6 +76,7 @@ export const registerUser = async ({ role, ...payload }: RegisterPayload): Promi
       photoURL: null,
       organizationId: null,
       browserstackCredentials: null,
+      preferences: getInitialPreferences(),
       isNew: true,
     },
     null,
@@ -188,6 +195,11 @@ const parseBrowserstackCredentials = (value: unknown): BrowserstackCredentials |
   return { username, accessKey };
 };
 
+const getInitialPreferences = (): UserPreferences => ({
+  theme: getStoredThemePreference() ?? DEFAULT_USER_PREFERENCES.theme,
+  language: getStoredLanguagePreference() ?? DEFAULT_USER_PREFERENCES.language,
+});
+
 export const updateUserProfile = async (payload: UpdateProfilePayload): Promise<AuthUser> => {
   const user = firebaseAuth.currentUser;
   if (!user) {
@@ -197,10 +209,19 @@ export const updateUserProfile = async (payload: UpdateProfilePayload): Promise<
   const currentProfile = await fetchUserProfile(user.uid);
   const photoURL = null;
 
-  const trimmedFirstName = payload.firstName.trim();
-  const trimmedLastName = payload.lastName.trim();
-  const displayName = `${trimmedFirstName} ${trimmedLastName}`.trim();
+  const trimmedFirstName = payload.firstName?.trim() ?? currentProfile.firstName ?? '';
+  const trimmedLastName = payload.lastName?.trim() ?? currentProfile.lastName ?? '';
+  const displayName =
+    payload.firstName || payload.lastName
+      ? `${trimmedFirstName} ${trimmedLastName}`.trim()
+      : (currentProfile.displayName ?? user.displayName ?? user.email ?? '').trim();
   const browserstackCredentials = normalizeBrowserstackCredentials(payload.browserstackCredentials);
+  const preferences = payload.preferences
+    ? normalizeUserPreferences(
+        payload.preferences,
+        currentProfile.preferences ?? getInitialPreferences(),
+      )
+    : (currentProfile.preferences ?? getInitialPreferences());
 
   await firebaseUpdateProfile(user, {
     displayName: displayName || undefined,
@@ -217,6 +238,7 @@ export const updateUserProfile = async (payload: UpdateProfilePayload): Promise<
       photoURL,
       organizationId: currentProfile.organizationId ?? null,
       browserstackCredentials,
+      preferences,
       isNew: false,
     },
     browserstackCredentials,
@@ -234,6 +256,7 @@ interface StoredProfile {
   photoURL?: string | null;
   organizationId?: string | null;
   browserstackCredentials?: BrowserstackCredentials | null;
+  preferences?: UserPreferences;
 }
 
 const mapToAuthUser = (user: FirebaseUser, profile: StoredProfile): AuthUser => {
@@ -260,6 +283,7 @@ const mapToAuthUser = (user: FirebaseUser, profile: StoredProfile): AuthUser => 
     organizationId: profile.organizationId ?? null,
     browserstackCredentials: profile.browserstackCredentials ?? null,
     photoURL: profile.photoURL ?? null,
+    preferences: normalizeUserPreferences(profile.preferences, getInitialPreferences()),
     accessToken: user.refreshToken,
     isEmailVerified: user.emailVerified,
   };
@@ -275,6 +299,7 @@ const persistUserProfile = async (
     photoURL?: string | null;
     organizationId: string | null;
     browserstackCredentials: BrowserstackCredentials | null;
+    preferences: UserPreferences;
     isNew?: boolean;
   },
   browserstackCredentials: BrowserstackCredentials | null,
@@ -291,6 +316,7 @@ const persistUserProfile = async (
       photoURL: profile.photoURL ?? null,
       organizationId: profile.organizationId,
       browserstackCredentials,
+      preferences: profile.preferences,
       ...(profile.isNew ? { createdAt: serverTimestamp() } : {}),
       updatedAt: serverTimestamp(),
     },
@@ -312,6 +338,7 @@ const fetchUserProfile = async (uid: string): Promise<StoredProfile> => {
       photoURL: (data.photoURL as string | null) ?? null,
       organizationId: (data.organizationId as string | null) ?? null,
       browserstackCredentials: parseBrowserstackCredentials(data?.browserstackCredentials),
+      preferences: normalizeUserPreferences(data?.preferences, getInitialPreferences()),
     };
   }
 
@@ -323,6 +350,7 @@ const fetchUserProfile = async (uid: string): Promise<StoredProfile> => {
     photoURL: null,
     organizationId: null,
     browserstackCredentials: null,
+    preferences: getInitialPreferences(),
   };
 };
 

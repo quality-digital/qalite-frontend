@@ -1,4 +1,4 @@
-import type { AuthUser, Role } from '../entities/auth';
+import type { AuthUser, Role, UpdateProfilePayload } from '../entities/auth';
 
 export interface AuthRepository {
   register: (input: {
@@ -13,9 +13,5 @@ export interface AuthRepository {
   getCurrent: () => Promise<AuthUser | null>;
   onAuthStateChanged: (listener: (user: AuthUser | null) => void) => () => void;
   hasRequiredRole: (user: AuthUser | null, allowedRoles: Role[]) => boolean;
-  updateProfile: (payload: {
-    firstName: string;
-    lastName: string;
-    browserstackCredentials?: AuthUser['browserstackCredentials'];
-  }) => Promise<AuthUser>;
+  updateProfile: (payload: UpdateProfilePayload) => Promise<AuthUser>;
 }

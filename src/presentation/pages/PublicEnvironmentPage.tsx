@@ -27,10 +27,10 @@ export const PublicEnvironmentPage = () => {
     Boolean(environment?.status === 'in_progress'),
   );
   const { bugs, isLoading: isLoadingBugs } = useEnvironmentBugs(environment?.id ?? null);
-  const { bugCountByScenario, progressPercentage, progressLabel, scenarioCount, headerMeta, urls } =
+  const { progressPercentage, progressLabel, scenarioCount, headerMeta, urls } =
     useEnvironmentDetails(environment, bugs);
 
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     setActiveOrganization(environmentOrganization ?? null);
@@ -39,6 +39,12 @@ export const PublicEnvironmentPage = () => {
       setActiveOrganization(null);
     };
   }, [environmentOrganization, setActiveOrganization]);
+
+  useEffect(() => {
+    if (environment?.publicShareLanguage && i18n.language !== environment.publicShareLanguage) {
+      void i18n.changeLanguage(environment.publicShareLanguage);
+    }
+  }, [environment?.publicShareLanguage, i18n]);
 
   if (isLoading) {
     return (
@@ -90,14 +96,10 @@ export const PublicEnvironmentPage = () => {
         </div>
 
         <div className="environment-evidence">
-          <div className="environment-evidence__header">
-            <h3 className="section-title">{t('publicEnvironment.scenarios')}</h3>
-          </div>
           <EnvironmentEvidenceTable
             environment={environment}
             isLocked
             readOnly
-            bugCountByScenario={bugCountByScenario}
             organizationId={environmentOrganization?.id ?? null}
           />
         </div>
@@ -108,6 +110,7 @@ export const PublicEnvironmentPage = () => {
           isLoading={isLoadingBugs}
           onEdit={() => {}}
           showActions={false}
+          showHeader={false}
         />
       </section>
     </Layout>

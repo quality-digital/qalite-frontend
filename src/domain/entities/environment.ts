@@ -50,6 +50,7 @@ export interface Environment {
   bugs: number;
   totalCenarios: number;
   participants: string[];
+  publicShareLanguage: string | null;
 }
 
 export interface CreateEnvironmentInput {
@@ -71,6 +72,7 @@ export interface CreateEnvironmentInput {
   bugs: number;
   totalCenarios: number;
   participants: string[];
+  publicShareLanguage: string | null;
 }
 
 export type UpdateEnvironmentInput = Partial<Omit<Environment, 'id'>>;

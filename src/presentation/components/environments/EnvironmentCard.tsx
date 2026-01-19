@@ -5,7 +5,7 @@ import type { Environment } from '../../../domain/entities/environment';
 import type { UserSummary } from '../../../domain/entities/user';
 import { getReadableUserName, getUserInitials } from '../../utils/userDisplay';
 import { ENVIRONMENT_STATUS_LABEL } from '../../../shared/config/environmentLabels';
-import { TEST_TYPES_BY_ENVIRONMENT } from '../../constants/environmentOptions';
+import { translateEnvironmentOption } from '../../constants/environmentOptions';
 
 interface EnvironmentCardProps {
   environment: Environment;
@@ -30,8 +30,12 @@ export const EnvironmentCard = ({
   const hasParticipants = participants.length > 0;
   const visibleParticipants = participants.slice(0, 3);
   const hiddenParticipantsCount = Math.max(participants.length - visibleParticipants.length, 0);
-  const bugLabel = environment.tipoAmbiente?.toUpperCase() === 'WS' ? 'Storyfix' : 'Bugs';
+  const bugLabel =
+    environment.tipoAmbiente?.toUpperCase() === 'WS'
+      ? t('environmentCard.bugStoryfix')
+      : t('environmentCard.bugBugs');
   const totalScenariosWithPlatforms = environment.totalCenarios * 2;
+  const momentLabel = translateEnvironmentOption(environment.momento, t);
 
   const handleOpen = () => onOpen(environment);
 
@@ -64,9 +68,16 @@ export const EnvironmentCard = ({
       </div>
 
       <div className="environment-card-suite-row">
-        <span className="environment-card-suite-label">Suíte</span>
+        <span className="environment-card-suite-label">{t('environmentCard.suiteLabel')}</span>
         <span className="environment-card-suite-name">{displaySuiteName}</span>
       </div>
+
+      {environment.momento && (
+        <div className="environment-card-moment-row">
+          <span className="environment-card-moment-label">{t('environmentCard.momentLabel')}</span>
+          <span className="environment-card-moment-name">{momentLabel}</span>
+        </div>
+      )}
 
       <div className="environment-card-stats">
         <div className="environment-card-stat">
@@ -79,32 +90,27 @@ export const EnvironmentCard = ({
         </div>
       </div>
 
-      <div className="environment-card-participants" aria-label="Participantes">
+      <div
+        className="environment-card-participants"
+        aria-label={t('environmentCard.participantsLabel')}
+      >
         {hasParticipants ? (
           <>
             <ul
               className="environment-card-participant-list"
-              aria-label="Participantes cadastrados"
+              aria-label={t('environmentCard.participantsListLabel')}
             >
               {visibleParticipants.map((user) => {
                 const readableName = getReadableUserName(user);
                 const initials = getUserInitials(readableName);
                 return (
                   <li key={user.id} className="environment-card-participant" title={readableName}>
-                    {user.photoURL ? (
-                      <img
-                        src={user.photoURL}
-                        alt={readableName}
-                        className="environment-card-avatar"
-                      />
-                    ) : (
-                      <span
-                        className="environment-card-avatar environment-card-avatar--initials"
-                        aria-label={readableName}
-                      >
-                        {initials}
-                      </span>
-                    )}
+                    <span
+                      className="environment-card-avatar environment-card-avatar--initials"
+                      aria-label={readableName}
+                    >
+                      {initials}
+                    </span>
                   </li>
                 );
               })}
@@ -115,11 +121,13 @@ export const EnvironmentCard = ({
               )}
             </ul>
             <span className="environment-card-participants-label">
-              {participants.length} {t('environmentCard.participant')}{participants.length > 1 ? 's' : ''}
+              {t('environmentCard.participant', { count: participants.length })}
             </span>
           </>
         ) : (
-          <span className="environment-card-avatars__placeholder">{t('environmentCard.noParticipants')}</span>
+          <span className="environment-card-avatars__placeholder">
+            {t('environmentCard.noParticipants')}
+          </span>
         )}
       </div>
     </div>

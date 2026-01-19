@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
 import { Button } from './Button';
 import { UserAvatar } from './UserAvatar';
-import { LogoutIcon, UserIcon } from './icons';
+import { LogoutIcon } from './icons';
 import qliteLogo from '../assets/logo.png';
 import { useTranslation } from 'react-i18next';
 
@@ -18,47 +18,31 @@ export const Layout = ({ children }: LayoutProps) => {
   const navigate = useNavigate();
   const displayName = user?.displayName || user?.email || '';
   const brandSource = activeOrganization;
-  const brandName = brandSource?.name || 'QaLite';
-  const brandLogo = qliteLogo;
-
   const { t } = useTranslation();
-  const { i18n } = useTranslation();
-
-  function changeLang(lang) {
-    i18n.changeLanguage(lang);
-  }
+  const brandName = brandSource?.name || t('app.brandName');
+  const brandLogo = qliteLogo;
 
   return (
     <div className="app-shell">
       <header className="app-header">
-        <Link to="/" className="app-brand" aria-label={`Página inicial da ${brandName}`}>
-          <img src={brandLogo} alt="Logo da QaLite" className="app-brand-logo" />
+        <Link to="/" className="app-brand" aria-label={t('layout.homeAriaLabel', { brandName })}>
+          <img
+            src={brandLogo}
+            alt={t('layout.brandLogoAlt', { brandName })}
+            className="app-brand-logo"
+          />
           <span className="app-brand-name">{brandSource?.name || brandName}</span>
         </Link>
         <nav className="header-actions">
           {user ? (
             <div className="header-user">
-              <div className="header-user-info">
-                <UserAvatar name={displayName} photoURL={user.photoURL} size="sm" />
-                <div className="user-context">
-                  <span className="user-greeting">{t('greeting')},</span>
-                  <span className="user-name">{displayName}</span>
-                  <span className="user-role">
-                  {user.role === 'admin' ? t('roleAdmin') : t('roleUser')}
-                  </span>
-                </div>
-              </div>
-              <select className="language-switch" onChange={(e) => changeLang(e.target.value)} value={i18n.language}>
-                <option value="pt">Pt 🇧🇷</option>
-                <option value="en">En 🇺🇸 </option>
-              </select>
               <div className="header-user-actions">
                 <button
                   type="button"
                   className="header-profile"
                   onClick={() => navigate('/profile')}
                 >
-                  <UserIcon aria-hidden className="icon" />
+                  <UserAvatar name={displayName} size="sm" />
                   <span>{t('profile')}</span>
                 </button>
                 <Button type="button" variant="ghost" onClick={() => void logout()}>
@@ -83,18 +67,3 @@ export const Layout = ({ children }: LayoutProps) => {
     </div>
   );
 };
-
-export default function LanguageSwitcher() {
-  const { i18n } = useTranslation();
-
-  function changeLang(lang) {
-    i18n.changeLanguage(lang);
-  }
-
-  return (
-    <select onChange={(e) => changeLang(e.target.value)} value={i18n.language}>
-      <option value="pt">🇧🇷 Português</option>
-      <option value="en">🇺🇸 English</option>
-    </select>
-  );
-}

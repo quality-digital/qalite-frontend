@@ -1,8 +1,6 @@
 import type { StoreRepository } from '../../domain/repositories/StoreRepository';
 import type {
   CreateStorePayload,
-  ImportScenariosResult,
-  ImportSuitesResult,
   Store,
   StoreCategory,
   StoreCategoryInput,
@@ -10,7 +8,6 @@ import type {
   StoreScenario,
   StoreScenarioInput,
   StoreSuite,
-  StoreSuiteExportPayload,
   StoreSuiteInput,
   UpdateStorePayload,
 } from '../../domain/entities/store';
@@ -97,52 +94,6 @@ export class StoreUseCases {
 
   exportStore(storeId: string): Promise<StoreExportPayload> {
     return this.storeRepository.exportStore(storeId);
-  }
-
-  exportSuites(storeId: string): Promise<StoreSuiteExportPayload> {
-    return this.storeRepository.exportSuites(storeId);
-  }
-
-  importScenarios(
-    storeId: string,
-    scenarios: StoreScenarioInput[],
-    strategy: 'replace' | 'merge',
-  ): Promise<{
-    scenarios: StoreScenario[];
-    created: number;
-    skipped: number;
-    strategy: 'replace' | 'merge';
-  }> {
-    return this.storeRepository.importScenarios(storeId, scenarios, strategy);
-  }
-
-  importSuites(
-    storeId: string,
-    suites: StoreSuiteInput[],
-    strategy: 'replace' | 'merge',
-  ): Promise<{
-    suites: StoreSuite[];
-    created: number;
-    skipped: number;
-    strategy: 'replace' | 'merge';
-  }> {
-    return this.storeRepository.importSuites(storeId, suites, strategy);
-  }
-
-  replaceScenarios(storeId: string, scenarios: StoreScenarioInput[]): Promise<StoreScenario[]> {
-    return this.storeRepository.replaceScenarios(storeId, scenarios);
-  }
-
-  replaceSuites(storeId: string, suites: StoreSuiteInput[]): Promise<StoreSuite[]> {
-    return this.storeRepository.replaceSuites(storeId, suites);
-  }
-
-  mergeScenarios(storeId: string, scenarios: StoreScenarioInput[]): Promise<ImportScenariosResult> {
-    return this.storeRepository.mergeScenarios(storeId, scenarios);
-  }
-
-  mergeSuites(storeId: string, suites: StoreSuiteInput[]): Promise<ImportSuitesResult> {
-    return this.storeRepository.mergeSuites(storeId, suites);
   }
 }
 

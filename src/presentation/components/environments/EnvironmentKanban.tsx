@@ -11,9 +11,10 @@ import { environmentService } from '../../../application/use-cases/EnvironmentUs
 import { userService } from '../../../application/use-cases/UserUseCase';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
-import { Button } from '../Button';
+import { PaginationControls } from '../PaginationControls';
 import { EnvironmentCard } from './EnvironmentCard';
-import { CreateEnvironmentModal } from './CreateEnvironmentModal';
+import { CreateEnvironmentCard } from './CreateEnvironmentCard';
+import { ArchiveIcon } from '../icons';
 
 interface EnvironmentKanbanProps {
   storeId: string;
@@ -38,9 +39,9 @@ export const EnvironmentKanban = ({
 }: EnvironmentKanbanProps) => {
   const { showToast } = useToast();
   const navigate = useNavigate();
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [userProfilesMap, setUserProfilesMap] = useState<Record<string, UserSummary>>({});
   const [isArchiveMinimized, setIsArchiveMinimized] = useState(true);
+  const [archivedVisibleCount, setArchivedVisibleCount] = useState(5);
   const { user } = useAuth();
   const { t } = useTranslation();
 
@@ -195,30 +196,35 @@ export const EnvironmentKanban = ({
     navigate(`/environments/${environment.id}`);
   };
 
+  const PAGE_SIZE = 5;
   const doneEnvironments = grouped.done;
-  const activeDoneEnvironments = doneEnvironments.slice(0, 5);
-  const archivedEnvironments = doneEnvironments.slice(5);
+  const activeDoneEnvironments = doneEnvironments.slice(0, PAGE_SIZE);
+  const archivedEnvironments = doneEnvironments.slice(PAGE_SIZE);
   const hasArchivedEnvironments = archivedEnvironments.length > 0;
+  const paginatedArchivedEnvironments = archivedEnvironments.slice(0, archivedVisibleCount);
+
+  useEffect(() => {
+    setArchivedVisibleCount(PAGE_SIZE);
+  }, [archivedEnvironments.length]);
 
   return (
     <section className="environment-kanban">
       <header className="environment-kanban-header">
-        <div>
-          <span className="badge">{t('environmentKanban.environmentStatus')}</span>
-          <h3 className="section-title">{t('environmentKanban.environments')}</h3>
-          <p className="environment-kanban-description">
-            {t('environmentKanban.description')}
-          </p>
-        </div>
-        <Button type="button" onClick={() => setIsCreateOpen(true)}>
-          {t('environmentKanban.create')}
-        </Button>
+        <CreateEnvironmentCard
+          storeId={storeId}
+          suites={suites}
+          scenarios={scenarios}
+          onCreated={() =>
+            showToast({ type: 'success', message: t('environmentKanban.environmentCreated') })
+          }
+        />
       </header>
 
       {hasArchivedEnvironments && (
         <p className="environment-kanban-archive-hint">
           {archivedEnvironments.length} {t('environmentKanban.environment')}
-          {archivedEnvironments.length === 1 ? '' : 's'} {t('environmentKanban.archivedEnvironments')}
+          {archivedEnvironments.length === 1 ? '' : 's'}{' '}
+          {t('environmentKanban.archivedEnvironments')}
           {archivedEnvironments.length === 1 ? '' : 's'} {t('environmentKanban.consulted')}
           {archivedEnvironments.length === 1 ? '' : 's'} {t('environmentKanban.below')}
         </p>
@@ -279,7 +285,10 @@ export const EnvironmentKanban = ({
             >
               <div className="environment-kanban-column-header">
                 <div className="environment-kanban-column-title">
-                  <h4>{t('environmentKanban.archived')}</h4>
+                  <h4 className="environment-kanban-archived-title">
+                    <ArchiveIcon aria-hidden className="icon" />
+                    {t('environmentKanban.archived')}
+                  </h4>
                   <button
                     type="button"
                     className="environment-kanban-archive-toggle"
@@ -304,7 +313,7 @@ export const EnvironmentKanban = ({
                   id="environment-kanban-archived-list"
                   className="environment-kanban-archived-list"
                 >
-                  {archivedEnvironments.map((environment) => (
+                  {paginatedArchivedEnvironments.map((environment) => (
                     <EnvironmentCard
                       key={environment.id}
                       environment={environment}
@@ -319,19 +328,23 @@ export const EnvironmentKanban = ({
                   ))}
                 </div>
               )}
+              {!isArchiveMinimized && (
+                <PaginationControls
+                  total={archivedEnvironments.length}
+                  visible={paginatedArchivedEnvironments.length}
+                  step={PAGE_SIZE}
+                  onShowLess={() => setArchivedVisibleCount(PAGE_SIZE)}
+                  onShowMore={() =>
+                    setArchivedVisibleCount((previous) =>
+                      Math.min(previous + PAGE_SIZE, archivedEnvironments.length),
+                    )
+                  }
+                />
+              )}
             </div>
           )}
         </div>
       )}
-
-      <CreateEnvironmentModal
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-        storeId={storeId}
-        suites={suites}
-        scenarios={scenarios}
-        onCreated={() => showToast({ type: 'success', message: t('environmentKanban.environmentCreated') })}
-      />
     </section>
   );
 };

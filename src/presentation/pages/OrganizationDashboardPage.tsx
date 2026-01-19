@@ -59,7 +59,7 @@ export const OrganizationDashboardPage = () => {
     };
 
     void fetchOrganization();
-  }, [isInitializing, navigate, showToast, user]);
+  }, [isInitializing, navigate, showToast, user, t]);
 
   useEffect(() => {
     setActiveOrganization(organization ?? null);
@@ -100,19 +100,14 @@ export const OrganizationDashboardPage = () => {
           {isLoading && <p className="section-subtitle">{t('organizationPage.syncing')}</p>}
 
           {!isLoading && (organization?.members.length ?? 0) === 0 && (
-            <p className="section-subtitle">
-              {t('organizationPage.empty')}
-            </p>
+            <p className="section-subtitle">{t('organizationPage.empty')}</p>
           )}
 
           {!isLoading && (organization?.members.length ?? 0) > 0 && (
             <ul className="member-list member-list--compact">
               {organization?.members.map((member) => (
                 <li key={member.uid} className="member-list-item">
-                  <UserAvatar
-                    name={member.displayName || member.email}
-                    photoURL={member.photoURL ?? undefined}
-                  />
+                  <UserAvatar name={member.displayName || member.email} />
                   <div className="member-list-details">
                     <span className="member-list-name">{member.displayName || member.email}</span>
                     <span className="member-list-email">{member.email}</span>

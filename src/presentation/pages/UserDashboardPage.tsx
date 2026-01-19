@@ -111,23 +111,19 @@ export const UserDashboardPage = () => {
 
   const subtitle = useMemo(() => {
     if (organization?.name) {
-      return t("userPage.organizationName", { org: organization.name }), t("selectStore");
+      return (t('userPage.organizationName', { org: organization.name }), t('selectStore'));
     }
 
     if (status === 'error') {
-      return t("userPage.loadingError");
+      return t('userPage.loadingError');
     }
 
-    return t("userPage.chooseStore");
-  }, [organization?.name, status]);
+    return t('userPage.chooseStore');
+  }, [organization?.name, status, t]);
 
   const isError = status === 'error';
-  const emptyStateTitle = isError
-    ? t("userPage.loadingStores")
-    : t("userPage.unavailableStores");
-  const emptyStateDescription = isError
-    ? t("userPage.updatePage")
-    : t("userPage.addStores");
+  const emptyStateTitle = isError ? t('userPage.loadingStores') : t('userPage.unavailableStores');
+  const emptyStateDescription = isError ? t('userPage.updatePage') : t('userPage.addStores');
 
   const scenariosPerStoreData = useMemo(
     () =>
@@ -147,33 +143,30 @@ export const UserDashboardPage = () => {
     [stores, storeAutomationCounts],
   );
 
+  const organizationCredentials = organization?.browserstackCredentials ?? null;
   const hasBrowserstackCredentials = useMemo(
-    () =>
-      Boolean(user?.browserstackCredentials?.username && user?.browserstackCredentials?.accessKey),
-    [user?.browserstackCredentials?.accessKey, user?.browserstackCredentials?.username],
+    () => Boolean(organizationCredentials?.username && organizationCredentials?.accessKey),
+    [organizationCredentials?.accessKey, organizationCredentials?.username],
   );
 
   const loadBrowserstackBuilds = useCallback(async () => {
-    if (!hasBrowserstackCredentials || !user?.browserstackCredentials) {
+    if (!hasBrowserstackCredentials || !organizationCredentials) {
       setBrowserstackBuilds([]);
       return;
     }
 
     try {
       setIsLoadingBrowserstack(true);
-      const builds = await browserstackService.listBuilds(user.browserstackCredentials);
+      const builds = await browserstackService.listBuilds(organizationCredentials);
       setBrowserstackBuilds(builds);
     } catch (error) {
       console.error(error);
-      const message =
-        error instanceof Error
-          ? error.message
-          : t("userPage.errorBrowserstack");
+      const message = error instanceof Error ? error.message : t('userPage.errorBrowserstack');
       showToast({ type: 'error', message });
     } finally {
       setIsLoadingBrowserstack(false);
     }
-  }, [hasBrowserstackCredentials, showToast, user?.browserstackCredentials]);
+  }, [hasBrowserstackCredentials, organizationCredentials, showToast, t]);
 
   useEffect(() => {
     void loadBrowserstackBuilds();
@@ -184,14 +177,14 @@ export const UserDashboardPage = () => {
       <section className="page-container">
         <div className="page-header">
           <div>
-            <span className="badge">{t("userPage.badge")}</span>
-            <h1 className="section-title">{t("userPage.storeTitle")}</h1>
+            <span className="badge">{t('userPage.badge')}</span>
+            <h1 className="section-title">{t('userPage.storeTitle')}</h1>
             <p className="section-subtitle">{subtitle}</p>
           </div>
         </div>
 
         {isLoading ? (
-          <p className="section-subtitle">{t("userPage.loadingTitle")}</p>
+          <p className="section-subtitle">{t('userPage.loadingTitle')}</p>
         ) : stores.length === 0 ? (
           <EmptyState
             title={emptyStateTitle}
@@ -199,11 +192,11 @@ export const UserDashboardPage = () => {
             action={
               isError ? (
                 <Button type="button" variant="secondary" onClick={() => window.location.reload()}>
-                  {t("userPage.reload")}
+                  {t('userPage.reload')}
                 </Button>
               ) : (
                 <Button type="button" variant="secondary" onClick={() => navigate('/profile')}>
-                  {t("userPage.profile")}
+                  {t('userPage.profile')}
                 </Button>
               )
             }
@@ -224,7 +217,13 @@ export const UserDashboardPage = () => {
                     </span>
                     <h2 className="card-title">{store.name}</h2>
                   </div>
-                  <span className="badge">{store.scenarioCount} cenários</span>
+                  <span className="badge">
+                    {t('storesPage.scenarios', { count: store.scenarioCount })}
+                  </span>
+                </div>
+                <div className="card-link-hint">
+                  <span>{t('storesPage.openStore')}</span>
+                  <span aria-hidden="true">&rarr;</span>
                 </div>
               </button>
             ))}
@@ -241,30 +240,24 @@ export const UserDashboardPage = () => {
                       <UsersGroupIcon className="icon icon--lg" />
                     </span>
                     <div>
-                      <h3>{t("userPage.users")}</h3>
-                      <p className="section-subtitle">
-                        {t("userPage.userSubtitle")}
-                      </p>
+                      <h3>{t('userPage.users')}</h3>
+                      <p className="section-subtitle">{t('userPage.userSubtitle')}</p>
                     </div>
                   </div>
                   <span className="badge">
-                    {organization.members.length} {t("userPage.usersCount")}
-                    {organization.members.length === 1 ? t("userPage.oneUser") : t("userPage.moreUsers")}
+                    {organization.members.length} {t('userPage.usersCount')}
+                    {organization.members.length === 1
+                      ? t('userPage.oneUser')
+                      : t('userPage.moreUsers')}
                   </span>
                 </div>
                 {organization.members.length === 0 ? (
-                  <p className="section-subtitle">
-                    {t("userPage.members")}
-                  </p>
+                  <p className="section-subtitle">{t('userPage.members')}</p>
                 ) : (
                   <ul className="collaborator-list">
                     {organization.members.map((member) => (
                       <li key={member.uid} className="collaborator-card">
-                        <UserAvatar
-                          name={member.displayName || member.email}
-                          photoURL={member.photoURL ?? undefined}
-                          size="sm"
-                        />
+                        <UserAvatar name={member.displayName || member.email} size="sm" />
                         <div className="collaborator-card__details">
                           <strong>{member.displayName || member.email}</strong>
                         </div>
@@ -277,17 +270,17 @@ export const UserDashboardPage = () => {
 
             <section className="organization-charts-grid">
               <SimpleBarChart
-                title={t("userPage.storeScenarios")}
-                description={t("userPage.totalScenarios")}
+                title={t('userPage.storeScenarios')}
+                description={t('userPage.totalScenarios')}
                 data={scenariosPerStoreData}
-                emptyMessage={t("userPage.emptyStores")}
+                emptyMessage={t('userPage.emptyStores')}
                 icon={<BarChartIcon aria-hidden className="icon icon--lg" />}
               />
               <SimpleBarChart
-                title={t("userPage.automatedScenarios")}
-                description={t("userPage.scenariosDescription")}
+                title={t('userPage.automatedScenarios')}
+                description={t('userPage.scenariosDescription')}
                 data={automatedScenariosPerStoreData}
-                emptyMessage={t("userPage.emptyScenarios")}
+                emptyMessage={t('userPage.emptyScenarios')}
                 isLoading={isLoadingAutomationStats}
                 variant="info"
                 icon={<SparklesIcon aria-hidden className="icon icon--lg" />}
@@ -297,23 +290,13 @@ export const UserDashboardPage = () => {
         )}
       </section>
 
-      {organization && (
+      {organization && hasBrowserstackCredentials && (
         <section className="page-container">
-          {hasBrowserstackCredentials ? (
-            <BrowserstackKanban
-              builds={browserstackBuilds}
-              isLoading={isLoadingBrowserstack}
-              onRefresh={loadBrowserstackBuilds}
-            />
-          ) : (
-            <div className="card">
-              <span className="badge">BrowserStack</span>
-              <h2 className="section-title">{t("userPage.browserstackTitle")}</h2>
-              <p className="section-subtitle">
-                {t("userPage.browserstackSubtitle")}
-              </p>
-            </div>
-          )}
+          <BrowserstackKanban
+            builds={browserstackBuilds}
+            isLoading={isLoadingBrowserstack}
+            onRefresh={loadBrowserstackBuilds}
+          />
         </section>
       )}
     </Layout>

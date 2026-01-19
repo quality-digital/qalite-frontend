@@ -11,8 +11,8 @@ import { browserstackService } from '../../application/use-cases/BrowserstackUse
 import { userService } from '../../application/use-cases/UserUseCase';
 import { useToast } from '../context/ToastContext';
 import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
-import { useAuth } from '../hooks/useAuth';
 import { Layout } from '../components/Layout';
+import { BackButton } from '../components/BackButton';
 import { Button } from '../components/Button';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { TextInput } from '../components/TextInput';
@@ -20,7 +20,13 @@ import { Modal } from '../components/Modal';
 import { UserAvatar } from '../components/UserAvatar';
 import { SimpleBarChart } from '../components/SimpleBarChart';
 import { BrowserstackKanban } from '../components/browserstack/BrowserstackKanban';
-import { BarChartIcon, SparklesIcon, StorefrontIcon, UsersGroupIcon } from '../components/icons';
+import {
+  BarChartIcon,
+  SettingsIcon,
+  SparklesIcon,
+  StorefrontIcon,
+  UsersGroupIcon,
+} from '../components/icons';
 import { OrganizationLogPanel } from '../components/OrganizationLogPanel';
 import { isAutomatedScenario } from '../../shared/utils/automation';
 import { useTranslation } from 'react-i18next';
@@ -34,6 +40,8 @@ interface OrganizationFormState {
   name: string;
   slackWebhookUrl: string;
   emailDomain: string;
+  browserstackUsername: string;
+  browserstackAccessKey: string;
 }
 
 const initialStoreForm: StoreForm = {
@@ -45,12 +53,13 @@ const initialOrganizationForm: OrganizationFormState = {
   name: '',
   slackWebhookUrl: '',
   emailDomain: '',
+  browserstackUsername: '',
+  browserstackAccessKey: '',
 };
 
 export const AdminStoresPage = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { user } = useAuth();
   const { setActiveOrganization } = useOrganizationBranding();
   const [searchParams, setSearchParams] = useSearchParams();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -66,6 +75,8 @@ export const AdminStoresPage = () => {
   const [organizationForm, setOrganizationForm] =
     useState<OrganizationFormState>(initialOrganizationForm);
   const [isOrganizationSlackSectionOpen, setIsOrganizationSlackSectionOpen] = useState(false);
+  const [isOrganizationBrowserstackSectionOpen, setIsOrganizationBrowserstackSectionOpen] =
+    useState(false);
   const [organizationError, setOrganizationError] = useState<string | null>(null);
   const [isSavingOrganization, setIsSavingOrganization] = useState(false);
   const [isManagingMembers, setIsManagingMembers] = useState(false);
@@ -113,7 +124,7 @@ export const AdminStoresPage = () => {
     };
 
     void fetchOrganizations();
-  }, [searchParams, showToast]);
+  }, [searchParams, showToast, translation]);
 
   useEffect(() => {
     if (!selectedOrganizationId) {
@@ -140,7 +151,7 @@ export const AdminStoresPage = () => {
     };
 
     void fetchStores();
-  }, [selectedOrganizationId, setSearchParams, showToast]);
+  }, [selectedOrganizationId, setSearchParams, showToast, translation]);
 
   const selectedOrganization = useMemo(
     () => organizations.find((organization) => organization.id === selectedOrganizationId) ?? null,
@@ -198,7 +209,7 @@ export const AdminStoresPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [selectedOrganizationId, stores, showToast]);
+  }, [selectedOrganizationId, stores, showToast, translation]);
 
   useEffect(() => {
     const searchTerm = newMemberEmail.trim();
@@ -234,21 +245,24 @@ export const AdminStoresPage = () => {
     };
   }, [newMemberEmail, selectedOrganization]);
 
+  const selectedOrganizationCredentials = selectedOrganization?.browserstackCredentials ?? null;
   const hasBrowserstackCredentials = useMemo(
     () =>
-      Boolean(user?.browserstackCredentials?.username && user?.browserstackCredentials?.accessKey),
-    [user?.browserstackCredentials?.accessKey, user?.browserstackCredentials?.username],
+      Boolean(
+        selectedOrganizationCredentials?.username && selectedOrganizationCredentials?.accessKey,
+      ),
+    [selectedOrganizationCredentials?.accessKey, selectedOrganizationCredentials?.username],
   );
 
   const loadBrowserstackBuilds = useCallback(async () => {
-    if (!user?.browserstackCredentials || !hasBrowserstackCredentials) {
+    if (!selectedOrganizationCredentials || !hasBrowserstackCredentials) {
       setBrowserstackBuilds([]);
       return;
     }
 
     try {
       setIsLoadingBrowserstack(true);
-      const builds = await browserstackService.listBuilds(user.browserstackCredentials);
+      const builds = await browserstackService.listBuilds(selectedOrganizationCredentials);
       setBrowserstackBuilds(builds);
     } catch (error) {
       console.error(error);
@@ -262,7 +276,7 @@ export const AdminStoresPage = () => {
     } finally {
       setIsLoadingBrowserstack(false);
     }
-  }, [hasBrowserstackCredentials, showToast, user?.browserstackCredentials]);
+  }, [hasBrowserstackCredentials, selectedOrganizationCredentials, showToast, translation]);
 
   useEffect(() => {
     void loadBrowserstackBuilds();
@@ -305,13 +319,20 @@ export const AdminStoresPage = () => {
 
     const slackWebhookUrl = selectedOrganization.slackWebhookUrl ?? '';
     const emailDomain = selectedOrganization.emailDomain ?? '';
+    const browserstackUsername = selectedOrganization.browserstackCredentials?.username ?? '';
+    const browserstackAccessKey = selectedOrganization.browserstackCredentials?.accessKey ?? '';
 
     setOrganizationForm({
       name: selectedOrganization.name,
       slackWebhookUrl,
       emailDomain,
+      browserstackUsername,
+      browserstackAccessKey,
     });
     setIsOrganizationSlackSectionOpen(Boolean(slackWebhookUrl.trim()));
+    setIsOrganizationBrowserstackSectionOpen(
+      Boolean(browserstackUsername.trim() || browserstackAccessKey.trim()),
+    );
     setOrganizationError(null);
     setIsOrganizationModalOpen(true);
   };
@@ -320,6 +341,7 @@ export const AdminStoresPage = () => {
     setIsOrganizationModalOpen(false);
     setOrganizationError(null);
     setIsOrganizationSlackSectionOpen(false);
+    setIsOrganizationBrowserstackSectionOpen(false);
     setOrganizationForm(initialOrganizationForm);
     setNewMemberEmail('');
     setUserSuggestions([]);
@@ -331,6 +353,22 @@ export const AdminStoresPage = () => {
 
       if (!nextValue) {
         setOrganizationForm((form) => ({ ...form, slackWebhookUrl: '' }));
+      }
+
+      return nextValue;
+    });
+  };
+
+  const toggleOrganizationBrowserstackSection = () => {
+    setIsOrganizationBrowserstackSectionOpen((previous) => {
+      const nextValue = !previous;
+
+      if (!nextValue) {
+        setOrganizationForm((form) => ({
+          ...form,
+          browserstackUsername: '',
+          browserstackAccessKey: '',
+        }));
       }
 
       return nextValue;
@@ -408,12 +446,25 @@ export const AdminStoresPage = () => {
         ? organizationForm.slackWebhookUrl.trim()
         : '';
       const emailDomain = organizationForm.emailDomain.trim();
+      const browserstackUsername = isOrganizationBrowserstackSectionOpen
+        ? organizationForm.browserstackUsername.trim()
+        : '';
+      const browserstackAccessKey = isOrganizationBrowserstackSectionOpen
+        ? organizationForm.browserstackAccessKey.trim()
+        : '';
 
       const updated = await organizationService.update(selectedOrganization.id, {
         name: trimmedName,
         description: (selectedOrganization.description ?? '').trim(),
         slackWebhookUrl,
         emailDomain,
+        browserstackCredentials:
+          browserstackUsername || browserstackAccessKey
+            ? {
+                username: browserstackUsername,
+                accessKey: browserstackAccessKey,
+              }
+            : null,
       });
 
       setOrganizations((previous) =>
@@ -467,30 +518,25 @@ export const AdminStoresPage = () => {
 
   const handleAddMember = async () => {
     if (!selectedOrganization) {
+      setOrganizationError(translation('AdminStoresPage.member-add-no-organization'));
       return;
     }
 
     const trimmedEmail = newMemberEmail.trim();
     if (!trimmedEmail) {
-
-      setOrganizationError('Informe um e-mail para adicionar.');
+      setOrganizationError(translation('AdminStoresPage.member-add-email-required'));
 
       return;
-
     }
 
     const normalizedEmail = trimmedEmail.toLowerCase();
 
     if (
-
       selectedOrganization.members.some((member) => member.email.toLowerCase() === normalizedEmail)
-
     ) {
-
-      setOrganizationError('Usuário já está vinculado à organização.');
+      setOrganizationError(translation('AdminStoresPage.member-add-already-linked'));
 
       return;
-
     }
     try {
       setIsManagingMembers(true);
@@ -503,10 +549,10 @@ export const AdminStoresPage = () => {
         previous.map((organization) =>
           organization.id === selectedOrganization.id
             ? {
-              ...organization,
-              members: [...organization.members, member],
-              memberIds: [...organization.memberIds, member.uid],
-            }
+                ...organization,
+                members: [...organization.members, member],
+                memberIds: [...organization.memberIds, member.uid],
+              }
             : organization,
         ),
       );
@@ -524,7 +570,7 @@ export const AdminStoresPage = () => {
         error instanceof Error
           ? error.message
           : translation('AdminStoresPage.toast-error-add-member');
-      setNewMemberEmail(message);
+      setOrganizationError(message);
       showToast({ type: 'error', message });
     } finally {
       setIsManagingMembers(false);
@@ -547,10 +593,10 @@ export const AdminStoresPage = () => {
         previous.map((organization) =>
           organization.id === selectedOrganization.id
             ? {
-              ...organization,
-              members: organization.members.filter((item) => item.uid !== member.uid),
-              memberIds: organization.memberIds.filter((item) => item !== member.uid),
-            }
+                ...organization,
+                members: organization.members.filter((item) => item.uid !== member.uid),
+                memberIds: organization.memberIds.filter((item) => item !== member.uid),
+              }
             : organization,
         ),
       );
@@ -635,19 +681,19 @@ export const AdminStoresPage = () => {
       <section className="page-container" data-testid="stores-page">
         <div className="page-header">
           <div>
-            <button
-              type="button"
-              className="link-button"
-              onClick={() => navigate('/admin')}
+            <BackButton
+              label={translation('back')}
+              onClick={(event) => {
+                event.preventDefault();
+                navigate('/admin');
+              }}
               data-testid="stores-back-button"
-            >
-              &larr; {translation('back')}
-            </button>
+            />
             <h1 className="section-title">
               {selectedOrganization
                 ? translation('AdminStoresPage.stores-title-org-selected', {
-                  organizationName: selectedOrganization.name,
-                })
+                    organizationName: selectedOrganization.name,
+                  })
                 : translation('AdminStoresPage.stores-title-no-org-selected')}
             </h1>
             <p className="section-subtitle">
@@ -664,6 +710,7 @@ export const AdminStoresPage = () => {
                 onClick={openOrganizationModal}
                 data-testid="manage-organization-button"
               >
+                <SettingsIcon aria-hidden className="icon" />
                 {translation('AdminStoresPage.manage-organization-button')}
               </Button>
             )}
@@ -723,7 +770,9 @@ export const AdminStoresPage = () => {
                       </div>
                     </div>
                     <span className="badge">
-                      {translation('scenarios', { count: store.scenarioCount })}
+                      {translation('AdminStoresPage.store-card-scenarios-badge', {
+                        scenarioCount: store.scenarioCount,
+                      })}
                     </span>
                   </div>
                   <div className="card-link-hint">
@@ -753,8 +802,8 @@ export const AdminStoresPage = () => {
                       {selectedOrganization.members.length === 1
                         ? translation('AdminStoresPage.collaborators-count-singular')
                         : translation('AdminStoresPage.collaborators-count-plural', {
-                          count: selectedOrganization.members.length,
-                        })}
+                            count: selectedOrganization.members.length,
+                          })}
                     </span>
                   </div>
                   {selectedOrganization.members.length === 0 ? (
@@ -765,11 +814,7 @@ export const AdminStoresPage = () => {
                     <ul className="collaborator-list">
                       {selectedOrganization.members.map((member) => (
                         <li key={member.uid} className="collaborator-card">
-                          <UserAvatar
-                            name={member.displayName || member.email}
-                            photoURL={member.photoURL ?? undefined}
-                            size="sm"
-                          />
+                          <UserAvatar name={member.displayName || member.email} size="sm" />
                           <div className="collaborator-card__details">
                             <strong>{member.displayName || member.email}</strong>
                           </div>
@@ -803,22 +848,12 @@ export const AdminStoresPage = () => {
                 />
               </section>
 
-              {hasBrowserstackCredentials ? (
+              {hasBrowserstackCredentials && (
                 <BrowserstackKanban
                   builds={browserstackBuilds}
                   isLoading={isLoadingBrowserstack}
                   onRefresh={loadBrowserstackBuilds}
                 />
-              ) : (
-                <div className="card">
-                  <span className="badge">BrowserStack</span>
-                  <h2 className="section-title">
-                    {translation('AdminStoresPage.browserstack-card-title')}
-                  </h2>
-                  <p className="section-subtitle">
-                    {translation('AdminStoresPage.browserstack-card-subtitle')}
-                  </p>
-                </div>
               )}
             </div>
           </>
@@ -914,7 +949,7 @@ export const AdminStoresPage = () => {
                   emailDomain: event.target.value,
                 }))
               }
-              placeholder="@exemplo.com"
+              placeholder={translation('AdminStoresPage.org-email-domain-placeholder')}
               dataTestId="organization-settings-email-domain"
             />
             <p className="form-hint">{translation('AdminStoresPage.org-email-domain-hint')}</p>
@@ -923,8 +958,87 @@ export const AdminStoresPage = () => {
                 <div className="collapsible-section__titles">
                   <img
                     className="collapsible-section__icon"
-                    src="https://img.icons8.com/external-tal-revivo-color-tal-revivo/48/external-slack-replace-email-text-messaging-and-instant-messaging-for-your-team-logo-color-tal-revivo.png"
-                    alt="Slack"
+                    src="https://img.icons8.com/color/48/browser-stack.png"
+                    alt={translation('AdminStoresPage.org-browserstack-icon-alt')}
+                    width={48}
+                    height={48}
+                  />
+                  <p className="collapsible-section__title">
+                    {translation('AdminStoresPage.org-browserstack-section-title')}
+                  </p>
+                  <p className="collapsible-section__description">
+                    {translation('AdminStoresPage.org-browserstack-section-description')}
+                  </p>
+                </div>
+                <label className="collapsible-section__toggle">
+                  <input
+                    type="checkbox"
+                    checked={isOrganizationBrowserstackSectionOpen}
+                    onChange={toggleOrganizationBrowserstackSection}
+                    aria-expanded={isOrganizationBrowserstackSectionOpen}
+                    aria-controls="organization-settings-browserstack-section"
+                  />
+                  <span>
+                    {isOrganizationBrowserstackSectionOpen
+                      ? translation('AdminStoresPage.org-browserstack-toggle-on')
+                      : translation('AdminStoresPage.org-browserstack-toggle-off')}
+                  </span>
+                </label>
+              </div>
+              {isOrganizationBrowserstackSectionOpen && (
+                <div
+                  className="collapsible-section__body"
+                  id="organization-settings-browserstack-section"
+                  data-testid="organization-settings-browserstack-section"
+                >
+                  <div className="form-grid">
+                    <TextInput
+                      id="organization-browserstack-username"
+                      label={translation('AdminStoresPage.org-browserstack-username-label')}
+                      value={organizationForm.browserstackUsername}
+                      onChange={(event) =>
+                        setOrganizationForm((previous) => ({
+                          ...previous,
+                          browserstackUsername: event.target.value,
+                        }))
+                      }
+                      placeholder={translation(
+                        'AdminStoresPage.org-browserstack-username-placeholder',
+                      )}
+                      dataTestId="organization-settings-browserstack-username"
+                    />
+                    <TextInput
+                      id="organization-browserstack-access-key"
+                      label={translation('AdminStoresPage.org-browserstack-access-key-label')}
+                      value={organizationForm.browserstackAccessKey}
+                      onChange={(event) =>
+                        setOrganizationForm((previous) => ({
+                          ...previous,
+                          browserstackAccessKey: event.target.value,
+                        }))
+                      }
+                      placeholder={translation(
+                        'AdminStoresPage.org-browserstack-access-key-placeholder',
+                      )}
+                      type="password"
+                      dataTestId="organization-settings-browserstack-access-key"
+                    />
+                  </div>
+                  <p className="form-hint">
+                    {translation('AdminStoresPage.org-browserstack-hint')}
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="collapsible-section">
+              <div className="collapsible-section__header">
+                <div className="collapsible-section__titles">
+                  <img
+                    className="collapsible-section__icon"
+                    src="https://img.icons8.com/external-tal-revivo-color-tal-revivo/24/external-slack-replace-email-text-messaging-and-instant-messaging-for-your-team-logo-color-tal-revivo.png"
+                    alt={translation('AdminStoresPage.org-slack-icon-alt')}
+                    width={24}
+                    height={24}
                   />
                   <p className="collapsible-section__title">
                     {translation('AdminStoresPage.org-slack-section-title')}
@@ -964,7 +1078,7 @@ export const AdminStoresPage = () => {
                         slackWebhookUrl: event.target.value,
                       }))
                     }
-                    placeholder="https://hooks.slack.com/services/..."
+                    placeholder={translation('AdminStoresPage.org-slack-webhook-placeholder')}
                     dataTestId="organization-settings-slack-webhook"
                   />
                   <p className="form-hint">
@@ -977,7 +1091,7 @@ export const AdminStoresPage = () => {
               <Button
                 type="submit"
                 isLoading={isSavingOrganization}
-                loadingText={translation('AdminStoresPage.save-organization-loading-text')}
+                loadingText={translation('saving')}
                 data-testid="save-organization-settings"
               >
                 {translation('saveChanges')}
@@ -1005,8 +1119,9 @@ export const AdminStoresPage = () => {
                 </p>
               </div>
               <span className="badge">
-                {selectedOrganization.members.length} membro
-                {selectedOrganization.members.length === 1 ? '' : 's'}
+                {translation('AdminStoresPage.member-count', {
+                  count: selectedOrganization.members.length,
+                })}
               </span>
             </div>
 
@@ -1030,13 +1145,16 @@ export const AdminStoresPage = () => {
                 {translation('AdminStoresPage.org-added-user')}
               </Button>
             </div>
-            <p className="form-hint">
-              Convide qualquer usuário existente pelo e-mail, mesmo que não corresponda ao domínio
-              configurado.
-            </p>
-            {isSearchingUsers && <p className="form-hint">Buscando sugestões...</p>}
+            <p className="form-hint">{translation('AdminStoresPage.member-add-hint')}</p>
+            {isSearchingUsers && (
+              <p className="form-hint">{translation('AdminStoresPage.user-search-loading')}</p>
+            )}
             {!isSearchingUsers && userSuggestions.length > 0 && (
-              <ul className="suggestion-list" role="listbox" aria-label="Sugestões de usuários">
+              <ul
+                className="suggestion-list"
+                role="listbox"
+                aria-label={translation('AdminStoresPage.user-search-suggestions')}
+              >
                 {userSuggestions.map((suggestion) => (
                   <li key={suggestion.id}>
                     <button
@@ -1044,18 +1162,16 @@ export const AdminStoresPage = () => {
                       className="suggestion-option"
                       onClick={() => setNewMemberEmail(suggestion.email)}
                     >
-                      <UserAvatar
-                        name={suggestion.displayName || suggestion.email}
-                        photoURL={suggestion.photoURL ?? undefined}
-                        size="sm"
-                      />
+                      <UserAvatar name={suggestion.displayName || suggestion.email} size="sm" />
                       <div className="suggestion-option__details">
                         <span className="suggestion-option__name">
                           {suggestion.displayName || suggestion.email}
                         </span>
                         <span className="suggestion-option__email">{suggestion.email}</span>
                       </div>
-                      <span className="suggestion-option__hint">Usar e-mail</span>
+                      <span className="suggestion-option__hint">
+                        {translation('AdminStoresPage.user-search-email-hint')}
+                      </span>
                     </button>
                   </li>
                 ))}
@@ -1070,10 +1186,7 @@ export const AdminStoresPage = () => {
               <ul className="member-list">
                 {selectedOrganization.members.map((member) => (
                   <li key={member.uid} className="member-list-item">
-                    <UserAvatar
-                      name={member.displayName || member.email}
-                      photoURL={member.photoURL ?? undefined}
-                    />
+                    <UserAvatar name={member.displayName || member.email} />
                     <div className="member-list-details">
                       <span className="member-list-name">{member.displayName || member.email}</span>
                       <span className="member-list-email">{member.email}</span>

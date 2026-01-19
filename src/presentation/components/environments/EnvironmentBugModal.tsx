@@ -43,7 +43,7 @@ export const EnvironmentBugModal = ({
     }
 
     return environment.scenarios?.[scenarioId]?.titulo ?? t('environmentBugModal.deletedScenario');
-  }, [environment.scenarios, scenarioId]);
+  }, [environment.scenarios, scenarioId, t]);
 
   useEffect(() => {
     if (bug) {
@@ -94,7 +94,11 @@ export const EnvironmentBugModal = ({
   };
 
   return (
-    <Modal isOpen={isOpen} title={bug ? t('environmentBugModal.bugEdit') : t('environmentBugModal.bugCreate')} onClose={onClose}>
+    <Modal
+      isOpen={isOpen}
+      title={bug ? t('environmentBugModal.bugEdit') : t('environmentBugModal.bugCreate')}
+      onClose={onClose}
+    >
       <form className="environment-bug-form" onSubmit={handleSubmit}>
         <div className="environment-bug-form__grid">
           <label>

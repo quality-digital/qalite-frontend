@@ -72,18 +72,6 @@ export interface UpdateStorePayload {
   stage: string;
 }
 
-export interface ImportScenariosResult {
-  created: number;
-  skipped: number;
-  scenarios: StoreScenario[];
-}
-
-export interface ImportSuitesResult {
-  created: number;
-  skipped: number;
-  suites: StoreSuite[];
-}
-
 export interface StoreExportPayload {
   store: {
     id: string;
@@ -94,21 +82,4 @@ export interface StoreExportPayload {
   };
   exportedAt: string;
   scenarios: StoreScenario[];
-}
-
-export interface StoreSuiteExportPayload {
-  store: {
-    id: string;
-    name: string;
-    site: string;
-    stage: string;
-    scenarioCount: number;
-  };
-  exportedAt: string;
-  suites: Array<{
-    id: string;
-    name: string;
-    description: string;
-    scenarios: Array<{ id: string; title: string }>;
-  }>;
 }

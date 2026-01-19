@@ -1,5 +1,18 @@
 import type { BrowserstackCredentials } from './browserstack';
 
+export type ThemePreference = 'light' | 'dark' | 'system';
+export type LanguagePreference = 'pt' | 'en';
+
+export interface UserPreferences {
+  theme: ThemePreference;
+  language: LanguagePreference;
+}
+
+export const DEFAULT_USER_PREFERENCES: UserPreferences = {
+  theme: 'system',
+  language: 'en',
+};
+
 export type Role = 'admin' | 'user';
 
 export const DEFAULT_ROLE: Role = 'user';
@@ -16,6 +29,7 @@ export interface AuthUser {
   accessToken?: string;
   photoURL?: string;
   browserstackCredentials?: BrowserstackCredentials | null;
+  preferences: UserPreferences;
   isEmailVerified: boolean;
 }
 
@@ -34,7 +48,8 @@ export interface LoginPayload {
 export type AuthStateListener = (user: AuthUser | null) => void;
 
 export interface UpdateProfilePayload {
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
   browserstackCredentials?: BrowserstackCredentials | null;
+  preferences?: UserPreferences;
 }

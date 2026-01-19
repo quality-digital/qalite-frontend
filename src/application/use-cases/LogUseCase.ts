@@ -1,4 +1,8 @@
-import type { LogRepository } from '../../domain/repositories/LogRepository';
+import type {
+  ActivityLogPage,
+  ActivityLogCursor,
+  LogRepository,
+} from '../../domain/repositories/LogRepository';
 import type { ActivityLog, ActivityLogInput } from '../../domain/entities/activityLog';
 import { firebaseLogRepository } from '../../infrastructure/repositories/firebaseLogRepository';
 
@@ -11,6 +15,14 @@ export class LogUseCases {
 
   listByOrganization(organizationId: string): Promise<ActivityLog[]> {
     return this.logRepository.listByOrganization(organizationId);
+  }
+
+  listByOrganizationPage(
+    organizationId: string,
+    pageSize: number,
+    cursor?: ActivityLogCursor | null,
+  ): Promise<ActivityLogPage> {
+    return this.logRepository.listByOrganizationPage(organizationId, pageSize, cursor);
   }
 }
 

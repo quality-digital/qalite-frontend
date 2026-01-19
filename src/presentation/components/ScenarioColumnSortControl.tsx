@@ -1,22 +1,18 @@
-const normalize = (value: string) =>
-  value
-    .normalize('NFD')
-    .replace(/[^\p{Letter}\p{Number}]+/gu, '')
-    .toLowerCase();
+import {
+  normalizeAutomationEnum,
+  normalizeCriticalityEnum,
+} from '../../shared/utils/scenarioEnums';
 
 const CRITICALITY_PRIORITY: Record<string, number> = {
-  critica: 0,
-  crítica: 0,
-  alta: 1,
-  media: 2,
-  média: 2,
-  baixa: 3,
+  CRITICAL: 0,
+  HIGH: 1,
+  MEDIUM: 2,
+  LOW: 3,
 };
 
 const AUTOMATION_PRIORITY: Record<string, number> = {
-  automatizado: 0,
-  naoautomatizado: 1,
-  nãoautomatizado: 1,
+  AUTOMATED: 0,
+  NOT_AUTOMATED: 1,
 };
 
 export interface ScenarioSortableShape {
@@ -49,7 +45,8 @@ const getCriticalityRank = (value?: string | null) => {
     return Number.MAX_SAFE_INTEGER;
   }
 
-  return CRITICALITY_PRIORITY[normalize(value)] ?? Number.MAX_SAFE_INTEGER;
+  const normalized = normalizeCriticalityEnum(value);
+  return CRITICALITY_PRIORITY[normalized] ?? Number.MAX_SAFE_INTEGER;
 };
 
 const getAutomationRank = (value?: string | null) => {
@@ -57,7 +54,8 @@ const getAutomationRank = (value?: string | null) => {
     return Number.MAX_SAFE_INTEGER;
   }
 
-  return AUTOMATION_PRIORITY[normalize(value)] ?? Number.MAX_SAFE_INTEGER;
+  const normalized = normalizeAutomationEnum(value);
+  return AUTOMATION_PRIORITY[normalized] ?? Number.MAX_SAFE_INTEGER;
 };
 
 const compareScenarioField = <T extends ScenarioSortableShape>(

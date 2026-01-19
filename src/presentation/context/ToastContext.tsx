@@ -145,7 +145,12 @@ const ToastViewport = () => {
   const optionsStatus = getToastTitles(translation);
 
   return (
-    <div className="toast-viewport" role="region" aria-live="polite" aria-label="Notificações">
+    <div
+      className="toast-viewport"
+      role="region"
+      aria-live="polite"
+      aria-label={translation('toast.viewportAriaLabel')}
+    >
       {toasts.map((toast) => (
         <div key={toast.id} className={`toast toast-${toast.type}`}>
           <div className="toast-icon" aria-hidden="true">
@@ -159,7 +164,7 @@ const ToastViewport = () => {
             type="button"
             className="toast-dismiss"
             onClick={() => dismissToast(toast.id)}
-            aria-label="Dispensar notificação"
+            aria-label={translation('toast.dismissAriaLabel')}
           >
             ×
           </button>

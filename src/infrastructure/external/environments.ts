@@ -33,7 +33,7 @@ import type {
 import type { UserSummary } from '../../domain/entities/user';
 import { firebaseFirestore } from '../database/firebase';
 import { EnvironmentStatusError } from '../../shared/errors/firebaseErrors';
-import { BUG_STATUS_LABEL } from '../../shared/config/environmentLabels';
+import { BUG_STATUS_LABEL, ENVIRONMENT_STATUS_LABEL } from '../../shared/config/environmentLabels';
 import { logActivity } from './logs';
 import {
   formatDateTime,
@@ -41,6 +41,9 @@ import {
   formatEndDateTime,
   getElapsedMilliseconds,
 } from '../../shared/utils/time';
+import { translateEnvironmentOption } from '../../shared/utils/environmentOptions';
+import i18n from '../../lib/i18n';
+import { normalizeCriticalityEnum } from '../../shared/utils/scenarioEnums';
 
 const ENVIRONMENTS_COLLECTION = 'environments';
 const BUGS_SUBCOLLECTION = 'bugs';
@@ -216,6 +219,7 @@ const normalizeEnvironment = (id: string, data: Record<string, unknown>): Enviro
   bugs: Number(data.bugs ?? 0),
   totalCenarios: Number(data.totalCenarios ?? 0),
   participants: getStringArray(data.participants),
+  publicShareLanguage: getStringOrNull(data.publicShareLanguage),
 });
 
 export const createEnvironment = async (payload: CreateEnvironmentInput): Promise<Environment> => {
@@ -780,18 +784,20 @@ const getScenarioLabel = (environment: Environment, scenarioId: string | null) =
 const normalizeParticipants = (
   environment: Environment,
   participantProfiles: UserSummary[] = [],
+  t: (key: string, options?: Record<string, string>) => string,
 ) => {
   const uniqueIds = Array.from(new Set(environment.participants ?? []));
   const profileMap = new Map(participantProfiles.map((profile) => [profile.id, profile]));
 
   return uniqueIds.map((id) => {
     const profile = profileMap.get(id);
-    const displayName = profile?.displayName?.trim() || profile?.email || `Participante ${id}`;
+    const displayName =
+      profile?.displayName?.trim() || profile?.email || t('dynamic.fallbackParticipant', { id });
 
     return {
       id,
       name: displayName,
-      email: profile?.email ?? 'Não informado',
+      email: profile?.email ?? t('dynamic.noEmail'),
     };
   });
 };
@@ -807,6 +813,82 @@ const buildTimeTrackingSummary = (environment: Environment) => {
   };
 };
 
+const translateScenarioStatus = (value: EnvironmentScenarioStatus, t: (key: string) => string) => {
+  const key = `environmentEvidenceTable.status_${value}`;
+  const translated = t(key);
+  return translated === key ? value : translated;
+};
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+const URL_PATTERN = /\b((https?:\/\/|www\.)[^\s]+|[a-z0-9.-]+\.[a-z]{2,}(?:\/[^\s]*)?)/gi;
+
+const buildHref = (value: string) => (/^https?:\/\//i.test(value) ? value : `https://${value}`);
+
+const linkifyHtml = (value: string) => {
+  if (!value) {
+    return '';
+  }
+
+  let result = '';
+  let lastIndex = 0;
+  const regex = new RegExp(URL_PATTERN);
+
+  value.replace(regex, (match, _value, _protocol, offset: number) => {
+    if (offset > lastIndex) {
+      result += escapeHtml(value.slice(lastIndex, offset));
+    }
+
+    const href = buildHref(match);
+    result += `<a href="${escapeHtml(href)}" target="_blank" rel="noreferrer noopener">${escapeHtml(match)}</a>`;
+    lastIndex = offset + match.length;
+    return match;
+  });
+
+  if (lastIndex < value.length) {
+    result += escapeHtml(value.slice(lastIndex));
+  }
+
+  return result || escapeHtml(value);
+};
+
+const buildExternalLink = (value: string | null | undefined) => {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+  if (trimmed.includes('.')) {
+    return `https://${trimmed}`;
+  }
+  return null;
+};
+
+const formatCriticalityLabel = (value: string, t: (key: string) => string) => {
+  const normalized = normalizeCriticalityEnum(value);
+  if (normalized === 'LOW') {
+    return t('scenarioOptions.low');
+  }
+  if (normalized === 'MEDIUM') {
+    return t('scenarioOptions.medium');
+  }
+  if (normalized === 'HIGH') {
+    return t('scenarioOptions.high');
+  }
+  if (normalized === 'CRITICAL') {
+    return t('scenarioOptions.critical');
+  }
+  return value?.trim() || t('storeSummary.emptyValue');
+};
+
 export const exportEnvironmentAsPDF = (
   environment: Environment,
   bugs: EnvironmentBug[] = [],
@@ -816,33 +898,60 @@ export const exportEnvironmentAsPDF = (
     return;
   }
 
-  const normalizedParticipants = normalizeParticipants(environment, participantProfiles);
+  const t = i18n.t.bind(i18n);
+  const normalizedParticipants = normalizeParticipants(environment, participantProfiles, t);
   const timeSummary = buildTimeTrackingSummary(environment);
   const scenarioCount = Object.values(environment.scenarios ?? {}).length * 2;
+  const statusLabel = t(ENVIRONMENT_STATUS_LABEL[environment.status]);
+  const testTypeLabel = translateEnvironmentOption(environment.tipoTeste, t);
+  const momentLabel = translateEnvironmentOption(environment.momento, t);
+  const exportTitle = t('environmentExport.title', { id: environment.identificador });
+  const jiraTask = environment.jiraTask?.trim() || '';
+  const jiraHref = buildExternalLink(jiraTask);
+  const jiraValue = jiraHref
+    ? `<a href="${escapeHtml(jiraHref)}" target="_blank" rel="noreferrer noopener">${escapeHtml(
+        jiraTask,
+      )}</a>`
+    : escapeHtml(jiraTask || t('dynamic.identifierFallback'));
   const urlList =
     (environment.urls ?? []).length > 0
       ? `<ul>${(environment.urls ?? [])
-          .map(
-            (url) =>
-              `<li><a href="${url}" target="_blank" rel="noreferrer noopener">${url}</a></li>`,
-          )
+          .map((url) => {
+            const href = buildExternalLink(url);
+            const label = escapeHtml(url);
+            return href
+              ? `<li><a href="${escapeHtml(
+                  href,
+                )}" target="_blank" rel="noreferrer noopener">${label}</a></li>`
+              : `<li>${label}</li>`;
+          })
           .join('')}</ul>`
-      : '<p>Nenhuma URL cadastrada.</p>';
+      : `<p>${t('environmentExport.noUrls')}</p>`;
   const scenarioRows = Object.values(environment.scenarios ?? {})
     .map((scenario) => {
       const statuses = getScenarioPlatformStatuses(scenario);
+      const statusMobile = translateScenarioStatus(statuses.mobile, t);
+      const statusDesktop = translateScenarioStatus(statuses.desktop, t);
+      const evidenceLabel = scenario.evidenciaArquivoUrl
+        ? t('environmentEvidenceTable.evidencia_abrir')
+        : t('environmentEvidenceTable.evidencia_sem');
+      const criticalityLabel = formatCriticalityLabel(scenario.criticidade, t);
+      const observation =
+        scenario.observacao?.trim() || t('environmentEvidenceTable.observacao_none');
       return `
         <tr>
-          <td>${scenario.titulo}</td>
-          <td>${scenario.categoria}</td>
-          <td>${scenario.criticidade}</td>
-          <td>${scenario.observacao || ''}</td>
-          <td>${statuses.mobile}</td>
-          <td>${statuses.desktop}</td>
+          <td>${linkifyHtml(scenario.titulo)}</td>
+          <td>${linkifyHtml(scenario.categoria)}</td>
+          <td>${escapeHtml(criticalityLabel)}</td>
+          <td>${linkifyHtml(observation)}</td>
+          <td>${escapeHtml(statusMobile)}</td>
+          <td>${escapeHtml(statusDesktop)}</td>
           <td>${
             scenario.evidenciaArquivoUrl
-              ? `<a href="${scenario.evidenciaArquivoUrl}">Arquivo</a>`
-              : 'Sem evidência'
+              ? `<a href="${escapeHtml(
+                  scenario.evidenciaArquivoUrl,
+                )}" target="_blank" rel="noreferrer noopener">${escapeHtml(evidenceLabel)}</a>`
+              : escapeHtml(evidenceLabel)
           }</td>
         </tr>
       `;
@@ -855,15 +964,15 @@ export const exportEnvironmentAsPDF = (
           .map(
             (participant) => `
         <tr>
-          <td>${participant.name}</td>
-          <td>${participant.email}</td>
+          <td>${escapeHtml(participant.name)}</td>
+          <td>${escapeHtml(participant.email)}</td>
         </tr>
       `,
           )
           .join('')
       : `
         <tr>
-          <td colspan="2">Nenhum participante registrado.</td>
+          <td colspan="2">${t('environmentExport.noParticipants')}</td>
         </tr>
       `;
 
@@ -873,24 +982,24 @@ export const exportEnvironmentAsPDF = (
           .map(
             (bug) => `
         <tr>
-          <td>${bug.title}</td>
-          <td>${BUG_STATUS_LABEL[bug.status]}</td>
-          <td>${getScenarioLabel(environment, bug.scenarioId)}</td>
-          <td>${bug.description ?? 'Sem descrição'}</td>
+          <td>${escapeHtml(bug.title)}</td>
+          <td>${escapeHtml(t(BUG_STATUS_LABEL[bug.status]))}</td>
+          <td>${escapeHtml(getScenarioLabel(environment, bug.scenarioId))}</td>
+          <td>${linkifyHtml(bug.description ?? t('environmentExport.noDescription'))}</td>
         </tr>
       `,
           )
           .join('')
       : `
         <tr>
-          <td colspan="4">Nenhum bug registrado.</td>
+          <td colspan="4">${t('environmentExport.noBugs')}</td>
         </tr>
       `;
 
   const documentContent = `
     <html>
       <head>
-        <title>Ambiente ${environment.identificador}</title>
+        <title>${escapeHtml(exportTitle)}</title>
         <style>
           body { font-family: Arial, sans-serif; padding: 24px; }
           h1 { margin-bottom: 0; }
@@ -902,78 +1011,90 @@ export const exportEnvironmentAsPDF = (
         </style>
       </head>
       <body>
-        <h1>Ambiente ${environment.identificador}</h1>
-        <p>Status: ${environment.status}</p>
-        <p>Tipo: ${environment.tipoAmbiente} · ${environment.tipoTeste}</p>
-        ${environment.momento ? `<p>Momento: ${environment.momento}</p>` : ''}
-        ${environment.release ? `<p>Release: ${environment.release}</p>` : ''}
-        <p>Jira: ${environment.jiraTask || 'Não informado'}</p>
-        <h2>Resumo do ambiente</h2>
+        <h1>${escapeHtml(exportTitle)}</h1>
+        <p>${escapeHtml(t('environmentExport.statusLabel'))}: ${escapeHtml(statusLabel)}</p>
+        <p>${escapeHtml(t('environmentExport.typeLabel'))}: ${escapeHtml(
+          environment.tipoAmbiente,
+        )} · ${escapeHtml(testTypeLabel)}</p>
+        ${
+          environment.momento
+            ? `<p>${escapeHtml(t('environmentExport.momentLabel'))}: ${escapeHtml(momentLabel)}</p>`
+            : ''
+        }
+        ${
+          environment.release
+            ? `<p>${escapeHtml(t('environmentExport.releaseLabel'))}: ${escapeHtml(
+                environment.release,
+              )}</p>`
+            : ''
+        }
+        <p>${t('environmentExport.jiraLabel')}: ${jiraValue}</p>
+        <h2>${t('environmentExport.summaryTitle')}</h2>
         <div class="summary-grid">
           <div>
-            <span>Início do teste</span>
-            <strong>${timeSummary.start}</strong>
+            <span>${t('environmentExport.startLabel')}</span>
+            <strong>${escapeHtml(timeSummary.start)}</strong>
           </div>
           <div>
-            <span>Término do teste</span>
-            <strong>${timeSummary.end}</strong>
+            <span>${t('environmentExport.endLabel')}</span>
+            <strong>${escapeHtml(timeSummary.end)}</strong>
           </div>
           <div>
-            <span>Tempo total</span>
-            <strong>${timeSummary.total}</strong>
+            <span>${t('environmentExport.totalLabel')}</span>
+            <strong>${escapeHtml(timeSummary.total)}</strong>
           </div>
           <div>
-            <span>Suíte</span>
-            <strong>${environment.suiteName ?? 'Não informada'}</strong>
+            <span>${t('environmentExport.suiteLabel')}</span>
+            <strong>${escapeHtml(environment.suiteName ?? t('dynamic.suiteNameFallback'))}</strong>
           </div>
           <div>
-            <span>Total de cenários</span>
+            <span>${t('environmentExport.totalScenariosLabel')}</span>
             <strong>${scenarioCount}</strong>
           </div>
           <div>
-            <span>Bugs registrados</span>
+            <span>${t('environmentExport.bugsLabel')}</span>
             <strong>${bugs.length}</strong>
           </div>
           <div>
-            <span>Participantes</span>
+            <span>${t('environmentExport.participantsLabel')}</span>
             <strong>${normalizedParticipants.length}</strong>
           </div>
         </div>
-        <h3>URLs monitoradas</h3>
+        <h3>${t('environmentExport.monitoredUrlsTitle')}</h3>
         ${urlList}
-        <h2>Participantes</h2>
+        <h2>${t('environmentExport.participantsTitle')}</h2>
         <table class="participants-table">
           <thead>
             <tr>
-              <th>Nome</th>
-              <th>Email</th>
+              <th>${t('environmentExport.participantName')}</th>
+              <th>${t('environmentExport.participantEmail')}</th>
             </tr>
           </thead>
           <tbody>${participantRows}</tbody>
         </table>
-        <h2>Cenários</h2>
+        <h2>${t('environmentExport.scenariosTitle')}</h2>
         <table>
           <thead>
             <tr>
-              <th>Título</th>
-              <th>Categoria</th>
-              <th>Criticidade</th>
-              <th>Observação</th>
-              <th>Status Mobile</th>
-              <th>Status Desktop</th>
-              <th>Evidência</th>
+              <th>${t('environmentEvidenceTable.table_titulo')}</th>
+              <th>${t('environmentEvidenceTable.table_categoria')}</th>
+              <th>${t('environmentEvidenceTable.table_criticidade')}</th>
+              <th>${t('environmentEvidenceTable.table_observacao')}</th>
+              <th>${t('environmentEvidenceTable.table_status_mobile')}</th>
+              <th>${t('environmentEvidenceTable.table_status_desktop')}</th>
+              <th>${t('environmentEvidenceTable.table_evidencia')}</th>
             </tr>
           </thead>
           <tbody>${scenarioRows}</tbody>
         </table>
-        <h2>Bugs registrados</h2>
+        <h2>${t('environmentExport.bugsTitle')}</h2>
         <table>
           <thead>
             <tr>
-              <th>Título</th>
-              <th>Status</th>
-              <th>Cenário</th>
-              <th>Descrição</th>
+              <th>${t('environmentExport.bugTitle')}</th>
+              <th>${t('environmentExport.bugStatus')}</th>
+              <th>${t('environmentExport.bugScenario')}</th>
+              <th>${t('environmentExport.bugDescription')}</th>
             </tr>
           </thead>
           <tbody>${bugRows}</tbody>
@@ -984,7 +1105,7 @@ export const exportEnvironmentAsPDF = (
 
   const printWindow = window.open('', '_blank');
   if (!printWindow) {
-    throw new Error('Não foi possível abrir a janela para impressão.');
+    throw new Error(t('environmentExport.printError'));
   }
 
   printWindow.document.write(documentContent);
@@ -1002,63 +1123,73 @@ export const copyEnvironmentAsMarkdown = async (
     return;
   }
 
-  const normalizedParticipants = normalizeParticipants(environment, participantProfiles);
+  const t = i18n.t.bind(i18n);
+  const normalizedParticipants = normalizeParticipants(environment, participantProfiles, t);
   const timeSummary = buildTimeTrackingSummary(environment);
   const scenarioCount = Object.values(environment.scenarios ?? {}).length * 2;
+  const statusLabel = t(ENVIRONMENT_STATUS_LABEL[environment.status]);
+  const testTypeLabel = translateEnvironmentOption(environment.tipoTeste, t);
+  const momentLabel = translateEnvironmentOption(environment.momento, t);
   const scenarioTableRows = Object.values(environment.scenarios ?? {})
     .map((scenario) => {
       const statuses = getScenarioPlatformStatuses(scenario);
+      const statusMobile = translateScenarioStatus(statuses.mobile, t);
+      const statusDesktop = translateScenarioStatus(statuses.desktop, t);
+      const evidenceLabel = scenario.evidenciaArquivoUrl
+        ? t('environmentEvidenceTable.evidencia_abrir')
+        : t('environmentEvidenceTable.evidencia_sem');
       const evidenceLink = scenario.evidenciaArquivoUrl
-        ? `[evidência](${scenario.evidenciaArquivoUrl})`
-        : 'Sem evidência';
-      const observation = scenario.observacao?.trim() || '—';
-      return `| ${scenario.titulo} | ${scenario.categoria} | ${scenario.criticidade} | ${observation} | ${statuses.mobile} | ${statuses.desktop} | ${evidenceLink} |`;
+        ? `[${evidenceLabel}](${scenario.evidenciaArquivoUrl})`
+        : evidenceLabel;
+      const observation =
+        scenario.observacao?.trim() || t('environmentEvidenceTable.observacao_none');
+      return `| ${scenario.titulo} | ${scenario.categoria} | ${scenario.criticidade} | ${observation} | ${statusMobile} | ${statusDesktop} | ${evidenceLink} |`;
     })
     .join('\n');
   const scenarioTable = scenarioTableRows
-    ? `| Título | Categoria | Criticidade | Observação | Status Mobile | Status Desktop | Evidência |\n| --- | --- | --- | --- | --- | --- | --- |\n${scenarioTableRows}`
-    : '- Nenhum cenário cadastrado';
+    ? `| ${t('environmentEvidenceTable.table_titulo')} | ${t('environmentEvidenceTable.table_categoria')} | ${t('environmentEvidenceTable.table_criticidade')} | ${t('environmentEvidenceTable.table_observacao')} | ${t('environmentEvidenceTable.table_status_mobile')} | ${t('environmentEvidenceTable.table_status_desktop')} | ${t('environmentEvidenceTable.table_evidencia')} |\n| --- | --- | --- | --- | --- | --- | --- |\n${scenarioTableRows}`
+    : `- ${t('environmentExport.noScenarios')}`;
 
   const bugLines = bugs
     .map((bug) => {
       const scenarioLabel = getScenarioLabel(environment, bug.scenarioId);
       const description = bug.description ? ` — ${bug.description}` : '';
-      return `- **${bug.title}** (${BUG_STATUS_LABEL[bug.status]}) · Cenário: ${scenarioLabel}${description}`;
+      return `- **${bug.title}** (${t(BUG_STATUS_LABEL[bug.status])}) · ${t('environmentExport.bugScenario')}: ${scenarioLabel}${description}`;
     })
     .join('\n');
 
   const urls = (environment.urls ?? []).map((url) => `  - ${url}`).join('\n');
   const participants = normalizedParticipants
     .map((participant) => {
-      const email = participant.email !== 'Não informado' ? ` (${participant.email})` : '';
+      const email = participant.email !== t('dynamic.noEmail') ? ` (${participant.email})` : '';
       return `- **${participant.name}**${email}`;
     })
     .join('\n');
 
-  const markdown = `# Ambiente ${environment.identificador}
+  const markdown = `# ${t('environmentExport.title', { id: environment.identificador })}
 
-- Status: ${environment.status}
-- Tipo: ${environment.tipoAmbiente} · ${environment.tipoTeste}
-${environment.momento ? `- Momento: ${environment.momento}\n` : ''}${
-    environment.release ? `- Release: ${environment.release}\n` : ''
-  }- Jira: ${environment.jiraTask || 'Não informado'}
-- Início do teste: ${timeSummary.start}
-- Término do teste: ${timeSummary.end}
-- Tempo total: ${timeSummary.total}
-- Suíte: ${environment.suiteName ?? 'Não informada'}
-- Total de cenários: ${scenarioCount}
-- Bugs registrados: ${bugs.length}
-- Participantes: ${normalizedParticipants.length}
-- URLs:\n${urls || '  - Nenhuma URL cadastrada'}
+- ${t('environmentExport.statusLabel')}: ${statusLabel}
+- ${t('environmentExport.typeLabel')}: ${environment.tipoAmbiente} · ${testTypeLabel}
+${environment.momento ? `- ${t('environmentExport.momentLabel')}: ${momentLabel}\n` : ''}${
+    environment.release ? `- ${t('environmentExport.releaseLabel')}: ${environment.release}\n` : ''
+  }- ${t('environmentExport.jiraLabel')}: ${environment.jiraTask || t('dynamic.identifierFallback')}
+- ${t('environmentExport.startLabel')}: ${timeSummary.start}
+- ${t('environmentExport.endLabel')}: ${timeSummary.end}
+- ${t('environmentExport.totalLabel')}: ${timeSummary.total}
+- ${t('environmentExport.suiteLabel')}: ${environment.suiteName ?? t('dynamic.suiteNameFallback')}
+- ${t('environmentExport.totalScenariosLabel')}: ${scenarioCount}
+- ${t('environmentExport.bugsLabel')}: ${bugs.length}
+- ${t('environmentExport.participantsLabel')}: ${normalizedParticipants.length}
+- ${t('environmentExport.urlsLabel')}:\n${urls || `  - ${t('environmentExport.noUrls')}`}
 
-## Cenários
+## ${t('environmentExport.scenariosTitle')}
 ${scenarioTable}
 
-## Bugs
-${bugLines || '- Nenhum bug registrado'}
+## ${t('environmentExport.bugsTitle')}
+${bugLines || `- ${t('environmentExport.noBugs')}`}
 
-## Participantes
-${participants || '- Nenhum participante registrado'}
+## ${t('environmentExport.participantsTitle')}
+${participants || `- ${t('environmentExport.noParticipants')}`}
 `;
 
   if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {

@@ -1,7 +1,5 @@
 import type {
   CreateStorePayload,
-  ImportScenariosResult,
-  ImportSuitesResult,
   Store,
   StoreCategory,
   StoreCategoryInput,
@@ -9,7 +7,6 @@ import type {
   StoreScenario,
   StoreScenarioInput,
   StoreSuite,
-  StoreSuiteExportPayload,
   StoreSuiteInput,
   UpdateStorePayload,
 } from '../entities/store';
@@ -41,32 +38,4 @@ export interface StoreRepository {
   ) => Promise<StoreCategory>;
   deleteCategory: (storeId: string, categoryId: string) => Promise<void>;
   exportStore: (storeId: string) => Promise<StoreExportPayload>;
-  exportSuites: (storeId: string) => Promise<StoreSuiteExportPayload>;
-  importScenarios: (
-    storeId: string,
-    scenarios: StoreScenarioInput[],
-    strategy: 'replace' | 'merge',
-  ) => Promise<{
-    scenarios: StoreScenario[];
-    created: number;
-    skipped: number;
-    strategy: 'replace' | 'merge';
-  }>;
-  importSuites: (
-    storeId: string,
-    suites: StoreSuiteInput[],
-    strategy: 'replace' | 'merge',
-  ) => Promise<{
-    suites: StoreSuite[];
-    created: number;
-    skipped: number;
-    strategy: 'replace' | 'merge';
-  }>;
-  replaceScenarios: (storeId: string, scenarios: StoreScenarioInput[]) => Promise<StoreScenario[]>;
-  replaceSuites: (storeId: string, suites: StoreSuiteInput[]) => Promise<StoreSuite[]>;
-  mergeScenarios: (
-    storeId: string,
-    scenarios: StoreScenarioInput[],
-  ) => Promise<ImportScenariosResult>;
-  mergeSuites: (storeId: string, suites: StoreSuiteInput[]) => Promise<ImportSuitesResult>;
 }

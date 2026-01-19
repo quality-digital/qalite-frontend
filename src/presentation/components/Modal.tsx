@@ -1,5 +1,6 @@
 import { ReactNode, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 
 interface ModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface ModalProps {
 }
 
 export const Modal = ({ isOpen, title, description, onClose, children }: ModalProps) => {
+  const { t } = useTranslation();
   useEffect(() => {
     if (!isOpen) {
       return;
@@ -37,7 +39,12 @@ export const Modal = ({ isOpen, title, description, onClose, children }: ModalPr
             <h2 className="modal-title">{title}</h2>
             {description && <p className="modal-description">{description}</p>}
           </div>
-          <button type="button" className="modal-close" aria-label="Fechar" onClick={onClose}>
+          <button
+            type="button"
+            className="modal-close"
+            aria-label={t('modal.close')}
+            onClick={onClose}
+          >
             &times;
           </button>
         </div>

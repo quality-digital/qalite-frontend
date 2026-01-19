@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { ActivityLog } from '../../domain/entities/activityLog';
+import type { ActivityLogCursor } from '../../domain/repositories/LogRepository';
 import { logService } from '../../application/use-cases/LogUseCase';
 import { useToast } from '../context/ToastContext';
 import { ActivityIcon, ChevronDownIcon, FilterIcon } from './icons';
@@ -49,39 +50,63 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
   const { showToast } = useToast();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [actionFilter, setActionFilter] = useState<ActivityLog['action'] | 'all'>('all');
   const [entityFilter, setEntityFilter] = useState<ActivityLog['entityType'] | 'all'>('all');
-  const [visibleCount, setVisibleCount] = useState(INITIAL_LOG_PAGE_SIZE);
+  const cursorRef = useRef<ActivityLogCursor | null>(null);
+  const isLoadingMoreRef = useRef(false);
+  const hasMoreRef = useRef(true);
+  const [hasMoreLogs, setHasMoreLogs] = useState(true);
 
-  useEffect(() => {
-    let isMounted = true;
+  const fetchLogs = useCallback(
+    async (options?: { reset?: boolean }) => {
+      const shouldReset = options?.reset ?? false;
+      const nextCursor = shouldReset ? null : cursorRef.current;
 
-    const fetchLogs = async () => {
-      try {
+      if (!shouldReset && (!hasMoreRef.current || isLoadingMoreRef.current)) {
+        return;
+      }
+
+      if (shouldReset) {
         setIsLoading(true);
-        const entries = await logService.listByOrganization(organizationId);
-        if (isMounted) {
-          setLogs(entries);
-        }
+        setLogs([]);
+        setHasMoreLogs(true);
+        hasMoreRef.current = true;
+      } else {
+        isLoadingMoreRef.current = true;
+        setIsLoadingMore(true);
+      }
+
+      try {
+        const response = await logService.listByOrganizationPage(
+          organizationId,
+          INITIAL_LOG_PAGE_SIZE,
+          nextCursor,
+        );
+        setLogs((previous) => (shouldReset ? response.logs : [...previous, ...response.logs]));
+        cursorRef.current = response.nextCursor;
+        const hasMore = Boolean(response.nextCursor);
+        hasMoreRef.current = hasMore;
+        setHasMoreLogs(hasMore);
       } catch (error) {
         console.error(error);
-        if (isMounted) {
-          showToast({ type: 'error', message: i18n.t('logPanel.errorLoading') });
-        }
+        showToast({ type: 'error', message: i18n.t('logPanel.errorLoading') });
       } finally {
-        if (isMounted) {
+        if (shouldReset) {
           setIsLoading(false);
+        } else {
+          isLoadingMoreRef.current = false;
+          setIsLoadingMore(false);
         }
       }
-    };
+    },
+    [organizationId, showToast],
+  );
 
-    void fetchLogs();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [organizationId, showToast]);
+  useEffect(() => {
+    void fetchLogs({ reset: true });
+  }, [fetchLogs, organizationId]);
 
   const filteredLogs = useMemo(
     () =>
@@ -91,15 +116,6 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
           (entityFilter === 'all' || log.entityType === entityFilter),
       ),
     [actionFilter, entityFilter, logs],
-  );
-
-  useEffect(() => {
-    setVisibleCount(INITIAL_LOG_PAGE_SIZE);
-  }, [actionFilter, entityFilter, logs]);
-
-  const displayedLogs = useMemo(
-    () => filteredLogs.slice(0, visibleCount),
-    [filteredLogs, visibleCount],
   );
 
   const toggleCollapse = () => setIsCollapsed((prev) => !prev);
@@ -224,7 +240,9 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
             </label>
           </div>
 
-          {isLoading && <p className="section-subtitle">{t('logPanel.stateLoading')}</p>}
+          {isLoading && logs.length === 0 && (
+            <p className="section-subtitle">{t('logPanel.stateLoading')}</p>
+          )}
 
           {!isLoading && filteredLogs.length === 0 && (
             <p className="section-subtitle">{t('logPanel.stateEmpty')}</p>
@@ -232,7 +250,7 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
 
           {!isLoading && filteredLogs.length > 0 && (
             <ul className="activity-log-list">
-              {displayedLogs.map((log) => (
+              {filteredLogs.map((log) => (
                 <li key={log.id} className="activity-log-item">
                   <div className="activity-log-item__timeline" aria-hidden>
                     <span className={`activity-log-dot activity-log-dot--${log.action}`} />
@@ -258,12 +276,13 @@ export const OrganizationLogPanel = ({ organizationId }: OrganizationLogPanelPro
             </ul>
           )}
 
-          {!isLoading && filteredLogs.length > displayedLogs.length && (
+          {!isLoading && hasMoreLogs && (
             <div className="organization-log-panel__actions">
               <button
                 type="button"
                 className="button button-secondary"
-                onClick={() => setVisibleCount((previous) => previous + INITIAL_LOG_PAGE_SIZE)}
+                onClick={() => fetchLogs()}
+                disabled={isLoadingMore}
               >
                 {t('logPanel.listMore')}
               </button>

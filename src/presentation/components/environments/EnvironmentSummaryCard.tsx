@@ -2,7 +2,9 @@ import type { Environment } from '../../../domain/entities/environment';
 import type { UserSummary } from '../../../domain/entities/user';
 import { ENVIRONMENT_STATUS_LABEL } from '../../../shared/config/environmentLabels';
 import { getReadableUserName, getUserInitials } from '../../utils/userDisplay';
+import { translateEnvironmentOption } from '../../constants/environmentOptions';
 import { useTranslation } from 'react-i18next';
+import { buildExternalLink } from '../../utils/externalLink';
 
 const buildJiraLink = (value: string | null | undefined): string | null => {
   if (!value) {
@@ -146,7 +148,7 @@ export const EnvironmentSummaryCard = ({
             <span className="summary-card__meta-label">
               {translation('environmentSummary.moment')}
             </span>
-            <strong>{environment.momento}</strong>
+            <strong>{translateEnvironmentOption(environment.momento, translation)}</strong>
           </div>
         )}
 
@@ -186,17 +188,24 @@ export const EnvironmentSummaryCard = ({
           <p className="summary-card__empty">{translation('environmentSummary.noUrls')}</p>
         ) : (
           <div className="summary-card__chip-row">
-            {visibleUrls.map((url) => (
-              <a
-                key={url}
-                href={url}
-                className="summary-card__chip"
-                target="_blank"
-                rel="noreferrer noopener"
-              >
-                {url}
-              </a>
-            ))}
+            {visibleUrls.map((url) => {
+              const { href, label } = buildExternalLink(url);
+              return href ? (
+                <a
+                  key={url}
+                  href={href}
+                  className="summary-card__chip"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  {label}
+                </a>
+              ) : (
+                <span key={url} className="summary-card__chip">
+                  {label}
+                </span>
+              );
+            })}
             {remainingUrls > 0 && (
               <span className="summary-card__chip summary-card__chip--muted">+{remainingUrls}</span>
             )}
@@ -218,11 +227,7 @@ export const EnvironmentSummaryCard = ({
               const initials = getUserInitials(readableName);
               return (
                 <li key={participant.id} className="summary-card__avatar-item">
-                  {participant.photoURL ? (
-                    <img src={participant.photoURL} alt={readableName} />
-                  ) : (
-                    <span className="summary-card__avatar-fallback">{initials}</span>
-                  )}
+                  <span className="summary-card__avatar-fallback">{initials}</span>
                   <span>{readableName}</span>
                 </li>
               );

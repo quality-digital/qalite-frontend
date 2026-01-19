@@ -1,4 +1,5 @@
 import type { BrowserstackBuild } from '../../../domain/entities/browserstack';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../Button';
 
 interface BrowserstackKanbanProps {
@@ -9,10 +10,10 @@ interface BrowserstackKanbanProps {
 
 type NormalizedStatus = keyof typeof STATUS_META;
 const STATUS_META = {
-  em_espera: { label: 'Em espera', tone: 'info' as const },
-  em_andamento: { label: 'Em andamento', tone: 'info' as const },
-  concluido: { label: 'Concluído', tone: 'success' as const },
-  falhou: { label: 'Falhou', tone: 'danger' as const },
+  em_espera: { labelKey: 'browserstackKanban.status.waiting', tone: 'info' as const },
+  em_andamento: { labelKey: 'browserstackKanban.status.running', tone: 'info' as const },
+  concluido: { labelKey: 'browserstackKanban.status.done', tone: 'success' as const },
+  falhou: { labelKey: 'browserstackKanban.status.failed', tone: 'danger' as const },
 };
 
 const STATUS_ORDER: NormalizedStatus[] = ['em_espera', 'em_andamento', 'concluido', 'falhou'];
@@ -36,6 +37,7 @@ const normalizeStatus = (status?: string): NormalizedStatus => {
 };
 
 export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: BrowserstackKanbanProps) => {
+  const { t } = useTranslation();
   const groupedBuilds = builds.reduce<Partial<Record<NormalizedStatus, BrowserstackBuild[]>>>(
     (accumulator, build) => {
       const status = normalizeStatus(build.status);
@@ -57,27 +59,25 @@ export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: Browserstac
             <img
               className="browserstack-kanban__brand"
               src="https://img.icons8.com/color/48/browser-stack.png"
-              alt="BrowserStack"
+              alt={t('browserstackKanban.brandAlt')}
             />
-            <h3 className="section-title">BrowserStack</h3>
+            <h3 className="section-title">{t('browserstackKanban.title')}</h3>
           </div>
         </div>
 
         {onRefresh && (
           <Button type="button" variant="secondary" onClick={onRefresh} disabled={isLoading}>
-            {isLoading ? 'Atualizando...' : 'Atualizar lista'}
+            {isLoading ? t('browserstackKanban.refreshing') : t('browserstackKanban.refresh')}
           </Button>
         )}
       </header>
 
       {isLoading ? (
-        <p className="section-subtitle">Buscando execuções no BrowserStack...</p>
+        <p className="section-subtitle">{t('browserstackKanban.loading')}</p>
       ) : totalBuilds === 0 ? (
         <div className="browserstack-kanban__empty">
-          <h4 className="section-title">Nenhuma execução encontrada</h4>
-          <p className="section-subtitle">
-            Verifique suas credenciais do BrowserStack no perfil ou utilize o botão de atualizar.
-          </p>
+          <h4 className="section-title">{t('browserstackKanban.emptyTitle')}</h4>
+          <p className="section-subtitle">{t('browserstackKanban.emptySubtitle')}</p>
         </div>
       ) : (
         <div className="browserstack-kanban__columns">
@@ -94,11 +94,11 @@ export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: Browserstac
                       aria-hidden
                     />
                     <div>
-                      <h4>{statusMeta.label}</h4>
+                      <h4>{t(statusMeta.labelKey)}</h4>
                       <p className="browserstack-kanban__column-subtitle">
                         {entries.length > 0
-                          ? 'Cards ordenados pela criação mais recente'
-                          : 'Sem execuções neste status'}
+                          ? t('browserstackKanban.columnSubtitleWithCards')
+                          : t('browserstackKanban.columnSubtitleEmpty')}
                       </p>
                     </div>
                   </div>
@@ -111,13 +111,13 @@ export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: Browserstac
                       <header className="browserstack-build__header">
                         <div>
                           <h5 className="browserstack-build__title">
-                            {build.name || build.buildTag || 'Build sem nome'}
+                            {build.name || build.buildTag || t('browserstackKanban.unnamedBuild')}
                           </h5>
                           <div className="browserstack-build__meta-row">
                             <span
                               className={`browserstack-build__pill browserstack-build__pill--${statusMeta.tone}`}
                             >
-                              {statusMeta.label}
+                              {t(statusMeta.labelKey)}
                             </span>
                             {build.buildTag && (
                               <span className="browserstack-build__pill browserstack-build__pill--muted">
@@ -135,7 +135,7 @@ export const BrowserstackKanban = ({ builds, isLoading, onRefresh }: Browserstac
                           target="_blank"
                           rel="noreferrer"
                         >
-                          Ver build →
+                          {t('browserstackKanban.viewBuild')}
                         </a>
                       )}
                     </article>

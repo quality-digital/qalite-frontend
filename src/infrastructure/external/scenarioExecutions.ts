@@ -31,6 +31,35 @@ const parseTimestamp = (value: Timestamp | string | null | undefined): string | 
   return typeof value === 'string' ? value : null;
 };
 
+const parseExecutionDuration = (value: unknown): number => {
+  if (typeof value === 'number') {
+    return value;
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    return Number(value);
+  }
+
+  return Number.NaN;
+};
+
+const isValidDuration = (value: number): boolean => Number.isFinite(value) && value > 0;
+
+const calculateMedian = (values: number[]): number => {
+  if (values.length === 0) {
+    return Number.NaN;
+  }
+
+  const sorted = values.slice().sort((first, second) => first - second);
+  const mid = Math.floor(sorted.length / 2);
+
+  if (sorted.length % 2 === 0) {
+    return (sorted[mid - 1] + sorted[mid]) / 2;
+  }
+
+  return sorted[mid];
+};
+
 export const createScenarioExecution = async (
   payload: CreateScenarioExecutionInput,
 ): Promise<void> => {
@@ -59,7 +88,7 @@ export const listScenarioExecutionsByStore = async (
       scenarioTitle: String(data.scenarioTitle ?? ''),
       qaId: data.qaId ? String(data.qaId) : null,
       qaName: data.qaName ? String(data.qaName) : null,
-      totalMs: Number(data.totalMs ?? 0),
+      totalMs: parseExecutionDuration(data.totalMs),
       executedAt: String(data.executedAt ?? ''),
       createdAt: parseTimestamp(data.createdAt as Timestamp | string | null | undefined),
     } satisfies ScenarioExecution;
@@ -86,9 +115,13 @@ export const getStoreScenarioAverages = async (storeId: string): Promise<Scenari
 };
 
 const buildScenarioAverageMap = (executions: ScenarioExecution[]): ScenarioAverageMap => {
-  const map = new Map<string, { entry: ScenarioAverageEntry; totalMs: number }>();
+  const map = new Map<string, { entry: ScenarioAverageEntry; durations: number[] }>();
 
   executions.forEach((execution) => {
+    if (!isValidDuration(execution.totalMs)) {
+      return;
+    }
+
     const key = execution.scenarioId || `${execution.scenarioTitle}-${execution.environmentId}`;
     const title = execution.scenarioTitle?.trim() || 'Cenário';
     const existing = key ? map.get(key) : undefined;
@@ -102,18 +135,21 @@ const buildScenarioAverageMap = (executions: ScenarioExecution[]): ScenarioAvera
           averageMs: execution.totalMs,
           bestMs: execution.totalMs,
         },
-        totalMs: execution.totalMs,
+        durations: [execution.totalMs],
       });
       return;
     }
 
     existing.entry.executions += 1;
-    existing.totalMs += execution.totalMs;
     existing.entry.bestMs = Math.min(existing.entry.bestMs, execution.totalMs);
-    existing.entry.averageMs = existing.totalMs / existing.entry.executions;
+    existing.durations.push(execution.totalMs);
   });
 
   return Array.from(map.entries()).reduce<ScenarioAverageMap>((accumulator, [key, value]) => {
+    const median = calculateMedian(value.durations);
+    if (Number.isFinite(median)) {
+      value.entry.averageMs = median;
+    }
     accumulator[key] = value.entry;
     return accumulator;
   }, {});

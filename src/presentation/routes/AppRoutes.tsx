@@ -3,13 +3,10 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import { ProtectedRoute, RoleProtectedRoute } from './ProtectedRoute';
 import { AppProviders } from '../providers/AppProviders';
+import { PageLoader } from '../components/PageLoader';
+import { HomePage } from '../pages/HomePage';
+import { LoginPage } from '../pages/LoginPage';
 
-const HomePage = lazy(() =>
-  import('../pages/HomePage').then(({ HomePage }) => ({ default: HomePage })),
-);
-const LoginPage = lazy(() =>
-  import('../pages/LoginPage').then(({ LoginPage }) => ({ default: LoginPage })),
-);
 const RegisterPage = lazy(() =>
   import('../pages/RegisterPage').then(({ RegisterPage }) => ({ default: RegisterPage })),
 );
@@ -64,7 +61,7 @@ const AdminStoresPage = lazy(() =>
 export const AppRoutes = () => (
   <AppProviders>
     <BrowserRouter>
-      <Suspense fallback={null}>
+      <Suspense fallback={<PageLoader message="Carregando página..." />}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />

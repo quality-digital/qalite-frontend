@@ -2,15 +2,19 @@ import {
   Timestamp,
   addDoc,
   collection,
+  documentId,
   getDocs,
+  limit,
   orderBy,
   query,
   serverTimestamp,
+  startAfter,
   where,
   writeBatch,
 } from 'firebase/firestore';
 
 import type { ActivityLog, ActivityLogInput } from '../../domain/entities/activityLog';
+import type { ActivityLogCursor, ActivityLogPage } from '../../domain/repositories/LogRepository';
 import { getCurrentUser } from './auth';
 import { firebaseFirestore } from '../database/firebase';
 
@@ -81,4 +85,33 @@ export const listOrganizationLogs = async (organizationId: string): Promise<Acti
 
   const snapshot = await getDocs(logsQuery);
   return snapshot.docs.map((docSnapshot) => mapLog(docSnapshot.id, docSnapshot.data() ?? {}));
+};
+
+export const listOrganizationLogsPage = async (
+  organizationId: string,
+  pageSize: number,
+  cursor?: ActivityLogCursor | null,
+): Promise<ActivityLogPage> => {
+  await cleanupOldLogs(organizationId);
+
+  const constraints = [
+    where('organizationId', '==', organizationId),
+    orderBy('createdAt', 'desc'),
+    orderBy(documentId(), 'desc'),
+    limit(pageSize),
+  ];
+
+  if (cursor?.createdAt) {
+    constraints.push(startAfter(Timestamp.fromDate(cursor.createdAt), cursor.id));
+  }
+
+  const logsQuery = query(logsCollection, ...constraints);
+  const snapshot = await getDocs(logsQuery);
+  const logs = snapshot.docs.map((docSnapshot) => mapLog(docSnapshot.id, docSnapshot.data() ?? {}));
+
+  const lastLog = logs[logs.length - 1];
+  const nextCursor =
+    lastLog?.createdAt instanceof Date ? { createdAt: lastLog.createdAt, id: lastLog.id } : null;
+
+  return { logs, nextCursor };
 };
