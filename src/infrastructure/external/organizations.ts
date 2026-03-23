@@ -1,26 +1,37 @@
 import {
   Timestamp,
   addDoc,
-  arrayRemove,
-  arrayUnion,
+  collectionGroup,
   collection,
+  deleteDoc,
   doc,
   documentId,
   getDoc,
   limit,
+  onSnapshot,
   query,
   runTransaction,
   serverTimestamp,
   startAfter,
   orderBy,
-  updateDoc,
-  where,
-  writeBatch,
+  type Query,
   type QueryDocumentSnapshot,
+  type QuerySnapshot,
+  type DocumentData,
+  type Unsubscribe,
+  where,
+  updateDoc,
+  writeBatch,
 } from 'firebase/firestore';
 
 import type { BrowserstackCredentials } from '../../domain/entities/browserstack';
-import type { Organization, OrganizationMember } from '../../domain/entities/organization';
+import type {
+  CancelOrganizationAccessRequestPayload,
+  Organization,
+  OrganizationAccessRequest,
+  OrganizationMember,
+  RequestOrganizationAccessPayload,
+} from '../../domain/entities/organization';
 import { getNormalizedEmailDomain, normalizeEmailDomain } from '../../shared/utils/email';
 import { firebaseFirestore } from '../database/firebase';
 import { CacheStore } from '../cache/CacheStore';
@@ -34,6 +45,7 @@ import {
 } from './firestoreCache';
 
 const ORGANIZATIONS_COLLECTION = 'organizations';
+const ACCESS_REQUESTS_SUBCOLLECTION = 'accessRequests';
 const USERS_COLLECTION = 'users';
 const ORGANIZATION_CACHE = new CacheStore({
   namespace: 'organizations',
@@ -43,6 +55,7 @@ const ORGANIZATION_CACHE = new CacheStore({
 const ORGANIZATION_LIST_CACHE_KEY = 'listSummary';
 const ORGANIZATION_DETAIL_CACHE_PREFIX = 'detail:';
 const ORGANIZATION_PAGE_SIZE = 50;
+const PENDING_ACCESS_STATUS = 'pending';
 
 export interface CreateOrganizationPayload {
   name: string;
@@ -72,6 +85,13 @@ export interface RemoveUserFromOrganizationPayload {
 }
 
 const organizationsCollection = collection(firebaseFirestore, ORGANIZATIONS_COLLECTION);
+const accessRequestsCollection = (organizationId: string) =>
+  collection(
+    firebaseFirestore,
+    ORGANIZATIONS_COLLECTION,
+    organizationId,
+    ACCESS_REQUESTS_SUBCOLLECTION,
+  );
 
 const normalizeBrowserstackCredentials = (
   credentials: BrowserstackCredentials | null | undefined,
@@ -86,19 +106,58 @@ const normalizeBrowserstackCredentials = (
   return { username, accessKey };
 };
 
+const mapAccessRequest = (
+  organizationId: string,
+  id: string,
+  data: Record<string, unknown> | undefined,
+): OrganizationAccessRequest => ({
+  id,
+  organizationId,
+  userId: ((data?.userId as string) ?? '').trim(),
+  email: ((data?.email as string) ?? '').trim(),
+  displayName: ((data?.displayName as string) ?? '').trim(),
+  photoURL: ((data?.photoURL as string | null) ?? null) || null,
+  createdAt: timestampToDate(data?.createdAt),
+  updatedAt: timestampToDate(data?.updatedAt),
+});
+
+const listPendingAccessRequests = async (
+  organizationId: string,
+): Promise<OrganizationAccessRequest[]> => {
+  const snapshot = await getDocsCacheThenServer(
+    query(accessRequestsCollection(organizationId), where('status', '==', PENDING_ACCESS_STATUS)),
+  );
+
+  return snapshot.docs
+    .map((docSnapshot) =>
+      mapAccessRequest(
+        organizationId,
+        docSnapshot.id,
+        docSnapshot.data({ serverTimestamps: 'estimate' }),
+      ),
+    )
+    .sort(
+      (first, second) => (second.createdAt?.getTime() ?? 0) - (first.createdAt?.getTime() ?? 0),
+    );
+};
+
 const listOrganizationsFromServer = async (): Promise<Organization[]> => {
-  const organizationsQuery = query(organizationsCollection, orderBy('name'));
   const organizations: Organization[] = [];
   let lastDoc: QueryDocumentSnapshot | null = null;
   let hasMore = true;
 
   while (hasMore) {
-    const pageQuery = lastDoc
-      ? query(organizationsQuery, startAfter(lastDoc), limit(ORGANIZATION_PAGE_SIZE))
-      : query(organizationsQuery, limit(ORGANIZATION_PAGE_SIZE));
+    const pageQuery: Query<DocumentData> = lastDoc
+      ? query(
+          organizationsCollection,
+          orderBy('name'),
+          startAfter(lastDoc),
+          limit(ORGANIZATION_PAGE_SIZE),
+        )
+      : query(organizationsCollection, orderBy('name'), limit(ORGANIZATION_PAGE_SIZE));
 
-    const snapshot = await getDocsCacheThenServer(pageQuery);
-    const pageItems = snapshot.docs.map((docSnapshot) =>
+    const snapshot: QuerySnapshot<DocumentData> = await getDocsCacheThenServer(pageQuery);
+    const pageItems = snapshot.docs.map((docSnapshot: QueryDocumentSnapshot<DocumentData>) =>
       mapOrganizationSummary(docSnapshot.id, docSnapshot.data({ serverTimestamps: 'estimate' })),
     );
 
@@ -120,6 +179,27 @@ export const listOrganizationsSummary = async (): Promise<Organization[]> => {
 };
 
 export const listOrganizations = listOrganizationsSummary;
+
+export const listenToOrganizationsSummary = (
+  onChange: (organizations: Organization[]) => void,
+  onError?: (error: Error) => void,
+): Unsubscribe =>
+  onSnapshot(
+    query(organizationsCollection, orderBy('name')),
+    (snapshot) => {
+      const organizations = snapshot.docs
+        .map((docSnapshot) =>
+          mapOrganizationSummary(
+            docSnapshot.id,
+            docSnapshot.data({ serverTimestamps: 'estimate' }),
+          ),
+        )
+        .sort((first, second) => first.name.localeCompare(second.name));
+
+      onChange(organizations);
+    },
+    (error) => onError?.(error),
+  );
 
 const getOrganizationFromServer = async (id: string): Promise<Organization | null> => {
   const organizationRef = doc(firebaseFirestore, ORGANIZATIONS_COLLECTION, id);
@@ -155,7 +235,35 @@ export const getOrganizationDetail = async (id: string): Promise<Organization | 
 
 export const getOrganization = getOrganizationDetail;
 
-export const createOrganization = async (payload: CreateOrganizationPayload): Organization => {
+export const listenToOrganizationDetail = (
+  organizationId: string,
+  onChange: (organization: Organization | null) => void,
+  onError?: (error: Error) => void,
+): Unsubscribe =>
+  onSnapshot(
+    doc(firebaseFirestore, ORGANIZATIONS_COLLECTION, organizationId),
+    async (snapshot) => {
+      if (!snapshot.exists()) {
+        onChange(null);
+        return;
+      }
+
+      try {
+        const organization = await mapOrganizationDetail(
+          snapshot.id,
+          snapshot.data({ serverTimestamps: 'estimate' }),
+        );
+        onChange(organization);
+      } catch (error) {
+        onError?.(error instanceof Error ? error : new Error('Erro ao carregar organização.'));
+      }
+    },
+    (error) => onError?.(error),
+  );
+
+export const createOrganization = async (
+  payload: CreateOrganizationPayload,
+): Promise<Organization> => {
   const trimmedName = payload.name.trim();
   const trimmedDescription = payload.description.trim();
   const slackWebhookUrl = payload.slackWebhookUrl?.trim() || null;
@@ -310,7 +418,7 @@ export const addUserToOrganization = async (
     }
 
     transaction.update(organizationRef, {
-      members: arrayUnion(userId),
+      members: [...currentMembers, userId],
       updatedAt: serverTimestamp(),
     });
 
@@ -360,8 +468,13 @@ export const removeUserFromOrganization = async (
     const userData = userSnapshot.data({ serverTimestamps: 'estimate' }) ?? {};
     const currentOrganizationId = (userData.organizationId as string | null) ?? null;
 
+    const currentMembers =
+      (organizationSnapshot.data({ serverTimestamps: 'estimate' })?.members as
+        | string[]
+        | undefined) ?? [];
+
     transaction.update(organizationRef, {
-      members: arrayRemove(payload.userId),
+      members: currentMembers.filter((memberId) => memberId !== payload.userId),
       updatedAt: serverTimestamp(),
     });
 
@@ -379,6 +492,199 @@ export const removeUserFromOrganization = async (
 
   ORGANIZATION_CACHE.invalidatePrefix(`${ORGANIZATION_LIST_CACHE_KEY}`);
   ORGANIZATION_CACHE.remove(`${ORGANIZATION_DETAIL_CACHE_PREFIX}${payload.organizationId}`);
+};
+
+export const requestOrganizationAccess = async (
+  payload: RequestOrganizationAccessPayload,
+): Promise<OrganizationAccessRequest> => {
+  const existingPendingRequestsSnapshot = await getDocsCacheThenServer(
+    query(
+      collectionGroup(firebaseFirestore, ACCESS_REQUESTS_SUBCOLLECTION),
+      where('userId', '==', payload.userId),
+      limit(50),
+    ),
+  );
+
+  const hasPendingRequestForAnotherOrganization = existingPendingRequestsSnapshot.docs.some(
+    (docSnapshot) => {
+      const data = docSnapshot.data({ serverTimestamps: 'estimate' });
+      const status = (data.status as string | undefined) ?? '';
+      const organizationId = docSnapshot.ref.parent.parent?.id ?? '';
+
+      return status === PENDING_ACCESS_STATUS && organizationId !== payload.organizationId;
+    },
+  );
+
+  if (hasPendingRequestForAnotherOrganization) {
+    throw new Error('Você já possui uma solicitação pendente em outra organização.');
+  }
+
+  const organizationRef = doc(firebaseFirestore, ORGANIZATIONS_COLLECTION, payload.organizationId);
+  const requestRef = doc(accessRequestsCollection(payload.organizationId), payload.userId);
+  const userRef = doc(firebaseFirestore, USERS_COLLECTION, payload.userId);
+
+  await runTransaction(firebaseFirestore, async (transaction) => {
+    const [organizationSnapshot, requestSnapshot, userSnapshot] = await Promise.all([
+      transaction.get(organizationRef),
+      transaction.get(requestRef),
+      transaction.get(userRef),
+    ]);
+
+    if (!organizationSnapshot.exists()) {
+      throw new Error('Organização não encontrada.');
+    }
+
+    const currentMembers =
+      (organizationSnapshot.data({ serverTimestamps: 'estimate' })?.members as
+        | string[]
+        | undefined) ?? [];
+
+    if (currentMembers.includes(payload.userId)) {
+      throw new Error('Você já faz parte desta organização.');
+    }
+
+    const currentOrganizationId =
+      (userSnapshot.data({ serverTimestamps: 'estimate' })?.organizationId as string | null) ??
+      null;
+
+    if (currentOrganizationId) {
+      throw new Error('Seu usuário já está vinculado a uma organização.');
+    }
+
+    if (requestSnapshot.exists()) {
+      const status =
+        (requestSnapshot.data({ serverTimestamps: 'estimate' })?.status as string | undefined) ??
+        '';
+
+      if (status === PENDING_ACCESS_STATUS) {
+        throw new Error('Sua solicitação já está pendente para esta organização.');
+      }
+    }
+
+    transaction.set(
+      requestRef,
+      {
+        userId: payload.userId,
+        email: payload.userEmail.trim().toLowerCase(),
+        displayName: payload.displayName.trim(),
+        photoURL: payload.photoURL ?? null,
+        status: PENDING_ACCESS_STATUS,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
+  });
+
+  const snapshot = await getDocCacheThenServer(requestRef);
+  return mapAccessRequest(
+    payload.organizationId,
+    snapshot.id,
+    snapshot.data({ serverTimestamps: 'estimate' }) ?? {},
+  );
+};
+
+export const cancelOrganizationAccessRequest = async (
+  payload: CancelOrganizationAccessRequestPayload,
+): Promise<void> => {
+  const requestRef = doc(accessRequestsCollection(payload.organizationId), payload.userId);
+  const snapshot = await getDocCacheThenServer(requestRef);
+
+  if (!snapshot.exists()) {
+    return;
+  }
+
+  const status =
+    (snapshot.data({ serverTimestamps: 'estimate' })?.status as string | undefined) ?? '';
+
+  if (status !== PENDING_ACCESS_STATUS) {
+    throw new Error('A solicitação não está mais pendente para cancelamento.');
+  }
+
+  await deleteDoc(requestRef);
+};
+
+export const approveOrganizationAccessRequest = async (payload: {
+  organizationId: string;
+  requestId: string;
+}): Promise<OrganizationMember> => {
+  const organizationRef = doc(firebaseFirestore, ORGANIZATIONS_COLLECTION, payload.organizationId);
+  const requestRef = doc(accessRequestsCollection(payload.organizationId), payload.requestId);
+
+  const member = await runTransaction(firebaseFirestore, async (transaction) => {
+    const [organizationSnapshot, requestSnapshot] = await Promise.all([
+      transaction.get(organizationRef),
+      transaction.get(requestRef),
+    ]);
+
+    if (!organizationSnapshot.exists()) {
+      throw new Error('Organização não encontrada.');
+    }
+
+    if (!requestSnapshot.exists()) {
+      throw new Error('Solicitação não encontrada.');
+    }
+
+    const requestData = requestSnapshot.data({ serverTimestamps: 'estimate' }) ?? {};
+    const userId = ((requestData.userId as string) ?? payload.requestId).trim();
+
+    if (!userId) {
+      throw new Error('Solicitação inválida.');
+    }
+
+    const userRef = doc(firebaseFirestore, USERS_COLLECTION, userId);
+    const userSnapshot = await transaction.get(userRef);
+    if (!userSnapshot.exists()) {
+      throw new Error('Usuário não encontrado.');
+    }
+
+    const organizationData = organizationSnapshot.data({ serverTimestamps: 'estimate' }) ?? {};
+    const currentMembers = ((organizationData.members as string[] | undefined) ?? []).filter(
+      Boolean,
+    );
+    const userData = userSnapshot.data({ serverTimestamps: 'estimate' }) ?? {};
+    const currentOrganizationId = (userData.organizationId as string | null) ?? null;
+
+    if (currentOrganizationId && currentOrganizationId !== payload.organizationId) {
+      throw new Error('Usuário já está vinculado a outra organização.');
+    }
+
+    const nextMembers = currentMembers.includes(userId)
+      ? currentMembers
+      : [...currentMembers, userId];
+
+    transaction.update(organizationRef, {
+      members: nextMembers,
+      updatedAt: serverTimestamp(),
+    });
+    transaction.set(
+      userRef,
+      {
+        organizationId: payload.organizationId,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
+    transaction.delete(requestRef);
+
+    return {
+      uid: userId,
+      email: (userData.email as string) ?? (requestData.email as string) ?? '',
+      displayName:
+        (userData.displayName as string) ??
+        (requestData.displayName as string) ??
+        (requestData.email as string) ??
+        '',
+      photoURL:
+        (userData.photoURL as string | null) ??
+        (requestData.photoURL as string | null | undefined) ??
+        null,
+    };
+  });
+
+  ORGANIZATION_CACHE.invalidatePrefix(`${ORGANIZATION_LIST_CACHE_KEY}`);
+  ORGANIZATION_CACHE.remove(`${ORGANIZATION_DETAIL_CACHE_PREFIX}${payload.organizationId}`);
+  return member;
 };
 
 export const getUserOrganization = async (userId: string): Promise<Organization | null> => {
@@ -403,6 +709,89 @@ export const getUserOrganization = async (userId: string): Promise<Organization 
     return null;
   }
 };
+
+export const listenToPendingAccessRequestsByUser = (
+  userId: string,
+  onChange: (requests: OrganizationAccessRequest[]) => void,
+  onError?: (error: Error) => void,
+): Unsubscribe =>
+  onSnapshot(
+    query(
+      collectionGroup(firebaseFirestore, ACCESS_REQUESTS_SUBCOLLECTION),
+      where('userId', '==', userId),
+    ),
+    (snapshot) => {
+      const requests = snapshot.docs
+        .map((docSnapshot) => {
+          const data = docSnapshot.data({ serverTimestamps: 'estimate' });
+          if ((data.status as string | undefined) !== PENDING_ACCESS_STATUS) {
+            return null;
+          }
+          const organizationId = docSnapshot.ref.parent.parent?.id ?? '';
+          return mapAccessRequest(organizationId, docSnapshot.id, data);
+        })
+        .filter((request): request is OrganizationAccessRequest =>
+          Boolean(request?.organizationId),
+        );
+
+      onChange(
+        requests.sort(
+          (first, second) => (second.createdAt?.getTime() ?? 0) - (first.createdAt?.getTime() ?? 0),
+        ),
+      );
+    },
+    (error) => onError?.(error),
+  );
+
+export const listenToPendingAccessRequestsForOrganization = (
+  organizationId: string,
+  onChange: (requests: OrganizationAccessRequest[]) => void,
+  onError?: (error: Error) => void,
+): Unsubscribe =>
+  onSnapshot(
+    query(accessRequestsCollection(organizationId), where('status', '==', PENDING_ACCESS_STATUS)),
+    (snapshot) => {
+      const requests = snapshot.docs
+        .map((docSnapshot) =>
+          mapAccessRequest(
+            organizationId,
+            docSnapshot.id,
+            docSnapshot.data({ serverTimestamps: 'estimate' }),
+          ),
+        )
+        .sort(
+          (first, second) => (second.createdAt?.getTime() ?? 0) - (first.createdAt?.getTime() ?? 0),
+        );
+      onChange(requests);
+    },
+    (error) => onError?.(error),
+  );
+
+export const listenToAllPendingAccessRequests = (
+  onChange: (requests: OrganizationAccessRequest[]) => void,
+  onError?: (error: Error) => void,
+): Unsubscribe =>
+  onSnapshot(
+    query(collectionGroup(firebaseFirestore, ACCESS_REQUESTS_SUBCOLLECTION)),
+    (snapshot) => {
+      const requests = snapshot.docs
+        .map((docSnapshot) => {
+          const data = docSnapshot.data({ serverTimestamps: 'estimate' });
+          if ((data.status as string | undefined) !== PENDING_ACCESS_STATUS) {
+            return null;
+          }
+          const organizationId = docSnapshot.ref.parent.parent?.id ?? '';
+          return mapAccessRequest(organizationId, docSnapshot.id, data);
+        })
+        .filter((request): request is OrganizationAccessRequest => Boolean(request?.organizationId))
+        .sort(
+          (first, second) => (second.createdAt?.getTime() ?? 0) - (first.createdAt?.getTime() ?? 0),
+        );
+
+      onChange(requests);
+    },
+    (error) => onError?.(error),
+  );
 
 export const findOrganizationByEmailDomain = async (
   email: string,
@@ -476,7 +865,7 @@ export const addUserToOrganizationByEmailDomain = async (
 
     if (shouldAddMember) {
       transaction.update(organizationRef, {
-        members: arrayUnion(user.uid),
+        members: [...currentMembers, user.uid],
         updatedAt: serverTimestamp(),
       });
     }
@@ -502,7 +891,7 @@ export const addUserToOrganizationByEmailDomain = async (
 const mapOrganizationSummary = (
   id: string,
   data: Record<string, unknown> | undefined,
-): Promise<Organization> => {
+): Organization => {
   const memberIds = (data?.members as string[] | undefined) ?? [];
   const members: OrganizationMember[] = [];
   const browserstackCredentials = normalizeBrowserstackCredentials(
@@ -519,6 +908,7 @@ const mapOrganizationSummary = (
     browserstackCredentials,
     members,
     memberIds,
+    pendingAccessRequests: [],
     createdAt: timestampToDate(data?.createdAt),
     updatedAt: timestampToDate(data?.updatedAt),
   };
@@ -529,7 +919,10 @@ const mapOrganizationDetail = async (
   data: Record<string, unknown> | undefined,
 ): Promise<Organization> => {
   const memberIds = (data?.members as string[] | undefined) ?? [];
-  const members = await fetchMembers(memberIds);
+  const [members, pendingAccessRequests] = await Promise.all([
+    fetchMembers(memberIds),
+    listPendingAccessRequests(id),
+  ]);
   const browserstackCredentials = normalizeBrowserstackCredentials(
     (data?.browserstackCredentials as BrowserstackCredentials | null | undefined) ?? null,
   );
@@ -544,6 +937,7 @@ const mapOrganizationDetail = async (
     browserstackCredentials,
     members,
     memberIds,
+    pendingAccessRequests,
     createdAt: timestampToDate(data?.createdAt),
     updatedAt: timestampToDate(data?.updatedAt),
   };

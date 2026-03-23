@@ -9,7 +9,7 @@ import type {
   EnvironmentScenario,
   EnvironmentStatus,
 } from '../../../domain/entities/environment';
-import type { StoreScenario, StoreSuite } from '../../../domain/entities/store';
+import type { Store, StoreScenario, StoreSuite } from '../../../domain/entities/store';
 import type { UserSummary } from '../../../domain/entities/user';
 import { environmentService } from '../../../infrastructure/services/environmentService';
 import { userService } from '../../../infrastructure/services/userService';
@@ -24,6 +24,7 @@ import { ArchiveIcon, CheckCircleIcon, InboxIcon, ProgressIcon } from '../icons'
 
 interface EnvironmentKanbanProps {
   storeId: string;
+  storeStage?: Store['stage'] | null;
   suites: StoreSuite[];
   scenarios: StoreScenario[];
   environments: Environment[];
@@ -32,7 +33,7 @@ interface EnvironmentKanbanProps {
 }
 
 const COLUMNS: { status: EnvironmentStatus; title: string; Icon: typeof InboxIcon }[] = [
-  { status: 'backlog', title: 'Backlog', Icon: InboxIcon },
+  { status: 'backlog', title: 'environmentKanban.backlog', Icon: InboxIcon },
   { status: 'in_progress', title: 'environmentKanban.progress', Icon: ProgressIcon },
   { status: 'done', title: 'environmentKanban.done', Icon: CheckCircleIcon },
 ];
@@ -55,6 +56,7 @@ const cloneScenarioMap = (
 
 export const EnvironmentKanban = ({
   storeId,
+  storeStage,
   suites,
   scenarios,
   environments,
@@ -300,6 +302,7 @@ export const EnvironmentKanban = ({
       <header className="environment-kanban-header">
         <CreateEnvironmentCard
           storeId={storeId}
+          storeStage={storeStage}
           suites={suites}
           scenarios={scenarios}
           onCreated={handleEnvironmentCreated}
@@ -308,133 +311,133 @@ export const EnvironmentKanban = ({
 
       {hasArchivedEnvironments && (
         <p className="environment-kanban-archive-hint">
-          {archivedEnvironments.length} {t('environmentKanban.environment')}
-          {archivedEnvironments.length === 1 ? '' : 's'}{' '}
-          {t('environmentKanban.archivedEnvironments')}
-          {archivedEnvironments.length === 1 ? '' : 's'} {t('environmentKanban.consulted')}
-          {archivedEnvironments.length === 1 ? '' : 's'} {t('environmentKanban.below')}
+          {t('environmentKanban.archivedSummary', { count: archivedEnvironments.length })}
         </p>
       )}
 
       {isLoading ? (
         <p className="section-subtitle">{t('environmentKanban.loading')}</p>
       ) : (
-        <div className="environment-kanban-columns">
-          {COLUMNS.map((column) => {
-            const environmentsToRender =
-              column.status === 'done' ? activeDoneEnvironments : grouped[column.status];
+        <>
+          <div className="environment-kanban-columns">
+            {COLUMNS.map((column) => {
+              const environmentsToRender =
+                column.status === 'done' ? activeDoneEnvironments : grouped[column.status];
 
-            return (
-              <div
-                key={column.status}
-                className="environment-kanban-column"
-                onDragOver={handleDragOver}
-                onDrop={handleDrop(column.status)}
-              >
-                <div className="environment-kanban-column-header">
-                  <h4 className="environment-kanban-column-title">
-                    <column.Icon aria-hidden className="icon" />
-                    {t(column.title)}
-                  </h4>
-                  <span className="environment-kanban-column-count">
-                    {environmentsToRender.length}
-                  </span>
+              return (
+                <div
+                  key={column.status}
+                  className="environment-kanban-column"
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop(column.status)}
+                >
+                  <div className="environment-kanban-column-header">
+                    <h4 className="environment-kanban-column-title">
+                      <column.Icon aria-hidden className="icon" />
+                      {t(column.title)}
+                    </h4>
+                    <span className="environment-kanban-column-count">
+                      {environmentsToRender.length}
+                    </span>
+                  </div>
+                  {environmentsToRender.length === 0 ? (
+                    <p className="section-subtitle">{t('environmentKanban.noEnvironment')}</p>
+                  ) : (
+                    environmentsToRender.map((environment) => (
+                      <EnvironmentCard
+                        key={environment.id}
+                        environment={environment}
+                        participants={(environment.participants ?? [])
+                          .map((id) => userProfilesMap[id])
+                          .filter((user): user is UserSummary => Boolean(user))}
+                        suiteName={suiteNameByEnvironment[environment.id]}
+                        draggable
+                        onDragStart={handleDragStart}
+                        onOpen={handleOpenEnvironment}
+                        onClone={requestCloneEnvironment}
+                      />
+                    ))
+                  )}
                 </div>
-                {environmentsToRender.length === 0 ? (
-                  <p className="section-subtitle">{t('environmentKanban.noEnvironment')}</p>
-                ) : (
-                  environmentsToRender.map((environment) => (
-                    <EnvironmentCard
-                      key={environment.id}
-                      environment={environment}
-                      participants={(environment.participants ?? [])
-                        .map((id) => userProfilesMap[id])
-                        .filter((user): user is UserSummary => Boolean(user))}
-                      suiteName={suiteNameByEnvironment[environment.id]}
-                      draggable
-                      onDragStart={handleDragStart}
-                      onOpen={handleOpenEnvironment}
-                      onClone={requestCloneEnvironment}
-                    />
-                  ))
-                )}
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
 
           {archivedEnvironments.length > 0 && (
-            <div
-              className={[
-                'environment-kanban-column environment-kanban-column--archived',
-                isArchiveMinimized ? 'environment-kanban-column--collapsed' : null,
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop('done')}
-            >
-              <div className="environment-kanban-column-header">
-                <div className="environment-kanban-column-title">
-                  <h4 className="environment-kanban-archived-title">
-                    <ArchiveIcon aria-hidden className="icon" />
-                    {t('environmentKanban.archived')}
-                  </h4>
-                  <button
-                    type="button"
-                    className="environment-kanban-archive-toggle"
-                    onClick={() => setIsArchiveMinimized((previous) => !previous)}
-                    aria-expanded={!isArchiveMinimized}
-                    aria-controls="environment-kanban-archived-list"
-                  >
-                    {isArchiveMinimized ? t('environmentKanban.max') : t('environmentKanban.min')}
-                  </button>
+            <div className="environment-kanban-archived-row">
+              <div
+                className={[
+                  'environment-kanban-column environment-kanban-column--archived',
+                  isArchiveMinimized ? 'environment-kanban-column--collapsed' : null,
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop('done')}
+              >
+                <div className="environment-kanban-column-header">
+                  <div className="environment-kanban-column-title">
+                    <h4 className="environment-kanban-archived-title">
+                      <ArchiveIcon aria-hidden className="icon" />
+                      {t('environmentKanban.archived')}
+                    </h4>
+                    <button
+                      type="button"
+                      className="environment-kanban-archive-toggle"
+                      onClick={() => setIsArchiveMinimized((previous) => !previous)}
+                      aria-expanded={!isArchiveMinimized}
+                      aria-controls="environment-kanban-archived-list"
+                    >
+                      {isArchiveMinimized ? t('environmentKanban.max') : t('environmentKanban.min')}
+                    </button>
+                  </div>
+                  <span className="environment-kanban-column-count">
+                    {archivedEnvironments.length}
+                  </span>
                 </div>
-                <span className="environment-kanban-column-count">
-                  {archivedEnvironments.length}
-                </span>
-              </div>
 
-              {isArchiveMinimized ? (
-                <p className="environment-kanban-archive-placeholder">
-                  {t('environmentKanban.maxEnvironment')}
-                </p>
-              ) : (
-                <div
-                  id="environment-kanban-archived-list"
-                  className="environment-kanban-archived-list"
-                >
-                  {paginatedArchivedEnvironments.map((environment) => (
-                    <EnvironmentCard
-                      key={environment.id}
-                      environment={environment}
-                      participants={(environment.participants ?? [])
-                        .map((id) => userProfilesMap[id])
-                        .filter((user): user is UserSummary => Boolean(user))}
-                      suiteName={suiteNameByEnvironment[environment.id]}
-                      draggable
-                      onDragStart={handleDragStart}
-                      onOpen={handleOpenEnvironment}
-                      onClone={requestCloneEnvironment}
-                    />
-                  ))}
-                </div>
-              )}
-              {!isArchiveMinimized && (
-                <PaginationControls
-                  total={archivedEnvironments.length}
-                  visible={paginatedArchivedEnvironments.length}
-                  step={PAGE_SIZE}
-                  onShowLess={() => setArchivedVisibleCount(PAGE_SIZE)}
-                  onShowMore={() =>
-                    setArchivedVisibleCount((previous) =>
-                      Math.min(previous + PAGE_SIZE, archivedEnvironments.length),
-                    )
-                  }
-                />
-              )}
+                {isArchiveMinimized ? (
+                  <p className="environment-kanban-archive-placeholder">
+                    {t('environmentKanban.maxEnvironment')}
+                  </p>
+                ) : (
+                  <div
+                    id="environment-kanban-archived-list"
+                    className="environment-kanban-archived-list"
+                  >
+                    {paginatedArchivedEnvironments.map((environment) => (
+                      <EnvironmentCard
+                        key={environment.id}
+                        environment={environment}
+                        participants={(environment.participants ?? [])
+                          .map((id) => userProfilesMap[id])
+                          .filter((user): user is UserSummary => Boolean(user))}
+                        suiteName={suiteNameByEnvironment[environment.id]}
+                        draggable
+                        onDragStart={handleDragStart}
+                        onOpen={handleOpenEnvironment}
+                        onClone={requestCloneEnvironment}
+                      />
+                    ))}
+                  </div>
+                )}
+                {!isArchiveMinimized && (
+                  <PaginationControls
+                    total={archivedEnvironments.length}
+                    visible={paginatedArchivedEnvironments.length}
+                    step={PAGE_SIZE}
+                    onShowLess={() => setArchivedVisibleCount(PAGE_SIZE)}
+                    onShowMore={() =>
+                      setArchivedVisibleCount((previous) =>
+                        Math.min(previous + PAGE_SIZE, archivedEnvironments.length),
+                      )
+                    }
+                  />
+                )}
+              </div>
             </div>
           )}
-        </div>
+        </>
       )}
 
       <Modal

@@ -1,12 +1,17 @@
-import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
-import type { Organization, OrganizationMember } from '../../domain/entities/organization';
-import type { BrowserstackBuild } from '../../domain/entities/browserstack';
+import type { Organization, OrganizationAccessRequest } from '../../domain/entities/organization';
+import type { Store } from '../../domain/entities/store';
 import type { UserSummary } from '../../domain/entities/user';
+import {
+  listenToOrganizationDetail,
+  listenToOrganizationsSummary,
+  listenToPendingAccessRequestsForOrganization,
+} from '../../infrastructure/external/organizations';
 import { organizationService } from '../../infrastructure/services/organizationService';
 import { storeService } from '../../infrastructure/services/storeService';
-import { browserstackService } from '../../infrastructure/services/browserstackService';
 import { userService } from '../../infrastructure/services/userService';
 import { useStoresRealtime } from '../context/StoresRealtimeContext';
 import { useToast } from '../context/ToastContext';
@@ -14,48 +19,53 @@ import { useOrganizationBranding } from '../context/OrganizationBrandingContext'
 import { Layout } from '../components/Layout';
 import { BackButton } from '../components/BackButton';
 import { Button } from '../components/Button';
-import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
-import { TextInput } from '../components/TextInput';
-import { Modal } from '../components/Modal';
 import { UserAvatar } from '../components/UserAvatar';
-import { BrowserstackKanban } from '../components/browserstack/BrowserstackKanban';
-import { StoreScenarioComparisonChart } from '../components/StoreScenarioComparisonChart';
-import { SettingsIcon, StorefrontIcon, UsersGroupIcon } from '../components/icons';
 import { CachedImage } from '../components/CachedImage';
-import { useTranslation } from 'react-i18next';
-
-interface StoreForm {
-  name: string;
-  site: string;
-}
+import { Modal } from '../components/Modal';
+import { TextInput } from '../components/TextInput';
+import { SelectInput } from '../components/SelectInput';
+import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
+import {
+  ActivityIcon,
+  PieChartIcon,
+  SettingsIcon,
+  StorefrontIcon,
+  UsersGroupIcon,
+} from '../components/icons';
 
 interface OrganizationFormState {
   name: string;
   slackWebhookUrl: string;
   emailDomain: string;
-  browserstackUsername: string;
-  browserstackAccessKey: string;
 }
 
-const initialStoreForm: StoreForm = {
+interface StoreFormState {
+  name: string;
+  site: string;
+  adminUrl: string;
+  logoUrl: string;
+  stage: 'WS' | 'Preview';
+}
+
+const createOrganizationFormState = (organization: Organization | null): OrganizationFormState => ({
+  name: organization?.name ?? '',
+  slackWebhookUrl: organization?.slackWebhookUrl ?? '',
+  emailDomain: organization?.emailDomain ?? '',
+});
+
+const createEmptyStoreFormState = (): StoreFormState => ({
   name: '',
   site: '',
-};
-
-const initialOrganizationForm: OrganizationFormState = {
-  name: '',
-  slackWebhookUrl: '',
-  emailDomain: '',
-  browserstackUsername: '',
-  browserstackAccessKey: '',
-};
+  adminUrl: '',
+  logoUrl: '',
+  stage: 'WS',
+});
 
 export const AdminStoresPage = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { setActiveOrganization } = useOrganizationBranding();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>('');
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const { organizationId: activeOrganizationId, stores, isLoading, error } = useStoresRealtime();
@@ -66,62 +76,52 @@ export const AdminStoresPage = () => {
   const isLoadingStores = Boolean(
     activeOrganizationId && activeOrganizationId === selectedOrganizationId && isLoading,
   );
-  const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
   const [isOrganizationLocked, setIsOrganizationLocked] = useState(false);
-  const [storeForm, setStoreForm] = useState<StoreForm>(initialStoreForm);
-  const [isSavingStore, setIsSavingStore] = useState(false);
-  const [storeError, setStoreError] = useState<string | null>(null);
   const [isOrganizationModalOpen, setIsOrganizationModalOpen] = useState(false);
-  const [organizationForm, setOrganizationForm] =
-    useState<OrganizationFormState>(initialOrganizationForm);
+  const [organizationForm, setOrganizationForm] = useState<OrganizationFormState>(
+    createOrganizationFormState(null),
+  );
   const [organizationLogoFile, setOrganizationLogoFile] = useState<File | null>(null);
   const [organizationLogoPreview, setOrganizationLogoPreview] = useState<string | null>(null);
-  const [isOrganizationSlackSectionOpen, setIsOrganizationSlackSectionOpen] = useState(false);
-  const [isOrganizationBrowserstackSectionOpen, setIsOrganizationBrowserstackSectionOpen] =
-    useState(false);
   const [organizationError, setOrganizationError] = useState<string | null>(null);
+  const [isOrganizationSlackSectionOpen, setIsOrganizationSlackSectionOpen] = useState(false);
   const [isSavingOrganization, setIsSavingOrganization] = useState(false);
-  const [isManagingMembers, setIsManagingMembers] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState('');
   const [userSuggestions, setUserSuggestions] = useState<UserSummary[]>([]);
   const [isSearchingUsers, setIsSearchingUsers] = useState(false);
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{
-    message: string;
-    description?: string;
-    onConfirm: () => Promise<void> | void;
-  } | null>(null);
-  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
-  const [browserstackBuilds, setBrowserstackBuilds] = useState<BrowserstackBuild[]>([]);
-  const [isLoadingBrowserstack, setIsLoadingBrowserstack] = useState(false);
+  const [isManagingMembers, setIsManagingMembers] = useState(false);
+  const [pendingAccessRequests, setPendingAccessRequests] = useState<OrganizationAccessRequest[]>(
+    [],
+  );
+  const [approvingRequestId, setApprovingRequestId] = useState<string | null>(null);
+  const [organizationDeleteModalOpen, setOrganizationDeleteModalOpen] = useState(false);
+  const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
+  const [editingStore, setEditingStore] = useState<Store | null>(null);
+  const [storeForm, setStoreForm] = useState<StoreFormState>(createEmptyStoreFormState());
+  const [storeLogoFile, setStoreLogoFile] = useState<File | null>(null);
+  const [storeLogoPreview, setStoreLogoPreview] = useState<string | null>(null);
+  const [storeError, setStoreError] = useState<string | null>(null);
+  const [isSavingStore, setIsSavingStore] = useState(false);
+  const [storeDeleteModalOpen, setStoreDeleteModalOpen] = useState(false);
   const { t: translation } = useTranslation();
-  const scenarioChartData = useMemo(() => {
-    return storesForOrganization
-      .map((store) => {
-        const automated = store.automatedScenarioCount ?? 0;
-        const notAutomated =
-          store.notAutomatedScenarioCount ?? Math.max(store.scenarioCount - automated, 0);
-        const total = store.scenarioCount || automated + notAutomated;
 
-        return {
-          label: store.name,
-          automated,
-          notAutomated,
-          total,
-        };
-      })
-      .sort(
-        (first, second) => second.total - first.total || first.label.localeCompare(second.label),
-      );
-  }, [storesForOrganization]);
-  const hasScenarioChartData = scenarioChartData.some((item) => item.total > 0);
-  const organizationLogoSource = organizationLogoPreview ?? selectedOrganization?.logoUrl ?? null;
+  const totalScenarios = useMemo(
+    () => storesForOrganization.reduce((sum, store) => sum + (store.scenarioCount ?? 0), 0),
+    [storesForOrganization],
+  );
+  const totalAutomated = useMemo(
+    () =>
+      storesForOrganization.reduce((sum, store) => sum + (store.automatedScenarioCount ?? 0), 0),
+    [storesForOrganization],
+  );
+  const totalManual = Math.max(totalScenarios - totalAutomated, 0);
+  const automationRate =
+    totalScenarios > 0 ? Math.round((totalAutomated / totalScenarios) * 100) : 0;
 
   useEffect(() => {
-    const fetchOrganizations = async () => {
-      try {
-        const data = await organizationService.listSummary();
-        setOrganizations(data);
-        const organizationFromParam = searchParams.get('Id');
+    const organizationFromParam = searchParams.get('Id');
+    const unsubscribe = listenToOrganizationsSummary(
+      (data) => {
         const hasValidOrganizationParam = Boolean(
           organizationFromParam && data.some((item) => item.id === organizationFromParam),
         );
@@ -133,18 +133,22 @@ export const AdminStoresPage = () => {
         }
 
         setIsOrganizationLocked(false);
-        if (data.length > 0) {
-          setSelectedOrganizationId(data[0].id);
-        } else {
-          setSelectedOrganizationId('');
-        }
-      } catch (error) {
-        console.error(error);
-        showToast({ type: 'error', message: translation('AdminStoresPage.toast-error-load-orgs') });
-      }
-    };
+        setSelectedOrganizationId((currentValue) => {
+          if (currentValue && data.some((item) => item.id === currentValue)) {
+            return currentValue;
+          }
 
-    void fetchOrganizations();
+          return data[0]?.id ?? '';
+        });
+      },
+      () => {
+        showToast({ type: 'error', message: translation('AdminStoresPage.toast-error-load-orgs') });
+      },
+    );
+
+    return () => {
+      unsubscribe();
+    };
   }, [searchParams, showToast, translation]);
 
   useEffect(() => {
@@ -166,10 +170,20 @@ export const AdminStoresPage = () => {
     });
   }, [error, showToast, translation]);
 
-  const selectedOrganizationSummary = useMemo(
-    () => organizations.find((organization) => organization.id === selectedOrganizationId) ?? null,
-    [organizations, selectedOrganizationId],
-  );
+  useEffect(() => {
+    if (!selectedOrganizationId) {
+      setPendingAccessRequests([]);
+      return;
+    }
+
+    return listenToPendingAccessRequestsForOrganization(
+      selectedOrganizationId,
+      setPendingAccessRequests,
+      () => {
+        setPendingAccessRequests([]);
+      },
+    );
+  }, [selectedOrganizationId, translation]);
 
   useEffect(() => {
     if (!selectedOrganizationId) {
@@ -177,33 +191,14 @@ export const AdminStoresPage = () => {
       return;
     }
 
-    setSelectedOrganization(selectedOrganizationSummary);
-  }, [selectedOrganizationId, selectedOrganizationSummary]);
-
-  useEffect(() => {
-    if (!selectedOrganizationId) {
-      return;
-    }
-
-    let isMounted = true;
-
-    const fetchOrganizationDetail = async () => {
-      try {
-        const detail = await organizationService.getDetail(selectedOrganizationId);
-        if (isMounted && detail) {
-          setSelectedOrganization(detail);
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    void fetchOrganizationDetail();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [selectedOrganizationId]);
+    return listenToOrganizationDetail(
+      selectedOrganizationId,
+      (detail) => setSelectedOrganization(detail),
+      () => {
+        setOrganizationError(translation('AdminStoresPage.toast-error-save-org'));
+      },
+    );
+  }, [selectedOrganizationId, translation]);
 
   useEffect(() => {
     setActiveOrganization(selectedOrganization ?? null);
@@ -212,9 +207,40 @@ export const AdminStoresPage = () => {
   useEffect(() => () => setActiveOrganization(null), [setActiveOrganization]);
 
   useEffect(() => {
+    if (!selectedOrganization) {
+      return;
+    }
+
+    setOrganizationForm(createOrganizationFormState(selectedOrganization));
+    setIsOrganizationSlackSectionOpen(Boolean(selectedOrganization.slackWebhookUrl?.trim()));
+  }, [selectedOrganization]);
+
+  useEffect(() => {
+    if (!organizationLogoFile) {
+      setOrganizationLogoPreview(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(organizationLogoFile);
+    setOrganizationLogoPreview(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [organizationLogoFile]);
+
+  useEffect(() => {
+    if (!storeLogoFile) {
+      setStoreLogoPreview(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(storeLogoFile);
+    setStoreLogoPreview(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [storeLogoFile]);
+
+  useEffect(() => {
     const searchTerm = newMemberEmail.trim();
 
-    if (!searchTerm) {
+    if (!searchTerm || !isOrganizationModalOpen) {
       setUserSuggestions([]);
       return;
     }
@@ -229,8 +255,7 @@ export const AdminStoresPage = () => {
             : results;
 
           setUserSuggestions(filteredResults);
-        } catch (error) {
-          console.error(error);
+        } catch {
           setUserSuggestions([]);
         } finally {
           setIsSearchingUsers(false);
@@ -240,185 +265,50 @@ export const AdminStoresPage = () => {
       void fetchSuggestions();
     }, 250);
 
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [newMemberEmail, selectedOrganization]);
+    return () => window.clearTimeout(timeoutId);
+  }, [isOrganizationModalOpen, newMemberEmail, selectedOrganization]);
 
-  const selectedOrganizationCredentials = selectedOrganization?.browserstackCredentials ?? null;
-  const hasBrowserstackCredentials = useMemo(
-    () =>
-      Boolean(
-        selectedOrganizationCredentials?.username && selectedOrganizationCredentials?.accessKey,
-      ),
-    [selectedOrganizationCredentials?.accessKey, selectedOrganizationCredentials?.username],
-  );
-
-  const loadBrowserstackBuilds = useCallback(async () => {
-    if (!selectedOrganizationCredentials || !hasBrowserstackCredentials) {
-      setBrowserstackBuilds([]);
-      return;
+  const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>, callback: () => void) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      callback();
     }
-
-    try {
-      setIsLoadingBrowserstack(true);
-      const builds = await browserstackService.listBuilds(selectedOrganizationCredentials);
-      setBrowserstackBuilds(builds);
-    } catch (error) {
-      console.error(error);
-      const message =
-        error instanceof Error
-          ? error.message
-          : translation('AdminStoresPage.toast-error-load-browserstack');
-
-      setBrowserstackBuilds([]);
-      showToast({ type: 'error', message });
-    } finally {
-      setIsLoadingBrowserstack(false);
-    }
-  }, [hasBrowserstackCredentials, selectedOrganizationCredentials, showToast, translation]);
-
-  useEffect(() => {
-    void loadBrowserstackBuilds();
-  }, [loadBrowserstackBuilds]);
-
-  useEffect(() => {
-    if (!organizationLogoFile) {
-      setOrganizationLogoPreview(null);
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(organizationLogoFile);
-    setOrganizationLogoPreview(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [organizationLogoFile]);
-
-  const openCreateModal = () => {
-    setStoreForm(initialStoreForm);
-    setStoreError(null);
-    setIsStoreModalOpen(true);
-  };
-
-  const closeStoreModal = () => {
-    setIsStoreModalOpen(false);
-    setStoreForm(initialStoreForm);
-    setStoreError(null);
   };
 
   const openOrganizationModal = () => {
-    if (!selectedOrganization) {
-      return;
-    }
-
-    const slackWebhookUrl = selectedOrganization.slackWebhookUrl ?? '';
-    const emailDomain = selectedOrganization.emailDomain ?? '';
-    const browserstackUsername = selectedOrganization.browserstackCredentials?.username ?? '';
-    const browserstackAccessKey = selectedOrganization.browserstackCredentials?.accessKey ?? '';
-
-    setOrganizationForm({
-      name: selectedOrganization.name,
-      slackWebhookUrl,
-      emailDomain,
-      browserstackUsername,
-      browserstackAccessKey,
-    });
-    setIsOrganizationSlackSectionOpen(Boolean(slackWebhookUrl.trim()));
-    setIsOrganizationBrowserstackSectionOpen(
-      Boolean(browserstackUsername.trim() || browserstackAccessKey.trim()),
-    );
     setOrganizationError(null);
     setOrganizationLogoFile(null);
+    setNewMemberEmail('');
+    setUserSuggestions([]);
+    setOrganizationForm(createOrganizationFormState(selectedOrganization));
     setIsOrganizationModalOpen(true);
   };
 
   const closeOrganizationModal = () => {
     setIsOrganizationModalOpen(false);
     setOrganizationError(null);
-    setIsOrganizationSlackSectionOpen(false);
-    setIsOrganizationBrowserstackSectionOpen(false);
-    setOrganizationForm(initialOrganizationForm);
     setOrganizationLogoFile(null);
     setOrganizationLogoPreview(null);
     setNewMemberEmail('');
     setUserSuggestions([]);
   };
 
-  const toggleOrganizationSlackSection = () => {
-    setIsOrganizationSlackSectionOpen((previous) => {
-      const nextValue = !previous;
-
-      if (!nextValue) {
-        setOrganizationForm((form) => ({ ...form, slackWebhookUrl: '' }));
-      }
-
-      return nextValue;
-    });
-  };
-
-  const toggleOrganizationBrowserstackSection = () => {
-    setIsOrganizationBrowserstackSectionOpen((previous) => {
-      const nextValue = !previous;
-
-      if (!nextValue) {
-        setOrganizationForm((form) => ({
-          ...form,
-          browserstackUsername: '',
-          browserstackAccessKey: '',
-        }));
-      }
-
-      return nextValue;
-    });
-  };
-
-  const handleStoreSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const openCreateStoreModal = () => {
+    setEditingStore(null);
+    setStoreForm(createEmptyStoreFormState());
+    setStoreLogoFile(null);
+    setStoreLogoPreview(null);
     setStoreError(null);
+    setIsStoreModalOpen(true);
+  };
 
-    const trimmedName = storeForm.name.trim();
-    const trimmedSite = storeForm.site.trim();
-
-    if (!selectedOrganizationId) {
-      setStoreError(translation('AdminStoresPage.form-error-no-org-selected'));
-      return;
-    }
-
-    if (!trimmedName) {
-      setStoreError(translation('AdminStoresPage.form-error-no-store-name'));
-      return;
-    }
-
-    if (!trimmedSite) {
-      setStoreError(translation('AdminStoresPage.form-error-no-store-site'));
-      return;
-    }
-
-    try {
-      setIsSavingStore(true);
-
-      await storeService.create({
-        organizationId: selectedOrganizationId,
-        name: trimmedName,
-        site: trimmedSite,
-        stage: '',
-      });
-
-      showToast({
-        type: 'success',
-        message: translation('AdminStoresPage.toast-success-store-created'),
-      });
-      closeStoreModal();
-    } catch (error) {
-      console.error(error);
-      const message =
-        error instanceof Error
-          ? error.message
-          : translation('AdminStoresPage.toast-error-save-store');
-      setStoreError(message);
-      showToast({ type: 'error', message });
-    } finally {
-      setIsSavingStore(false);
-    }
+  const closeStoreModal = () => {
+    setIsStoreModalOpen(false);
+    setEditingStore(null);
+    setStoreForm(createEmptyStoreFormState());
+    setStoreLogoFile(null);
+    setStoreLogoPreview(null);
+    setStoreError(null);
   };
 
   const handleOrganizationSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -441,74 +331,29 @@ export const AdminStoresPage = () => {
         ? organizationForm.slackWebhookUrl.trim()
         : '';
       const emailDomain = organizationForm.emailDomain.trim();
-      const browserstackUsername = isOrganizationBrowserstackSectionOpen
-        ? organizationForm.browserstackUsername.trim()
-        : '';
-      const browserstackAccessKey = isOrganizationBrowserstackSectionOpen
-        ? organizationForm.browserstackAccessKey.trim()
-        : '';
       const logoUrl = organizationLogoFile
         ? await organizationService.uploadLogo(selectedOrganization.id, organizationLogoFile)
         : undefined;
 
-      const updated = await organizationService.update(selectedOrganization.id, {
+      await organizationService.update(selectedOrganization.id, {
         name: trimmedName,
         description: (selectedOrganization.description ?? '').trim(),
         ...(logoUrl !== undefined ? { logoUrl } : {}),
         slackWebhookUrl,
         emailDomain,
-        browserstackCredentials:
-          browserstackUsername || browserstackAccessKey
-            ? {
-                username: browserstackUsername,
-                accessKey: browserstackAccessKey,
-              }
-            : null,
       });
 
-      setOrganizations((previous) =>
-        previous.map((organization) => (organization.id === updated.id ? updated : organization)),
-      );
-      setSelectedOrganization((previous) => (previous?.id === updated.id ? updated : previous));
       showToast({
         type: 'success',
         message: translation('AdminStoresPage.toast-success-org-updated'),
       });
       closeOrganizationModal();
-    } catch (error) {
-      console.error(error);
+    } catch (saveError) {
       const message =
-        error instanceof Error
-          ? error.message
+        saveError instanceof Error
+          ? saveError.message
           : translation('AdminStoresPage.toast-error-save-org');
       setOrganizationError(message);
-      showToast({ type: 'error', message });
-    } finally {
-      setIsSavingOrganization(false);
-    }
-  };
-
-  const handleDeleteOrganization = async (organization: Organization) => {
-    try {
-      setIsSavingOrganization(true);
-      await organizationService.delete(organization.id);
-      const remainingOrganizations = organizations.filter((item) => item.id !== organization.id);
-      setOrganizations(remainingOrganizations);
-      closeOrganizationModal();
-      showToast({
-        type: 'success',
-        message: translation('AdminStoresPage.toast-success-org-removed'),
-      });
-
-      setSelectedOrganizationId('');
-      setSearchParams({});
-      navigate('/admin');
-    } catch (error) {
-      console.error(error);
-      const message =
-        error instanceof Error
-          ? error.message
-          : translation('AdminStoresPage.toast-error-remove-org');
       showToast({ type: 'error', message });
     } finally {
       setIsSavingOrganization(false);
@@ -524,47 +369,23 @@ export const AdminStoresPage = () => {
     const trimmedEmail = newMemberEmail.trim();
     if (!trimmedEmail) {
       setOrganizationError(translation('AdminStoresPage.member-add-email-required'));
-
       return;
     }
 
     const normalizedEmail = trimmedEmail.toLowerCase();
-
     if (
       selectedOrganization.members.some((member) => member.email.toLowerCase() === normalizedEmail)
     ) {
       setOrganizationError(translation('AdminStoresPage.member-add-already-linked'));
-
       return;
     }
+
     try {
       setIsManagingMembers(true);
-      const member = await organizationService.addUser({
+      await organizationService.addUser({
         organizationId: selectedOrganization.id,
         userEmail: trimmedEmail,
       });
-
-      setOrganizations((previous) =>
-        previous.map((organization) =>
-          organization.id === selectedOrganization.id
-            ? {
-                ...organization,
-                members: [...organization.members, member],
-                memberIds: [...organization.memberIds, member.uid],
-              }
-            : organization,
-        ),
-      );
-      setSelectedOrganization((previous) =>
-        previous?.id === selectedOrganization.id
-          ? {
-              ...previous,
-              members: [...previous.members, member],
-              memberIds: [...previous.memberIds, member.uid],
-            }
-          : previous,
-      );
-
       setNewMemberEmail('');
       setUserSuggestions([]);
       setOrganizationError(null);
@@ -572,12 +393,11 @@ export const AdminStoresPage = () => {
         type: 'success',
         message: translation('AdminStoresPage.toast-success-member-added'),
       });
-    } catch (error) {
-      console.error(error);
+    } catch (memberError) {
       const message =
-        error instanceof Error
-          ? error.message
-          : translation('AdminStoresPage.toast-error-add-member');
+        memberError instanceof Error
+          ? memberError.message
+          : translation('AdminStoresPage.toast-error-save-org');
       setOrganizationError(message);
       showToast({ type: 'error', message });
     } finally {
@@ -585,7 +405,7 @@ export const AdminStoresPage = () => {
     }
   };
 
-  const handleRemoveMember = async (member: OrganizationMember) => {
+  const handleRemoveMember = async (memberUid: string) => {
     if (!selectedOrganization) {
       return;
     }
@@ -594,104 +414,188 @@ export const AdminStoresPage = () => {
       setIsManagingMembers(true);
       await organizationService.removeUser({
         organizationId: selectedOrganization.id,
-        userId: member.uid,
+        userId: memberUid,
       });
-
-      setOrganizations((previous) =>
-        previous.map((organization) =>
-          organization.id === selectedOrganization.id
-            ? {
-                ...organization,
-                members: organization.members.filter((item) => item.uid !== member.uid),
-                memberIds: organization.memberIds.filter((item) => item !== member.uid),
-              }
-            : organization,
-        ),
-      );
-      setSelectedOrganization((previous) =>
-        previous?.id === selectedOrganization.id
-          ? {
-              ...previous,
-              members: previous.members.filter((item) => item.uid !== member.uid),
-              memberIds: previous.memberIds.filter((item) => item !== member.uid),
-            }
-          : previous,
-      );
-
       showToast({
         type: 'success',
         message: translation('AdminStoresPage.toast-success-member-removed'),
       });
-    } catch (error) {
-      console.error(error);
+    } catch (memberError) {
       const message =
-        error instanceof Error
-          ? error.message
-          : translation('AdminStoresPage.toast-error-remove-member');
+        memberError instanceof Error
+          ? memberError.message
+          : translation('AdminStoresPage.toast-error-save-org');
+      setOrganizationError(message);
       showToast({ type: 'error', message });
     } finally {
       setIsManagingMembers(false);
     }
   };
 
-  const openDeleteOrganizationModal = () => {
+  const handleApproveAccessRequest = async (requestId: string) => {
     if (!selectedOrganization) {
-      return;
-    }
-
-    setDeleteConfirmation({
-      message: translation('AdminStoresPage.confirm-delete-org-message', {
-        organizationName: selectedOrganization.name,
-      }),
-      description: translation('AdminStoresPage.confirm-delete-org-description'),
-      onConfirm: () => handleDeleteOrganization(selectedOrganization),
-    });
-  };
-
-  const openRemoveMemberModal = (member: OrganizationMember) => {
-    if (!selectedOrganization) {
-      return;
-    }
-
-    setDeleteConfirmation({
-      message: translation('AdminStoresPage.confirm-remove-member-message', {
-        memberName: member.displayName || member.email,
-      }),
-      description: translation('AdminStoresPage.confirm-remove-member-description', {
-        organizationName: selectedOrganization.name,
-      }),
-      onConfirm: () => handleRemoveMember(member),
-    });
-  };
-
-  const closeDeleteConfirmation = () => {
-    if (isConfirmingDelete) {
-      return;
-    }
-
-    setDeleteConfirmation(null);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!deleteConfirmation) {
       return;
     }
 
     try {
-      setIsConfirmingDelete(true);
-      await deleteConfirmation.onConfirm();
+      setApprovingRequestId(requestId);
+      await organizationService.approveAccessRequest({
+        organizationId: selectedOrganization.id,
+        requestId,
+      });
+      setOrganizationError(null);
+      showToast({
+        type: 'success',
+        message: translation('AdminStoresPage.pending-request-approved'),
+      });
+    } catch (requestError) {
+      const message =
+        requestError instanceof Error
+          ? requestError.message
+          : translation('AdminStoresPage.pending-request-error');
+      setOrganizationError(message);
+      showToast({ type: 'error', message });
     } finally {
-      setIsConfirmingDelete(false);
-      setDeleteConfirmation(null);
+      setApprovingRequestId(null);
     }
   };
 
-  const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>, callback: () => void) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      callback();
+  const handleDeleteOrganization = async () => {
+    if (!selectedOrganization) {
+      return;
+    }
+
+    try {
+      setIsSavingOrganization(true);
+      await organizationService.delete(selectedOrganization.id);
+      showToast({
+        type: 'success',
+        message: translation('AdminStoresPage.toast-success-org-removed'),
+      });
+      setOrganizationDeleteModalOpen(false);
+      closeOrganizationModal();
+      navigate('/admin');
+    } catch (deleteError) {
+      const message =
+        deleteError instanceof Error
+          ? deleteError.message
+          : translation('AdminStoresPage.toast-error-save-org');
+      setOrganizationError(message);
+      showToast({ type: 'error', message });
+    } finally {
+      setIsSavingOrganization(false);
     }
   };
+
+  const handleStoreSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setStoreError(null);
+
+    const organizationId = selectedOrganization?.id ?? selectedOrganizationId;
+    const trimmedName = storeForm.name.trim();
+    const trimmedSite = storeForm.site.trim();
+    const trimmedAdminUrl = storeForm.adminUrl.trim();
+
+    if (!organizationId) {
+      setStoreError(translation('AdminStoresPage.form-error-no-org-selected'));
+      return;
+    }
+
+    if (!trimmedName) {
+      setStoreError(translation('AdminStoresPage.form-error-no-store-name'));
+      return;
+    }
+
+    if (!trimmedSite) {
+      setStoreError(translation('AdminStoresPage.form-error-no-store-site'));
+      return;
+    }
+
+    try {
+      setIsSavingStore(true);
+
+      if (editingStore) {
+        const logoUrl = storeLogoFile
+          ? await storeService.uploadLogo(editingStore.id, storeLogoFile)
+          : storeForm.logoUrl || null;
+
+        await storeService.update(editingStore.id, {
+          name: trimmedName,
+          site: trimmedSite,
+          adminUrl: trimmedAdminUrl,
+          stage: storeForm.stage,
+          logoUrl,
+        });
+
+        showToast({
+          type: 'success',
+          message: translation('storeSummary.storeUpdateSuccess'),
+        });
+      } else {
+        const createdStore = await storeService.create({
+          organizationId,
+          name: trimmedName,
+          site: trimmedSite,
+          adminUrl: trimmedAdminUrl,
+          stage: storeForm.stage,
+          logoUrl: null,
+        });
+
+        if (storeLogoFile) {
+          const logoUrl = await storeService.uploadLogo(createdStore.id, storeLogoFile);
+          await storeService.update(createdStore.id, {
+            name: trimmedName,
+            site: trimmedSite,
+            adminUrl: trimmedAdminUrl,
+            stage: storeForm.stage,
+            logoUrl,
+          });
+        }
+
+        showToast({
+          type: 'success',
+          message: translation('AdminStoresPage.toast-success-store-created'),
+        });
+      }
+
+      closeStoreModal();
+    } catch (saveError) {
+      const message =
+        saveError instanceof Error
+          ? saveError.message
+          : translation('AdminStoresPage.toast-error-save-store');
+      setStoreError(message);
+      showToast({ type: 'error', message });
+    } finally {
+      setIsSavingStore(false);
+    }
+  };
+
+  const handleDeleteStore = async () => {
+    if (!editingStore) {
+      return;
+    }
+
+    try {
+      setIsSavingStore(true);
+      await storeService.delete(editingStore.id);
+      showToast({ type: 'success', message: translation('storeSummary.storeRemoveSuccess') });
+      setStoreDeleteModalOpen(false);
+      closeStoreModal();
+    } catch (deleteError) {
+      const message =
+        deleteError instanceof Error
+          ? deleteError.message
+          : translation('storeSummary.storeRemoveError');
+      setStoreError(message);
+      showToast({ type: 'error', message });
+    } finally {
+      setIsSavingStore(false);
+    }
+  };
+
+  const organizationLogoSource = organizationLogoPreview ?? selectedOrganization?.logoUrl ?? null;
+  const storeLogoSource = storeLogoPreview ?? storeForm.logoUrl ?? null;
 
   return (
     <Layout>
@@ -733,7 +637,7 @@ export const AdminStoresPage = () => {
             )}
             <Button
               type="button"
-              onClick={openCreateModal}
+              onClick={openCreateStoreModal}
               disabled={!selectedOrganizationId}
               data-testid="new-store-button"
             >
@@ -741,6 +645,37 @@ export const AdminStoresPage = () => {
             </Button>
           </div>
         </div>
+
+        <section className="dashboard-kpi-grid">
+          <article className="dashboard-kpi-card">
+            <span className="dashboard-kpi-card__icon">
+              <StorefrontIcon className="icon icon--lg" />
+            </span>
+            <strong>{storesForOrganization.length}</strong>
+            <span>{translation('AdminStoresPage.kpis.activeStores')}</span>
+          </article>
+          <article className="dashboard-kpi-card">
+            <span className="dashboard-kpi-card__icon">
+              <ActivityIcon className="icon icon--lg" />
+            </span>
+            <strong>{totalScenarios}</strong>
+            <span>{translation('AdminStoresPage.kpis.totalScenarios')}</span>
+          </article>
+          <article className="dashboard-kpi-card">
+            <span className="dashboard-kpi-card__icon">
+              <PieChartIcon className="icon icon--lg" />
+            </span>
+            <strong>{automationRate}%</strong>
+            <span>{translation('AdminStoresPage.kpis.averageAutomation')}</span>
+          </article>
+          <article className="dashboard-kpi-card">
+            <span className="dashboard-kpi-card__icon">
+              <ActivityIcon className="icon icon--lg" />
+            </span>
+            <strong>{totalManual}</strong>
+            <span>{translation('AdminStoresPage.kpis.manualCases')}</span>
+          </article>
+        </section>
 
         {isLoadingStores ? (
           <p className="section-subtitle">
@@ -752,7 +687,7 @@ export const AdminStoresPage = () => {
               {translation('AdminStoresPage.no-stores-title')}
             </h2>
             <p className="section-subtitle">{translation('AdminStoresPage.no-stores-subtitle')}</p>
-            <Button type="button" onClick={openCreateModal} disabled={!selectedOrganizationId}>
+            <Button type="button" onClick={openCreateStoreModal} disabled={!selectedOrganizationId}>
               {translation('AdminStoresPage.new-store-button')}
             </Button>
           </div>
@@ -760,35 +695,40 @@ export const AdminStoresPage = () => {
           <>
             <div className="dashboard-grid">
               {storesForOrganization.map((store) => (
-                <div
-                  key={store.id}
-                  className="card card-clickable"
-                  data-testid={`store-card-${store.id}`}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => navigate(`/stores/${store.id}`)}
-                  onKeyDown={(event) =>
-                    handleCardKeyDown(event, () => navigate(`/stores/${store.id}`))
-                  }
-                >
-                  <div className="card-header">
-                    <div className="card-title-group">
-                      <span className="card-title-icon" aria-hidden>
-                        <StorefrontIcon className="icon icon--lg" />
-                      </span>
-                      <div>
-                        <h2 className="card-title">{store.name}</h2>
-                        <span className="badge store-card-scenarios">
-                          {translation('AdminStoresPage.store-card-scenarios-badge', {
-                            scenarioCount: store.scenarioCount,
-                          })}
+                <div key={store.id} className="card store-card-shell">
+                  <div
+                    className="store-card-shell__content"
+                    data-testid={`store-card-${store.id}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => navigate(`/stores/${store.id}`)}
+                    onKeyDown={(event) =>
+                      handleCardKeyDown(event, () => navigate(`/stores/${store.id}`))
+                    }
+                  >
+                    <div className="card-header">
+                      <div className="card-title-group">
+                        <span className="card-title-icon" aria-hidden>
+                          {store.logoUrl ? (
+                            <CachedImage src={store.logoUrl} alt="" className="icon icon--lg" />
+                          ) : (
+                            <StorefrontIcon className="icon icon--lg" />
+                          )}
                         </span>
+                        <div>
+                          <h2 className="card-title">{store.name}</h2>
+                          <span className="badge store-card-scenarios">
+                            {translation('AdminStoresPage.store-card-scenarios-badge', {
+                              scenarioCount: store.scenarioCount,
+                            })}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="card-link-hint">
-                    <span>{translation('storesPage.openStore')}</span>
-                    <span aria-hidden>&rarr;</span>
+                    <div className="card-link-hint">
+                      <span>{translation('storesPage.openStore')}</span>
+                      <span aria-hidden>&rarr;</span>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -839,434 +779,379 @@ export const AdminStoresPage = () => {
                   )}
                 </section>
               )}
-
-              {hasBrowserstackCredentials && (
-                <BrowserstackKanban
-                  builds={browserstackBuilds}
-                  isLoading={isLoadingBrowserstack}
-                  onRefresh={loadBrowserstackBuilds}
-                />
-              )}
-            </div>
-
-            <div className="organization-charts-grid organization-charts-grid--dashboard">
-              <StoreScenarioComparisonChart
-                title={translation('AdminStoresPage.chart-automation-comparison-title')}
-                description={translation('AdminStoresPage.chart-automation-comparison-description')}
-                data={hasScenarioChartData ? scenarioChartData : []}
-                emptyMessage={translation(
-                  'AdminStoresPage.chart-automation-comparison-empty-message',
-                )}
-                isLoading={isLoadingStores}
-              />
             </div>
           </>
         )}
       </section>
 
       <Modal
+        isOpen={isOrganizationModalOpen}
+        onClose={closeOrganizationModal}
+        title={translation('AdminStoresPage.manage-organization-button')}
+        description={
+          selectedOrganization?.name ?? translation('AdminStoresPage.stores-title-no-org-selected')
+        }
+      >
+        {organizationError && (
+          <p className="form-message form-message--error">{organizationError}</p>
+        )}
+        <form className="form-grid" onSubmit={handleOrganizationSubmit}>
+          <TextInput
+            id="organization-name"
+            label={translation('adminOrganizationsPage.form.name.label')}
+            value={organizationForm.name}
+            onChange={(event) =>
+              setOrganizationForm((previous) => ({ ...previous, name: event.target.value }))
+            }
+            required
+          />
+          <TextInput
+            id="organization-email-domain"
+            label={translation('adminOrganizationsPage.form.emailDomain.label')}
+            value={organizationForm.emailDomain}
+            onChange={(event) =>
+              setOrganizationForm((previous) => ({ ...previous, emailDomain: event.target.value }))
+            }
+          />
+
+          <div className="organization-logo-field">
+            <div className="organization-logo-preview">
+              {organizationLogoSource ? (
+                <CachedImage
+                  src={organizationLogoSource}
+                  alt={selectedOrganization?.name ?? 'Logo'}
+                />
+              ) : (
+                <span className="organization-logo-fallback">Logo</span>
+              )}
+            </div>
+            <div className="organization-logo-actions">
+              <label htmlFor="organization-logo-upload" className="field-label">
+                {translation('AdminStoresPage.organization-logo-label')}
+              </label>
+              <input
+                id="organization-logo-upload"
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                  setOrganizationLogoFile(event.target.files?.[0] ?? null)
+                }
+              />
+            </div>
+          </div>
+
+          <div className="collapsible-section">
+            <div className="collapsible-section__header">
+              <div className="collapsible-section__titles">
+                <CachedImage
+                  className="collapsible-section__icon"
+                  src="https://img.icons8.com/external-tal-revivo-color-tal-revivo/24/external-slack-replace-email-text-messaging-and-instant-messaging-for-your-team-logo-color-tal-revivo.png"
+                  alt={translation('adminOrganizationsPage.form.slack.iconAlt')}
+                  width={24}
+                  height={24}
+                />
+                <p className="collapsible-section__title">
+                  {translation('adminOrganizationsPage.form.slack.title')}
+                </p>
+              </div>
+              <label className="collapsible-section__toggle">
+                <input
+                  type="checkbox"
+                  checked={isOrganizationSlackSectionOpen}
+                  onChange={() => {
+                    setIsOrganizationSlackSectionOpen((previous) => {
+                      const nextValue = !previous;
+                      if (!nextValue) {
+                        setOrganizationForm((form) => ({ ...form, slackWebhookUrl: '' }));
+                      }
+                      return nextValue;
+                    });
+                  }}
+                />
+                <span>
+                  {isOrganizationSlackSectionOpen
+                    ? translation('adminOrganizationsPage.form.slack.enabled')
+                    : translation('adminOrganizationsPage.form.slack.disabled')}
+                </span>
+              </label>
+            </div>
+            {isOrganizationSlackSectionOpen && (
+              <TextInput
+                id="organization-slack-webhook"
+                label={translation('adminOrganizationsPage.form.slack.webhookLabel')}
+                value={organizationForm.slackWebhookUrl}
+                onChange={(event) =>
+                  setOrganizationForm((previous) => ({
+                    ...previous,
+                    slackWebhookUrl: event.target.value,
+                  }))
+                }
+              />
+            )}
+          </div>
+
+          <div className="card">
+            <strong>{translation('AdminStoresPage.collaborators-card-title')}</strong>
+            <div className="form-grid organization-member-form-row">
+              <TextInput
+                id="organization-member-email"
+                label={translation('AdminStoresPage.member-email-label')}
+                value={newMemberEmail}
+                onChange={(event) => setNewMemberEmail(event.target.value)}
+                placeholder={translation('AdminStoresPage.member-email-placeholder')}
+              />
+              <div className="form-actions organization-member-actions">
+                <Button
+                  type="button"
+                  onClick={() => void handleAddMember()}
+                  isLoading={isManagingMembers}
+                >
+                  {translation('AdminStoresPage.member-add-button')}
+                </Button>
+              </div>
+            </div>
+            {isSearchingUsers ? <p className="form-hint">{translation('loadingAccess')}</p> : null}
+            {userSuggestions.length > 0 ? (
+              <div className="suggestions-list">
+                {userSuggestions.map((user) => (
+                  <button
+                    key={user.id}
+                    type="button"
+                    className="suggestions-list__item"
+                    onClick={() => setNewMemberEmail(user.email)}
+                  >
+                    {user.displayName || user.email}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            <div className="organization-pending-requests">
+              <div className="organization-pending-requests__header">
+                <strong>{translation('AdminStoresPage.pending-requests-title')}</strong>
+                <span className="form-hint">
+                  {translation('AdminStoresPage.pending-requests-count', {
+                    count: pendingAccessRequests.length,
+                  })}
+                </span>
+              </div>
+
+              {pendingAccessRequests.length === 0 ? (
+                <p className="form-hint">{translation('AdminStoresPage.pending-requests-empty')}</p>
+              ) : (
+                <ul className="collaborator-list organization-members-list">
+                  {pendingAccessRequests.map((request) => (
+                    <li key={request.id} className="collaborator-card">
+                      <UserAvatar
+                        name={request.displayName || request.email}
+                        size="sm"
+                        photoUrl={request.photoURL ?? null}
+                      />
+                      <div className="collaborator-card__details">
+                        <strong>{request.displayName || request.email}</strong>
+                        <span className="collaborator-card__email">{request.email}</span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => void handleApproveAccessRequest(request.id)}
+                        isLoading={approvingRequestId === request.id}
+                      >
+                        {translation('AdminStoresPage.pending-request-approve')}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <ul className="collaborator-list organization-members-list">
+              {selectedOrganization?.members.map((member) => (
+                <li key={member.uid} className="collaborator-card">
+                  <UserAvatar
+                    name={member.displayName || member.email}
+                    size="sm"
+                    photoUrl={member.photoURL ?? null}
+                  />
+                  <div className="collaborator-card__details">
+                    <strong>{member.displayName || member.email}</strong>
+                    <span className="collaborator-card__email">{member.email}</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="organization-member-remove-button"
+                    onClick={() => void handleRemoveMember(member.uid)}
+                    disabled={isManagingMembers}
+                  >
+                    {translation('AdminStoresPage.member-remove-button')}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="form-actions">
+            <Button type="submit" isLoading={isSavingOrganization}>
+              {translation('storeSummary.saveChanges')}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={closeOrganizationModal}
+              disabled={isSavingOrganization}
+            >
+              {translation('cancel')}
+            </Button>
+          </div>
+        </form>
+
+        <div className="modal-danger-zone">
+          <div>
+            <h4>{translation('AdminStoresPage.manage-organization-button')}</h4>
+            <p>{translation('storeSummary.removeStoreWarning')}</p>
+          </div>
+          <button
+            type="button"
+            className="link-danger"
+            onClick={() => setOrganizationDeleteModalOpen(true)}
+          >
+            {translation('delete')}
+          </button>
+        </div>
+      </Modal>
+
+      <Modal
         isOpen={isStoreModalOpen}
         onClose={closeStoreModal}
-        title={translation('AdminStoresPage.store-name-label')}
-        description={translation('AdminStoresPage.modal-store-description')}
+        title={
+          editingStore
+            ? translation('storeSummary.storeSettings')
+            : translation('AdminStoresPage.new-store-button')
+        }
+        description={
+          selectedOrganization?.name ?? translation('AdminStoresPage.stores-title-no-org-selected')
+        }
       >
         {storeError && <p className="form-message form-message--error">{storeError}</p>}
         <form className="form-grid" onSubmit={handleStoreSubmit} data-testid="store-form">
           <TextInput
             id="store-name"
-            label={translation('AdminStoresPage.store-name-label')}
+            label={translation('storeManagement.storeNameLabel')}
             value={storeForm.name}
             onChange={(event) =>
               setStoreForm((previous) => ({ ...previous, name: event.target.value }))
             }
-            placeholder={translation('AdminStoresPage.store-name-placeholder')}
             required
-            dataTestId="store-name-input"
           />
           <TextInput
             id="store-site"
-            label={translation('AdminStoresPage.store-site-label')}
+            label={translation('storeManagement.storeSiteLabel')}
             value={storeForm.site}
             onChange={(event) =>
               setStoreForm((previous) => ({ ...previous, site: event.target.value }))
             }
-            placeholder={translation('AdminStoresPage.store-site-placeholder')}
-            dataTestId="store-site-input"
+            required
           />
+          <TextInput
+            id="store-admin-url"
+            label={translation('storeManagement.storeAdminUrlLabel')}
+            value={storeForm.adminUrl}
+            onChange={(event) =>
+              setStoreForm((previous) => ({ ...previous, adminUrl: event.target.value }))
+            }
+          />
+          <SelectInput
+            id="store-stage"
+            label={translation('storeManagement.storeEnvironmentLabel')}
+            value={storeForm.stage}
+            onChange={(event) =>
+              setStoreForm((previous) => ({
+                ...previous,
+                stage: event.target.value as 'WS' | 'Preview',
+              }))
+            }
+            options={[
+              { value: 'WS', label: translation('storeManagement.storePlatformVtexio') },
+              { value: 'Preview', label: translation('storeManagement.storePlatformFaststore') },
+            ]}
+          />
+
+          <div className="organization-logo-field">
+            <div className="organization-logo-preview">
+              {storeLogoSource ? (
+                <CachedImage src={storeLogoSource} alt={storeForm.name || 'Logo da loja'} />
+              ) : (
+                <span className="organization-logo-fallback">Logo</span>
+              )}
+            </div>
+            <div className="organization-logo-actions">
+              <label htmlFor="store-logo-upload" className="field-label">
+                {translation('AdminStoresPage.store-logo-label')}
+              </label>
+              <input
+                id="store-logo-upload"
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                  setStoreLogoFile(event.target.files?.[0] ?? null)
+                }
+              />
+              <p className="form-hint">{translation('AdminStoresPage.store-logo-hint')}</p>
+            </div>
+          </div>
           <div className="form-actions">
-            <Button
-              type="submit"
-              isLoading={isSavingStore}
-              loadingText={translation('AdminStoresPage.save-button-saving')}
-              data-testid="save-store-button"
-            >
-              {translation('AdminStoresPage.save-store-button')}
+            <Button type="submit" isLoading={isSavingStore}>
+              {editingStore
+                ? translation('storeSummary.saveChanges')
+                : translation('AdminStoresPage.new-store-button')}
             </Button>
             <Button
               type="button"
               variant="ghost"
               onClick={closeStoreModal}
               disabled={isSavingStore}
-              data-testid="cancel-store-button"
             >
-              {translation('AdminStoresPage.cancel-store-button')}
+              {translation('cancel')}
             </Button>
           </div>
         </form>
-      </Modal>
-
-      {selectedOrganization && (
-        <Modal
-          isOpen={isOrganizationModalOpen}
-          onClose={closeOrganizationModal}
-          title={translation('AdminStoresPage.modal-org-title', {
-            organizationName: selectedOrganization.name,
-          })}
-        >
-          {organizationError && (
-            <p className="form-message form-message--error">{organizationError}</p>
-          )}
-
-          <form
-            className="form-grid"
-            onSubmit={handleOrganizationSubmit}
-            data-testid="organization-settings-form"
-          >
-            <TextInput
-              id="organization-name"
-              label={translation('AdminStoresPage.org-name-label')}
-              value={organizationForm.name}
-              onChange={(event) =>
-                setOrganizationForm((previous) => ({ ...previous, name: event.target.value }))
-              }
-              placeholder={translation('AdminStoresPage.org-name-placeholder')}
-              required
-              dataTestId="organization-settings-name"
-            />
-            <div className="organization-logo-field">
-              <div className="organization-logo-preview">
-                {organizationLogoSource ? (
-                  <CachedImage
-                    src={organizationLogoSource}
-                    alt={translation('AdminStoresPage.org-logo-preview')}
-                  />
-                ) : (
-                  <span className="organization-logo-fallback">
-                    {translation('AdminStoresPage.org-logo-placeholder')}
-                  </span>
-                )}
-              </div>
-              <div className="organization-logo-actions">
-                <label htmlFor="organization-logo-upload" className="field-label">
-                  {translation('AdminStoresPage.org-logo-label')}
-                </label>
-                <input
-                  id="organization-logo-upload"
-                  type="file"
-                  accept="image/*"
-                  className="file-input"
-                  onChange={(event) => setOrganizationLogoFile(event.target.files?.[0] ?? null)}
-                />
-                <p className="form-hint">{translation('AdminStoresPage.org-logo-hint')}</p>
-              </div>
-            </div>
-            <TextInput
-              id="organization-email-domain"
-              label={translation('AdminStoresPage.org-email-domain-label')}
-              value={organizationForm.emailDomain}
-              onChange={(event) =>
-                setOrganizationForm((previous) => ({
-                  ...previous,
-                  emailDomain: event.target.value,
-                }))
-              }
-              placeholder={translation('AdminStoresPage.org-email-domain-placeholder')}
-              dataTestId="organization-settings-email-domain"
-            />
-            <p className="form-hint">{translation('AdminStoresPage.org-email-domain-hint')}</p>
-            <div className="collapsible-section">
-              <div className="collapsible-section__header">
-                <div className="collapsible-section__titles">
-                  <CachedImage
-                    className="collapsible-section__icon"
-                    src="https://img.icons8.com/color/48/browser-stack.png"
-                    alt={translation('AdminStoresPage.org-browserstack-icon-alt')}
-                    width={48}
-                    height={48}
-                  />
-                  <p className="collapsible-section__title">
-                    {translation('AdminStoresPage.org-browserstack-section-title')}
-                  </p>
-                  <p className="collapsible-section__description">
-                    {translation('AdminStoresPage.org-browserstack-section-description')}
-                  </p>
-                </div>
-                <label className="collapsible-section__toggle">
-                  <input
-                    type="checkbox"
-                    checked={isOrganizationBrowserstackSectionOpen}
-                    onChange={toggleOrganizationBrowserstackSection}
-                    aria-expanded={isOrganizationBrowserstackSectionOpen}
-                    aria-controls="organization-settings-browserstack-section"
-                  />
-                  <span>
-                    {isOrganizationBrowserstackSectionOpen
-                      ? translation('AdminStoresPage.org-browserstack-toggle-on')
-                      : translation('AdminStoresPage.org-browserstack-toggle-off')}
-                  </span>
-                </label>
-              </div>
-              {isOrganizationBrowserstackSectionOpen && (
-                <div
-                  className="collapsible-section__body"
-                  id="organization-settings-browserstack-section"
-                  data-testid="organization-settings-browserstack-section"
-                >
-                  <div className="form-grid">
-                    <TextInput
-                      id="organization-browserstack-username"
-                      label={translation('AdminStoresPage.org-browserstack-username-label')}
-                      value={organizationForm.browserstackUsername}
-                      onChange={(event) =>
-                        setOrganizationForm((previous) => ({
-                          ...previous,
-                          browserstackUsername: event.target.value,
-                        }))
-                      }
-                      placeholder={translation(
-                        'AdminStoresPage.org-browserstack-username-placeholder',
-                      )}
-                      dataTestId="organization-settings-browserstack-username"
-                    />
-                    <TextInput
-                      id="organization-browserstack-access-key"
-                      label={translation('AdminStoresPage.org-browserstack-access-key-label')}
-                      value={organizationForm.browserstackAccessKey}
-                      onChange={(event) =>
-                        setOrganizationForm((previous) => ({
-                          ...previous,
-                          browserstackAccessKey: event.target.value,
-                        }))
-                      }
-                      placeholder={translation(
-                        'AdminStoresPage.org-browserstack-access-key-placeholder',
-                      )}
-                      type="password"
-                      dataTestId="organization-settings-browserstack-access-key"
-                    />
-                  </div>
-                  <p className="form-hint">
-                    {translation('AdminStoresPage.org-browserstack-hint')}
-                  </p>
-                </div>
-              )}
-            </div>
-            <div className="collapsible-section">
-              <div className="collapsible-section__header">
-                <div className="collapsible-section__titles">
-                  <CachedImage
-                    className="collapsible-section__icon"
-                    src="https://img.icons8.com/external-tal-revivo-color-tal-revivo/24/external-slack-replace-email-text-messaging-and-instant-messaging-for-your-team-logo-color-tal-revivo.png"
-                    alt={translation('AdminStoresPage.org-slack-icon-alt')}
-                    width={24}
-                    height={24}
-                  />
-                  <p className="collapsible-section__title">
-                    {translation('AdminStoresPage.org-slack-section-title')}
-                  </p>
-                  <p className="collapsible-section__description">
-                    {translation('AdminStoresPage.org-slack-section-description')}
-                  </p>
-                </div>
-                <label className="collapsible-section__toggle">
-                  <input
-                    type="checkbox"
-                    checked={isOrganizationSlackSectionOpen}
-                    onChange={toggleOrganizationSlackSection}
-                    aria-expanded={isOrganizationSlackSectionOpen}
-                    aria-controls="organization-settings-slack-section"
-                  />
-                  <span>
-                    {isOrganizationSlackSectionOpen
-                      ? translation('AdminStoresPage.org-slack-toggle-on')
-                      : translation('AdminStoresPage.org-slack-toggle-off')}
-                  </span>
-                </label>
-              </div>
-              {isOrganizationSlackSectionOpen && (
-                <div
-                  className="collapsible-section__body"
-                  id="organization-settings-slack-section"
-                  data-testid="organization-settings-slack-section"
-                >
-                  <TextInput
-                    id="organization-slack-webhook"
-                    label={translation('AdminStoresPage.org-slack-webhook-label')}
-                    value={organizationForm.slackWebhookUrl}
-                    onChange={(event) =>
-                      setOrganizationForm((previous) => ({
-                        ...previous,
-                        slackWebhookUrl: event.target.value,
-                      }))
-                    }
-                    placeholder={translation('AdminStoresPage.org-slack-webhook-placeholder')}
-                    dataTestId="organization-settings-slack-webhook"
-                  />
-                  <p className="form-hint">
-                    {translation('AdminStoresPage.org-slack-webhook-hint')}
-                  </p>
-                </div>
-              )}
-            </div>
-            <div className="form-actions">
-              <Button
-                type="submit"
-                isLoading={isSavingOrganization}
-                loadingText={translation('saving')}
-                data-testid="save-organization-settings"
-              >
-                {translation('saveChanges')}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={closeOrganizationModal}
-                disabled={isSavingOrganization}
-                data-testid="cancel-organization-settings"
-              >
-                {translation('AdminStoresPage.cancel-store-button')}
-              </Button>
-            </div>
-          </form>
-
-          <div className="card bg-surface" style={{ padding: '1.5rem', marginTop: '1.5rem' }}>
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div>
-                <h3 className="text-lg font-semibold text-primary">
-                  {translation('AdminStoresPage.org-vinculed-members')}
-                </h3>
-                <p className="section-subtitle">
-                  {translation('AdminStoresPage.org-slack-added-user')}
-                </p>
-              </div>
-              <span className="badge">
-                {translation('AdminStoresPage.member-count', {
-                  count: selectedOrganization.members.length,
-                })}
-              </span>
-            </div>
-
-            <div className="member-invite-grid">
-              <TextInput
-                id="organization-add-member"
-                label={translation('AdminStoresPage.org-added-user-to-email')}
-                value={newMemberEmail}
-                onChange={(event) => setNewMemberEmail(event.target.value)}
-                placeholder={translation('AdminStoresPage.org-email-placeholder')}
-                autoComplete="email"
-                dataTestId="organization-add-member-input"
-              />
-              <Button
-                type="button"
-                onClick={handleAddMember}
-                isLoading={isManagingMembers}
-                loadingText={translation('AdminStoresPage.org-button-addeding')}
-                data-testid="add-organization-member"
-              >
-                {translation('AdminStoresPage.org-added-user')}
-              </Button>
-            </div>
-            <p className="form-hint">{translation('AdminStoresPage.member-add-hint')}</p>
-            {isSearchingUsers && (
-              <p className="form-hint">{translation('AdminStoresPage.user-search-loading')}</p>
-            )}
-            {!isSearchingUsers && userSuggestions.length > 0 && (
-              <ul
-                className="suggestion-list"
-                role="listbox"
-                aria-label={translation('AdminStoresPage.user-search-suggestions')}
-              >
-                {userSuggestions.map((suggestion) => (
-                  <li key={suggestion.id}>
-                    <button
-                      type="button"
-                      className="suggestion-option"
-                      onClick={() => setNewMemberEmail(suggestion.email)}
-                    >
-                      <UserAvatar
-                        name={suggestion.displayName || suggestion.email}
-                        size="sm"
-                        photoUrl={suggestion.photoURL ?? null}
-                      />
-                      <div className="suggestion-option__details">
-                        <span className="suggestion-option__name">
-                          {suggestion.displayName || suggestion.email}
-                        </span>
-                        <span className="suggestion-option__email">{suggestion.email}</span>
-                      </div>
-                      <span className="suggestion-option__hint">
-                        {translation('AdminStoresPage.user-search-email-hint')}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {selectedOrganization.members.length === 0 ? (
-              <p className="section-subtitle">
-                {translation('AdminStoresPage.no-members-message')}
-              </p>
-            ) : (
-              <ul className="member-list">
-                {selectedOrganization.members.map((member) => (
-                  <li key={member.uid} className="member-list-item">
-                    <UserAvatar
-                      name={member.displayName || member.email}
-                      photoUrl={member.photoURL ?? null}
-                    />
-                    <div className="member-list-details">
-                      <span className="member-list-name">{member.displayName || member.email}</span>
-                      <span className="member-list-email">{member.email}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="member-list-remove"
-                      onClick={() => openRemoveMemberModal(member)}
-                      disabled={isManagingMembers}
-                    >
-                      {translation('AdminStoresPage.org-remove-user')}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
+        {editingStore ? (
           <div className="modal-danger-zone">
             <div>
-              <h4>{translation('AdminStoresPage.org-danger-zone')}</h4>
-              <p>{translation('AdminStoresPage.org-remove-org-and-users')}</p>
+              <h4>{translation('storeSummary.removeStore')}</h4>
+              <p>{translation('storeSummary.removeStoreWarning')}</p>
             </div>
             <button
               type="button"
               className="link-danger"
-              onClick={openDeleteOrganizationModal}
-              disabled={isSavingOrganization}
-              data-testid="delete-organization-button"
+              onClick={() => setStoreDeleteModalOpen(true)}
             >
-              {translation('AdminStoresPage.org-remove-organization')}
+              {translation('delete')}
             </button>
           </div>
-        </Modal>
-      )}
+        ) : null}
+      </Modal>
+
       <ConfirmDeleteModal
-        isOpen={Boolean(deleteConfirmation)}
-        message={deleteConfirmation?.message}
-        description={deleteConfirmation?.description}
-        onClose={closeDeleteConfirmation}
-        onConfirm={handleConfirmDelete}
-        isConfirming={isConfirmingDelete}
+        isOpen={organizationDeleteModalOpen}
+        message={translation('AdminStoresPage.manage-organization-button')}
+        description={selectedOrganization?.name ?? ''}
+        confirmText={translation('delete')}
+        cancelText={translation('cancel')}
+        isConfirming={isSavingOrganization}
+        onClose={() => setOrganizationDeleteModalOpen(false)}
+        onConfirm={() => void handleDeleteOrganization()}
+      />
+
+      <ConfirmDeleteModal
+        isOpen={storeDeleteModalOpen}
+        message={translation('storeSummary.removeStore')}
+        description={editingStore?.name ?? ''}
+        confirmText={translation('delete')}
+        cancelText={translation('cancel')}
+        isConfirming={isSavingStore}
+        onClose={() => setStoreDeleteModalOpen(false)}
+        onConfirm={() => void handleDeleteStore()}
       />
     </Layout>
   );

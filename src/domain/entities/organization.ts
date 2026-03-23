@@ -7,6 +7,17 @@ export interface OrganizationMember {
   photoURL: string | null;
 }
 
+export interface OrganizationAccessRequest {
+  id: string;
+  organizationId: string;
+  userId: string;
+  email: string;
+  displayName: string;
+  photoURL: string | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
 export interface Organization {
   id: string;
   name: string;
@@ -17,6 +28,7 @@ export interface Organization {
   browserstackCredentials?: BrowserstackCredentials | null;
   members: OrganizationMember[];
   memberIds: string[];
+  pendingAccessRequests: OrganizationAccessRequest[];
   createdAt: Date | null;
   updatedAt: Date | null;
 }
@@ -44,6 +56,19 @@ export interface AddUserToOrganizationPayload {
 }
 
 export interface RemoveUserFromOrganizationPayload {
+  organizationId: string;
+  userId: string;
+}
+
+export interface RequestOrganizationAccessPayload {
+  organizationId: string;
+  userId: string;
+  userEmail: string;
+  displayName: string;
+  photoURL?: string | null;
+}
+
+export interface CancelOrganizationAccessRequestPayload {
   organizationId: string;
   userId: string;
 }

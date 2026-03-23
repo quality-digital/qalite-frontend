@@ -127,73 +127,82 @@ export const EnvironmentBugList = ({
       ) : bugs.length === 0 ? (
         <p className="section-subtitle">{translation('environmentBugList.noBugs')}</p>
       ) : (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>{translation('environmentBugList.scenario')}</th>
-              <th>{translation('environmentBugList.severity')}</th>
-              <th>{translation('environmentBugList.priority')}</th>
-              <th>{translation('environmentBugList.actualResult')}</th>
-              {showActions && <th>{translation('environmentBugList.actions')}</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {bugs.map((bug) => (
-              <tr key={bug.id}>
-                <td>{getScenarioLabel(bug.scenarioId)}</td>
-                <td>
-                  <span className={`bug-severity bug-severity--${bug.severity ?? 'unknown'}`}>
-                    {getSeverityLabel(bug.severity)}
-                  </span>
-                </td>
-                <td>
-                  <span className={`bug-priority bug-priority--${bug.priority ?? 'unknown'}`}>
-                    {getPriorityLabel(bug.priority)}
-                  </span>
-                </td>
-                <td>
-                  {bug.actualResult?.trim() || translation('environmentBugList.noActualResult')}
-                </td>
-                {showActions && (
-                  <td className="environment-bugs__actions">
-                    <div className="environment-bugs__actions-content">
-                      <button
-                        type="button"
-                        className="action-button"
-                        onClick={() => setBugToView(bug)}
-                        aria-label={translation('environmentBugList.viewDetails')}
-                        title={translation('environmentBugList.viewDetails')}
-                      >
-                        <EyeIcon aria-hidden className="action-button__icon" />
-                        {translation('environmentBugList.viewDetails')}
-                      </button>
-                      <button
-                        type="button"
-                        className="action-button"
-                        onClick={() => onEdit(bug)}
-                        disabled={isReadOnly}
-                        aria-label={translation('environmentBugList.edit')}
-                        title={translation('environmentBugList.edit')}
-                      >
-                        <PencilIcon aria-hidden className="action-button__icon" />
-                      </button>
-                      <button
-                        type="button"
-                        className="action-button action-button--danger"
-                        onClick={() => setBugToDelete(bug)}
-                        disabled={isReadOnly}
-                        aria-label={translation('environmentBugList.remove')}
-                        title={translation('environmentBugList.remove')}
-                      >
-                        <TrashIcon aria-hidden className="action-button__icon" />
-                      </button>
-                    </div>
-                  </td>
-                )}
+        <div className="table-scroll-area">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th className="scenario-title-column">{translation('environmentBugList.scenario')}</th>
+                <th>{translation('environmentBugList.severity')}</th>
+                <th>{translation('environmentBugList.priority')}</th>
+                <th>{translation('environmentBugList.actualResult')}</th>
+                {showActions && <th>{translation('environmentBugList.actions')}</th>}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {bugs.map((bug) => (
+                <tr key={bug.id}>
+                  <td
+                    className="scenario-title-cell"
+                    title={getScenarioLabel(bug.scenarioId)}
+                  >
+                    <span className="scenario-title-text">
+                      {getScenarioLabel(bug.scenarioId)}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`bug-severity bug-severity--${bug.severity ?? 'unknown'}`}>
+                      {getSeverityLabel(bug.severity)}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`bug-priority bug-priority--${bug.priority ?? 'unknown'}`}>
+                      {getPriorityLabel(bug.priority)}
+                    </span>
+                  </td>
+                  <td>
+                    {bug.actualResult?.trim() || translation('environmentBugList.noActualResult')}
+                  </td>
+                  {showActions && (
+                    <td className="environment-bugs__actions">
+                      <div className="environment-bugs__actions-content">
+                        <button
+                          type="button"
+                          className="action-button"
+                          onClick={() => setBugToView(bug)}
+                          aria-label={translation('environmentBugList.viewDetails')}
+                          title={translation('environmentBugList.viewDetails')}
+                        >
+                          <EyeIcon aria-hidden className="action-button__icon" />
+                          {translation('environmentBugList.viewDetails')}
+                        </button>
+                        <button
+                          type="button"
+                          className="action-button"
+                          onClick={() => onEdit(bug)}
+                          disabled={isReadOnly}
+                          aria-label={translation('environmentBugList.edit')}
+                          title={translation('environmentBugList.edit')}
+                        >
+                          <PencilIcon aria-hidden className="action-button__icon" />
+                        </button>
+                        <button
+                          type="button"
+                          className="action-button action-button--danger"
+                          onClick={() => setBugToDelete(bug)}
+                          disabled={isReadOnly}
+                          aria-label={translation('environmentBugList.remove')}
+                          title={translation('environmentBugList.remove')}
+                        >
+                          <TrashIcon aria-hidden className="action-button__icon" />
+                        </button>
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
       <ConfirmDeleteModal
         isOpen={Boolean(bugToDelete)}

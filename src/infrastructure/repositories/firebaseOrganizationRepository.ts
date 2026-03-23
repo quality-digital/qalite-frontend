@@ -1,11 +1,14 @@
 import type { OrganizationRepository } from '../../domain/repositories/OrganizationRepository';
 import {
   addUserToOrganization,
+  approveOrganizationAccessRequest,
+  cancelOrganizationAccessRequest,
   createOrganization,
   deleteOrganization,
   getOrganization,
   getUserOrganization,
   listOrganizations,
+  requestOrganizationAccess,
   removeUserFromOrganization,
   updateOrganization,
   uploadOrganizationLogo,
@@ -22,5 +25,8 @@ export const firebaseOrganizationRepository: OrganizationRepository = {
   delete: deleteOrganization,
   addUser: addUserToOrganization,
   removeUser: removeUserFromOrganization,
+  requestAccess: requestOrganizationAccess,
+  cancelAccessRequest: cancelOrganizationAccessRequest,
+  approveAccessRequest: approveOrganizationAccessRequest,
   getUserOrganizationByUserId: getUserOrganization,
 };

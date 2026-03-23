@@ -8,6 +8,7 @@ import type {
 } from '../../domain/entities/environment';
 import {
   SCENARIO_COMPLETED_STATUSES,
+  getEnvironmentColumns,
   getScenarioPlatformStatuses,
 } from '../../infrastructure/external/environments';
 import { translateEnvironmentOption } from '../constants/environmentOptions';
@@ -41,11 +42,6 @@ const createEmptyScenarioStats = (): ScenarioStats => ({
   concluded: 0,
   pending: 0,
   running: 0,
-});
-
-const buildInitialPlatformStats = (): Record<EnvironmentScenarioPlatform, ScenarioStats> => ({
-  mobile: createEmptyScenarioStats(),
-  desktop: createEmptyScenarioStats(),
 });
 
 const formatProgressLabel = (
@@ -90,12 +86,18 @@ export const useEnvironmentDetails = (
       return acc;
     }, {});
 
-    const platformScenarioStats = buildInitialPlatformStats();
+    const environmentColumns = getEnvironmentColumns(environment);
+    const platformScenarioStats = environmentColumns.reduce<
+      Record<EnvironmentScenarioPlatform, ScenarioStats>
+    >((acc, column) => {
+      acc[column] = createEmptyScenarioStats();
+      return acc;
+    }, {});
 
     Object.values(environment?.scenarios ?? {}).forEach((scenario) => {
-      const statuses = getScenarioPlatformStatuses(scenario);
+      const statuses = getScenarioPlatformStatuses(scenario, environmentColumns);
 
-      (['mobile', 'desktop'] as EnvironmentScenarioPlatform[]).forEach((platform) => {
+      environmentColumns.forEach((platform) => {
         const stats = platformScenarioStats[platform];
         const status = statuses[platform];
 
@@ -115,9 +117,7 @@ export const useEnvironmentDetails = (
       });
     });
 
-    const combinedScenarioStats = (
-      ['mobile', 'desktop'] as EnvironmentScenarioPlatform[]
-    ).reduce<ScenarioStats>((combined, platform) => {
+    const combinedScenarioStats = environmentColumns.reduce<ScenarioStats>((combined, platform) => {
       const stats = platformScenarioStats[platform];
       combined.total += stats.total;
       combined.concluded += stats.concluded;

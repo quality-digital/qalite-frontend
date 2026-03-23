@@ -30,7 +30,7 @@
     "saveChanges": "Save changes",
     "saving": "Saving...",
     "app": {
-      "brandName": "QaLite"
+      "brandName": "QALite"
     },
     "layout": {
       "homeAriaLabel": "Go to {{brandName}} home",
@@ -61,8 +61,6 @@
     "connectedAccounts": {
       "title": "Connected accounts",
       "subtitle": "Connect third-party services to speed up your QA routine.",
-      "browserstackTitle": "BrowserStack",
-      "browserstackDescription": "Use your credentials to connect BrowserStack automation.",
       "username": "Username",
       "accessKey": "Access key",
       "disconnected": "Not connected",
@@ -74,9 +72,7 @@
       "browserstackHint": "We only store the required credentials and mask sensitive data.",
       "save": "Save credentials",
       "connect": "Connect",
-      "browserstackRequired": "Enter username and access key to connect BrowserStack.",
-      "organizationRequired": "Join an organization to configure BrowserStack.",
-      "saveError": "Could not save BrowserStack credentials."
+      "saveError": "Could not save credentials."
     },
     "pagination": {
       "showing": "Showing {{visible}} of {{total}}",
@@ -96,25 +92,6 @@
     "simpleChart": {
       "badge": "Overview",
       "loading": "Loading data..."
-    },
-    "browserstackKanban": {
-      "title": "BrowserStack",
-      "brandAlt": "BrowserStack",
-      "refresh": "Refresh list",
-      "refreshing": "Refreshing...",
-      "loading": "Fetching BrowserStack runs...",
-      "emptyTitle": "No runs found",
-      "emptySubtitle": "Check your BrowserStack credentials in your profile or use the refresh button.",
-      "columnSubtitleWithCards": "Cards ordered by most recent creation",
-      "columnSubtitleEmpty": "No runs in this status",
-      "unnamedBuild": "Unnamed build",
-      "viewBuild": "View build →",
-      "status": {
-        "waiting": "Waiting",
-        "running": "In progress",
-        "done": "Completed",
-        "failed": "Failed"
-      }
     },
     "themeToggle": {
       "light": "Light",
@@ -141,6 +118,10 @@
       "critical": "Critical"
     },
     "environmentOptions": {
+      "WS": "WS",
+      "Preview": "FastStore (Preview)",
+      "TM": "Homologation",
+      "PROD": "Production",
       "smokeTest": "Smoke-test",
       "seo": "SEO",
       "performance": "Performance",
@@ -155,7 +136,9 @@
       "progress": "In progress",
       "done": "Completed",
       "open": "Open",
-      "resolved": "Resolved"
+      "resolved": "Resolved",
+      "mobile": "Mobile",
+      "desktop": "Desktop"
     },
     "environmentBugModal": {
       "progress": "In progress",
@@ -244,6 +227,9 @@
       "testType": "Test type",
       "releaseLabel": "Release",
       "suiteId": "Existing suite",
+      "environmentColumns": "Environment columns",
+      "environmentColumnsPlaceholder": "iPhone 13\nSamsung S23\nTablet",
+      "environmentColumnsRequired": "Add at least one environment column.",
       "none": "None",
       "setMoment": "Moment/When",
       "scenariosLoaded": "Scenarios loaded from the suite"
@@ -278,7 +264,10 @@
       "cloneConfirmMessage": "Do you want to clone the environment {{identifier}}?",
       "cloneConfirmAction": "Clone",
       "cloneCancel": "Cancel",
-      "cloneLoading": "Cloning..."
+      "cloneLoading": "Cloning...",
+      "archivedSummary_one": "{{count}} archived environment can be viewed below the board.",
+      "archivedSummary_other": "{{count}} archived environments can be viewed below the board.",
+      "backlog": "Backlog"
     },
     "loginPage": {
       "title": "Sign in to your account",
@@ -328,6 +317,24 @@
       "success": "Check your email to reset your password.",
       "error": "The recovery link could not be sent. Please try again."
     },
+    "resetPasswordPage": {
+      "title": "Create a new password",
+      "newPasswordLabel": "New password",
+      "confirmPasswordLabel": "Confirm new password",
+      "resetButton": "Reset password",
+      "loading": "Resetting...",
+      "verifying": "Verifying recovery link...",
+      "invalidCode": "The recovery link is invalid or has expired. Try requesting a new one.",
+      "invalidForm": "Please check all fields and requirements.",
+      "verificationFailed": "Unable to verify recovery link. Try again.",
+      "resetFailed": "Unable to reset password. Try again.",
+      "resetSuccess": "Password reset successfully! Redirecting to login...",
+      "redirecting": "Redirecting to login...",
+      "passwordMismatch": "Passwords do not match.",
+      "passwordsMatch": "Passwords match!",
+      "backToForgot": "Request new recovery link",
+      "passwordTip": "Choose a strong new password with at least {{min}} characters"
+    },
     "userPage": {
       "organizationName": "You are collaborating with {{org}}.",
       "selectStore": "Choose a store to continue.",
@@ -337,7 +344,6 @@
       "unavailableStores": "No stores available",
       "updatePage": "Refresh the page or try again later. If the problem persists, contact the administrator.",
       "addStores": "Ask the administrator to add stores to your organization or come back later.",
-      "errorBrowserstack": "Failed to load BrowserStack executions.",
       "badge": "Store Catalog",
       "storeTitle": "Select a store to review its scenarios",
       "loadingTitle": "Loading available stores...",
@@ -355,9 +361,12 @@
       "automatedScenarios": "Automated Scenarios",
       "scenariosDescription": "Comparison of scenarios marked as automated for each store.",
       "emptyScenarios": "We haven’t identified any automated scenarios in this organization’s stores yet.",
-      "browserstackBadge": "BrowserStack",
-      "browserstackTitle": "Follow automated runs",
-      "browserstackSubtitle": "Add your BrowserStack credentials to the organization to view executions Kanban board."
+      "kpis": {
+        "activeStores": "Active stores",
+        "totalScenarios": "Total scenarios",
+        "averageAutomation": "Average automation",
+        "manualCases": "Manual cases"
+      }
     },
     "forbiddenPage": {
       "description": "You do not have permission to access this page. Contact the administrator or return to the homepage."
@@ -365,6 +374,7 @@
     "adminOrganizationsPage": {
       "title": "Registered organizations",
       "subtitle": "Manage organizations and keep members updated in one place.",
+      "createButton": "Create organization",
       "actions": {
         "newOrganization": "New organization",
         "create": "Create organization",
@@ -386,27 +396,25 @@
       "modal": {
         "title": "New organization"
       },
+      "createModal": {
+        "description": "Fill in the details to create a new organization."
+      },
       "form": {
         "name": {
           "label": "Organization name",
           "placeholder": "e.g.: Onboarding Squad"
         },
+        "description": {
+          "label": "Description"
+        },
+        "logo": {
+          "label": "Organization logo"
+        },
+        "submitButton": "Create organization",
         "emailDomain": {
           "label": "Organization email domain",
           "placeholder": "@example.com",
           "hint": "Enter the domain (with or without @). Users with this email will be automatically linked."
-        },
-        "browserstack": {
-          "title": "BrowserStack",
-          "description": "Would you like to add credentials to follow automated runs?",
-          "iconAlt": "BrowserStack",
-          "enabled": "Enabled",
-          "disabled": "Disabled",
-          "usernameLabel": "BrowserStack username",
-          "usernamePlaceholder": "browserstack.user",
-          "accessKeyLabel": "BrowserStack access key",
-          "accessKeyPlaceholder": "Paste the access key",
-          "hint": "BrowserStack credentials are managed by the organization."
         },
         "slack": {
           "title": "Slack Webhook",
@@ -425,7 +433,17 @@
       "errors": {
         "generic": "Unable to save the organization.",
         "nameRequired": "Please provide an organization name.",
-        "loadOrganizations": "Unable to load organizations."
+        "loadOrganizations": "Unable to load organizations.",
+        "createFailed": "Failed to create organization."
+      },
+      "toast": {
+        "organizationCreated": "Organization created successfully."
+      },
+      "kpis": {
+        "organizations": "Organizations",
+        "members": "Collaborators",
+        "averagePerOrganization": "Average per organization",
+        "withDomain": "With configured domain"
       }
     },
     "storesPage": {
@@ -468,14 +486,11 @@
       "delete.confirmTitle": "Are you sure you want to delete {{name}}?",
       "delete.confirmDescription": "The user will be removed from the organization {{organization}}."
     },
-    "browserstack": {
-      "error.load": "Unable to load BrowserStack executions."
-    },
     "automation": {
       "error.loadStats": "Unable to load automated scenarios by store."
     },
     "AdminStoresPage": {
-      "no-members-message": "No users linked yet. Add members using the email registered in QaLite",
+      "no-members-message": "No users linked yet. Add members using the email registered in QALite",
       "stores-page": "Store Administration Page",
       "stores-back-button": "← Back",
       "stores-title-org-selected": "Stores of the organization {{organizationName}}",
@@ -504,13 +519,15 @@
       "chart-automation-comparison-title": "Automated vs not automated",
       "chart-automation-comparison-description": "Scenario ranking by store with a comparison between automated and not automated.",
       "chart-automation-comparison-empty-message": "Add scenarios to compare automation across stores.",
-      "browserstack-card-badge": "BrowserStack",
-      "browserstack-card-title": "Connect your account",
-      "browserstack-card-subtitle": "Add your BrowserStack username and access key to the organization to track automated executions.",
+      "organization-logo-label": "Organization logo",
       "member-add-no-organization": "Select an organization before adding members.",
       "member-add-email-required": "Enter an email to add.",
       "member-add-already-linked": "This user is already linked to the organization.",
       "member-add-hint": "Invite any existing user by email, even if it doesn't match the configured domain.",
+      "member-email-label": "Member email",
+      "member-email-placeholder": "member@company.com",
+      "member-add-button": "Add member",
+      "member-remove-button": "Remove member",
       "member-count": "{{count}} member",
       "member-count_plural": "{{count}} members",
       "user-search-loading": "Searching suggestions...",
@@ -519,7 +536,6 @@
       "toast-error-load-orgs": "Could not load organizations.",
       "toast-error-load-stores": "Could not load the stores for this organization.",
       "toast-error-load-automation-stats": "Could not load automated scenarios by store.",
-      "toast-error-load-browserstack": "Could not load BrowserStack executions.",
       "toast-success-store-created": "New store registered.",
       "toast-error-save-store": "Could not save the store.",
       "toast-success-org-updated": "Organization successfully updated.",
@@ -539,6 +555,15 @@
       "store-name-placeholder": "Ex: QA Store",
       "store-site-label": "Site URL",
       "store-site-placeholder": "https://mystore.com",
+      "store-admin-url-label": "VTEX admin URL",
+      "store-admin-url-placeholder": "https://admin.vtex.com/...",
+      "store-environment-label": "Store environment",
+      "store-platform-vtexio": "VTEX IO (WS)",
+      "store-platform-faststore": "FastStore (Preview)",
+      "store-logo-label": "Store logo",
+      "store-logo-hint": "Upload a square image (PNG, JPG, WEBP, or SVG).",
+      "store-logo-preview": "Store logo preview",
+      "store-logo-placeholder": "No logo",
       "save-button-saving": "Saving...",
       "save-store-button": "Create store",
       "cancel-store-button": "Cancel",
@@ -552,16 +577,6 @@
       "org-email-domain-label": "Organization email domain",
       "org-email-domain-placeholder": "@example.com",
       "org-email-domain-hint": "Enter the domain (with or without @). Users with this email are automatically included.",
-      "org-browserstack-section-title": "BrowserStack",
-      "org-browserstack-section-description": "Would you like to add credentials to follow automated runs?",
-      "org-browserstack-icon-alt": "BrowserStack",
-      "org-browserstack-toggle-on": "Enabled",
-      "org-browserstack-toggle-off": "Disabled",
-      "org-browserstack-username-label": "BrowserStack username",
-      "org-browserstack-username-placeholder": "browserstack.user",
-      "org-browserstack-access-key-label": "BrowserStack access key",
-      "org-browserstack-access-key-placeholder": "Paste the access key",
-      "org-browserstack-hint": "BrowserStack credentials are configured at the organization level.",
       "org-slack-section-title": "Slack Webhook",
       "org-slack-section-description": "Do you want to register a webhook to send automatic notifications to Slack?",
       "org-slack-icon-alt": "Slack",
@@ -576,7 +591,7 @@
       "confirm-remove-member-description": "The user will be removed from the organization {{organizationName}}.",
       "form-error-no-org-name": "Enter a name for the organization.",
       "form-error-no-member-email": "Enter the user's email.",
-      "org-slack-added-user": "Add users by the email registered in QaLite.",
+      "org-slack-added-user": "Add users by the email registered in QALite.",
       "org-vinculed-members": "Linked members",
       "org-added-user": "Add user",
       "org-added-user-to-email": "Add user by email",
@@ -585,7 +600,19 @@
       "org-remove-user": "Remove",
       "org-danger-zone": "Danger Zone",
       "org-remove-org-and-users": "Remove the organization and unlink all users.",
-      "org-remove-organization": "Delete organization"
+      "org-remove-organization": "Delete organization",
+      "pending-requests-title": "Pending requests to join this organization",
+      "pending-requests-count": "{{count}} request(s)",
+      "pending-requests-empty": "There are no pending requests for this organization.",
+      "pending-request-approve": "Approve access",
+      "pending-request-approved": "Request approved successfully.",
+      "pending-request-error": "Unable to approve the access request.",
+      "kpis": {
+        "activeStores": "Active stores",
+        "totalScenarios": "Total scenarios",
+        "averageAutomation": "Average automation",
+        "manualCases": "Manual cases"
+      }
     },
     "environment": {
       "loading": "Loading environment data...",
@@ -619,7 +646,7 @@
       "slack.success": "Summary successfully sent to Slack.",
       "slack.error": "Failed to send the summary to Slack.",
       "slack.summaryMessage": "Suite {{suiteName}} summary: {{scenarioCount}} scenarios, {{status}}. Link: {{link}}",
-      "slack.summaryHeader": "QALITE Summary",
+      "slack.summaryHeader": "QALite Summary",
       "slack.participantsTitle": "Who's participating",
       "slack.emptyList": "No monitored URLs",
       "slack.emptyParticipants": "No participants listed",
@@ -658,27 +685,20 @@
       "notRecorded": "Not recorded",
       "inProgress": "In progress",
       "notEnded": "Not finished",
-
       "bugs": "Registered bugs",
       "storyfix": "Registered storyfixes",
-
       "jira": "Jira",
       "notInformed": "Not informed",
-
       "moment": "Moment",
       "release": "Release",
-
       "participants": "Participants",
       "noParticipants": "No participants",
       "oneParticipant": "1 active participant",
       "multipleParticipants": "{{count}} active participants",
-
       "urls": "Monitored URLs",
       "noUrls": "No URL added.",
-
       "whoIsParticipating": "Who is participating"
     },
-
     "environmentBugList": {
       "bugRemovedSuccess": "Bug removed successfully.",
       "bugRemovedError": "Could not remove the bug.",
@@ -700,7 +720,8 @@
       "noSeverity": "No severity",
       "noPriority": "No priority",
       "confirmDeleteWithName": "Do you really want to delete the bug \"{{title}}\"?",
-      "confirmDelete": "Do you really want to delete?"
+      "confirmDelete": "Do you really want to delete?",
+      "loadError": "Unable to load bugs."
     },
     "editEnvironmentModal": {
       "editEnvironment": "Edit environment",
@@ -771,7 +792,8 @@
       "toast_sem_org": "Associate this store with an organization to record scenario time.",
       "toast_save_success": "Evidence link saved successfully.",
       "toast_save_error": "Failed to save evidence link.",
-      "toast_exec_error": "Failed to register scenario execution time."
+      "toast_exec_error": "Failed to register scenario execution time.",
+      "statusAriaLabel": "Status {{platform}} for scenario {{scenario}}"
     },
     "environmentExport": {
       "title": "Environment {{id}}",
@@ -810,7 +832,6 @@
       "noActualResult": "No actual result",
       "printError": "Unable to open the print window."
     },
-
     "summary": {
       "participants": "Participants",
       "bugs": "Bugs",
@@ -854,7 +875,7 @@
     "noOrganization": {
       "badge": "Pending configuration",
       "title": "You’re not linked to any organization yet.",
-      "subtitle": "Contact an administrator to set up your email domain or associate your account with a team to unlock QaLite’s features.",
+      "subtitle": "Contact an administrator to set up your email domain or associate your account with a team to unlock QALite’s features.",
       "steps": "What can you do now?",
       "update": "Make sure your profile information is up to date in your",
       "confirm": "Confirm your account email with the admin.",
@@ -884,16 +905,8 @@
       "photo": "Profile photo",
       "newPhoto": "Choose a new image",
       "formats": "Supported formats: JPG, PNG, or WEBP (up to 5MB).",
-      "browserstackTitle": "BrowserStack Credentials",
-      "browserstackDescription": "Integrations use personal credentials. Enable it only if you need to update your information.",
-      "browserstackLogoAlt": "BrowserStack",
       "enabled": "Enabled",
       "disabled": "Disabled",
-      "browserstackUser": "BrowserStack User",
-      "browserstackUserPlaceholder": "username",
-      "browserstackPassword": "BrowserStack Access Key",
-      "browserstackPasswordPlaceholder": "access key",
-      "browserstackText": "We store your credentials for use in your personal BrowserStack integrations.",
       "loadingText": "Saving...",
       "saveButton": "Save changes"
     },
@@ -919,6 +932,11 @@
       "storeFormTitleEdit": "Edit store",
       "storeNameLabel": "Name",
       "storeSiteLabel": "Site",
+      "storeAdminUrlLabel": "VTEX admin URL",
+      "storeAdminUrlPlaceholder": "https://admin.vtex.com/...",
+      "storeEnvironmentLabel": "Store environment",
+      "storePlatformVtexio": "VTEX IO (WS)",
+      "storePlatformFaststore": "FastStore (Preview)",
       "storeNamePlaceholder": "Ex: Downtown store",
       "storeSitePlaceholder": "Ex: https://mystore.com",
       "storeSaveCreate": "Save store",
@@ -1031,6 +1049,7 @@
       "scenarioDeleteConfirm": "Are you sure you want to delete the scenario \"{{title}}\"?",
       "suiteDeleteConfirm": "Are you sure you want to delete the suite \"{{name}}\"?",
       "loadingStore": "Loading store...",
+      "organizationLabel": "Organization",
       "store": "Store",
       "siteLabel": "Site",
       "environmentLabel": "Environment",
@@ -1068,6 +1087,11 @@
       "testData": "Scenario and test suite dataset",
       "exportPdf": "Export PDF",
       "exportExcel": "Export Excel",
+      "importJson": "Import JSON",
+      "downloadJsonTemplate": "Download JSON template",
+      "importJsonInvalid": "Invalid JSON file. Use the provided template to import scenarios.",
+      "importJsonSuccess": "{{count}} scenarios imported successfully.",
+      "importJsonError": "Unable to import scenarios from JSON.",
       "exportExcelSheetName": "Scenarios",
       "exportExcelInfoSheetName": "Store",
       "exportFileSuffix": "scenarios",
@@ -1120,9 +1144,122 @@
       "storeSettings": "Store settings",
       "storeName": "Store name",
       "storeUrl": "Website URL",
+      "storeAdminUrl": "VTEX admin URL",
+      "storeLogoLabel": "Store logo",
+      "storeLogoHint": "Upload the store logo.",
+      "storeLogoPreview": "Store logo preview",
+      "storeLogoPlaceholder": "No logo",
+      "storeEnvironmentLabel": "Store environment",
+      "storePlatformVtexio": "VTEX IO (WS)",
+      "storePlatformFaststore": "FastStore (Preview)",
+      "storeSlackWebhookLabel": "Store Slack webhook",
+      "storeSlackWebhookPlaceholder": "https://hooks.slack.com/services/...",
+      "storeSlackWebhookHint": "If provided, this webhook takes priority over the organization webhook.",
       "saveChanges": "Save changes",
       "removeStore": "Remove store",
-      "removeStoreWarning": "This will delete all linked scenarios and suites."
+      "removeStoreWarning": "This will delete all linked scenarios and suites.",
+      "exportSummarySheetName": "Summary",
+      "exportScenarioSheetName": "Scenarios",
+      "organizationLogoAlt": "Organization logo",
+      "storeLogoAlt": "Store logo",
+      "selectScenarioAriaLabel": "Select scenario {{scenario}}"
+    },
+    "generic": {
+      "user": "User",
+      "userInitial": "U",
+      "notRegistered": "Not registered",
+      "inProgress": "In progress",
+      "notEnded": "Not ended",
+      "report": "Report"
+    },
+    "organizationStores": {
+      "loadError": "We could not load your stores right now. Please try again later.",
+      "realtimeError": "Could not sync stores in real time."
+    },
+    "environmentRealtime": {
+      "notFound": "Environment not found."
+    },
+    "organizationAccessRequests": {
+      "availableOrganizations": "Available organizations",
+      "availableOrganizationsSubtitle": "Request access to join an organization even when your email has not been pre-registered yet.",
+      "loading": "Loading available organizations...",
+      "emptyTitle": "No organizations available",
+      "emptyDescription": "As soon as an organization is created, it will appear here for access requests.",
+      "domainHint": "Configured domain: {{emailDomain}}",
+      "manualApprovalHint": "Approval is handled from organization management.",
+      "availableBadge": "Available to request",
+      "pendingBadge": "Request pending",
+      "requestButton": "Request access",
+      "requestPending": "Requested",
+      "requestBlocked": "Blocked",
+      "cancelButton": "Cancel request",
+      "requesting": "Requesting...",
+      "canceling": "Canceling...",
+      "singlePendingRule": "You can keep only 1 pending request at a time.",
+      "requestCreated": "Request sent to {{organizationName}}.",
+      "requestError": "Unable to request organization access.",
+      "cancelSuccess": "Request canceled for {{organizationName}}.",
+      "cancelError": "Unable to cancel access request.",
+      "loadOrganizationsError": "Unable to load available organizations.",
+      "pendingTitle": "Access requests",
+      "pendingSubtitle": "Approve requests to grant immediate organization access.",
+      "pendingEmpty": "There are no pending requests right now.",
+      "pendingCount": "{{count}} pending",
+      "approveButton": "Add to organization",
+      "approving": "Adding...",
+      "approveSuccess": "Access granted immediately.",
+      "approveError": "Unable to approve the access request.",
+      "adminToast": "There are {{count}} pending access requests awaiting approval."
+    },
+    "common": {
+      "loading": "Loading..."
+    },
+    "authPageLabels": {
+      "login": "Sign in to your account",
+      "register": "Create your account",
+      "forgotPassword": "Recover your password"
+    },
+    "passwordStrength": {
+      "veryWeak": "Very weak",
+      "weak": "Weak",
+      "fair": "Fair",
+      "strong": "Strong",
+      "veryStrong": "Very strong",
+      "requirements": {
+        "minLength": "At least {{count}} characters",
+        "uppercase": "One uppercase letter",
+        "lowercase": "One lowercase letter",
+        "number": "One number",
+        "special": "One special character (!@#$%^&*)"
+      }
     }
-  }
+  },
+  "profilePage.overviewBadge": "Overview",
+  "profilePage.personalBadge": "Personal details",
+  "profilePage.personalTitle": "Personal details",
+  "profilePage.personalSubtitle": "Update your name, avatar, and displayed email without leaving the page.",
+  "profilePage.personalAction": "Save details",
+  "profilePage.personalSaving": "Saving details...",
+  "profilePage.personalSaved": "Personal details updated successfully.",
+  "profilePage.personalError": "Unable to update personal details.",
+  "profilePage.personalUpToDate": "Your personal details are already up to date.",
+  "profilePage.settingsBadge": "Settings",
+  "profilePage.settingsTitle": "Settings",
+  "profilePage.settingsSubtitle": "Adjust language and theme with immediate UI updates.",
+  "profilePage.settingsAction": "Save settings",
+  "profilePage.settingsSaving": "Saving settings...",
+  "profilePage.settingsSaved": "Settings updated successfully.",
+  "profilePage.settingsError": "Unable to update settings.",
+  "profilePage.settingsUpToDate": "Your settings are already up to date.",
+  "profilePage.securityBadge": "Security",
+  "profilePage.securityTitle": "Security",
+  "profilePage.securitySubtitle": "Manage account access without changing the current authentication flow.",
+  "profilePage.securityAction": "Send reset link",
+  "profilePage.securityLoading": "Sending reset link...",
+  "profilePage.securitySuccess": "We sent a password reset link to your email.",
+  "profilePage.securityError": "Unable to send the password reset link.",
+  "profilePage.securityHint": "Use password reset delivery to update your password securely.",
+  "profilePage.securityFallbackAction": "Open reset flow",
+  "profilePage.securityEmailUnavailable": "Email unavailable",
+  "layout.openProfile": "Open profile"
 }

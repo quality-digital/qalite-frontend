@@ -15,7 +15,7 @@ const isThemePreference = (value: unknown): value is ThemePreference =>
 const isLanguagePreference = (value: unknown): value is LanguagePreference =>
   value === 'pt' || value === 'en';
 
-const normalizeLanguagePreference = (value?: string | null): LanguagePreference | null => {
+export const normalizeLanguagePreference = (value?: string | null): LanguagePreference | null => {
   if (!value) {
     return null;
   }
@@ -98,4 +98,22 @@ export const persistPreferencesLocally = (preferences: UserPreferences): void =>
 
   window.localStorage.setItem(THEME_PREFERENCE_STORAGE_KEY, preferences.theme);
   window.localStorage.setItem(LANGUAGE_STORAGE_KEY, preferences.language);
+};
+
+export const getPreferredDocumentLocale = (): string | null => {
+  if (typeof navigator === 'undefined') {
+    return null;
+  }
+
+  const languages = navigator.languages?.length ? navigator.languages : [navigator.language];
+  const preferredLanguage = getStoredLanguagePreference() ?? getDeviceLanguagePreference();
+
+  if (!preferredLanguage) {
+    return languages.find(Boolean) ?? null;
+  }
+
+  const exactMatch = languages.find((language) =>
+    language.toLowerCase().startsWith(preferredLanguage),
+  );
+  return exactMatch ?? preferredLanguage;
 };

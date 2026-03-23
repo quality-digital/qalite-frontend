@@ -1,16 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import i18n from '../../lib/i18n';
 
 import type { Environment } from '../../domain/entities/environment';
 import { environmentService } from '../../infrastructure/services/environmentService';
 import { getEnvironmentCached } from '../../infrastructure/external/environments';
 
 export const useEnvironmentRealtime = (environmentId: string | null | undefined) => {
-  const subscribeToEnvironment = useCallback(
-    (id: string, handler: (environment: Environment | null) => void) =>
-      environmentService.observeEnvironment(id, handler),
-    [],
-  );
-
   const cachedEnvironment = useMemo(
     () => (environmentId ? getEnvironmentCached(environmentId) : null),
     [environmentId],
@@ -23,7 +18,7 @@ export const useEnvironmentRealtime = (environmentId: string | null | undefined)
     if (!environmentId) {
       setEnvironment(null);
       setIsLoading(false);
-      setError('Ambiente não encontrado.');
+      setError(i18n.t('environmentRealtime.notFound'));
       return;
     }
 
@@ -32,20 +27,20 @@ export const useEnvironmentRealtime = (environmentId: string | null | undefined)
     setIsLoading(!cachedEnvironment);
     setError(null);
 
-    const unsubscribe = subscribeToEnvironment(environmentId, (nextValue) => {
+    const unsubscribe = environmentService.observeEnvironment(environmentId, (nextValue) => {
       if (!isMounted) {
         return;
       }
       setEnvironment(nextValue);
       setIsLoading(false);
-      setError(nextValue ? null : 'Ambiente não encontrado.');
+      setError(nextValue ? null : i18n.t('environmentRealtime.notFound'));
     });
 
     return () => {
       isMounted = false;
       unsubscribe();
     };
-  }, [cachedEnvironment, environmentId, subscribeToEnvironment]);
+  }, [cachedEnvironment, environmentId]);
 
   return { environment, isLoading, error };
 };

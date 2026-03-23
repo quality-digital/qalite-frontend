@@ -13,13 +13,18 @@ import {
   serverTimestamp,
   startAfter,
   updateDoc,
+  type Query,
   type QueryDocumentSnapshot,
+  type QuerySnapshot,
+  type DocumentData,
   type Unsubscribe,
   where,
   writeBatch,
 } from 'firebase/firestore';
+import { buildStorageFileName, uploadFileAndGetUrl } from './storage';
 
 import type {
+  CreateStoreScenarioPayload,
   CreateStorePayload,
   Store,
   StoreCategory,
@@ -89,7 +94,10 @@ const mapStore = (id: string, data: Record<string, unknown>): Store => {
     organizationId: ((data.organizationId as string) ?? '').trim(),
     name: ((data.name as string) ?? '').trim(),
     site: ((data.site as string) ?? '').trim(),
+    adminUrl: ((data.adminUrl as string) ?? '').trim(),
     stage: ((data.stage as string) ?? '').trim(),
+    logoUrl: ((data.logoUrl as string) ?? '').trim() || null,
+    slackWebhookUrl: ((data.slackWebhookUrl as string) ?? '').trim() || null,
     scenarioCount,
     automatedScenarioCount,
     notAutomatedScenarioCount,
@@ -189,13 +197,13 @@ const listStoresFromServer = async (organizationId: string): Promise<Store[]> =>
     let hasMore = true;
 
     while (hasMore) {
-      const pageQuery = lastDoc
+      const pageQuery: Query<DocumentData> = lastDoc
         ? query(storesQuery, startAfter(lastDoc), limit(STORE_PAGE_SIZE))
         : query(storesQuery, limit(STORE_PAGE_SIZE));
 
-      const snapshot = await getDocsCacheThenServer(pageQuery);
+      const snapshot: QuerySnapshot<DocumentData> = await getDocsCacheThenServer(pageQuery);
 
-      snapshot.docs.forEach((docSnapshot) => {
+      snapshot.docs.forEach((docSnapshot: QueryDocumentSnapshot<DocumentData>) => {
         stores.push(mapStore(docSnapshot.id, docSnapshot.data({ serverTimestamps: 'estimate' })));
       });
 
@@ -240,7 +248,6 @@ export const listenToStores = (
   return onSnapshot(
     storesQuery,
     (snapshot) => {
-      // O listener sempre recalcula o array completo para manter a lista consistente no cliente.
       const stores = snapshot.docs.map((docSnapshot) =>
         mapStore(docSnapshot.id, docSnapshot.data({ serverTimestamps: 'estimate' })),
       );
@@ -290,7 +297,10 @@ export const createStore = async (payload: CreateStorePayload): Promise<Store> =
     organizationId: payload.organizationId,
     name: payload.name.trim(),
     site: payload.site.trim(),
+    adminUrl: payload.adminUrl?.trim() || '',
     stage: payload.stage.trim(),
+    logoUrl: payload.logoUrl?.trim() || null,
+    slackWebhookUrl: payload.slackWebhookUrl?.trim() || null,
     scenarioCount: 0,
     automatedScenarioCount: 0,
     notAutomatedScenarioCount: 0,
@@ -303,7 +313,10 @@ export const createStore = async (payload: CreateStorePayload): Promise<Store> =
     organizationId: payload.organizationId,
     name: payload.name.trim(),
     site: payload.site.trim(),
+    adminUrl: payload.adminUrl?.trim() || '',
     stage: payload.stage.trim(),
+    logoUrl: payload.logoUrl?.trim() || null,
+    slackWebhookUrl: payload.slackWebhookUrl?.trim() || null,
     scenarioCount: 0,
     automatedScenarioCount: 0,
     notAutomatedScenarioCount: 0,
@@ -322,7 +335,12 @@ export const updateStore = async (storeId: string, payload: UpdateStorePayload):
   await updateDoc(storeRef, {
     name: payload.name.trim(),
     site: payload.site.trim(),
+    adminUrl: payload.adminUrl?.trim() || '',
     stage: payload.stage.trim(),
+    ...(payload.logoUrl !== undefined ? { logoUrl: payload.logoUrl?.trim() || null } : {}),
+    ...(payload.slackWebhookUrl !== undefined
+      ? { slackWebhookUrl: payload.slackWebhookUrl?.trim() || null }
+      : {}),
     updatedAt: serverTimestamp(),
   });
 
@@ -333,6 +351,11 @@ export const updateStore = async (storeId: string, payload: UpdateStorePayload):
   STORE_CACHE.invalidatePrefix(`${STORE_LIST_CACHE_KEY}:`);
 
   return updated;
+};
+
+export const uploadStoreLogo = async (storeId: string, file: File): Promise<string> => {
+  const fileName = buildStorageFileName(file);
+  return uploadFileAndGetUrl(`stores/${storeId}/logo/${fileName}`, file);
 };
 
 export const deleteStore = async (storeId: string): Promise<void> => {
@@ -371,11 +394,11 @@ const listScenariosFromServer = async (storeId: string): Promise<StoreScenario[]
   let hasMore = true;
 
   while (hasMore) {
-    const pageQuery = lastDoc
+    const pageQuery: Query<DocumentData> = lastDoc
       ? query(scenariosQuery, startAfter(lastDoc), limit(SCENARIOS_PAGE_SIZE))
       : query(scenariosQuery, limit(SCENARIOS_PAGE_SIZE));
-    const snapshot = await getDocsCacheThenServer(pageQuery);
-    snapshot.docs.forEach((docSnapshot) => {
+    const snapshot: QuerySnapshot<DocumentData> = await getDocsCacheThenServer(pageQuery);
+    snapshot.docs.forEach((docSnapshot: QueryDocumentSnapshot<DocumentData>) => {
       scenarios.push(
         mapScenario(storeId, docSnapshot.id, docSnapshot.data({ serverTimestamps: 'estimate' })),
       );
@@ -415,8 +438,29 @@ export const listScenarios = async (storeId: string): Promise<StoreScenario[]> =
   });
 };
 
+export const listenToScenarios = (
+  storeId: string,
+  onChange: (scenarios: StoreScenario[]) => void,
+  onError?: (error: Error) => void,
+): Unsubscribe => {
+  const storeRef = doc(firebaseFirestore, STORES_COLLECTION, storeId);
+  const scenariosCollection = collection(storeRef, SCENARIOS_SUBCOLLECTION);
+  const scenariosQuery = query(scenariosCollection, orderBy('title'));
+
+  return onSnapshot(
+    scenariosQuery,
+    (snapshot) => {
+      const scenarios = snapshot.docs.map((docSnapshot) =>
+        mapScenario(storeId, docSnapshot.id, docSnapshot.data({ serverTimestamps: 'estimate' })),
+      );
+      onChange(scenarios);
+    },
+    (error) => onError?.(error),
+  );
+};
+
 export const createScenario = async (
-  payload: { storeId: string } & StoreScenarioInput,
+  payload: CreateStoreScenarioPayload,
 ): Promise<StoreScenario> => {
   const { storeId, ...scenarioInput } = payload;
   const storeRef = doc(firebaseFirestore, STORES_COLLECTION, storeId);
@@ -592,11 +636,11 @@ const listSuitesFromServer = async (storeId: string): Promise<StoreSuite[]> => {
   let hasMore = true;
 
   while (hasMore) {
-    const pageQuery = lastDoc
+    const pageQuery: Query<DocumentData> = lastDoc
       ? query(suitesQuery, startAfter(lastDoc), limit(SUITES_PAGE_SIZE))
       : query(suitesQuery, limit(SUITES_PAGE_SIZE));
-    const snapshot = await getDocsCacheThenServer(pageQuery);
-    snapshot.docs.forEach((docSnapshot) => {
+    const snapshot: QuerySnapshot<DocumentData> = await getDocsCacheThenServer(pageQuery);
+    snapshot.docs.forEach((docSnapshot: QueryDocumentSnapshot<DocumentData>) => {
       suites.push(
         mapSuite(storeId, docSnapshot.id, docSnapshot.data({ serverTimestamps: 'estimate' })),
       );
@@ -713,6 +757,27 @@ export const listCategories = async (storeId: string): Promise<StoreCategory[]> 
     console.error(error);
     return [];
   }
+};
+
+export const listenToCategories = (
+  storeId: string,
+  onChange: (categories: StoreCategory[]) => void,
+  onError?: (error: Error) => void,
+): Unsubscribe => {
+  const storeRef = doc(firebaseFirestore, STORES_COLLECTION, storeId);
+  const categoriesCollection = collection(storeRef, CATEGORIES_SUBCOLLECTION);
+  const categoriesQuery = query(categoriesCollection, orderBy('searchName'));
+
+  return onSnapshot(
+    categoriesQuery,
+    (snapshot) => {
+      const categories = snapshot.docs.map((docSnapshot) =>
+        mapCategory(storeId, docSnapshot.id, docSnapshot.data({ serverTimestamps: 'estimate' })),
+      );
+      onChange(categories);
+    },
+    (error) => onError?.(error),
+  );
 };
 
 export const createCategory = async (
@@ -874,7 +939,10 @@ export const exportStoreData = async (storeId: string): Promise<StoreExportPaylo
       id: store.id,
       name: store.name,
       site: store.site,
+      adminUrl: store.adminUrl,
       stage: store.stage,
+      logoUrl: store.logoUrl,
+      slackWebhookUrl: store.slackWebhookUrl,
       scenarioCount: scenarios.length,
     },
     exportedAt: new Date().toISOString(),

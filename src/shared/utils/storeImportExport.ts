@@ -326,8 +326,8 @@ const buildScenarioSheets = (payload: StoreExportPayload): WorksheetDefinition[]
   ];
 
   return [
-    { name: 'Resumo', rows: summaryRows },
-    { name: 'Cenários', rows: scenarioRows },
+    { name: t('storeSummary.exportSummarySheetName'), rows: summaryRows },
+    { name: t('storeSummary.exportScenarioSheetName'), rows: scenarioRows },
   ];
 };
 
@@ -473,12 +473,37 @@ export const openScenarioPdf = (
     : escapeHtml(siteLabel);
   const organizationName = organization?.name?.trim() || '';
   const organizationLogo = organization?.logoUrl?.trim() || '';
-  const hasOrganizationHeader = Boolean(organizationName || organizationLogo);
-  const organizationHeader = hasOrganizationHeader
-    ? `<div class="org-header">
-        ${organizationLogo ? `<img src="${escapeHtml(organizationLogo)}" alt="${escapeHtml(organizationName || 'Organization logo')}" class="org-logo" />` : ''}
-        ${organizationName ? `<span class="org-name">${escapeHtml(organizationName)}</span>` : ''}
-      </div>`
+  const storeName = payload.store.name?.trim() || t('storeSummary.emptyValue');
+  const storeLogo = payload.store.logoUrl?.trim() || organizationLogo;
+  const brandingItems = [
+    {
+      key: 'organization',
+      label: t('storeSummary.organizationLabel'),
+      name: organizationName,
+      logo: organizationLogo,
+      fallbackAlt: t('storeSummary.organizationLogoAlt'),
+    },
+    {
+      key: 'store',
+      label: t('storeSummary.store'),
+      name: storeName,
+      logo: storeLogo,
+      fallbackAlt: t('storeSummary.storeLogoAlt'),
+    },
+  ].filter((item) => item.name || item.logo);
+
+  const brandingHeader = brandingItems.length
+    ? `<div class="org-header">${brandingItems
+        .map(
+          (item) => `<div class="org-header-item">
+            ${item.logo ? `<img src="${escapeHtml(item.logo)}" alt="${escapeHtml(item.name || item.fallbackAlt)}" class="org-logo" />` : ''}
+            <div class="org-header-copy">
+              <span class="org-label">${escapeHtml(item.label)}</span>
+              ${item.name ? `<span class="org-name">${escapeHtml(item.name)}</span>` : ''}
+            </div>
+          </div>`,
+        )
+        .join('')}</div>`
     : '';
 
   const content = `
@@ -507,7 +532,10 @@ export const openScenarioPdf = (
           }
           body { font-family: 'Inter', system-ui, -apple-system, sans-serif; padding: 24px; }
           h1 { margin-bottom: 4px; }
-          .org-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+          .org-header { display: flex; flex-wrap: wrap; align-items: stretch; gap: 12px; margin-bottom: 12px; }
+          .org-header-item { display: flex; align-items: center; gap: 12px; min-width: 220px; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface-muted); }
+          .org-header-copy { display: flex; flex-direction: column; gap: 2px; }
+          .org-label { font-size: 12px; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
           .org-logo { width: 48px; height: 48px; border-radius: 10px; object-fit: contain; border: 1px solid var(--color-border); background: #fff; }
           .org-name { font-size: 16px; font-weight: 600; color: #111827; }
           .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 16px 0; padding: 12px; background: var(--color-surface-muted); border: 1px solid var(--color-border); border-radius: 12px; }
@@ -525,7 +553,7 @@ export const openScenarioPdf = (
         </style>
       </head>
       <body>
-        ${organizationHeader}
+        ${brandingHeader}
         <h1>${escapeHtml(title)}</h1>
         <div class="summary-grid">
           <div>
@@ -603,7 +631,7 @@ export const downloadEnvironmentWorkbook = ({
   headers,
   rows,
   fileName,
-  sheetName = 'Report',
+  sheetName = i18n.t('generic.report'),
 }: EnvironmentWorkbookOptions) => {
   const workbookBlob = createWorkbookBlob(
     [

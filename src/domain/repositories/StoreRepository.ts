@@ -1,4 +1,5 @@
 import type {
+  CreateStoreScenarioPayload,
   CreateStorePayload,
   Store,
   StoreCategory,
@@ -18,9 +19,10 @@ export interface StoreRepository {
   getDetail: (id: string) => Promise<Store | null>;
   create: (store: CreateStorePayload) => Promise<Store>;
   update: (id: string, store: UpdateStorePayload) => Promise<Store>;
+  uploadLogo: (storeId: string, file: File) => Promise<string>;
   delete: (id: string) => Promise<void>;
   listScenarios: (storeId: string) => Promise<StoreScenario[]>;
-  createScenario: (scenario: { storeId: string } & StoreScenarioInput) => Promise<StoreScenario>;
+  createScenario: (scenario: CreateStoreScenarioPayload) => Promise<StoreScenario>;
   updateScenario: (
     storeId: string,
     scenarioId: string,

@@ -72,7 +72,7 @@ export const ProfilePage = () => {
         await updatePreferences(draftPreferences);
       }
     } catch (err) {
-      console.error(err);
+      setLocalError(err instanceof Error ? err.message : t('profilePage.errorSize'));
     }
   };
 

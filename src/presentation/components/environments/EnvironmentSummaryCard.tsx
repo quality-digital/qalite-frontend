@@ -53,7 +53,6 @@ export const EnvironmentSummaryCard = ({
   urls,
   participants,
   bugsCount,
-  storeName,
 }: EnvironmentSummaryCardProps) => {
   const { t: translation } = useTranslation();
 
@@ -63,7 +62,11 @@ export const EnvironmentSummaryCard = ({
   const visibleUrls = urls.slice(0, 3);
   const remainingUrls = urls.length - visibleUrls.length;
 
-  const isWsEnvironment = environment.tipoAmbiente?.toUpperCase() === 'WS';
+  const normalizedEnvironmentType =
+    typeof environment.tipoAmbiente === 'string'
+      ? environment.tipoAmbiente.trim().toUpperCase()
+      : '';
+  const isWsEnvironment = normalizedEnvironmentType === 'WS';
 
   const bugLabel = isWsEnvironment
     ? translation('environmentSummary.storyfix')
@@ -102,11 +105,6 @@ export const EnvironmentSummaryCard = ({
             {translation('environmentSummary.totalTime')}
           </span>
           <strong>{formattedTime}</strong>
-        </div>
-
-        <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">{translation('storeSummary.storeName')}</span>
-          <strong>{storeName?.trim() || translation('storeSummary.emptyValue')}</strong>
         </div>
 
         <div className="summary-card__meta-item">

@@ -1,9 +1,12 @@
 import type {
   AddUserToOrganizationPayload,
+  CancelOrganizationAccessRequestPayload,
   CreateOrganizationPayload,
   Organization,
+  OrganizationAccessRequest,
   OrganizationMember,
   RemoveUserFromOrganizationPayload,
+  RequestOrganizationAccessPayload,
   UpdateOrganizationPayload,
 } from '../entities/organization';
 
@@ -18,5 +21,11 @@ export interface OrganizationRepository {
   delete: (id: string) => Promise<void>;
   addUser: (payload: AddUserToOrganizationPayload) => Promise<OrganizationMember>;
   removeUser: (payload: RemoveUserFromOrganizationPayload) => Promise<void>;
+  requestAccess: (payload: RequestOrganizationAccessPayload) => Promise<OrganizationAccessRequest>;
+  cancelAccessRequest: (payload: CancelOrganizationAccessRequestPayload) => Promise<void>;
+  approveAccessRequest: (payload: {
+    organizationId: string;
+    requestId: string;
+  }) => Promise<OrganizationMember>;
   getUserOrganizationByUserId: (userId: string) => Promise<Organization | null>;
 }
