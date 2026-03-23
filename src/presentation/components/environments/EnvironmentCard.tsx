@@ -98,7 +98,9 @@ export const EnvironmentCard = ({
           <div className="environment-card__info-item">
             <ClockIcon aria-hidden className="environment-card__info-icon" />
             <div className="environment-card__info-content">
-              <span className="environment-card__info-label">{t('environmentCard.momentLabel')}</span>
+              <span className="environment-card__info-label">
+                {t('environmentCard.momentLabel')}
+              </span>
               <span className="environment-card__info-value" title={momentLabel}>
                 {momentLabel}
               </span>

@@ -6643,8 +6643,6 @@ button.store-summary-highlight:focus-visible {
   color: var(--color-text-primary);
 }
 
-
-
 .environment-card-status-dot {
   /* Deprecated: Use .environment-card__status-badge instead */
   display: none;

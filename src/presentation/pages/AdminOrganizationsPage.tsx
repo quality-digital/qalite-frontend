@@ -137,7 +137,11 @@ export const AdminOrganizationsPage = () => {
             <p className="section-subtitle">{t('adminOrganizationsPage.subtitle')}</p>
           </div>
           <div className="page-actions">
-            <Button type="button" onClick={openCreateModal} data-testid="create-organization-button">
+            <Button
+              type="button"
+              onClick={openCreateModal}
+              data-testid="create-organization-button"
+            >
               {t('adminOrganizationsPage.createButton')}
             </Button>
           </div>
@@ -287,12 +291,7 @@ export const AdminOrganizationsPage = () => {
             <Button type="submit" isLoading={isSaving}>
               {t('adminOrganizationsPage.form.submitButton')}
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={closeCreateModal}
-              disabled={isSaving}
-            >
+            <Button type="button" variant="ghost" onClick={closeCreateModal} disabled={isSaving}>
               {t('cancel')}
             </Button>
           </div>
