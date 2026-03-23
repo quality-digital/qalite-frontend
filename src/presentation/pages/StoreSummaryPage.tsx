@@ -76,6 +76,17 @@ const emptySuiteForm: StoreSuiteInput = {
   scenarioIds: [],
 };
 
+const SCENARIO_JSON_TEMPLATE: StoreScenarioInput[] = [
+  {
+    title: 'Validar login com usuário válido',
+    category: 'Autenticação',
+    automation: 'NOT_AUTOMATED',
+    criticality: 'HIGH',
+    observation: 'Cobrir web e app.',
+    bdd: 'Dado que o usuário acessa a tela de login...',
+  },
+];
+
 interface ScenarioFilters {
   search: string;
   category: string;
@@ -162,7 +173,7 @@ export const StoreSummaryPage = () => {
   const { storeId } = useParams<{ storeId: string }>();
   const { user, isInitializing } = useAuth();
   const { showToast } = useToast();
-  const { setActiveOrganization } = useOrganizationBranding();
+  const { setActiveOrganization, setActiveStore } = useOrganizationBranding();
 
   const [store, setStore] = useState<Store | null>(null);
   const [organization, setOrganization] = useState<Organization | null>(null);
@@ -209,7 +220,9 @@ export const StoreSummaryPage = () => {
   const [isViewingSuitesOnly, setIsViewingSuitesOnly] = useState(false);
   const suiteListRef = useRef<HTMLDivElement | null>(null);
   const scenarioFormRef = useRef<HTMLFormElement | null>(null);
+  const scenarioJsonInputRef = useRef<HTMLInputElement | null>(null);
   const [exportingScenarioFormat, setExportingScenarioFormat] = useState<ExportFormat | null>(null);
+  const [isImportingScenarioJson, setIsImportingScenarioJson] = useState(false);
   const { t, i18n } = useTranslation();
   const storeSiteInfo = useMemo(() => {
     const link = buildExternalLink(store?.site);
@@ -218,11 +231,27 @@ export const StoreSummaryPage = () => {
       href: link.href,
     };
   }, [store?.site, t]);
+  const storeAdminInfo = useMemo(() => {
+    const link = buildExternalLink(store?.adminUrl);
+    return {
+      label: link.label || t('storeSummary.notInformed'),
+      href: link.href,
+    };
+  }, [store?.adminUrl, t]);
   const [isStoreSettingsOpen, setIsStoreSettingsOpen] = useState(false);
-  const [storeSettings, setStoreSettings] = useState({ name: '', site: '' });
+  const [storeSettings, setStoreSettings] = useState({
+    name: '',
+    site: '',
+    adminUrl: '',
+    logoUrl: '',
+    slackWebhookUrl: '',
+    stage: 'WS' as 'WS' | 'Preview',
+  });
   const [storeSettingsError, setStoreSettingsError] = useState<string | null>(null);
   const [isUpdatingStore, setIsUpdatingStore] = useState(false);
   const [isDeletingStore, setIsDeletingStore] = useState(false);
+  const [storeSettingsLogoFile, setStoreSettingsLogoFile] = useState<File | null>(null);
+  const [storeSettingsLogoPreview, setStoreSettingsLogoPreview] = useState<string | null>(null);
 
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     message: string;
@@ -583,15 +612,36 @@ export const StoreSummaryPage = () => {
       return;
     }
 
-    setStoreSettings({ name: store.name, site: store.site });
+    setStoreSettings({
+      name: store.name,
+      site: store.site,
+      adminUrl: store.adminUrl ?? '',
+      logoUrl: store.logoUrl ?? '',
+      slackWebhookUrl: store.slackWebhookUrl ?? '',
+      stage: store.stage === 'Preview' ? 'Preview' : 'WS',
+    });
+    setStoreSettingsLogoFile(null);
+    setStoreSettingsLogoPreview(store.logoUrl ?? null);
     setStoreSettingsError(null);
     setIsStoreSettingsOpen(true);
   };
 
   const closeStoreSettings = () => {
     setIsStoreSettingsOpen(false);
+    setStoreSettingsLogoFile(null);
+    setStoreSettingsLogoPreview(null);
     setStoreSettingsError(null);
   };
+
+  useEffect(() => {
+    if (!storeSettingsLogoFile) {
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(storeSettingsLogoFile);
+    setStoreSettingsLogoPreview(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [storeSettingsLogoFile]);
 
   const handleStoreSettingsSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -602,6 +652,9 @@ export const StoreSummaryPage = () => {
 
     const trimmedName = storeSettings.name.trim();
     const trimmedSite = storeSettings.site.trim();
+    const trimmedAdminUrl = storeSettings.adminUrl.trim();
+
+    const trimmedSlackWebhookUrl = storeSettings.slackWebhookUrl.trim();
 
     if (!trimmedName) {
       setStoreSettingsError(t('storeSummary.storeNameRequired'));
@@ -615,14 +668,30 @@ export const StoreSummaryPage = () => {
 
     try {
       setIsUpdatingStore(true);
+      const uploadedLogoUrl = storeSettingsLogoFile
+        ? await storeService.uploadLogo(store.id, storeSettingsLogoFile)
+        : undefined;
       const updated = await storeService.update(store.id, {
         name: trimmedName,
         site: trimmedSite,
-        stage: store.stage,
+        adminUrl: trimmedAdminUrl,
+        stage: storeSettings.stage,
+
+        ...(uploadedLogoUrl !== undefined
+          ? { logoUrl: uploadedLogoUrl }
+          : { logoUrl: storeSettings.logoUrl || null }),
+        slackWebhookUrl: trimmedSlackWebhookUrl || null,
       });
 
       setStore(updated);
-      setStoreSettings({ name: updated.name, site: updated.site });
+      setStoreSettings({
+        name: updated.name,
+        site: updated.site,
+        adminUrl: updated.adminUrl ?? '',
+        logoUrl: updated.logoUrl ?? '',
+        slackWebhookUrl: updated.slackWebhookUrl ?? '',
+        stage: updated.stage === 'Preview' ? 'Preview' : 'WS',
+      });
       closeStoreSettings();
       showToast({ type: 'success', message: t('storeSummary.storeUpdateSuccess') });
     } catch (error) {
@@ -845,7 +914,25 @@ export const StoreSummaryPage = () => {
     setActiveOrganization(organization);
   }, [organization, setActiveOrganization]);
 
-  useEffect(() => () => setActiveOrganization(null), [setActiveOrganization]);
+  useEffect(() => {
+    setActiveStore(
+      store
+        ? {
+            id: store.id,
+            name: store.name,
+            logoUrl: store.logoUrl,
+          }
+        : null,
+    );
+  }, [setActiveStore, store]);
+
+  useEffect(
+    () => () => {
+      setActiveOrganization(null);
+      setActiveStore(null);
+    },
+    [setActiveOrganization, setActiveStore],
+  );
 
   const handleCreateCategory = async () => {
     if (!store) {
@@ -1054,6 +1141,93 @@ export const StoreSummaryPage = () => {
       showToast({ type: 'error', message });
     } finally {
       setIsSavingScenario(false);
+    }
+  };
+
+  const normalizeImportedScenario = (input: Record<string, unknown>): StoreScenarioInput => ({
+    title: String(input.title ?? '').trim(),
+    category: String(input.category ?? '').trim(),
+    automation: normalizeAutomationEnum(String(input.automation ?? '').trim()),
+    criticality: normalizeCriticalityEnum(String(input.criticality ?? '').trim()),
+    observation: String(input.observation ?? '').trim(),
+    bdd: String(input.bdd ?? '').trim(),
+  });
+
+  const downloadScenarioJsonTemplate = () => {
+    const blob = new Blob([JSON.stringify(SCENARIO_JSON_TEMPLATE, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'modelo-cenarios.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleScenarioJsonImport = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !store) {
+      return;
+    }
+
+    try {
+      setIsImportingScenarioJson(true);
+      const raw = await file.text();
+      const parsed = JSON.parse(raw) as unknown;
+      const items = Array.isArray(parsed)
+        ? parsed
+        : typeof parsed === 'object' &&
+            parsed !== null &&
+            Array.isArray((parsed as { scenarios?: unknown[] }).scenarios)
+          ? (parsed as { scenarios: unknown[] }).scenarios
+          : null;
+
+      if (!items) {
+        throw new Error(t('storeSummary.importJsonInvalid'));
+      }
+
+      const payloads = items
+        .filter(
+          (item): item is Record<string, unknown> => typeof item === 'object' && item !== null,
+        )
+        .map(normalizeImportedScenario);
+
+      if (
+        payloads.length === 0 ||
+        payloads.some(
+          (scenario) =>
+            !scenario.title || !scenario.category || !scenario.automation || !scenario.criticality,
+        )
+      ) {
+        throw new Error(t('storeSummary.importJsonInvalid'));
+      }
+
+      for (const scenario of payloads) {
+        await storeService.createScenario({ storeId: store.id, ...scenario });
+      }
+
+      const [updatedScenarios, updatedCategories] = await Promise.all([
+        storeService.listScenarios(store.id),
+        storeService.listCategories(store.id),
+      ]);
+      setScenarios(updatedScenarios);
+      setCategories(updatedCategories);
+      showToast({
+        type: 'success',
+        message: t('storeSummary.importJsonSuccess', { count: payloads.length }),
+      });
+    } catch (error) {
+      console.error(error);
+      showToast({
+        type: 'error',
+        message: error instanceof Error ? error.message : t('storeSummary.importJsonError'),
+      });
+    } finally {
+      event.target.value = '';
+      setIsImportingScenarioJson(false);
     }
   };
 
@@ -1539,17 +1713,24 @@ export const StoreSummaryPage = () => {
               <div className="store-summary">
                 <div className="store-summary-meta">
                   <div className="store-summary-context">
-                    {organization?.name && <span>{organization.name}</span>}
-                    {store?.name && (
-                      <span className="store-summary-context__name">{store.name}</span>
-                    )}
                     <span>
+                      <strong>{t('storeSummary.storeUrl')}:</strong>{' '}
                       {storeSiteInfo.href ? (
                         <a href={storeSiteInfo.href} target="_blank" rel="noreferrer noopener">
                           {storeSiteInfo.label}
                         </a>
                       ) : (
                         storeSiteInfo.label
+                      )}
+                    </span>
+                    <span>
+                      <strong>{t('storeSummary.storeAdminUrl')}:</strong>{' '}
+                      {storeAdminInfo.href ? (
+                        <a href={storeAdminInfo.href} target="_blank" rel="noreferrer noopener">
+                          {storeAdminInfo.label}
+                        </a>
+                      ) : (
+                        storeAdminInfo.label
                       )}
                     </span>
                   </div>
@@ -1559,6 +1740,7 @@ export const StoreSummaryPage = () => {
                     aria-label={t('storeSummary.summaryAriaLabel')}
                   >
                     {storeHighlights.map((highlight) => {
+                      const highlightClassName = `store-summary-highlight${highlight.isActive ? ' is-active' : ''}`;
                       const content = (
                         <>
                           <span className="store-summary-highlight__value">{highlight.value}</span>
@@ -1575,18 +1757,14 @@ export const StoreSummaryPage = () => {
                         <button
                           key={highlight.id}
                           type="button"
-                          className={`store-summary-highlight${highlight.isActive ? ' is-active' : ''}`}
+                          className={highlightClassName}
                           onClick={highlight.onClick}
                           aria-pressed={highlight.isActive}
                         >
                           {content}
                         </button>
                       ) : (
-                        <div
-                          key={highlight.id}
-                          className="store-summary-highlight"
-                          aria-live="polite"
-                        >
+                        <div key={highlight.id} className={highlightClassName} aria-live="polite">
                           {content}
                         </div>
                       );
@@ -1611,6 +1789,13 @@ export const StoreSummaryPage = () => {
                         {t('storeSummary.createScenarioDescription')}
                       </p>
                     </div>
+                    <input
+                      ref={scenarioJsonInputRef}
+                      type="file"
+                      accept="application/json"
+                      hidden
+                      onChange={(event) => void handleScenarioJsonImport(event)}
+                    />
                     {scenarioFormError && (
                       <p className="form-message form-message--error">{scenarioFormError}</p>
                     )}
@@ -1838,7 +2023,7 @@ export const StoreSummaryPage = () => {
                   </form>
                 )}
 
-                {viewMode !== 'environments' && (
+                {(viewMode === 'scenarios' || viewMode === 'suites') && (
                   <div className="scenario-table-header">
                     <div>
                       <h3 className="section-subtitle">{t('storeSummary.testData')}</h3>
@@ -1847,6 +2032,24 @@ export const StoreSummaryPage = () => {
                       {viewMode === 'scenarios' ? (
                         <>
                           <div className="scenario-action-group">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={() => scenarioJsonInputRef.current?.click()}
+                              isLoading={isImportingScenarioJson}
+                              loadingText={t('importing')}
+                            >
+                              <FileTextIcon aria-hidden className="icon" />
+                              {t('storeSummary.importJson')}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={downloadScenarioJsonTemplate}
+                            >
+                              <FileTextIcon aria-hidden className="icon" />
+                              {t('storeSummary.downloadJsonTemplate')}
+                            </Button>
                             <Button
                               type="button"
                               variant="ghost"
@@ -1940,7 +2143,9 @@ export const StoreSummaryPage = () => {
                               <table className="scenario-table data-table">
                                 <thead>
                                   <tr>
-                                    <th>{t('storeSummary.scenarioTitle')}</th>
+                                    <th className="scenario-title-column">
+                                      {t('storeSummary.scenarioTitle')}
+                                    </th>
                                     <th>
                                       <ScenarioColumnSortControl
                                         label={t('storeSummary.category')}
@@ -1949,14 +2154,16 @@ export const StoreSummaryPage = () => {
                                         onChange={setScenarioSort}
                                       />
                                     </th>
-                                    <th>
-                                      <ScenarioColumnSortControl
-                                        label={t('storeSummary.automation')}
-                                        field="automation"
-                                        sort={scenarioSort}
-                                        onChange={setScenarioSort}
-                                      />
-                                    </th>
+                                    {viewMode === 'scenarios' && (
+                                      <th>
+                                        <ScenarioColumnSortControl
+                                          label={t('storeSummary.automation')}
+                                          field="automation"
+                                          sort={scenarioSort}
+                                          onChange={setScenarioSort}
+                                        />
+                                      </th>
+                                    )}
                                     <th>{t('storeSummary.actions')}</th>
                                   </tr>
                                 </thead>
@@ -1964,9 +2171,18 @@ export const StoreSummaryPage = () => {
                                   {paginatedScenarios.map((scenario) => {
                                     return (
                                       <tr key={scenario.id}>
-                                        <td>{scenario.title}</td>
+                                        <td
+                                          className="scenario-title-cell"
+                                          title={scenario.title || t('storeSummary.emptyValue')}
+                                        >
+                                          <span className="scenario-title-text">
+                                            {scenario.title || t('storeSummary.emptyValue')}
+                                          </span>
+                                        </td>
                                         <td>{scenario.category}</td>
-                                        <td>{formatAutomationLabel(scenario.automation)}</td>
+                                        {viewMode === 'scenarios' && (
+                                          <td>{formatAutomationLabel(scenario.automation)}</td>
+                                        )}
                                         <td className="scenario-actions">
                                           <button
                                             type="button"
@@ -2097,7 +2313,9 @@ export const StoreSummaryPage = () => {
                                 <table className="suite-preview-table data-table">
                                   <thead>
                                     <tr>
-                                      <th>{t('storeSummary.scenarioTitle')}</th>
+                                      <th className="scenario-title-column">
+                                        {t('storeSummary.scenarioTitle')}
+                                      </th>
                                       <th>
                                         <ScenarioColumnSortControl
                                           label={t('storeSummary.category')}
@@ -2124,11 +2342,17 @@ export const StoreSummaryPage = () => {
                                           scenario?.title ?? t('storeSummary.deletedScenario');
                                         return (
                                           <tr key={`${selectedSuitePreview.id}-${scenarioId}`}>
-                                            <td data-label="Cenário">{title}</td>
-                                            <td data-label="Categoria">
-                                              {scenario?.category ?? 'N/A'}
+                                            <td
+                                              className="scenario-title-cell"
+                                              data-label={t('storeSummary.scenarioTitle')}
+                                              title={title}
+                                            >
+                                              <span className="scenario-title-text">{title}</span>
                                             </td>
-                                            <td data-label="Automação">
+                                            <td data-label={t('storeSummary.category')}>
+                                              {scenario?.category ?? t('storeSummary.emptyValue')}
+                                            </td>
+                                            <td data-label={t('storeSummary.automation')}>
                                               {scenario
                                                 ? formatAutomationLabel(scenario.automation)
                                                 : t('storeSummary.emptyValue')}
@@ -2378,7 +2602,9 @@ export const StoreSummaryPage = () => {
                                                 <th className="suite-scenario-checkbox">
                                                   {t('select')}
                                                 </th>
-                                                <th>{t('storeSummary.scenarioTitle')}</th>
+                                                <th className="scenario-title-column">
+                                                  {t('storeSummary.scenarioTitle')}
+                                                </th>
                                                 <th>
                                                   <ScenarioColumnSortControl
                                                     label={t('storeSummary.category')}
@@ -2409,7 +2635,7 @@ export const StoreSummaryPage = () => {
                                                   >
                                                     <td
                                                       className="suite-scenario-checkbox"
-                                                      data-label="Selecionar"
+                                                      data-label={t('select')}
                                                     >
                                                       <input
                                                         type="checkbox"
@@ -2417,18 +2643,29 @@ export const StoreSummaryPage = () => {
                                                         onChange={() =>
                                                           handleSuiteScenarioToggle(scenario.id)
                                                         }
-                                                        aria-label={`Selecionar cenário ${scenario.title}`}
+                                                        aria-label={t(
+                                                          'storeSummary.selectScenarioAriaLabel',
+                                                          { scenario: scenario.title },
+                                                        )}
                                                       />
                                                     </td>
                                                     <td
+                                                      className="scenario-title-cell"
                                                       data-label={t('storeSummary.scenarioTitle')}
+                                                      title={
+                                                        scenario.title ||
+                                                        t('storeSummary.emptyValue')
+                                                      }
                                                     >
-                                                      {scenario.title}
+                                                      <span className="scenario-title-text">
+                                                        {scenario.title ||
+                                                          t('storeSummary.emptyValue')}
+                                                      </span>
                                                     </td>
-                                                    <td data-label="Categoria">
+                                                    <td data-label={t('storeSummary.category')}>
                                                       {scenario.category}
                                                     </td>
-                                                    <td data-label="Automação">
+                                                    <td data-label={t('storeSummary.automation')}>
                                                       {formatAutomationLabel(scenario.automation)}
                                                     </td>
                                                   </tr>
@@ -2464,6 +2701,7 @@ export const StoreSummaryPage = () => {
                   ) : (
                     <EnvironmentKanban
                       storeId={storeId ?? ''}
+                      storeStage={store?.stage ?? null}
                       suites={suites}
                       scenarios={scenarios}
                       environments={environments}
@@ -2596,6 +2834,69 @@ export const StoreSummaryPage = () => {
             required
             dataTestId="store-settings-site"
           />
+
+          <TextInput
+            id="store-settings-admin-url"
+            label={t('storeSummary.storeAdminUrl')}
+            value={storeSettings.adminUrl}
+            onChange={(event) =>
+              setStoreSettings((previous) => ({ ...previous, adminUrl: event.target.value }))
+            }
+            dataTestId="store-settings-admin-url"
+          />
+          <SelectInput
+            id="store-settings-stage"
+            label={t('storeSummary.storeEnvironmentLabel')}
+            value={storeSettings.stage}
+            onChange={(event) =>
+              setStoreSettings((previous) => ({
+                ...previous,
+                stage: event.target.value as 'WS' | 'Preview',
+              }))
+            }
+            options={[
+              { value: 'WS', label: t('storeSummary.storePlatformVtexio') },
+              { value: 'Preview', label: t('storeSummary.storePlatformFaststore') },
+            ]}
+          />
+
+          <div className="organization-logo-field">
+            <div className="organization-logo-preview">
+              {storeSettingsLogoPreview ? (
+                <img src={storeSettingsLogoPreview} alt={t('storeSummary.storeLogoPreview')} />
+              ) : (
+                <span className="organization-logo-fallback">
+                  {t('storeSummary.storeLogoPlaceholder')}
+                </span>
+              )}
+            </div>
+            <div className="organization-logo-actions">
+              <label htmlFor="store-settings-logo" className="field-label">
+                {t('storeSummary.storeLogoLabel')}
+              </label>
+              <input
+                id="store-settings-logo"
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                onChange={(event) => setStoreSettingsLogoFile(event.target.files?.[0] ?? null)}
+              />
+              <p className="form-hint">{t('storeSummary.storeLogoHint')}</p>
+            </div>
+          </div>
+          <TextInput
+            id="store-settings-slack-webhook"
+            label={t('storeSummary.storeSlackWebhookLabel')}
+            value={storeSettings.slackWebhookUrl}
+            onChange={(event) =>
+              setStoreSettings((previous) => ({
+                ...previous,
+                slackWebhookUrl: event.target.value,
+              }))
+            }
+            placeholder={t('storeSummary.storeSlackWebhookPlaceholder')}
+            dataTestId="store-settings-slack-webhook"
+          />
+          <p className="form-hint">{t('storeSummary.storeSlackWebhookHint')}</p>
           <div className="form-actions">
             <Button
               type="submit"

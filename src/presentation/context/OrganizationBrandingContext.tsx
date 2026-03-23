@@ -2,9 +2,17 @@ import { ReactNode, createContext, useCallback, useContext, useMemo, useState } 
 
 import type { Organization } from '../../domain/entities/organization';
 
+export interface BrandingStore {
+  id?: string | null;
+  name: string;
+  logoUrl?: string | null;
+}
+
 interface OrganizationBrandingContextValue {
   activeOrganization: Organization | null;
+  activeStore: BrandingStore | null;
   setActiveOrganization: (organization: Organization | null) => void;
+  setActiveStore: (store: BrandingStore | null) => void;
 }
 
 const OrganizationBrandingContext = createContext<OrganizationBrandingContextValue | undefined>(
@@ -13,17 +21,24 @@ const OrganizationBrandingContext = createContext<OrganizationBrandingContextVal
 
 export const OrganizationBrandingProvider = ({ children }: { children: ReactNode }) => {
   const [activeOrganization, setActiveOrganizationState] = useState<Organization | null>(null);
+  const [activeStore, setActiveStoreState] = useState<BrandingStore | null>(null);
 
   const setActiveOrganization = useCallback((organization: Organization | null) => {
     setActiveOrganizationState(organization);
   }, []);
 
+  const setActiveStore = useCallback((store: BrandingStore | null) => {
+    setActiveStoreState(store);
+  }, []);
+
   const value = useMemo(
     () => ({
       activeOrganization,
+      activeStore,
       setActiveOrganization,
+      setActiveStore,
     }),
-    [activeOrganization, setActiveOrganization],
+    [activeOrganization, activeStore, setActiveOrganization, setActiveStore],
   );
 
   return (

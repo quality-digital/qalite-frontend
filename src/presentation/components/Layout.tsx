@@ -15,13 +15,12 @@ interface LayoutProps {
 
 export const Layout = ({ children }: LayoutProps) => {
   const { user, logout } = useAuth();
-  const { activeOrganization } = useOrganizationBranding();
+  const { activeOrganization, activeStore } = useOrganizationBranding();
   const navigate = useNavigate();
   const displayName = user?.displayName || user?.email || '';
-  const brandSource = activeOrganization;
   const { t } = useTranslation();
-  const brandName = brandSource?.name || t('app.brandName');
-  const brandLogo = brandSource?.logoUrl || qliteLogo;
+  const brandName = activeStore?.name || activeOrganization?.name || t('app.brandName');
+  const brandLogo = activeStore?.logoUrl || activeOrganization?.logoUrl || qliteLogo;
 
   return (
     <div className="app-shell">
@@ -32,7 +31,7 @@ export const Layout = ({ children }: LayoutProps) => {
             alt={t('layout.brandLogoAlt', { brandName })}
             className="app-brand-logo"
           />
-          <span className="app-brand-name">{brandSource?.name || brandName}</span>
+          <span className="app-brand-name">{brandName}</span>
         </Link>
         <nav className="header-actions">
           {user ? (

@@ -34,6 +34,7 @@ interface EditEnvironmentModalProps {
 const buildScenarioMap = (
   suite: StoreSuite | undefined,
   scenarioList: StoreScenario[],
+  environmentColumns: string[],
 ): Record<string, EnvironmentScenario> => {
   if (!suite) {
     return {};
@@ -53,6 +54,13 @@ const buildScenarioMap = (
       observacao: match.observation,
       automatizado: match.automation,
       status: 'pendente',
+      statusByEnvironment: environmentColumns.reduce<Record<string, EnvironmentScenario['status']>>(
+        (acc, column) => {
+          acc[column] = 'pendente';
+          return acc;
+        },
+        {},
+      ),
       statusMobile: 'pendente',
       statusDesktop: 'pendente',
       evidenciaArquivoUrl: null,
@@ -99,6 +107,10 @@ export const EditEnvironmentModal = ({
     setRelease(environment.release ?? '');
     setSuiteId(environment.suiteId ?? '');
   }, [environment]);
+  const environmentColumns = useMemo(
+    () => environment?.environmentColumns ?? ['Desktop', 'Mobile'],
+    [environment?.environmentColumns],
+  );
 
   const isLocked = environment?.status === 'done';
   const canDelete = Boolean(onDeleteRequest) && !isLocked;
@@ -107,8 +119,8 @@ export const EditEnvironmentModal = ({
     [suiteId, suites],
   );
   const scenarioMap = useMemo(
-    () => buildScenarioMap(selectedSuite, scenarios),
-    [selectedSuite, scenarios],
+    () => buildScenarioMap(selectedSuite, scenarios, environmentColumns),
+    [environmentColumns, scenarios, selectedSuite],
   );
   const totalCenarios = Object.keys(scenarioMap).length;
 
@@ -143,7 +155,7 @@ export const EditEnvironmentModal = ({
     const scenarioEntries = Object.values(environment?.scenarios ?? {});
     return scenarioEntries.some((scenario) => {
       const statuses = getScenarioPlatformStatuses(scenario);
-      return statuses.mobile !== 'pendente' || statuses.desktop !== 'pendente';
+      return Object.values(statuses).some((status) => status !== 'pendente');
     });
   }, [environment?.scenarios]);
 
@@ -288,8 +300,8 @@ export const EditEnvironmentModal = ({
             disabled={isLocked}
             options={[
               { value: 'WS', label: 'WS' },
-              { value: 'TM', label: 'TM' },
-              { value: 'PROD', label: 'PROD' },
+              { value: 'TM', label: translation('environmentOptions.TM') },
+              { value: 'PROD', label: translation('environmentOptions.PROD') },
             ]}
           />
           <SelectInput

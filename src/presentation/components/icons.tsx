@@ -1,6 +1,7 @@
 import type { IconBaseProps } from 'react-icons';
 import {
   FiActivity,
+  FiAlertCircle,
   FiAlertTriangle,
   FiArchive,
   FiArrowLeft,
@@ -20,16 +21,21 @@ import {
   FiLayers,
   FiList,
   FiLink,
+  FiLock,
   FiLogOut,
-  FiMonitor,
+  FiLogIn,
+  FiMail,
   FiMoon,
+  FiPieChart,
   FiPlusCircle,
   FiShield,
   FiSettings,
   FiShoppingBag,
   FiStar,
+  FiTrendingUp,
   FiTrash2,
   FiUser,
+  FiUserPlus,
   FiUsers,
 } from 'react-icons/fi';
 
@@ -55,7 +61,6 @@ export const FileTextIcon = (props: IconBaseProps) => <FiFileText {...props} />;
 export const ArchiveIcon = (props: IconBaseProps) => <FiArchive {...props} />;
 export const PencilIcon = (props: IconBaseProps) => <FiEdit3 {...props} />;
 export const TrashIcon = (props: IconBaseProps) => <FiTrash2 {...props} />;
-export const BrowserstackIcon = (props: IconBaseProps) => <FiMonitor {...props} />;
 export const InboxIcon = (props: IconBaseProps) => <FiInbox {...props} />;
 export const ProgressIcon = (props: IconBaseProps) => <FiActivity {...props} />;
 export const CheckCircleIcon = (props: IconBaseProps) => <FiCheckCircle {...props} />;
@@ -66,3 +71,12 @@ export const BugIcon = (props: IconBaseProps) => <FiAlertTriangle {...props} />;
 export const ListIcon = (props: IconBaseProps) => <FiList {...props} />;
 export const PlusCircleIcon = (props: IconBaseProps) => <FiPlusCircle {...props} />;
 export const ShieldIcon = (props: IconBaseProps) => <FiShield {...props} />;
+export const LoginIcon = (props: IconBaseProps) => <FiLogIn {...props} />;
+export const RegisterIcon = (props: IconBaseProps) => <FiUserPlus {...props} />;
+export const MailIcon = (props: IconBaseProps) => <FiMail {...props} />;
+export const LockIcon = (props: IconBaseProps) => <FiLock {...props} />;
+export const PieChartIcon = (props: IconBaseProps) => <FiPieChart {...props} />;
+export const TrendIcon = (props: IconBaseProps) => <FiTrendingUp {...props} />;
+export const XCircleIcon = (props: IconBaseProps) => <FiAlertCircle {...props} />;
+export const CircleIcon = (props: IconBaseProps) => <FiCheckCircle {...props} />;
+export const GitBranchIcon = (props: IconBaseProps) => <FiLayers {...props} />;

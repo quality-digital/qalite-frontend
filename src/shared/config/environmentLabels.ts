@@ -2,7 +2,6 @@ import type {
   EnvironmentBug,
   EnvironmentBugPriority,
   EnvironmentBugSeverity,
-  EnvironmentScenarioPlatform,
   EnvironmentStatus,
 } from '../../domain/entities/environment';
 
@@ -10,11 +9,6 @@ export const ENVIRONMENT_STATUS_LABEL: Record<EnvironmentStatus, string> = {
   backlog: 'environmentLabels.backlog',
   in_progress: 'environmentLabels.progress',
   done: 'environmentLabels.done',
-};
-
-export const ENVIRONMENT_PLATFORM_LABEL: Record<EnvironmentScenarioPlatform, string> = {
-  mobile: 'Mobile',
-  desktop: 'Desktop',
 };
 
 export const BUG_STATUS_LABEL: Record<EnvironmentBug['status'], string> = {

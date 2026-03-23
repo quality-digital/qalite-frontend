@@ -1,5 +1,6 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 import type {
   Store,
@@ -8,6 +9,7 @@ import type {
   StoreScenarioInput,
 } from '../../domain/entities/store';
 import { storeService } from '../../infrastructure/services/storeService';
+import { listenToCategories, listenToScenarios } from '../../infrastructure/external/stores';
 import { useStoresRealtime } from '../context/StoresRealtimeContext';
 import { useToast } from '../context/ToastContext';
 import { Button } from './Button';
@@ -69,6 +71,7 @@ export const StoreManagementPanel = ({
   showScenarioForm = true,
 }: StoreManagementPanelProps) => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const { organizationId: activeOrganizationId, stores, isLoading, error } = useStoresRealtime();
   const storesForOrganization = useMemo(
@@ -78,9 +81,6 @@ export const StoreManagementPanel = ({
   const isLoadingStores = Boolean(
     activeOrganizationId && activeOrganizationId === organizationId && isLoading,
   );
-  const [storeFormMode, setStoreFormMode] = useState<'hidden' | 'create' | 'edit'>('hidden');
-  const [storeForm, setStoreForm] = useState({ name: '', site: '' });
-  const [storeFormError, setStoreFormError] = useState<string | null>(null);
   const [isSavingStore, setIsSavingStore] = useState(false);
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const { organization: storeOrganization } = useStoreOrganizationBranding(selectedStoreId);
@@ -237,23 +237,23 @@ export const StoreManagementPanel = ({
       return;
     }
 
-    const fetchScenarios = async () => {
-      try {
-        setIsLoadingScenarios(true);
-        const data = await storeService.listScenarios(selectedStore.id);
+    setIsLoadingScenarios(true);
+
+    return listenToScenarios(
+      selectedStore.id,
+      (data) => {
         setScenarios(data);
-      } catch (error) {
+        setIsLoadingScenarios(false);
+      },
+      (error) => {
         console.error(error);
+        setIsLoadingScenarios(false);
         showToast({
           type: 'error',
           message: t('storeManagement.scenarioListLoadError'),
         });
-      } finally {
-        setIsLoadingScenarios(false);
-      }
-    };
-
-    void fetchScenarios();
+      },
+    );
   }, [selectedStore, showToast, t]);
 
   useEffect(() => {
@@ -263,31 +263,20 @@ export const StoreManagementPanel = ({
       return;
     }
 
-    let isMounted = true;
-    const fetchCategories = async () => {
-      try {
-        setIsLoadingCategories(true);
-        const data = await storeService.listCategories(selectedStore.id);
-        if (isMounted) {
-          setCategories(data);
-        }
-      } catch (error) {
+    setIsLoadingCategories(true);
+
+    return listenToCategories(
+      selectedStore.id,
+      (data) => {
+        setCategories(data);
+        setIsLoadingCategories(false);
+      },
+      (error) => {
         console.error(error);
-        if (isMounted) {
-          showToast({ type: 'error', message: t('storeSummary.categoriesLoadError') });
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoadingCategories(false);
-        }
-      }
-    };
-
-    void fetchCategories();
-
-    return () => {
-      isMounted = false;
-    };
+        setIsLoadingCategories(false);
+        showToast({ type: 'error', message: t('storeSummary.categoriesLoadError') });
+      },
+    );
   }, [selectedStore, showToast, t]);
 
   useEffect(() => {
@@ -374,83 +363,6 @@ export const StoreManagementPanel = ({
     setIsSyncingLegacyCategories(false);
   }, [selectedStore?.id]);
 
-  const resetStoreForm = () => {
-    setStoreForm({ name: '', site: '' });
-    setStoreFormMode('hidden');
-    setStoreFormError(null);
-  };
-
-  const handleStartCreateStore = () => {
-    setStoreForm({ name: '', site: '' });
-    setStoreFormMode('create');
-    setStoreFormError(null);
-  };
-
-  const handleStartEditStore = (store: Store) => {
-    setStoreForm({ name: store.name, site: store.site });
-    setStoreFormMode('edit');
-    setStoreFormError(null);
-    setSelectedStoreId(store.id);
-  };
-
-  const handleStoreFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setStoreFormError(null);
-
-    if (!canManageStores) {
-      return;
-    }
-
-    const trimmedName = storeForm.name.trim();
-    const trimmedSite = storeForm.site.trim();
-    const stageValue = storeFormMode === 'edit' && selectedStore ? selectedStore.stage : '';
-
-    if (!trimmedName) {
-      setStoreFormError(t('storeSummary.storeNameRequired'));
-      return;
-    }
-
-    if (!trimmedSite) {
-      setStoreFormError(t('storeSummary.storeSiteRequired'));
-      return;
-    }
-
-    try {
-      setIsSavingStore(true);
-      if (storeFormMode === 'create') {
-        const created = await storeService.create({
-          organizationId,
-          name: trimmedName,
-          site: trimmedSite,
-          stage: '',
-        });
-
-        setSelectedStoreId(created.id);
-        resetStoreForm();
-        showToast({ type: 'success', message: t('storeManagement.storeCreateSuccess') });
-        return;
-      }
-
-      if (storeFormMode === 'edit' && selectedStore) {
-        await storeService.update(selectedStore.id, {
-          name: trimmedName,
-          site: trimmedSite,
-          stage: stageValue,
-        });
-
-        showToast({ type: 'success', message: t('storeSummary.storeUpdateSuccess') });
-        resetStoreForm();
-      }
-    } catch (error) {
-      console.error(error);
-      const message = error instanceof Error ? error.message : t('storeManagement.storeSaveError');
-      setStoreFormError(message);
-      showToast({ type: 'error', message });
-    } finally {
-      setIsSavingStore(false);
-    }
-  };
-
   const handleDeleteStore = async (store: Store) => {
     if (!canManageStores) {
       return;
@@ -488,13 +400,10 @@ export const StoreManagementPanel = ({
 
     try {
       setIsCreatingCategory(true);
-      const created = await storeService.createCategory({
+      await storeService.createCategory({
         storeId: selectedStore.id,
         name: trimmedCategory,
       });
-      setCategories((previous) =>
-        [...previous, created].sort((a, b) => a.name.localeCompare(b.name)),
-      );
       setScenarioForm((previous) => ({ ...previous, category: trimmedCategory }));
       setNewCategoryName('');
       setCategoryError(null);
@@ -536,14 +445,9 @@ export const StoreManagementPanel = ({
 
     try {
       setUpdatingCategoryId(editingCategoryId);
-      const updated = await storeService.updateCategory(selectedStore.id, editingCategoryId, {
+      await storeService.updateCategory(selectedStore.id, editingCategoryId, {
         name: trimmedName,
       });
-      setCategories((previous) =>
-        previous
-          .map((category) => (category.id === updated.id ? updated : category))
-          .sort((a, b) => a.name.localeCompare(b.name)),
-      );
       if (previousCategory && previousCategory.name !== trimmedName) {
         setScenarios((previous) =>
           previous.map((scenario) =>
@@ -580,7 +484,6 @@ export const StoreManagementPanel = ({
     try {
       setDeletingCategoryId(category.id);
       await storeService.deleteCategory(selectedStore.id, category.id);
-      setCategories((previous) => previous.filter((item) => item.id !== category.id));
       if (scenarioForm.category === category.name) {
         setScenarioForm((previous) => ({ ...previous, category: '' }));
       }
@@ -628,21 +531,13 @@ export const StoreManagementPanel = ({
     try {
       setIsSavingScenario(true);
       if (editingScenarioId) {
-        const updated = await storeService.updateScenario(
-          selectedStore.id,
-          editingScenarioId,
-          trimmedScenario,
-        );
-        setScenarios((previous) =>
-          previous.map((scenario) => (scenario.id === updated.id ? updated : scenario)),
-        );
+        await storeService.updateScenario(selectedStore.id, editingScenarioId, trimmedScenario);
         showToast({ type: 'success', message: t('storeSummary.scenarioUpdateSuccess') });
       } else {
-        const created = await storeService.createScenario({
+        await storeService.createScenario({
           storeId: selectedStore.id,
           ...trimmedScenario,
         });
-        setScenarios((previous) => [...previous, created]);
         showToast({ type: 'success', message: t('storeSummary.scenarioCreateSuccess') });
       }
 
@@ -689,7 +584,6 @@ export const StoreManagementPanel = ({
     try {
       setIsSavingScenario(true);
       await storeService.deleteScenario(selectedStore.id, scenario.id);
-      setScenarios((previous) => previous.filter((item) => item.id !== scenario.id));
       showToast({ type: 'success', message: t('storeSummary.scenarioRemoveSuccess') });
     } catch (error) {
       console.error(error);
@@ -873,7 +767,11 @@ export const StoreManagementPanel = ({
             </p>
           </div>
           {canManageStores && (
-            <Button type="button" variant="secondary" onClick={handleStartCreateStore}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => navigate(`/admin/organizations/${organizationId}/stores/new`)}
+            >
               {t('storeManagement.newStore')}
             </Button>
           )}
@@ -930,7 +828,7 @@ export const StoreManagementPanel = ({
                     <div className="store-list-actions">
                       <button
                         type="button"
-                        onClick={() => handleStartEditStore(store)}
+                        onClick={() => navigate(`/admin/stores/${store.id}/settings`)}
                         disabled={isSavingStore}
                         className="action-button"
                       >
@@ -952,52 +850,6 @@ export const StoreManagementPanel = ({
               );
             })}
           </ul>
-        )}
-
-        {canManageStores && storeFormMode !== 'hidden' && (
-          <form className="form-grid" onSubmit={handleStoreFormSubmit}>
-            <h3 className="form-title">
-              {storeFormMode === 'create'
-                ? t('storeManagement.storeFormTitleCreate')
-                : t('storeManagement.storeFormTitleEdit')}
-            </h3>
-            {storeFormError && <p className="form-message form-message--error">{storeFormError}</p>}
-            <TextInput
-              id="store-name"
-              label={t('storeManagement.storeNameLabel')}
-              value={storeForm.name}
-              onChange={(event) =>
-                setStoreForm((previous) => ({ ...previous, name: event.target.value }))
-              }
-              placeholder={t('storeManagement.storeNamePlaceholder')}
-              required
-            />
-            <TextInput
-              id="store-site"
-              label={t('storeManagement.storeSiteLabel')}
-              value={storeForm.site}
-              onChange={(event) =>
-                setStoreForm((previous) => ({ ...previous, site: event.target.value }))
-              }
-              placeholder={t('storeManagement.storeSitePlaceholder')}
-              required
-            />
-            <div className="store-form-actions">
-              <Button type="submit" isLoading={isSavingStore} loadingText={t('saving')}>
-                {storeFormMode === 'create'
-                  ? t('storeManagement.storeSaveCreate')
-                  : t('storeManagement.storeSaveUpdate')}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={resetStoreForm}
-                disabled={isSavingStore}
-              >
-                {t('cancel')}
-              </Button>
-            </div>
-          </form>
         )}
       </div>
 
@@ -1281,7 +1133,7 @@ export const StoreManagementPanel = ({
                 <table className="scenario-table data-table">
                   <thead>
                     <tr>
-                      <th>{t('storeSummary.scenarioTitle')}</th>
+                      <th className="scenario-title-column">{t('storeSummary.scenarioTitle')}</th>
                       <th>
                         <ScenarioColumnSortControl
                           label={t('storeSummary.category')}
@@ -1317,7 +1169,14 @@ export const StoreManagementPanel = ({
 
                       return (
                         <tr key={scenario.id}>
-                          <td>{scenario.title}</td>
+                          <td
+                            className="scenario-title-cell"
+                            title={scenario.title || t('storeManagement.emptyValue')}
+                          >
+                            <span className="scenario-title-text">
+                              {scenario.title || t('storeManagement.emptyValue')}
+                            </span>
+                          </td>
                           <td>{scenario.category}</td>
                           <td>{formatAutomationLabel(scenario.automation)}</td>
                           <td>

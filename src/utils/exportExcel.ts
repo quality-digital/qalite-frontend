@@ -6,8 +6,7 @@ export type EnvironmentExportRow = {
   categoria: string;
   criticidade: string;
   observacao?: string;
-  statusMobile: string;
-  statusDesktop: string;
+  statuses: string[];
   evidencia?: string;
 };
 
@@ -229,7 +228,7 @@ const applyColumnWidths = (
 ) => {
   const columnWidths = columnsValues.map((values) => calcColWidth(values));
   worksheet.columns.forEach((column, index) => {
-    column.width = columnWidths[index];
+    column.width = columnWidths[index] ?? 12;
   });
   return columnWidths;
 };
@@ -241,8 +240,8 @@ const applyAutoRowHeights = (
 ) => {
   for (let rowIndex = startRow; rowIndex <= worksheet.rowCount; rowIndex += 1) {
     const row = worksheet.getRow(rowIndex);
-    const rowValues = worksheet.columns.map((column) =>
-      String(row.getCell(column.number).value ?? ''),
+    const rowValues = worksheet.columns.map((column, index) =>
+      String(row.getCell(column.number ?? index + 1).value ?? ''),
     );
     row.height = calcRowHeightByWrap(rowValues, columnWidths);
   }
@@ -299,7 +298,7 @@ export const exportEnvironmentExcel = async ({
   infoHeaderLabels: [string, string];
   infoRows: ExportInfoRow[];
   scenarioRows: EnvironmentExportRow[];
-  scenarioHeaderLabels: [string, string, string, string, string, string, string];
+  scenarioHeaderLabels: string[];
   bugRows: EnvironmentBugExportRow[];
   bugHeaderLabels: [string, string, string, string];
 }) => {
@@ -316,16 +315,30 @@ export const exportEnvironmentExcel = async ({
     { header: scenarioHeaderLabels[1], key: 'categoria' },
     { header: scenarioHeaderLabels[2], key: 'criticidade' },
     { header: scenarioHeaderLabels[3], key: 'observacao' },
-    { header: scenarioHeaderLabels[4], key: 'statusMobile' },
-    { header: scenarioHeaderLabels[5], key: 'statusDesktop' },
-    { header: scenarioHeaderLabels[6], key: 'evidencia' },
+    ...scenarioHeaderLabels.slice(4, -1).map((header, index) => ({
+      header,
+      key: `status_${index}`,
+    })),
+    { header: scenarioHeaderLabels[scenarioHeaderLabels.length - 1], key: 'evidencia' },
   ];
 
   const headers = worksheet.getRow(1);
   headers.height = 22;
   headers.eachCell((cell) => applyHeaderStyle(cell));
 
-  scenarioRows.forEach((row) => worksheet.addRow(row));
+  scenarioRows.forEach((row) =>
+    worksheet.addRow({
+      titulo: row.titulo,
+      categoria: row.categoria,
+      criticidade: row.criticidade,
+      observacao: row.observacao ?? '',
+      ...row.statuses.reduce<Record<string, string>>((acc, status, index) => {
+        acc[`status_${index}`] = status;
+        return acc;
+      }, {}),
+      evidencia: row.evidencia ?? '',
+    }),
+  );
 
   for (let rowIndex = 2; rowIndex <= worksheet.rowCount; rowIndex += 1) {
     const row = worksheet.getRow(rowIndex);
@@ -335,13 +348,14 @@ export const exportEnvironmentExcel = async ({
     const criticality = criticidadeStyle(String(criticalityCell.value ?? ''));
     stylePill(criticalityCell, criticality.bg, criticality.fg);
 
-    const statusMobileCell = row.getCell(5);
-    const statusMobile = statusStyle(String(statusMobileCell.value ?? ''));
-    stylePill(statusMobileCell, statusMobile.bg, statusMobile.fg);
-
-    const statusDesktopCell = row.getCell(6);
-    const statusDesktop = statusStyle(String(statusDesktopCell.value ?? ''));
-    stylePill(statusDesktopCell, statusDesktop.bg, statusDesktop.fg);
+    for (let columnIndex = 5; columnIndex < worksheet.columnCount; columnIndex += 1) {
+      if (columnIndex === worksheet.columnCount) {
+        break;
+      }
+      const statusCell = row.getCell(columnIndex);
+      const status = statusStyle(String(statusCell.value ?? ''));
+      stylePill(statusCell, status.bg, status.fg);
+    }
   }
 
   const columnValues = [
@@ -349,9 +363,16 @@ export const exportEnvironmentExcel = async ({
     [worksheet.getColumn(2).header as string, ...scenarioRows.map((row) => row.categoria)],
     [worksheet.getColumn(3).header as string, ...scenarioRows.map((row) => row.criticidade)],
     [worksheet.getColumn(4).header as string, ...scenarioRows.map((row) => row.observacao ?? '')],
-    [worksheet.getColumn(5).header as string, ...scenarioRows.map((row) => row.statusMobile)],
-    [worksheet.getColumn(6).header as string, ...scenarioRows.map((row) => row.statusDesktop)],
-    [worksheet.getColumn(7).header as string, ...scenarioRows.map((row) => row.evidencia ?? '')],
+    ...scenarioHeaderLabels
+      .slice(4, -1)
+      .map((_, index) => [
+        worksheet.getColumn(5 + index).header as string,
+        ...scenarioRows.map((row) => row.statuses[index] ?? ''),
+      ]),
+    [
+      worksheet.getColumn(5 + scenarioHeaderLabels.slice(4, -1).length).header as string,
+      ...scenarioRows.map((row) => row.evidencia ?? ''),
+    ],
   ];
   const columnWidths = applyColumnWidths(worksheet, columnValues);
   applyAutoRowHeights(worksheet, columnWidths);

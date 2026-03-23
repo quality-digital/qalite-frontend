@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import i18n from '../../lib/i18n';
 
 import type { EnvironmentBug } from '../../domain/entities/environment';
 import { environmentService } from '../../infrastructure/services/environmentService';
@@ -25,7 +26,7 @@ export const useEnvironmentBugs = (environmentId: string | null | undefined) => 
     } catch (fetchError) {
       console.error(fetchError);
       setBugs([]);
-      setError('Não foi possível carregar os bugs.');
+      setError(i18n.t('environmentBugList.loadError'));
     } finally {
       setIsLoading(false);
     }

@@ -3,7 +3,7 @@ import {
   createContext,
   useCallback,
   useContext,
-  useLayoutEffect,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
@@ -17,6 +17,7 @@ import {
   getStoredLanguagePreference,
   getStoredThemePreference,
   getDeviceLanguagePreference,
+  normalizeLanguagePreference,
   normalizeUserPreferences,
   persistPreferencesLocally,
 } from '../../shared/config/userPreferences';
@@ -30,12 +31,17 @@ interface UserPreferencesContextValue {
 
 const UserPreferencesContext = createContext<UserPreferencesContextValue | undefined>(undefined);
 
-const getFallbackPreferences = (languageFallback: string): UserPreferences => {
+const arePreferencesEqual = (first: UserPreferences, second: UserPreferences): boolean =>
+  first.theme === second.theme && first.language === second.language;
+
+const getFallbackPreferences = (languageFallback?: string | null): UserPreferences => {
   const themeFallback = getStoredThemePreference() ?? DEFAULT_USER_PREFERENCES.theme;
+  const normalizedLanguage = normalizeLanguagePreference(languageFallback);
   const language =
+    normalizedLanguage ??
     getStoredLanguagePreference() ??
     getDeviceLanguagePreference() ??
-    (languageFallback === 'pt' ? 'pt' : 'en');
+    DEFAULT_USER_PREFERENCES.language;
 
   return {
     theme: themeFallback,
@@ -46,32 +52,38 @@ const getFallbackPreferences = (languageFallback: string): UserPreferences => {
 export const UserPreferencesProvider = ({ children }: { children: ReactNode }) => {
   const { user, updateProfile, isLoading } = useAuth();
   const { i18n, t } = useTranslation();
-  const { setPreference } = useTheme();
+  const { preference: themePreference, setPreference } = useTheme();
+  const resolvedAppLanguage = i18n.resolvedLanguage ?? i18n.language;
   const [preferences, setPreferences] = useState<UserPreferences>(() =>
-    normalizeUserPreferences(user?.preferences, getFallbackPreferences(i18n.language)),
+    normalizeUserPreferences(user?.preferences, getFallbackPreferences(resolvedAppLanguage)),
   );
   const [isReady, setIsReady] = useState(false);
 
   const applyPreferences = useCallback(
     async (next: UserPreferences) => {
-      setPreference(next.theme);
+      if (themePreference !== next.theme) {
+        setPreference(next.theme);
+      }
+
       persistPreferencesLocally(next);
 
-      if (i18n.language !== next.language) {
+      const currentLanguage = normalizeLanguagePreference(resolvedAppLanguage);
+      if (currentLanguage !== next.language) {
         await i18n.changeLanguage(next.language);
       }
     },
-    [i18n, setPreference],
+    [resolvedAppLanguage, i18n, setPreference, themePreference],
   );
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const resolved = normalizeUserPreferences(
       user?.preferences,
-      getFallbackPreferences(i18n.language),
+      getFallbackPreferences(resolvedAppLanguage),
     );
-    setPreferences(resolved);
+
+    setPreferences((previous) => (arePreferencesEqual(previous, resolved) ? previous : resolved));
     void applyPreferences(resolved).finally(() => setIsReady(true));
-  }, [applyPreferences, i18n.language, user?.preferences]);
+  }, [applyPreferences, resolvedAppLanguage, user?.preferences]);
 
   const updatePreferences = useCallback(
     async (next: UserPreferences) => {

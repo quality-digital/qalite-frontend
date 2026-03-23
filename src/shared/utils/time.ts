@@ -1,15 +1,24 @@
 import type { EnvironmentTimeTracking } from '../../domain/entities/environment';
+import { getPreferredDocumentLocale } from '../config/userPreferences';
+import i18n from '../../lib/i18n';
 
 interface DateTimeFormatOptions {
   locale?: string;
   emptyLabel?: string;
 }
 
+const DEFAULT_EMPTY_LABEL = 'generic.notRegistered';
+const DEFAULT_IN_PROGRESS_LABEL = 'generic.inProgress';
+const DEFAULT_NOT_ENDED_LABEL = 'generic.notEnded';
+
+const resolveFormattingLocale = (locale?: string) =>
+  locale ?? getPreferredDocumentLocale() ?? i18n.resolvedLanguage ?? 'en-US';
+
 export const formatDateTime = (
   value: string | null | undefined,
   options?: DateTimeFormatOptions,
 ): string => {
-  const emptyLabel = options?.emptyLabel ?? 'Não registrado';
+  const emptyLabel = options?.emptyLabel ?? i18n.t(DEFAULT_EMPTY_LABEL);
 
   if (!value) {
     return emptyLabel;
@@ -20,10 +29,10 @@ export const formatDateTime = (
     return emptyLabel;
   }
 
-  return date.toLocaleString(options?.locale ?? 'pt-BR', {
+  return new Intl.DateTimeFormat(resolveFormattingLocale(options?.locale), {
     dateStyle: 'short',
     timeStyle: 'short',
-  });
+  }).format(date);
 };
 
 export const getElapsedMilliseconds = (
@@ -58,8 +67,8 @@ export const formatEndDateTime = (
   }
 
   return isRunning
-    ? (options?.inProgressLabel ?? 'Em andamento')
-    : (options?.notEndedLabel ?? 'Não encerrado');
+    ? (options?.inProgressLabel ?? i18n.t(DEFAULT_IN_PROGRESS_LABEL))
+    : (options?.notEndedLabel ?? i18n.t(DEFAULT_NOT_ENDED_LABEL));
 };
 
 export const formatDurationFromMs = (milliseconds: number): string => {

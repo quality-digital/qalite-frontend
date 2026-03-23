@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { storeService } from '../../infrastructure/services/storeService';
@@ -15,15 +15,17 @@ import { useEnvironmentBugs } from '../hooks/useEnvironmentBugs';
 import { useEnvironmentDetails } from '../hooks/useEnvironmentDetails';
 import { useTranslation } from 'react-i18next';
 
+import { normalizeLanguagePreference } from '../../shared/config/userPreferences';
+
 export const PublicEnvironmentPage = () => {
   const { environmentId } = useParams<{ environmentId: string }>();
+  const requestedLanguageRef = useRef<string | null>(null);
   const { environment, isLoading } = useEnvironmentRealtime(environmentId);
-  const [storeName, setStoreName] = useState<string>('');
   const participants = useUserProfiles(environment?.participants ?? []);
   const { organization: environmentOrganization } = useStoreOrganizationBranding(
     environment?.storeId ?? null,
   );
-  const { setActiveOrganization } = useOrganizationBranding();
+  const { activeStore, setActiveOrganization, setActiveStore } = useOrganizationBranding();
   const { t, i18n } = useTranslation();
   const { formattedTime, formattedStart, formattedEnd } = useTimeTracking(
     environment?.timeTracking ?? null,
@@ -34,26 +36,43 @@ export const PublicEnvironmentPage = () => {
     },
   );
   const { bugs, isLoading: isLoadingBugs } = useEnvironmentBugs(environment?.id ?? null);
-  const { progressPercentage, progressLabel, scenarioCount, headerMeta, urls } =
-    useEnvironmentDetails(environment, bugs);
+  const { progressPercentage, progressLabel, scenarioCount, urls } = useEnvironmentDetails(
+    environment,
+    bugs,
+  );
 
   useEffect(() => {
     setActiveOrganization(environmentOrganization ?? null);
 
     return () => {
       setActiveOrganization(null);
+      setActiveStore(null);
     };
-  }, [environmentOrganization, setActiveOrganization]);
+  }, [environmentOrganization, setActiveOrganization, setActiveStore]);
 
   useEffect(() => {
-    if (environment?.publicShareLanguage && i18n.language !== environment.publicShareLanguage) {
-      void i18n.changeLanguage(environment.publicShareLanguage);
+    const publicLanguage = normalizeLanguagePreference(environment?.publicShareLanguage);
+    const activeLanguage = normalizeLanguagePreference(i18n.resolvedLanguage ?? i18n.language);
+
+    if (!publicLanguage || activeLanguage === publicLanguage) {
+      requestedLanguageRef.current = null;
+      return;
     }
-  }, [environment?.publicShareLanguage, i18n]);
+
+    if (requestedLanguageRef.current === publicLanguage) {
+      return;
+    }
+
+    requestedLanguageRef.current = publicLanguage;
+
+    void i18n.changeLanguage(publicLanguage).finally(() => {
+      requestedLanguageRef.current = null;
+    });
+  }, [environment?.publicShareLanguage, i18n.language, i18n.resolvedLanguage, i18n]);
 
   useEffect(() => {
     if (!environment?.storeId) {
-      setStoreName('');
+      setActiveStore(null);
       return;
     }
 
@@ -63,12 +82,19 @@ export const PublicEnvironmentPage = () => {
       try {
         const store = await storeService.getDetail(environment.storeId);
         if (isMounted) {
-          setStoreName(store?.name?.trim() || '');
+          setActiveStore(
+            store
+              ? {
+                  id: store.id,
+                  name: store.name.trim(),
+                  logoUrl: store.logoUrl ?? null,
+                }
+              : null,
+          );
         }
-      } catch (error) {
-        console.error(error);
+      } catch {
         if (isMounted) {
-          setStoreName('');
+          setActiveStore(null);
         }
       }
     };
@@ -78,7 +104,7 @@ export const PublicEnvironmentPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [environment?.storeId]);
+  }, [environment?.storeId, setActiveStore]);
 
   if (isLoading) {
     return (
@@ -104,16 +130,6 @@ export const PublicEnvironmentPage = () => {
   return (
     <Layout>
       <section className="page-container environment-page environment-page--public">
-        <div className="environment-page__header">
-          <div>
-            <h1 className="section-title">{environment.identificador}</h1>
-            <p className="section-subtitle">
-              {environment.tipoAmbiente} · {environment.tipoTeste}
-            </p>
-            {headerMeta.length > 0 && <p className="section-subtitle">{headerMeta.join(' · ')}</p>}
-          </div>
-        </div>
-
         <div className="environment-summary-grid">
           <EnvironmentSummaryCard
             environment={environment}
@@ -126,7 +142,7 @@ export const PublicEnvironmentPage = () => {
             urls={urls}
             participants={participants}
             bugsCount={bugs.length}
-            storeName={storeName}
+            storeName={activeStore?.name ?? ''}
           />
         </div>
 
