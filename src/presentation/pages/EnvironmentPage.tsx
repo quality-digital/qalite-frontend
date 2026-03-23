@@ -173,7 +173,9 @@ const buildSlackTaskSummaryPayload = (
   const attendeesList =
     attendeeList.length > 0
       ? attendeeList.map((attendee) =>
-          typeof attendee === 'string' ? `• ${attendee}` : `• ${attendee.name ?? ''} (${attendee.email ?? ''})`
+          typeof attendee === 'string'
+            ? `• ${attendee}`
+            : `• ${attendee.name ?? ''} (${attendee.email ?? ''})`,
         )
       : [`• ${translation('environment.slack.emptyParticipants')}`];
   const summaryMessage = [

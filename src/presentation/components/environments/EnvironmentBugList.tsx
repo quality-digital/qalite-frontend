@@ -131,7 +131,9 @@ export const EnvironmentBugList = ({
           <table className="data-table">
             <thead>
               <tr>
-                <th className="scenario-title-column">{translation('environmentBugList.scenario')}</th>
+                <th className="scenario-title-column">
+                  {translation('environmentBugList.scenario')}
+                </th>
                 <th>{translation('environmentBugList.severity')}</th>
                 <th>{translation('environmentBugList.priority')}</th>
                 <th>{translation('environmentBugList.actualResult')}</th>
@@ -141,13 +143,8 @@ export const EnvironmentBugList = ({
             <tbody>
               {bugs.map((bug) => (
                 <tr key={bug.id}>
-                  <td
-                    className="scenario-title-cell"
-                    title={getScenarioLabel(bug.scenarioId)}
-                  >
-                    <span className="scenario-title-text">
-                      {getScenarioLabel(bug.scenarioId)}
-                    </span>
+                  <td className="scenario-title-cell" title={getScenarioLabel(bug.scenarioId)}>
+                    <span className="scenario-title-text">{getScenarioLabel(bug.scenarioId)}</span>
                   </td>
                   <td>
                     <span className={`bug-severity bug-severity--${bug.severity ?? 'unknown'}`}>
