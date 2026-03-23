@@ -30,7 +30,7 @@
     "saveChanges": "Salvar alterações",
     "saving": "Salvando...",
     "app": {
-      "brandName": "QaLite"
+      "brandName": "QALite"
     },
     "layout": {
       "homeAriaLabel": "Ir para a página inicial da {{brandName}}",
@@ -61,8 +61,6 @@
     "connectedAccounts": {
       "title": "Contas conectadas",
       "subtitle": "Conecte serviços externos para acelerar sua rotina de QA.",
-      "browserstackTitle": "BrowserStack",
-      "browserstackDescription": "Use suas credenciais para habilitar a integração com o BrowserStack.",
       "username": "Usuário",
       "accessKey": "Chave de acesso",
       "disconnected": "Não conectado",
@@ -74,9 +72,7 @@
       "browserstackHint": "Armazenamos apenas as credenciais essenciais e mascaramos dados sensíveis.",
       "save": "Salvar credenciais",
       "connect": "Conectar",
-      "browserstackRequired": "Informe usuário e chave de acesso para conectar o BrowserStack.",
-      "organizationRequired": "Vincule-se a uma organização para configurar o BrowserStack.",
-      "saveError": "Não foi possível salvar as credenciais do BrowserStack."
+      "saveError": "Não foi possível salvar as credenciais."
     },
     "pagination": {
       "showing": "Mostrando {{visible}} de {{total}}",
@@ -95,27 +91,8 @@
       "show": "Mostrar senha"
     },
     "simpleChart": {
-      "badge": "Visão geral",
+      "badge": "",
       "loading": "Carregando dados..."
-    },
-    "browserstackKanban": {
-      "title": "BrowserStack",
-      "brandAlt": "BrowserStack",
-      "refresh": "Atualizar lista",
-      "refreshing": "Atualizando...",
-      "loading": "Buscando execuções no BrowserStack...",
-      "emptyTitle": "Nenhuma execução encontrada",
-      "emptySubtitle": "Verifique suas credenciais do BrowserStack no perfil ou utilize o botão de atualizar.",
-      "columnSubtitleWithCards": "Cards ordenados pela criação mais recente",
-      "columnSubtitleEmpty": "Sem execuções neste status",
-      "unnamedBuild": "Build sem nome",
-      "viewBuild": "Ver build →",
-      "status": {
-        "waiting": "Em espera",
-        "running": "Em andamento",
-        "done": "Concluído",
-        "failed": "Falhou"
-      }
     },
     "themeToggle": {
       "light": "Modo claro",
@@ -142,6 +119,10 @@
       "critical": "Crítica"
     },
     "environmentOptions": {
+      "WS": "WS",
+      "Preview": "FastStore (Preview)",
+      "TM": "Homologação",
+      "PROD": "Produção",
       "smokeTest": "Smoke-test",
       "seo": "SEO",
       "performance": "Performance",
@@ -156,7 +137,9 @@
       "progress": "Em andamento",
       "done": "Concluído",
       "open": "Aberto",
-      "resolved": "Resolvido"
+      "resolved": "Resolvido",
+      "mobile": "Mobile",
+      "desktop": "Desktop"
     },
     "environmentBugModal": {
       "progress": "Em andamento",
@@ -245,6 +228,9 @@
       "testType": "Tipo de teste",
       "releaseLabel": "Release",
       "suiteId": "Suite existente",
+      "environmentColumns": "Colunas de ambiente",
+      "environmentColumnsPlaceholder": "iPhone 13\nSamsung S23\nTablet",
+      "environmentColumnsRequired": "Informe pelo menos uma coluna de ambiente.",
       "none": "Nenhuma",
       "setMoment": "Momento/Quando",
       "scenariosLoaded": "Cenários carregados da suíte"
@@ -279,7 +265,10 @@
       "cloneConfirmMessage": "Deseja clonar o ambiente {{identifier}}?",
       "cloneConfirmAction": "Clonar",
       "cloneCancel": "Cancelar",
-      "cloneLoading": "Clonando..."
+      "cloneLoading": "Clonando...",
+      "archivedSummary_one": "{{count}} ambiente arquivado pode ser consultado abaixo do quadro.",
+      "archivedSummary_other": "{{count}} ambientes arquivados podem ser consultados abaixo do quadro.",
+      "backlog": "Backlog"
     },
     "loginPage": {
       "title": "Entre na sua conta",
@@ -329,6 +318,24 @@
       "success": "Verifique seu e-mail para redefinir a senha.",
       "error": "Não foi possível enviar o link de recuperação. Tente novamente."
     },
+    "resetPasswordPage": {
+      "title": "Crie uma nova senha",
+      "newPasswordLabel": "Nova senha",
+      "confirmPasswordLabel": "Confirme a nova senha",
+      "resetButton": "Redefinir senha",
+      "loading": "Redefinindo...",
+      "verifying": "Verificando link de recuperação...",
+      "invalidCode": "O link de recuperação é inválido ou expirou. Tente solicitar um novo.",
+      "invalidForm": "Verifique todos os campos e requisitos.",
+      "verificationFailed": "Não foi possível verificar o link de recuperação. Tente novamente.",
+      "resetFailed": "Não foi possível redefinir a senha. Tente novamente.",
+      "resetSuccess": "Senha redefinida com sucesso! Redirecionando para login...",
+      "redirecting": "Redirecionando para login...",
+      "passwordMismatch": "As senhas não coincidem.",
+      "passwordsMatch": "As senhas coincidem!",
+      "backToForgot": "Solicitar novo link de recuperação",
+      "passwordTip": "Escolha uma nova senha forte com pelo menos {{min}} caracteres"
+    },
     "userPage": {
       "organizationName": "Você está colaborando com {{org}}.",
       "selectStore": "Selecione uma loja para continuar.",
@@ -338,7 +345,6 @@
       "unavailableStores": "Nenhuma loja disponível ainda",
       "updatePage": "Atualize a página ou tente novamente mais tarde. Se o problema persistir, contate o administrador.",
       "addStores": "Peça para um administrador adicionar lojas à sua organização ou volte mais tarde.",
-      "errorBrowserstack": "Não foi possível carregar as execuções do BrowserStack.",
       "badge": "Biblioteca de lojas",
       "storeTitle": "Selecione uma loja para revisar seus cenários",
       "loadingTitle": "Carregando lojas disponíveis...",
@@ -356,9 +362,12 @@
       "automatedScenarios": "Cenários automatizados",
       "scenariosDescription": "Comparativo de cenários marcados como automatizados por loja.",
       "emptyScenarios": "Ainda não identificamos cenários automatizados nas lojas desta organização.",
-      "browserstackBadge": "BrowserStack",
-      "browserstackTitle": "Acompanhe execuções automatizadas",
-      "browserstackSubtitle": "Adicione as credenciais do BrowserStack na organização para visualizar o quadro Kanban de execuções."
+      "kpis": {
+        "activeStores": "Lojas ativas",
+        "totalScenarios": "Cenários totais",
+        "averageAutomation": "Automação média",
+        "manualCases": "Casos manuais"
+      }
     },
     "forbiddenPage": {
       "description": "Você não tem permissão para acessar esta página. Entre em contato com o administrador ou volte ao início."
@@ -366,6 +375,7 @@
     "adminOrganizationsPage": {
       "title": "Organizações cadastradas",
       "subtitle": "Gerencie as organizações e mantenha os membros atualizados em um só lugar.",
+      "createButton": "Criar organização",
       "actions": {
         "newOrganization": "Nova organização",
         "create": "Criar organização",
@@ -387,27 +397,25 @@
       "modal": {
         "title": "Nova organização"
       },
+      "createModal": {
+        "description": "Preencha os detalhes para criar uma nova organização."
+      },
       "form": {
         "name": {
           "label": "Nome da organização",
           "placeholder": "Ex.: Squad de Onboarding"
         },
+        "description": {
+          "label": "Descrição"
+        },
+        "logo": {
+          "label": "Logo da organização"
+        },
+        "submitButton": "Criar organização",
         "emailDomain": {
           "label": "Domínio de e-mail da organização",
           "placeholder": "@exemplo.com",
           "hint": "Informe o domínio (com ou sem @). Usuários com esse e-mail serão vinculados automaticamente."
-        },
-        "browserstack": {
-          "title": "BrowserStack",
-          "description": "Deseja cadastrar credenciais para acompanhar execuções automatizadas?",
-          "iconAlt": "BrowserStack",
-          "enabled": "Ativado",
-          "disabled": "Desativado",
-          "usernameLabel": "Usuário do BrowserStack",
-          "usernamePlaceholder": "browserstack.user",
-          "accessKeyLabel": "Access key do BrowserStack",
-          "accessKeyPlaceholder": "Cole a access key",
-          "hint": "Credenciais do BrowserStack são configuradas pela organização."
         },
         "slack": {
           "title": "Webhook do Slack",
@@ -426,7 +434,17 @@
       "errors": {
         "generic": "Não foi possível salvar a organização.",
         "nameRequired": "Informe um nome para a organização.",
-        "loadOrganizations": "Não foi possível carregar as organizações."
+        "loadOrganizations": "Não foi possível carregar as organizações.",
+        "createFailed": "Falha ao criar a organização."
+      },
+      "toast": {
+        "organizationCreated": "Organização criada com sucesso."
+      },
+      "kpis": {
+        "organizations": "Organizações",
+        "members": "Colaboradores",
+        "averagePerOrganization": "Média por organização",
+        "withDomain": "Com domínio configurado"
       }
     },
     "storesPage": {
@@ -469,14 +487,11 @@
       "delete.confirmTitle": "Você deseja mesmo excluir {{name}}?",
       "delete.confirmDescription": "O usuário será removido da organização {{organization}}."
     },
-    "browserstack": {
-      "error.load": "Não foi possível carregar as execuções do BrowserStack."
-    },
     "automation": {
       "error.loadStats": "Não foi possível carregar os cenários automatizados por loja."
     },
     "AdminStoresPage": {
-      "no-members-message": "Nenhum usuário vinculado ainda. Adicione membros utilizando o e-mail cadastrado no QaLite",
+      "no-members-message": "Nenhum usuário vinculado ainda. Adicione membros utilizando o e-mail cadastrado no QALite",
       "stores-page": "Página de Administração de Lojas",
       "stores-back-button": "← Voltar",
       "stores-title-org-selected": "Lojas da organização {{organizationName}}",
@@ -502,16 +517,18 @@
       "chart-automated-title": "Cenários automatizados",
       "chart-automated-description": "Comparativo de cenários marcados como automatizados por loja.",
       "chart-automated-empty-message": "Ainda não identificamos cenários automatizados nas lojas desta organização.",
-      "chart-automation-comparison-title": "Automatizados x não automatizados",
+      "chart-automation-comparison-title": "Comparativo de cenários",
       "chart-automation-comparison-description": "Ranking de cenários por loja com comparativo entre automatizados e não automatizados.",
       "chart-automation-comparison-empty-message": "Cadastre cenários para comparar automação entre as lojas.",
-      "browserstack-card-badge": "BrowserStack",
-      "browserstack-card-title": "Conecte sua conta",
-      "browserstack-card-subtitle": "Adicione usuário e access key do BrowserStack na organização para acompanhar as execuções automatizadas.",
+      "organization-logo-label": "Logo da organização",
       "member-add-no-organization": "Selecione uma organização antes de adicionar membros.",
       "member-add-email-required": "Informe um e-mail para adicionar.",
       "member-add-already-linked": "Usuário já está vinculado à organização.",
       "member-add-hint": "Convide qualquer usuário existente pelo e-mail, mesmo que não corresponda ao domínio configurado.",
+      "member-email-label": "E-mail do colaborador",
+      "member-email-placeholder": "colaborador@empresa.com",
+      "member-add-button": "Adicionar membro",
+      "member-remove-button": "Remover membro",
       "member-count": "{{count}} membro",
       "member-count_plural": "{{count}} membros",
       "user-search-loading": "Buscando sugestões...",
@@ -520,7 +537,6 @@
       "toast-error-load-orgs": "Não foi possível carregar as organizações.",
       "toast-error-load-stores": "Não foi possível carregar as lojas desta organização.",
       "toast-error-load-automation-stats": "Não foi possível carregar os cenários automatizados por loja.",
-      "toast-error-load-browserstack": "Não foi possível carregar as execuções do BrowserStack.",
       "toast-success-store-created": "Nova loja cadastrada.",
       "toast-error-save-store": "Não foi possível salvar a loja.",
       "toast-success-org-updated": "Organização atualizada com sucesso.",
@@ -540,6 +556,15 @@
       "store-name-placeholder": "Ex.: Loja QA",
       "store-site-label": "URL do site",
       "store-site-placeholder": "https://minhaloja.com",
+      "store-admin-url-label": "URL do admin VTEX",
+      "store-admin-url-placeholder": "https://admin.vtex.com/...",
+      "store-environment-label": "Ambiente da loja",
+      "store-platform-vtexio": "VTEX IO (WS)",
+      "store-platform-faststore": "FastStore (Preview)",
+      "store-logo-label": "Logo da loja",
+      "store-logo-hint": "Envie uma imagem quadrada (PNG, JPG, WEBP ou SVG).",
+      "store-logo-preview": "Prévia da logo da loja",
+      "store-logo-placeholder": "Sem logo",
       "save-button-saving": "Salvando...",
       "save-store-button": "Criar loja",
       "cancel-store-button": "Cancelar",
@@ -553,16 +578,6 @@
       "org-email-domain-label": "Domínio de e-mail da organização",
       "org-email-domain-placeholder": "@exemplo.com",
       "org-email-domain-hint": "Informe o domínio (com ou sem @). Usuários com esse e-mail entram automaticamente.",
-      "org-browserstack-section-title": "BrowserStack",
-      "org-browserstack-section-description": "Deseja cadastrar credenciais para acompanhar execuções automatizadas?",
-      "org-browserstack-icon-alt": "BrowserStack",
-      "org-browserstack-toggle-on": "Ativado",
-      "org-browserstack-toggle-off": "Desativado",
-      "org-browserstack-username-label": "Usuário do BrowserStack",
-      "org-browserstack-username-placeholder": "browserstack.user",
-      "org-browserstack-access-key-label": "Access key do BrowserStack",
-      "org-browserstack-access-key-placeholder": "Cole a access key",
-      "org-browserstack-hint": "Credenciais do BrowserStack são configuradas pela organização.",
       "org-slack-section-title": "Webhook do Slack",
       "org-slack-section-description": "Deseja cadastrar um webhook para enviar notificações automáticas no Slack?",
       "org-slack-icon-alt": "Slack",
@@ -577,7 +592,7 @@
       "confirm-remove-member-description": "O usuário será removido da organização {{organizationName}}.",
       "form-error-no-org-name": "Informe um nome para a organização.",
       "form-error-no-member-email": "Informe o e-mail do usuário.",
-      "org-slack-added-user": "Adicione usuários pelo e-mail cadastrado no QaLite.",
+      "org-slack-added-user": "Adicione usuários pelo e-mail cadastrado no QALite.",
       "org-vinculed-members": "Membros vinculados",
       "org-added-user": "Adicionar usuário",
       "org-added-user-to-email": "Adicionar usuário por e-mail",
@@ -586,7 +601,19 @@
       "org-remove-user": "Remover",
       "org-danger-zone": "Zona sensível",
       "org-remove-org-and-users": "Remova a organização e desvincule todos os usuários.",
-      "org-remove-organization": "Excluir organização"
+      "org-remove-organization": "Excluir organização",
+      "pending-requests-title": "Solicitações pendentes para entrar na organização",
+      "pending-requests-count": "{{count}} solicitação(ões)",
+      "pending-requests-empty": "Nenhuma solicitação pendente para esta organização.",
+      "pending-request-approve": "Aprovar acesso",
+      "pending-request-approved": "Solicitação aprovada com sucesso.",
+      "pending-request-error": "Não foi possível aprovar a solicitação de acesso.",
+      "kpis": {
+        "activeStores": "Lojas ativas",
+        "totalScenarios": "Cenários totais",
+        "averageAutomation": "Automação média",
+        "manualCases": "Casos manuais"
+      }
     },
     "environment": {
       "loading": "Carregando dados do ambiente...",
@@ -659,27 +686,20 @@
       "notRecorded": "Não registrado",
       "inProgress": "Em andamento",
       "notEnded": "Não encerrado",
-
       "bugs": "Bugs registrados",
       "storyfix": "Storyfix registrados",
-
       "jira": "Jira",
       "notInformed": "Não informado",
-
       "moment": "Momento",
       "release": "Release",
-
       "participants": "Participantes",
       "noParticipants": "Nenhum participante",
       "oneParticipant": "1 participante ativo",
       "multipleParticipants": "{{count}} participantes ativos",
-
       "urls": "URLs monitoradas",
       "noUrls": "Nenhuma URL adicionada.",
-
       "whoIsParticipating": "Quem está participando"
     },
-
     "environmentBugList": {
       "bugRemovedSuccess": "Bug removido com sucesso.",
       "bugRemovedError": "Não foi possível remover o bug.",
@@ -701,7 +721,8 @@
       "noSeverity": "Sem severidade",
       "noPriority": "Sem prioridade",
       "confirmDeleteWithName": "Você deseja mesmo excluir o bug \"{{title}}\"?",
-      "confirmDelete": "Você deseja mesmo excluir?"
+      "confirmDelete": "Você deseja mesmo excluir?",
+      "loadError": "Não foi possível carregar os bugs."
     },
     "editEnvironmentModal": {
       "editEnvironment": "Editar ambiente",
@@ -743,11 +764,9 @@
       "status_concluido": "Concluído",
       "status_nao_se_aplica": "Não se aplica",
       "status_concluido_automatizado": "Concluído automatizado",
-
       "filters_categoria": "Categoria",
       "filters_criticidade": "Criticidade",
       "filters_todas": "Todas",
-
       "table_titulo": "Cenário",
       "table_categoria": "Categoria",
       "table_criticidade": "Criticidade",
@@ -774,7 +793,8 @@
       "toast_sem_org": "Associe a loja a uma organização para registrar o tempo do cenário.",
       "toast_save_success": "Link de evidência salvo com sucesso.",
       "toast_save_error": "Não foi possível salvar o link da evidência.",
-      "toast_exec_error": "Não foi possível registrar o tempo do cenário."
+      "toast_exec_error": "Não foi possível registrar o tempo do cenário.",
+      "statusAriaLabel": "Status {{platform}} do cenário {{scenario}}"
     },
     "environmentExport": {
       "title": "Ambiente {{id}}",
@@ -854,9 +874,9 @@
       "fallbackMessage": "Não foi possível concluir a operação. Tente novamente."
     },
     "noOrganization": {
-      "badge": "Configuração pendente",
+      "badge": "",
       "title": "Você ainda não está vinculado a uma organização",
-      "subtitle": "Entre em contato com um administrador para configurar o domínio do seu e-mail ou associar sua conta a uma equipe e liberar os recursos do QaLite.",
+      "subtitle": "Entre em contato com um administrador para configurar o domínio do seu e-mail ou associar sua conta a uma equipe e liberar os recursos do QALite.",
       "steps": "O que você pode fazer agora?",
       "update": "Garanta que seus dados de perfil estejam atualizados em",
       "confirm": "Confirme com o administrador responsável o e-mail da sua conta.",
@@ -886,16 +906,8 @@
       "photo": "Foto de perfil",
       "newPhoto": "Selecionar nova foto",
       "formats": "Formatos suportados: JPG, PNG ou WEBP (até 5MB).",
-      "browserstackTitle": "Credenciais do BrowserStack",
-      "browserstackDescription": "As integrações usam credenciais pessoais. Ative apenas se precisar atualizar seus dados.",
-      "browserstackLogoAlt": "BrowserStack",
       "enabled": "Ativado",
       "disabled": "Desativado",
-      "browserstackUser": "Usuário do BrowserStack",
-      "browserstackUserPlaceholder": "usuário",
-      "browserstackPassword": "Access key do BrowserStack",
-      "browserstackPasswordPlaceholder": "access key",
-      "browserstackText": "Armazenamos as credenciais apenas para uso nas suas integrações pessoais com o BrowserStack.",
       "loadingText": "Salvando...",
       "saveButton": "Salvar alterações"
     },
@@ -921,6 +933,11 @@
       "storeFormTitleEdit": "Editar loja",
       "storeNameLabel": "Nome",
       "storeSiteLabel": "Site",
+      "storeAdminUrlLabel": "URL do admin VTEX",
+      "storeAdminUrlPlaceholder": "https://admin.vtex.com/...",
+      "storeEnvironmentLabel": "Ambiente da loja",
+      "storePlatformVtexio": "VTEX IO (WS)",
+      "storePlatformFaststore": "FastStore (Preview)",
       "storeNamePlaceholder": "Ex.: Loja Centro",
       "storeSitePlaceholder": "Ex.: https://minhaloja.com",
       "storeSaveCreate": "Salvar loja",
@@ -1033,6 +1050,7 @@
       "scenarioDeleteConfirm": "Você deseja mesmo excluir o cenário \"{{title}}\"?",
       "suiteDeleteConfirm": "Você deseja mesmo excluir a suíte \"{{name}}\"?",
       "loadingStore": "Carregando loja...",
+      "organizationLabel": "Organização",
       "store": "Loja",
       "siteLabel": "Site",
       "environmentLabel": "Ambiente",
@@ -1070,6 +1088,11 @@
       "testData": "Massa de cenários e suítes de testes",
       "exportPdf": "Exportar PDF",
       "exportExcel": "Exportar Excel",
+      "importJson": "Importar JSON",
+      "downloadJsonTemplate": "Baixar modelo JSON",
+      "importJsonInvalid": "Arquivo JSON inválido. Use o modelo fornecido para importar os cenários.",
+      "importJsonSuccess": "{{count}} cenários importados com sucesso.",
+      "importJsonError": "Não foi possível importar os cenários por JSON.",
       "exportExcelSheetName": "Cenários",
       "exportExcelInfoSheetName": "Loja",
       "exportFileSuffix": "cenarios",
@@ -1122,9 +1145,122 @@
       "storeSettings": "Configurações da loja",
       "storeName": "Nome da loja",
       "storeUrl": "URL do site",
+      "storeAdminUrl": "URL do admin VTEX",
+      "storeLogoLabel": "Logo da loja",
+      "storeLogoHint": "Envie a logo da loja.",
+      "storeLogoPreview": "Prévia da logo da loja",
+      "storeLogoPlaceholder": "Sem logo",
+      "storeEnvironmentLabel": "Ambiente da loja",
+      "storePlatformVtexio": "VTEX IO (WS)",
+      "storePlatformFaststore": "FastStore (Preview)",
+      "storeSlackWebhookLabel": "Webhook do Slack da loja",
+      "storeSlackWebhookPlaceholder": "https://hooks.slack.com/services/...",
+      "storeSlackWebhookHint": "Se preenchido, este webhook terá prioridade sobre o webhook da organização.",
       "saveChanges": "Salvar alterações",
       "removeStore": "Remover loja",
-      "removeStoreWarning": "Excluirá os cenários e suítes vinculados."
+      "removeStoreWarning": "Excluirá os cenários e suítes vinculados.",
+      "exportSummarySheetName": "Resumo",
+      "exportScenarioSheetName": "Cenários",
+      "organizationLogoAlt": "Logo da organização",
+      "storeLogoAlt": "Logo da loja",
+      "selectScenarioAriaLabel": "Selecionar cenário {{scenario}}"
+    },
+    "generic": {
+      "user": "Usuário",
+      "userInitial": "U",
+      "notRegistered": "Não registrado",
+      "inProgress": "Em andamento",
+      "notEnded": "Não encerrado",
+      "report": "Relatório"
+    },
+    "organizationStores": {
+      "loadError": "Não foi possível carregar suas lojas agora. Tente novamente mais tarde.",
+      "realtimeError": "Não foi possível sincronizar as lojas em tempo real."
+    },
+    "environmentRealtime": {
+      "notFound": "Ambiente não encontrado."
+    },
+    "organizationAccessRequests": {
+      "availableOrganizations": "Organizações disponíveis",
+      "availableOrganizationsSubtitle": "Solicite acesso para entrar em uma organização mesmo quando seu e-mail ainda não estiver previamente cadastrado.",
+      "loading": "Carregando organizações disponíveis...",
+      "emptyTitle": "Nenhuma organização disponível",
+      "emptyDescription": "Assim que uma organização for cadastrada, ela aparecerá aqui para solicitação de acesso.",
+      "domainHint": "Domínio configurado: {{emailDomain}}",
+      "manualApprovalHint": "A aprovação acontece pelo gerenciamento da organização.",
+      "availableBadge": "Disponível para solicitar",
+      "pendingBadge": "Solicitação pendente",
+      "requestButton": "Solicitar acesso",
+      "requestPending": "Solicitado",
+      "requestBlocked": "Bloqueado",
+      "cancelButton": "Cancelar solicitação",
+      "requesting": "Solicitando...",
+      "canceling": "Cancelando...",
+      "singlePendingRule": "Você só pode manter 1 solicitação pendente por vez.",
+      "requestCreated": "Solicitação enviada para {{organizationName}}.",
+      "requestError": "Não foi possível solicitar acesso à organização.",
+      "cancelSuccess": "Solicitação cancelada para {{organizationName}}.",
+      "cancelError": "Não foi possível cancelar a solicitação de acesso.",
+      "loadOrganizationsError": "Não foi possível carregar as organizações disponíveis.",
+      "pendingTitle": "Solicitações de acesso",
+      "pendingSubtitle": "Aprove solicitações para conceder acesso imediato à organização.",
+      "pendingEmpty": "Nenhuma solicitação pendente no momento.",
+      "pendingCount": "{{count}} pendente",
+      "pendingCount_plural": "{{count}} pendentes",
+      "approveButton": "Incluir na organização",
+      "approving": "Incluindo...",
+      "approveSuccess": "Acesso concedido imediatamente.",
+      "approveError": "Não foi possível aprovar a solicitação de acesso.",
+      "adminToast": "Existem {{count}} solicitações pendentes aguardando aprovação."
+    },
+    "common": {
+      "loading": "Carregando..."
+    },
+    "authPageLabels": {
+      "login": "Faça seu login",
+      "register": "Faça seu cadastro",
+      "forgotPassword": "Recupere sua senha"
+    },
+    "passwordStrength": {
+      "veryWeak": "Muito fraca",
+      "weak": "Fraca",
+      "fair": "Aceitável",
+      "strong": "Forte",
+      "veryStrong": "Muito forte",
+      "requirements": {
+        "minLength": "Mínimo de {{count}} caracteres",
+        "uppercase": "Uma letra maiúscula",
+        "lowercase": "Uma letra minúscula",
+        "number": "Um número",
+        "special": "Um caractere especial (!@#$%^&*)"
+      }
     }
-  }
+  },
+  "profilePage.overviewBadge": "Visão geral",
+  "profilePage.personalBadge": "Dados pessoais",
+  "profilePage.personalTitle": "Dados pessoais",
+  "profilePage.personalSubtitle": "Atualize nome, avatar e e-mail exibido sem sair da página.",
+  "profilePage.personalAction": "Salvar dados",
+  "profilePage.personalSaving": "Salvando dados...",
+  "profilePage.personalSaved": "Dados pessoais atualizados com sucesso.",
+  "profilePage.personalError": "Não foi possível atualizar os dados pessoais.",
+  "profilePage.personalUpToDate": "Seus dados pessoais já estão atualizados.",
+  "profilePage.settingsBadge": "Configurações",
+  "profilePage.settingsTitle": "Configurações",
+  "profilePage.settingsSubtitle": "Ajuste idioma e tema com atualização imediata da interface.",
+  "profilePage.settingsAction": "Salvar configurações",
+  "profilePage.settingsSaving": "Salvando configurações...",
+  "profilePage.settingsSaved": "Configurações atualizadas com sucesso.",
+  "profilePage.settingsError": "Não foi possível atualizar as configurações.",
+  "profilePage.settingsUpToDate": "Suas configurações já estão atualizadas.",
+  "profilePage.securityBadge": "Segurança",
+  "profilePage.securityTitle": "Segurança",
+  "profilePage.securitySubtitle": "Gerencie o acesso da conta sem alterar o fluxo atual de autenticação.",
+  "profilePage.securityAction": "Enviar redefinição",
+  "profilePage.securityLoading": "Enviando redefinição...",
+  "profilePage.securitySuccess": "Enviamos um link de redefinição de senha para seu e-mail.",
+  "profilePage.securityError": "Não foi possível enviar a redefinição de senha.",
+  "profilePage.securityHint": "Use o envio de redefinição para atualizar sua senha com segurança.",
+  "profilePage.securityFallbackAction": "Abrir fluxo de redefinição",
+  "profilePage.securityEmailUnavailable": "E-mail indisponível"
 }

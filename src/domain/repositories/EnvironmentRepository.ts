@@ -51,7 +51,12 @@ export interface EnvironmentRepository {
     environment: Environment,
     bugs?: EnvironmentBug[],
     participantProfiles?: UserSummary[],
+<<<<<<< HEAD
     storeName?: string,
+=======
+    store?: { name?: string | null; logoUrl?: string | null } | null,
+    organization?: { name?: string | null; logoUrl?: string | null } | null,
+>>>>>>> e5493a2 (chore: update version to 72.0.1 in package.json)
   ) => void;
   copyAsMarkdown: (
     environment: Environment,

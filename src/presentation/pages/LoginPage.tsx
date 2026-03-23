@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '../hooks/useAuth';
+import { useSequencedAnimation } from '../hooks/useMotion';
 import { AuthLayout } from '../components/AuthLayout';
+import { SocialAuthButtons } from '../components/SocialAuthButtons';
 import { Button } from '../components/Button';
 import { TextInput } from '../components/TextInput';
 import { PasswordInput } from '../components/PasswordInput';
@@ -12,6 +14,7 @@ export const LoginPage = () => {
   const { t: translation } = useTranslation();
   const navigate = useNavigate();
   const { login, isLoading } = useAuth();
+  const { pageTransitionClass, showContent } = useSequencedAnimation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
@@ -49,52 +52,60 @@ export const LoginPage = () => {
   };
 
   return (
-    <AuthLayout
-      title={translation('loginPage.title')}
-      footer={
-        <div className="auth-links">
-          <Link to="/forgot-password">{translation('loginPage.forgotPassword')}</Link>
-          <span>
-            {translation('loginPage.noAccount')}{' '}
-            <Link to="/register">{translation('loginPage.createNow')}</Link>
-          </span>
-        </div>
-      }
-    >
-      {formError && <p className="form-message form-message--error">{formError}</p>}
+    <div className={pageTransitionClass}>
+      <AuthLayout
+        title={translation('loginPage.title')}
+        heroLogo="QALite"
+        pageLabel={translation('authPageLabels.login')}
+        footer={
+          <div className="auth-links">
+            <Link to="/forgot-password">{translation('loginPage.forgotPassword')}</Link>
+            <span>
+              {translation('loginPage.noAccount')}{' '}
+              <Link to="/register">{translation('loginPage.createNow')}</Link>
+            </span>
+          </div>
+        }
+      >
+        {showContent && (
+          <>
+            {formError && <p className="form-message form-message--error">{formError}</p>}
 
-      <form className="form-grid" onSubmit={handleSubmit} data-testid="login-form">
-        <TextInput
-          id="email"
-          label={translation('loginPage.emailLabel')}
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          required
-          dataTestId="login-email"
-        />
+            <SocialAuthButtons />
 
-        <p className="form-hint">{translation('loginPage.emailHint')}</p>
+            <form className="form-grid" onSubmit={handleSubmit} data-testid="login-form">
+              <TextInput
+                id="email"
+                label={translation('loginPage.emailLabel')}
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+                dataTestId="login-email"
+              />
 
-        <PasswordInput
-          id="password"
-          label={translation('loginPage.passwordLabel')}
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-          autoComplete="current-password"
-          dataTestId="login-password"
-        />
+              <PasswordInput
+                id="password"
+                label={translation('loginPage.passwordLabel')}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+                autoComplete="current-password"
+                dataTestId="login-password"
+              />
 
-        <Button
-          type="submit"
-          isLoading={isLoading}
-          loadingText={translation('loginPage.loading')}
-          data-testid="login-submit"
-        >
-          {translation('loginPage.submit')}
-        </Button>
-      </form>
-    </AuthLayout>
+              <Button
+                type="submit"
+                isLoading={isLoading}
+                loadingText={translation('loginPage.loading')}
+                data-testid="login-submit"
+              >
+                {translation('loginPage.submit')}
+              </Button>
+            </form>
+          </>
+        )}
+      </AuthLayout>
+    </div>
   );
 };

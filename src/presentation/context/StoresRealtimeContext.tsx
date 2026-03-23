@@ -1,4 +1,5 @@
 import { ReactNode, createContext, useContext, useEffect, useMemo, useState } from 'react';
+import i18n from '../../lib/i18n';
 
 import type { Store } from '../../domain/entities/store';
 import { listenToStores } from '../../infrastructure/external/stores';
@@ -33,8 +34,6 @@ export const StoresRealtimeProvider = ({ children }: { children: ReactNode }) =>
 
     setState({ stores: [], isLoading: true, error: null });
 
-    // Um único listener centralizado evita múltiplos canais "channel?VER=8" por componente.
-    // Isso reduz leituras, pois o snapshot é compartilhado e mantém o cache local sincronizado.
     const unsubscribe = listenToStores(
       activeOrganization.id,
       (stores) => {
@@ -45,7 +44,7 @@ export const StoresRealtimeProvider = ({ children }: { children: ReactNode }) =>
         setState((previous) => ({
           ...previous,
           isLoading: false,
-          error: 'Não foi possível sincronizar as lojas em tempo real.',
+          error: i18n.t('organizationStores.realtimeError'),
         }));
       },
     );

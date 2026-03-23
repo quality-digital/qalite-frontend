@@ -40,7 +40,10 @@ import { useEnvironmentEngagement } from '../hooks/useEnvironmentEngagement';
 import { EnvironmentSummaryCard } from '../components/environments/EnvironmentSummaryCard';
 import { TOptions } from 'i18next';
 import { useScenarioEvidence } from '../hooks/useScenarioEvidence';
-import { getScenarioPlatformStatuses } from '../../infrastructure/external/environments';
+import {
+  getEnvironmentColumns,
+  getScenarioPlatformStatuses,
+} from '../../infrastructure/external/environments';
 import {
   getAutomationLabelKey,
   getCriticalityClassName,
@@ -154,7 +157,10 @@ const buildSlackTaskSummaryPayload = (
   );
   const taskIdentifier =
     environment.identificador?.trim() || translation('dynamic.identifierFallback');
-  const normalizedEnvironmentType = environment.tipoAmbiente?.trim().toUpperCase();
+  const normalizedEnvironmentType =
+    typeof environment.tipoAmbiente === 'string'
+      ? environment.tipoAmbiente.trim().toUpperCase()
+      : '';
   const isWorkspaceEnvironment = normalizedEnvironmentType === 'WS';
   const fix = {
     type: isWorkspaceEnvironment ? 'storyfixes' : 'bug',
@@ -166,7 +172,9 @@ const buildSlackTaskSummaryPayload = (
       : [`  - ${translation('environment.slack.emptyList')}`];
   const attendeesList =
     attendeeList.length > 0
-      ? attendeeList.map((attendee) => `• ${attendee.name} (${attendee.email})`)
+      ? attendeeList.map((attendee) =>
+          typeof attendee === 'string' ? `• ${attendee}` : `• ${attendee.name ?? ''} (${attendee.email ?? ''})`
+        )
       : [`• ${translation('environment.slack.emptyParticipants')}`];
   const summaryMessage = [
     translation('environment.slack.summaryHeader'),
@@ -238,7 +246,9 @@ export const EnvironmentPage = () => {
   const [suites, setSuites] = useState<StoreSuite[]>([]);
   const [scenarios, setScenarios] = useState<StoreScenario[]>([]);
   const [storeName, setStoreName] = useState<string>('');
-  const { setActiveOrganization } = useOrganizationBranding();
+  const [storeLogoUrl, setStoreLogoUrl] = useState<string | null>(null);
+  const [storeSlackWebhookUrl, setStoreSlackWebhookUrl] = useState<string | null>(null);
+  const { setActiveOrganization, setActiveStore } = useOrganizationBranding();
   const participantProfiles = useUserProfiles(environment?.participants ?? []);
   const activeOrganizationIdRef = useRef<string | null>(null);
   const {
@@ -268,15 +278,18 @@ export const EnvironmentPage = () => {
     progressLabel,
     scenarioCount,
     executedScenariosCount,
-    headerMeta,
     urls,
     shareLinks,
   } = useEnvironmentDetails(environment, bugs);
-  const slackWebhookUrl = environmentOrganization?.slackWebhookUrl?.trim() || null;
+  const slackWebhookUrl =
+    storeSlackWebhookUrl?.trim() || environmentOrganization?.slackWebhookUrl?.trim() || null;
   const inviteParam = searchParams.get('invite');
   const shouldAutoJoinFromInvite = inviteParam === 'true' || inviteParam === '1';
   const detailScenario = scenarioDetailsId ? environment?.scenarios?.[scenarioDetailsId] : null;
-  const detailScenarioStatus = detailScenario ? getScenarioPlatformStatuses(detailScenario) : null;
+  const detailScenarioStatus =
+    detailScenario && environment
+      ? getScenarioPlatformStatuses(detailScenario, getEnvironmentColumns(environment))
+      : null;
   const canManageEvidence = !isInteractionLocked;
   const formatAutomationLabel = (value?: string | null) => {
     const labelKey = getAutomationLabelKey(value);
@@ -359,7 +372,11 @@ export const EnvironmentPage = () => {
     }
     activeOrganizationIdRef.current = nextOrganizationId;
     setActiveOrganization(environmentOrganization ?? null);
-  }, [environmentOrganization, setActiveOrganization]);
+
+    return () => {
+      setActiveStore(null);
+    };
+  }, [environmentOrganization, setActiveOrganization, setActiveStore]);
 
   useEffect(() => {
     if (!environment?.storeId || !isEditOpen) {
@@ -398,6 +415,9 @@ export const EnvironmentPage = () => {
   useEffect(() => {
     if (!environment?.storeId) {
       setStoreName('');
+      setStoreLogoUrl(null);
+      setStoreSlackWebhookUrl(null);
+      setActiveStore(null);
       return;
     }
 
@@ -407,12 +427,28 @@ export const EnvironmentPage = () => {
       try {
         const store = await storeService.getDetail(environment.storeId);
         if (isMounted) {
-          setStoreName(store?.name?.trim() || '');
+          const resolvedStoreName = store?.name?.trim() || '';
+          const resolvedStoreLogoUrl = store?.logoUrl ?? null;
+          setStoreName(resolvedStoreName);
+          setStoreLogoUrl(resolvedStoreLogoUrl);
+          setStoreSlackWebhookUrl(store?.slackWebhookUrl ?? null);
+          setActiveStore(
+            store
+              ? {
+                  id: store.id,
+                  name: resolvedStoreName,
+                  logoUrl: resolvedStoreLogoUrl,
+                }
+              : null,
+          );
         }
       } catch (error) {
         console.error(error);
         if (isMounted) {
           setStoreName('');
+          setStoreLogoUrl(null);
+          setStoreSlackWebhookUrl(null);
+          setActiveStore(null);
         }
       }
     };
@@ -422,7 +458,7 @@ export const EnvironmentPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [environment?.storeId]);
+  }, [environment?.storeId, setActiveStore]);
 
   const { formattedTime, totalMs, formattedStart, formattedEnd } = useTimeTracking(
     environment?.timeTracking ?? null,
@@ -535,8 +571,7 @@ export const EnvironmentPage = () => {
         showToast({ type: 'error', message: translation('environment.copyError') });
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [showToast],
+    [showToast, translation],
   );
 
   const handleCopyPublicLink = useCallback(async () => {
@@ -562,18 +597,39 @@ export const EnvironmentPage = () => {
     if (!environment) {
       return;
     }
+<<<<<<< HEAD
     environmentService.exportAsPDF(environment, bugs, participantProfiles, storeName);
   }, [bugs, environment, participantProfiles, storeName]);
+=======
+    environmentService.exportAsPDF(
+      environment,
+      bugs,
+      participantProfiles,
+      { name: storeName, logoUrl: storeLogoUrl },
+      {
+        name: environmentOrganization?.name ?? null,
+        logoUrl: environmentOrganization?.logoUrl ?? null,
+      },
+    );
+  }, [
+    bugs,
+    environment,
+    environmentOrganization?.logoUrl,
+    environmentOrganization?.name,
+    participantProfiles,
+    storeLogoUrl,
+    storeName,
+  ]);
+>>>>>>> e5493a2 (chore: update version to 72.0.1 in package.json)
 
   const handleExportExcel = useCallback(() => {
     if (!environment) {
       return;
     }
+    const environmentColumns = getEnvironmentColumns(environment);
 
     const rows = Object.values(environment.scenarios ?? {}).map((scenario) => {
-      const statuses = getScenarioPlatformStatuses(scenario);
-      const statusMobile = formatScenarioStatusLabel(statuses.mobile);
-      const statusDesktop = formatScenarioStatusLabel(statuses.desktop);
+      const statuses = getScenarioPlatformStatuses(scenario, environmentColumns);
       const observation =
         scenario.observacao?.trim() || translation('environmentEvidenceTable.observacao_none');
       const evidence = scenario.evidenciaArquivoUrl
@@ -585,8 +641,7 @@ export const EnvironmentPage = () => {
         categoria: scenario.categoria || translation('storeSummary.emptyValue'),
         criticidade: formatCriticalityLabel(scenario.criticidade),
         observacao: observation,
-        statusMobile,
-        statusDesktop,
+        statuses: environmentColumns.map((column) => formatScenarioStatusLabel(statuses[column])),
         evidencia: evidence,
       };
     });
@@ -613,7 +668,7 @@ export const EnvironmentPage = () => {
       },
       {
         label: translation('editEnvironmentModal.environmentType'),
-        value: environment.tipoAmbiente || translation('storeSummary.emptyValue'),
+        value: translateOptionValue(environment.tipoAmbiente),
       },
       {
         label: translation('editEnvironmentModal.testType'),
@@ -700,8 +755,7 @@ export const EnvironmentPage = () => {
         translation('environmentEvidenceTable.table_categoria'),
         translation('environmentEvidenceTable.table_criticidade'),
         translation('environmentEvidenceTable.table_observacao'),
-        translation('environmentEvidenceTable.table_status_mobile'),
-        translation('environmentEvidenceTable.table_status_desktop'),
+        ...environmentColumns,
         translation('environmentEvidenceTable.table_evidencia'),
       ],
       bugRows,
@@ -745,7 +799,6 @@ export const EnvironmentPage = () => {
     } finally {
       setIsCopyingMarkdown(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bugs, environment, participantProfiles, showToast, storeName, translation]);
 
   const openCreateBugModal = useCallback((scenarioId: string) => {
@@ -782,8 +835,7 @@ export const EnvironmentPage = () => {
       showToast({ type: 'error', message: translation('environment.enterError') });
       return false;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enterEnvironment, showToast]);
+  }, [enterEnvironment, showToast, translation]);
 
   const handleLeaveEnvironment = useCallback(async () => {
     try {
@@ -794,7 +846,6 @@ export const EnvironmentPage = () => {
       console.error(error);
       showToast({ type: 'error', message: translation('environment.leaveError') });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leaveEnvironment, navigate, showToast, translation]);
 
   useEffect(() => {
@@ -845,24 +896,8 @@ export const EnvironmentPage = () => {
   return (
     <Layout>
       <section className="page-container environment-page" data-testid="environment-page">
-        <div className="environment-page__header">
-          <div>
-            <BackButton label={translation('back')} />
-            <div>
-              <h1 className="section-title">
-                {environment.identificador ?? translation('environment.anonymousEnvironment')}
-              </h1>
-              <p className="section-subtitle">
-                {environment.tipoAmbiente} {translation('environment.typeSeparator')}{' '}
-                {environment.tipoTeste}
-              </p>
-              {headerMeta.length > 0 && (
-                <p className="section-subtitle">
-                  {headerMeta.join(` ${translation('environment.typeSeparator')} `)}
-                </p>
-              )}
-            </div>
-          </div>
+        <div className="environment-toolbar">
+          <BackButton label={translation('back')} />
           <div className="environment-actions">
             {!hasEnteredEnvironment && !isLocked ? (
               <Button
@@ -1086,24 +1121,14 @@ export const EnvironmentPage = () => {
                   {formatCriticalityLabel(detailScenario.criticidade)}
                 </span>
               </div>
-              <div className="scenario-details-item">
-                <span className="scenario-details-label">
-                  {translation('environmentEvidenceTable.table_status_mobile')}
-                </span>
-                <span className="scenario-details-value">
-                  {formatScenarioStatusLabel(detailScenarioStatus?.mobile ?? detailScenario.status)}
-                </span>
-              </div>
-              <div className="scenario-details-item">
-                <span className="scenario-details-label">
-                  {translation('environmentEvidenceTable.table_status_desktop')}
-                </span>
-                <span className="scenario-details-value">
-                  {formatScenarioStatusLabel(
-                    detailScenarioStatus?.desktop ?? detailScenario.status,
-                  )}
-                </span>
-              </div>
+              {Object.entries(detailScenarioStatus ?? {}).map(([column, status]) => (
+                <div className="scenario-details-item" key={column}>
+                  <span className="scenario-details-label">{column}</span>
+                  <span className="scenario-details-value">
+                    {formatScenarioStatusLabel(status)}
+                  </span>
+                </div>
+              ))}
             </div>
             <div className="scenario-details-section">
               <span className="scenario-details-label">

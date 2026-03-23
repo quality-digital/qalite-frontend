@@ -8,12 +8,13 @@ import {
   useState,
 } from 'react';
 
+import { useTranslation } from 'react-i18next';
+
 import { authService } from '../../infrastructure/services/authService';
 import type { AuthUser, Role, UpdateProfilePayload } from '../../domain/entities/auth';
 import { DEFAULT_ROLE } from '../../domain/entities/auth';
 import { mapFirebaseError } from '../../shared/errors/firebaseErrors';
 import { useToast } from './ToastContext';
-import { useTranslation } from 'react-i18next';
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -21,9 +22,13 @@ interface AuthContextValue {
   isInitializing: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<AuthUser>;
+  loginWithGoogle: () => Promise<AuthUser>;
+  loginWithGithub: () => Promise<AuthUser>;
   register: (input: { email: string; password: string; displayName: string }) => Promise<AuthUser>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  verifyPasswordResetCode: (code: string) => Promise<string>;
+  confirmPasswordReset: (code: string, newPassword: string) => Promise<void>;
   hasRole: (roles: Role[]) => boolean;
   updateProfile: (payload: UpdateProfilePayload) => Promise<AuthUser>;
 }
@@ -102,8 +107,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOutSilently = useCallback(async () => {
     try {
       await authService.logout();
-    } catch (logoutError) {
-      console.error(logoutError);
+    } catch {
+      return;
     }
   }, []);
 
@@ -132,6 +137,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     },
     [runAuthAction, showToast, signOutSilently, translation],
   );
+
+  const loginWithGoogle = useCallback(async () => {
+    const authenticatedUser = await runAuthAction(() => authService.loginWithGoogle());
+    setUser(authenticatedUser);
+
+    const firstName = authenticatedUser.displayName.split(' ')[0] || translation('roleUser');
+    showToast({
+      type: 'success',
+      message: translation('registerPage.welcomeBack', { name: firstName }),
+    });
+
+    return authenticatedUser;
+  }, [runAuthAction, showToast, translation]);
+
+  const loginWithGithub = useCallback(async () => {
+    const authenticatedUser = await runAuthAction(() => authService.loginWithGithub());
+    setUser(authenticatedUser);
+
+    const firstName = authenticatedUser.displayName.split(' ')[0] || translation('roleUser');
+    showToast({
+      type: 'success',
+      message: translation('registerPage.welcomeBack', { name: firstName }),
+    });
+
+    return authenticatedUser;
+  }, [runAuthAction, showToast, translation]);
 
   const register = useCallback(
     async (input: { email: string; password: string; displayName: string }) => {
@@ -176,6 +207,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     [runAuthAction, translation],
   );
 
+  const verifyPasswordResetCode = useCallback(
+    (code: string) => runAuthAction(() => authService.verifyPasswordResetCode(code)),
+    [runAuthAction],
+  );
+
+  const confirmPasswordReset = useCallback(
+    (code: string, newPassword: string) =>
+      runAuthAction(() => authService.confirmPasswordReset(code, newPassword), {
+        successMessage: translation('resetPasswordPage.resetSuccess'),
+      }),
+    [runAuthAction, translation],
+  );
+
   const hasRole = useCallback((roles: Role[]) => authService.hasRequiredRole(user, roles), [user]);
 
   const updateProfile = useCallback(
@@ -194,9 +238,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isInitializing,
       error,
       login,
+      loginWithGoogle,
+      loginWithGithub,
       register,
       logout,
       resetPassword,
+      verifyPasswordResetCode,
+      confirmPasswordReset,
       hasRole,
       updateProfile,
     }),
@@ -206,9 +254,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isInitializing,
       error,
       login,
+      loginWithGoogle,
+      loginWithGithub,
       register,
       logout,
       resetPassword,
+      verifyPasswordResetCode,
+      confirmPasswordReset,
       hasRole,
       updateProfile,
     ],

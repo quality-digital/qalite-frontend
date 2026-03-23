@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../hooks/useAuth';
@@ -7,24 +7,24 @@ import { Button } from '../components/Button';
 import { EmptyState } from '../components/EmptyState';
 import { useOrganizationStores } from '../hooks/useOrganizationStores';
 import { UserAvatar } from '../components/UserAvatar';
-import { BrowserstackKanban } from '../components/browserstack/BrowserstackKanban';
-import { StoreScenarioComparisonChart } from '../components/StoreScenarioComparisonChart';
-import { InboxIcon, StorefrontIcon, UsersGroupIcon } from '../components/icons';
-import { useToast } from '../context/ToastContext';
+import { CachedImage } from '../components/CachedImage';
+import {
+  ActivityIcon,
+  InboxIcon,
+  PieChartIcon,
+  StorefrontIcon,
+  TrendIcon,
+  UsersGroupIcon,
+} from '../components/icons';
 import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
-import { browserstackService } from '../../infrastructure/services/browserstackService';
-import type { BrowserstackBuild } from '../../domain/entities/browserstack';
 import { useTranslation } from 'react-i18next';
 
 export const UserDashboardPage = () => {
   const navigate = useNavigate();
-  const { showToast } = useToast();
   const { user, isInitializing } = useAuth();
   const organizationId = user?.organizationId ?? null;
   const { organization, stores, isLoading, status } = useOrganizationStores(organizationId);
   const { setActiveOrganization } = useOrganizationBranding();
-  const [browserstackBuilds, setBrowserstackBuilds] = useState<BrowserstackBuild[]>([]);
-  const [isLoadingBrowserstack, setIsLoadingBrowserstack] = useState(false);
 
   const { t } = useTranslation();
   const scenarioChartData = useMemo(() => {
@@ -46,7 +46,11 @@ export const UserDashboardPage = () => {
         (first, second) => second.total - first.total || first.label.localeCompare(second.label),
       );
   }, [stores]);
-  const hasScenarioChartData = scenarioChartData.some((item) => item.total > 0);
+  const totalScenarios = scenarioChartData.reduce((acc, item) => acc + item.total, 0);
+  const totalAutomated = scenarioChartData.reduce((acc, item) => acc + item.automated, 0);
+  const totalManual = scenarioChartData.reduce((acc, item) => acc + item.notAutomated, 0);
+  const automationRate =
+    totalScenarios > 0 ? Math.round((totalAutomated / totalScenarios) * 100) : 0;
 
   useEffect(() => {
     if (isInitializing) {
@@ -55,11 +59,6 @@ export const UserDashboardPage = () => {
 
     if (!user) {
       navigate('/login', { replace: true });
-      return;
-    }
-
-    if (user.role === 'admin') {
-      navigate('/admin', { replace: true });
       return;
     }
 
@@ -97,35 +96,6 @@ export const UserDashboardPage = () => {
   const emptyStateTitle = isError ? t('userPage.loadingStores') : t('userPage.unavailableStores');
   const emptyStateDescription = isError ? t('userPage.updatePage') : t('userPage.addStores');
 
-  const organizationCredentials = organization?.browserstackCredentials ?? null;
-  const hasBrowserstackCredentials = useMemo(
-    () => Boolean(organizationCredentials?.username && organizationCredentials?.accessKey),
-    [organizationCredentials?.accessKey, organizationCredentials?.username],
-  );
-
-  const loadBrowserstackBuilds = useCallback(async () => {
-    if (!hasBrowserstackCredentials || !organizationCredentials) {
-      setBrowserstackBuilds([]);
-      return;
-    }
-
-    try {
-      setIsLoadingBrowserstack(true);
-      const builds = await browserstackService.listBuilds(organizationCredentials);
-      setBrowserstackBuilds(builds);
-    } catch (error) {
-      console.error(error);
-      const message = error instanceof Error ? error.message : t('userPage.errorBrowserstack');
-      showToast({ type: 'error', message });
-    } finally {
-      setIsLoadingBrowserstack(false);
-    }
-  }, [hasBrowserstackCredentials, organizationCredentials, showToast, t]);
-
-  useEffect(() => {
-    void loadBrowserstackBuilds();
-  }, [loadBrowserstackBuilds]);
-
   return (
     <Layout>
       <section className="page-container">
@@ -157,36 +127,73 @@ export const UserDashboardPage = () => {
             }
           />
         ) : (
-          <div className="dashboard-grid">
-            {stores.map((store) => (
-              <button
-                key={store.id}
-                type="button"
-                className="card card-interactive"
-                onClick={() => handleSelectStore(store.id)}
-              >
-                <div className="card-header">
-                  <div className="card-title-group">
-                    <span className="card-title-icon" aria-hidden>
-                      <StorefrontIcon className="icon icon--lg" />
-                    </span>
-                    <div>
-                      <h2 className="card-title">{store.name}</h2>
-                      <span className="badge store-card-scenarios">
-                        {t('AdminStoresPage.store-card-scenarios-badge', {
-                          scenarioCount: store.scenarioCount,
-                        })}
+          <>
+            <section className="dashboard-kpi-grid">
+              <article className="dashboard-kpi-card">
+                <span className="dashboard-kpi-card__icon">
+                  <StorefrontIcon className="icon icon--lg" />
+                </span>
+                <strong>{stores.length}</strong>
+                <span>{t('userPage.kpis.activeStores')}</span>
+              </article>
+              <article className="dashboard-kpi-card">
+                <span className="dashboard-kpi-card__icon">
+                  <ActivityIcon className="icon icon--lg" />
+                </span>
+                <strong>{totalScenarios}</strong>
+                <span>{t('userPage.kpis.totalScenarios')}</span>
+              </article>
+              <article className="dashboard-kpi-card">
+                <span className="dashboard-kpi-card__icon">
+                  <PieChartIcon className="icon icon--lg" />
+                </span>
+                <strong>{automationRate}%</strong>
+                <span>{t('userPage.kpis.averageAutomation')}</span>
+              </article>
+              <article className="dashboard-kpi-card">
+                <span className="dashboard-kpi-card__icon">
+                  <TrendIcon className="icon icon--lg" />
+                </span>
+                <strong>{totalManual}</strong>
+                <span>{t('userPage.kpis.manualCases')}</span>
+              </article>
+            </section>
+
+            <div className="dashboard-grid">
+              {stores.map((store) => (
+                <button
+                  key={store.id}
+                  type="button"
+                  className="card card-interactive"
+                  onClick={() => handleSelectStore(store.id)}
+                >
+                  <div className="card-header">
+                    <div className="card-title-group">
+                      <span className="card-title-icon" aria-hidden>
+                        {store.logoUrl ? (
+                          <CachedImage src={store.logoUrl} alt="" className="icon icon--lg" />
+                        ) : (
+                          <StorefrontIcon className="icon icon--lg" />
+                        )}
                       </span>
+                      <div>
+                        <h2 className="card-title">{store.name}</h2>
+                        <span className="badge store-card-scenarios">
+                          {t('AdminStoresPage.store-card-scenarios-badge', {
+                            scenarioCount: store.scenarioCount,
+                          })}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="card-link-hint">
-                  <span>{t('storesPage.openStore')}</span>
-                  <span aria-hidden="true">&rarr;</span>
-                </div>
-              </button>
-            ))}
-          </div>
+                  <div className="card-link-hint">
+                    <span>{t('storesPage.openStore')}</span>
+                    <span aria-hidden="true">&rarr;</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </>
         )}
 
         {stores.length > 0 && (
@@ -232,29 +239,7 @@ export const UserDashboardPage = () => {
             )}
           </div>
         )}
-
-        {stores.length > 0 && (
-          <div className="organization-charts-grid organization-charts-grid--dashboard">
-            <StoreScenarioComparisonChart
-              title={t('AdminStoresPage.chart-automation-comparison-title')}
-              description={t('AdminStoresPage.chart-automation-comparison-description')}
-              data={hasScenarioChartData ? scenarioChartData : []}
-              emptyMessage={t('AdminStoresPage.chart-automation-comparison-empty-message')}
-              isLoading={isLoading}
-            />
-          </div>
-        )}
       </section>
-
-      {organization && hasBrowserstackCredentials && (
-        <section className="page-container">
-          <BrowserstackKanban
-            builds={browserstackBuilds}
-            isLoading={isLoadingBrowserstack}
-            onRefresh={loadBrowserstackBuilds}
-          />
-        </section>
-      )}
     </Layout>
   );
 };

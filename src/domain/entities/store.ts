@@ -3,7 +3,10 @@ export interface Store {
   organizationId: string;
   name: string;
   site: string;
+  adminUrl: string;
   stage: string;
+  logoUrl: string | null;
+  slackWebhookUrl: string | null;
   scenarioCount: number;
   automatedScenarioCount: number;
   notAutomatedScenarioCount: number;
@@ -31,6 +34,10 @@ export interface StoreScenarioInput {
   criticality: string;
   observation: string;
   bdd: string;
+}
+
+export interface CreateStoreScenarioPayload extends StoreScenarioInput {
+  storeId: string;
 }
 
 export interface StoreSuite {
@@ -65,13 +72,19 @@ export interface CreateStorePayload {
   organizationId: string;
   name: string;
   site: string;
+  adminUrl?: string;
   stage: string;
+  logoUrl?: string | null;
+  slackWebhookUrl?: string | null;
 }
 
 export interface UpdateStorePayload {
   name: string;
   site: string;
+  adminUrl?: string;
   stage: string;
+  logoUrl?: string | null;
+  slackWebhookUrl?: string | null;
 }
 
 export interface StoreExportPayload {
@@ -79,7 +92,10 @@ export interface StoreExportPayload {
     id: string;
     name: string;
     site: string;
+    adminUrl?: string;
     stage: string;
+    logoUrl?: string | null;
+    slackWebhookUrl?: string | null;
     scenarioCount: number;
   };
   exportedAt: string;
