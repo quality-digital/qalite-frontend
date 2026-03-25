@@ -51,17 +51,8 @@ export interface EnvironmentRepository {
     environment: Environment,
     bugs?: EnvironmentBug[],
     participantProfiles?: UserSummary[],
-<<<<<<< HEAD
-<<<<<<< HEAD
-    storeName?: string,
-=======
     store?: { name?: string | null; logoUrl?: string | null } | null,
     organization?: { name?: string | null; logoUrl?: string | null } | null,
->>>>>>> e5493a2 (chore: update version to 72.0.1 in package.json)
-=======
-    store?: { name?: string | null; logoUrl?: string | null } | null,
-    organization?: { name?: string | null; logoUrl?: string | null } | null,
->>>>>>> e54af45be1a96e4f13d6da40e51e835db3693915
   ) => void;
   copyAsMarkdown: (
     environment: Environment,

@@ -471,11 +471,6 @@ export const openScenarioPdf = (
         siteLabel,
       )}</a>`
     : escapeHtml(siteLabel);
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> e54af45be1a96e4f13d6da40e51e835db3693915
   const organizationName = organization?.name?.trim() || '';
   const organizationLogo = organization?.logoUrl?.trim() || '';
   const storeName = payload.store.name?.trim() || t('storeSummary.emptyValue');
@@ -510,10 +505,6 @@ export const openScenarioPdf = (
         )
         .join('')}</div>`
     : '';
-<<<<<<< HEAD
->>>>>>> e5493a2 (chore: update version to 72.0.1 in package.json)
-=======
->>>>>>> e54af45be1a96e4f13d6da40e51e835db3693915
 
   const content = `
     <!doctype html>
@@ -541,21 +532,12 @@ export const openScenarioPdf = (
           }
           body { font-family: 'Inter', system-ui, -apple-system, sans-serif; padding: 24px; }
           h1 { margin-bottom: 4px; }
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> e54af45be1a96e4f13d6da40e51e835db3693915
           .org-header { display: flex; flex-wrap: wrap; align-items: stretch; gap: 12px; margin-bottom: 12px; }
           .org-header-item { display: flex; align-items: center; gap: 12px; min-width: 220px; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface-muted); }
           .org-header-copy { display: flex; flex-direction: column; gap: 2px; }
           .org-label { font-size: 12px; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
           .org-logo { width: 48px; height: 48px; border-radius: 10px; object-fit: contain; border: 1px solid var(--color-border); background: #fff; }
           .org-name { font-size: 16px; font-weight: 600; color: #111827; }
-<<<<<<< HEAD
->>>>>>> e5493a2 (chore: update version to 72.0.1 in package.json)
-=======
->>>>>>> e54af45be1a96e4f13d6da40e51e835db3693915
           .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 16px 0; padding: 12px; background: var(--color-surface-muted); border: 1px solid var(--color-border); border-radius: 12px; }
           .summary-grid span { color: var(--color-text-muted); font-size: 12px; }
           .summary-grid strong { display: block; margin-top: 4px; }
@@ -571,14 +553,7 @@ export const openScenarioPdf = (
         </style>
       </head>
       <body>
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
         ${brandingHeader}
->>>>>>> e5493a2 (chore: update version to 72.0.1 in package.json)
-=======
-        ${brandingHeader}
->>>>>>> e54af45be1a96e4f13d6da40e51e835db3693915
         <h1>${escapeHtml(title)}</h1>
         <div class="summary-grid">
           <div>

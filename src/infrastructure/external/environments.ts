@@ -1047,17 +1047,8 @@ export const exportEnvironmentAsPDF = (
   environment: Environment,
   bugs: EnvironmentBug[] = [],
   participantProfiles: UserSummary[] = [],
-<<<<<<< HEAD
-<<<<<<< HEAD
-  storeName?: string,
-=======
   store?: { name?: string | null; logoUrl?: string | null } | null,
   organization?: { name?: string | null; logoUrl?: string | null } | null,
->>>>>>> e5493a2 (chore: update version to 72.0.1 in package.json)
-=======
-  store?: { name?: string | null; logoUrl?: string | null } | null,
-  organization?: { name?: string | null; logoUrl?: string | null } | null,
->>>>>>> e54af45be1a96e4f13d6da40e51e835db3693915
 ): void => {
   if (typeof window === 'undefined') {
     return;
@@ -1075,11 +1066,6 @@ export const exportEnvironmentAsPDF = (
   const exportTitle = t('environmentExport.title', { id: environment.identificador });
   const storeLabel = store?.name?.trim();
   const exportTitleWithStore = storeLabel ? `${exportTitle} · ${storeLabel}` : exportTitle;
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> e54af45be1a96e4f13d6da40e51e835db3693915
   const organizationName = organization?.name?.trim() || '';
   const organizationLogo = organization?.logoUrl?.trim() || '';
   const storeLogo = store?.logoUrl?.trim() || '';
@@ -1091,10 +1077,6 @@ export const exportEnvironmentAsPDF = (
           ${storeLogo ? `<img src="${escapeHtml(storeLogo)}" alt="${escapeHtml(storeLabel || 'Store logo')}" class="org-logo" />` : ''}
         </div>`
       : '';
-<<<<<<< HEAD
->>>>>>> e5493a2 (chore: update version to 72.0.1 in package.json)
-=======
->>>>>>> e54af45be1a96e4f13d6da40e51e835db3693915
   const jiraTask = environment.jiraTask?.trim() || '';
   const jiraHref = buildExternalLink(jiraTask);
   const jiraValue = jiraHref
@@ -1251,12 +1233,9 @@ export const exportEnvironmentAsPDF = (
           body { font-family: Arial, sans-serif; padding: 24px; }
           h1 { margin-bottom: 0; }
           h2 { margin-top: 24px; }
-<<<<<<< HEAD
-=======
           .org-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
           .org-logo { width: 48px; height: 48px; border-radius: 10px; object-fit: contain; border: 1px solid var(--color-border); background: #fff; }
           .org-name { font-size: 16px; font-weight: 600; color: #111827; }
->>>>>>> e54af45be1a96e4f13d6da40e51e835db3693915
           .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; padding: 12px; background: var(--color-surface-muted); border: 1px solid var(--color-border); border-radius: 12px; }
           .summary-grid strong { display: block; margin-top: 4px; }
           table { width: 100%; border-collapse: collapse; margin-top: 16px; }
@@ -1286,10 +1265,7 @@ export const exportEnvironmentAsPDF = (
         </style>
       </head>
       <body>
-<<<<<<< HEAD
-=======
         ${organizationHeader}
->>>>>>> e54af45be1a96e4f13d6da40e51e835db3693915
         <h1>${escapeHtml(exportTitleWithStore)}</h1>
         <p>${escapeHtml(t('environmentExport.statusLabel'))}: ${escapeHtml(statusLabel)}</p>
         <p>${escapeHtml(t('environmentExport.typeLabel'))}: ${escapeHtml(
