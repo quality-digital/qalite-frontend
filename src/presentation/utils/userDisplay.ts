@@ -1,3 +1,5 @@
+import i18n from '../../lib/i18n';
+
 type UserDisplaySource = {
   displayName?: string | null;
   email?: string | null;
@@ -14,7 +16,7 @@ export const getReadableUserName = (user: UserDisplaySource) => {
     return safeEmail;
   }
 
-  return 'Usuário';
+  return i18n.t('generic.user');
 };
 
 export const getUserInitials = (value: string) =>
@@ -23,4 +25,4 @@ export const getUserInitials = (value: string) =>
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase())
     .slice(0, 2)
-    .join('') || 'U';
+    .join('') || i18n.t('generic.userInitial');

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import i18n from '../../lib/i18n';
 
 import type { Organization } from '../../domain/entities/organization';
 import type { Store } from '../../domain/entities/store';
@@ -58,7 +59,7 @@ export const useOrganizationStores = (organizationId: string | null) => {
         if (!isSubscribed) {
           return;
         }
-        const message = 'Não foi possível carregar suas lojas agora. Tente novamente mais tarde.';
+        const message = i18n.t('organizationStores.loadError');
         setState((previous) => ({ ...previous, status: 'error', error: message }));
         showToast({ type: 'error', message });
       }

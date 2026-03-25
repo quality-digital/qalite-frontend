@@ -14,8 +14,11 @@ import {
   orderBy,
   limit,
   startAfter,
+  type Query,
   type QueryDocumentSnapshot,
   type QueryConstraint,
+  type QuerySnapshot,
+  type DocumentData,
 } from 'firebase/firestore';
 
 import type {
@@ -78,12 +81,39 @@ export const SCENARIO_COMPLETED_STATUSES: EnvironmentScenarioStatus[] = [
   'nao_se_aplica',
 ];
 
+export const DEFAULT_ENVIRONMENT_COLUMNS = ['Desktop', 'Mobile'];
+
+export const getEnvironmentColumns = (
+  environment: Pick<Environment, 'environmentColumns'> | null | undefined,
+): string[] => {
+  const normalized = (environment?.environmentColumns ?? [])
+    .map((column) => column.trim())
+    .filter((column, index, array) => column.length > 0 && array.indexOf(column) === index);
+
+  return normalized.length > 0 ? normalized : DEFAULT_ENVIRONMENT_COLUMNS;
+};
+
 export const getScenarioPlatformStatuses = (
   scenario: EnvironmentScenario,
-): Record<EnvironmentScenarioPlatform, EnvironmentScenarioStatus> => ({
-  mobile: scenario.statusMobile ?? scenario.status,
-  desktop: scenario.statusDesktop ?? scenario.status,
-});
+  columns: string[] = DEFAULT_ENVIRONMENT_COLUMNS,
+): Record<EnvironmentScenarioPlatform, EnvironmentScenarioStatus> => {
+  const explicitStatuses = scenario.statusByEnvironment ?? {};
+
+  return columns.reduce<Record<EnvironmentScenarioPlatform, EnvironmentScenarioStatus>>(
+    (acc, column, index) => {
+      const legacyStatus =
+        index === 0
+          ? (scenario.statusMobile ?? scenario.status)
+          : index === 1
+            ? (scenario.statusDesktop ?? scenario.status)
+            : scenario.status;
+
+      acc[column] = explicitStatuses[column] ?? legacyStatus;
+      return acc;
+    },
+    {},
+  );
+};
 
 const getString = (value: unknown, fallback = ''): string =>
   typeof value === 'string' ? value : fallback;
@@ -140,6 +170,17 @@ const parseScenarioMap = (
       observacao: getString(entry.observacao ?? entry.observation),
       automatizado: automation,
       status: defaultStatus,
+      statusByEnvironment:
+        typeof entry.statusByEnvironment === 'object' && entry.statusByEnvironment !== null
+          ? Object.entries(entry.statusByEnvironment as Record<string, unknown>).reduce<
+              Record<string, EnvironmentScenarioStatus>
+            >((statusAcc, [key, statusValue]) => {
+              if (typeof key === 'string' && typeof statusValue === 'string' && key.trim()) {
+                statusAcc[key.trim()] = statusValue as EnvironmentScenarioStatus;
+              }
+              return statusAcc;
+            }, {})
+          : undefined,
       statusMobile: mobileStatus,
       statusDesktop: desktopStatus,
       evidenciaArquivoUrl: getStringOrNull(entry.evidenciaArquivoUrl),
@@ -210,6 +251,7 @@ const normalizeEnvironment = (id: string, data: Record<string, unknown>): Enviro
   totalCenarios: Number(data.totalCenarios ?? 0),
   participants: getStringArray(data.participants),
   publicShareLanguage: getStringOrNull(data.publicShareLanguage),
+  environmentColumns: getStringArray(data.environmentColumns),
 });
 
 export const createEnvironment = async (payload: CreateEnvironmentInput): Promise<Environment> => {
@@ -373,12 +415,12 @@ const listEnvironmentsFromServer = async (
     let hasMore = true;
 
     while (hasMore) {
-      const pageQuery = lastDoc
+      const pageQuery: Query<DocumentData> = lastDoc
         ? query(environmentsQuery, startAfter(lastDoc), limit(ENVIRONMENT_PAGE_SIZE))
         : query(environmentsQuery, limit(ENVIRONMENT_PAGE_SIZE));
-      const snapshot = await getDocsCacheThenServer(pageQuery);
+      const snapshot: QuerySnapshot<DocumentData> = await getDocsCacheThenServer(pageQuery);
 
-      snapshot.docs.forEach((docSnapshot) => {
+      snapshot.docs.forEach((docSnapshot: QueryDocumentSnapshot<DocumentData>) => {
         environments.push(
           normalizeEnvironment(
             docSnapshot.id,
@@ -514,13 +556,26 @@ export const updateScenarioStatus = async (
   status: EnvironmentScenarioStatus,
   platform?: EnvironmentScenarioPlatform,
 ): Promise<void> => {
+  if (platform && platform !== 'mobile' && platform !== 'desktop') {
+    await updateScenarioField(environmentId, scenarioId, {
+      [`statusByEnvironment.${platform}`]: status,
+    });
+    return;
+  }
+
   if (platform === 'mobile') {
-    await updateScenarioField(environmentId, scenarioId, { statusMobile: status });
+    await updateScenarioField(environmentId, scenarioId, {
+      statusMobile: status,
+      'statusByEnvironment.Mobile': status,
+    });
     return;
   }
 
   if (platform === 'desktop') {
-    await updateScenarioField(environmentId, scenarioId, { statusDesktop: status });
+    await updateScenarioField(environmentId, scenarioId, {
+      statusDesktop: status,
+      'statusByEnvironment.Desktop': status,
+    });
     return;
   }
 
@@ -684,8 +739,10 @@ export const transitionEnvironmentStatus = async ({
 
   if (targetStatus === 'done') {
     const hasIncompleteScenario = Object.values(environment.scenarios ?? {}).some((scenario) => {
-      const statuses = getScenarioPlatformStatuses(scenario);
-      return isIncompleteStatus(statuses.mobile) || isIncompleteStatus(statuses.desktop);
+      const statuses = Object.values(
+        getScenarioPlatformStatuses(scenario, getEnvironmentColumns(environment)),
+      );
+      return statuses.some((status) => isIncompleteStatus(status));
     });
 
     if (hasIncompleteScenario) {
@@ -704,6 +761,7 @@ export const transitionEnvironmentStatus = async ({
 
   if (targetStatus === 'in_progress') {
     const scenariosEntries = Object.entries(environment.scenarios ?? {});
+    const environmentColumns = getEnvironmentColumns(environment);
 
     if (scenariosEntries.length > 0) {
       const scenarios = scenariosEntries.reduce<Record<string, EnvironmentScenario>>(
@@ -713,6 +771,12 @@ export const transitionEnvironmentStatus = async ({
             status: 'em_andamento',
             statusMobile: 'em_andamento',
             statusDesktop: 'em_andamento',
+            statusByEnvironment: environmentColumns.reduce<
+              Record<string, EnvironmentScenarioStatus>
+            >((statusesAcc, column) => {
+              statusesAcc[column] = 'em_andamento';
+              return statusesAcc;
+            }, {}),
           };
           return acc;
         },
@@ -983,7 +1047,8 @@ export const exportEnvironmentAsPDF = (
   environment: Environment,
   bugs: EnvironmentBug[] = [],
   participantProfiles: UserSummary[] = [],
-  storeName?: string,
+  store?: { name?: string | null; logoUrl?: string | null } | null,
+  organization?: { name?: string | null; logoUrl?: string | null } | null,
 ): void => {
   if (typeof window === 'undefined') {
     return;
@@ -992,13 +1057,26 @@ export const exportEnvironmentAsPDF = (
   const t = i18n.t.bind(i18n);
   const normalizedParticipants = normalizeParticipants(environment, participantProfiles, t);
   const timeSummary = buildTimeTrackingSummary(environment);
-  const scenarioCount = Object.values(environment.scenarios ?? {}).length * 2;
+  const environmentColumns = getEnvironmentColumns(environment);
+  const scenarioCount =
+    Object.values(environment.scenarios ?? {}).length * environmentColumns.length;
   const statusLabel = t(ENVIRONMENT_STATUS_LABEL[environment.status]);
   const testTypeLabel = translateEnvironmentOption(environment.tipoTeste, t);
   const momentLabel = translateEnvironmentOption(environment.momento, t);
   const exportTitle = t('environmentExport.title', { id: environment.identificador });
-  const storeLabel = storeName?.trim();
+  const storeLabel = store?.name?.trim();
   const exportTitleWithStore = storeLabel ? `${exportTitle} · ${storeLabel}` : exportTitle;
+  const organizationName = organization?.name?.trim() || '';
+  const organizationLogo = organization?.logoUrl?.trim() || '';
+  const storeLogo = store?.logoUrl?.trim() || '';
+  const organizationHeader =
+    organizationName || organizationLogo || storeLogo
+      ? `<div class="org-header">
+          ${organizationLogo ? `<img src="${escapeHtml(organizationLogo)}" alt="${escapeHtml(organizationName || 'Organization logo')}" class="org-logo" />` : ''}
+          ${organizationName ? `<span class="org-name">${escapeHtml(organizationName)}</span>` : ''}
+          ${storeLogo ? `<img src="${escapeHtml(storeLogo)}" alt="${escapeHtml(storeLabel || 'Store logo')}" class="org-logo" />` : ''}
+        </div>`
+      : '';
   const jiraTask = environment.jiraTask?.trim() || '';
   const jiraHref = buildExternalLink(jiraTask);
   const jiraValue = jiraHref
@@ -1022,9 +1100,7 @@ export const exportEnvironmentAsPDF = (
       : `<p>${t('environmentExport.noUrls')}</p>`;
   const scenarioRows = Object.values(environment.scenarios ?? {})
     .map((scenario) => {
-      const statuses = getScenarioPlatformStatuses(scenario);
-      const statusMobile = translateScenarioStatus(statuses.mobile, t);
-      const statusDesktop = translateScenarioStatus(statuses.desktop, t);
+      const statuses = getScenarioPlatformStatuses(scenario, environmentColumns);
       const evidenceLabel = scenario.evidenciaArquivoUrl
         ? t('environmentEvidenceTable.evidencia_abrir')
         : t('environmentEvidenceTable.evidencia_sem');
@@ -1038,8 +1114,12 @@ export const exportEnvironmentAsPDF = (
           <td>${linkifyHtml(scenario.categoria)}</td>
           <td><span class="${criticalityClass}">${escapeHtml(criticalityLabel)}</span></td>
           <td>${linkifyHtml(observation)}</td>
-          <td><span class="${getStatusClassName(statusMobile)}">${escapeHtml(statusMobile)}</span></td>
-          <td><span class="${getStatusClassName(statusDesktop)}">${escapeHtml(statusDesktop)}</span></td>
+          ${environmentColumns
+            .map((column) => {
+              const statusLabel = translateScenarioStatus(statuses[column], t);
+              return `<td><span class="${getStatusClassName(statusLabel)}">${escapeHtml(statusLabel)}</span></td>`;
+            })
+            .join('')}
           <td>${
             scenario.evidenciaArquivoUrl
               ? `<a href="${escapeHtml(
@@ -1153,6 +1233,9 @@ export const exportEnvironmentAsPDF = (
           body { font-family: Arial, sans-serif; padding: 24px; }
           h1 { margin-bottom: 0; }
           h2 { margin-top: 24px; }
+          .org-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+          .org-logo { width: 48px; height: 48px; border-radius: 10px; object-fit: contain; border: 1px solid var(--color-border); background: #fff; }
+          .org-name { font-size: 16px; font-weight: 600; color: #111827; }
           .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; padding: 12px; background: var(--color-surface-muted); border: 1px solid var(--color-border); border-radius: 12px; }
           .summary-grid strong { display: block; margin-top: 4px; }
           table { width: 100%; border-collapse: collapse; margin-top: 16px; }
@@ -1182,10 +1265,11 @@ export const exportEnvironmentAsPDF = (
         </style>
       </head>
       <body>
+        ${organizationHeader}
         <h1>${escapeHtml(exportTitleWithStore)}</h1>
         <p>${escapeHtml(t('environmentExport.statusLabel'))}: ${escapeHtml(statusLabel)}</p>
         <p>${escapeHtml(t('environmentExport.typeLabel'))}: ${escapeHtml(
-          environment.tipoAmbiente,
+          translateEnvironmentOption(environment.tipoAmbiente, t),
         )} · ${escapeHtml(testTypeLabel)}</p>
         ${
           environment.momento
@@ -1252,8 +1336,7 @@ export const exportEnvironmentAsPDF = (
               <th>${t('environmentEvidenceTable.table_categoria')}</th>
               <th>${t('environmentEvidenceTable.table_criticidade')}</th>
               <th>${t('environmentEvidenceTable.table_observacao')}</th>
-              <th>${t('environmentEvidenceTable.table_status_mobile')}</th>
-              <th>${t('environmentEvidenceTable.table_status_desktop')}</th>
+              ${environmentColumns.map((column) => `<th>${escapeHtml(column)}</th>`).join('')}
               <th>${t('environmentEvidenceTable.table_evidencia')}</th>
             </tr>
           </thead>
@@ -1299,7 +1382,9 @@ export const copyEnvironmentAsMarkdown = async (
   const t = i18n.t.bind(i18n);
   const normalizedParticipants = normalizeParticipants(environment, participantProfiles, t);
   const timeSummary = buildTimeTrackingSummary(environment);
-  const scenarioCount = Object.values(environment.scenarios ?? {}).length * 2;
+  const environmentColumns = getEnvironmentColumns(environment);
+  const scenarioCount =
+    Object.values(environment.scenarios ?? {}).length * environmentColumns.length;
   const statusLabel = t(ENVIRONMENT_STATUS_LABEL[environment.status]);
   const testTypeLabel = translateEnvironmentOption(environment.tipoTeste, t);
   const momentLabel = translateEnvironmentOption(environment.momento, t);
@@ -1307,9 +1392,7 @@ export const copyEnvironmentAsMarkdown = async (
     value.replace(/\|/g, '\\|').replace(/\r?\n/g, '<br>');
   const scenarioTableRows = Object.values(environment.scenarios ?? {})
     .map((scenario) => {
-      const statuses = getScenarioPlatformStatuses(scenario);
-      const statusMobile = translateScenarioStatus(statuses.mobile, t);
-      const statusDesktop = translateScenarioStatus(statuses.desktop, t);
+      const statuses = getScenarioPlatformStatuses(scenario, environmentColumns);
       const evidenceLabel = scenario.evidenciaArquivoUrl
         ? t('environmentEvidenceTable.evidencia_abrir')
         : t('environmentEvidenceTable.evidencia_sem');
@@ -1322,13 +1405,17 @@ export const copyEnvironmentAsMarkdown = async (
         scenario.categoria,
       )} | ${normalizeMarkdownCell(scenario.criticidade)} | ${normalizeMarkdownCell(
         observation,
-      )} | ${normalizeMarkdownCell(statusMobile)} | ${normalizeMarkdownCell(
-        statusDesktop,
-      )} | ${evidenceLink} |`;
+      )} | ${environmentColumns
+        .map((column) => normalizeMarkdownCell(translateScenarioStatus(statuses[column], t)))
+        .join(' | ')} | ${evidenceLink} |`;
     })
     .join('\n');
   const scenarioTable = scenarioTableRows
-    ? `| ${t('environmentEvidenceTable.table_titulo')} | ${t('environmentEvidenceTable.table_categoria')} | ${t('environmentEvidenceTable.table_criticidade')} | ${t('environmentEvidenceTable.table_observacao')} | ${t('environmentEvidenceTable.table_status_mobile')} | ${t('environmentEvidenceTable.table_status_desktop')} | ${t('environmentEvidenceTable.table_evidencia')} |\n| --- | --- | --- | --- | --- | --- | --- |\n${scenarioTableRows}`
+    ? `| ${t('environmentEvidenceTable.table_titulo')} | ${t('environmentEvidenceTable.table_categoria')} | ${t('environmentEvidenceTable.table_criticidade')} | ${t('environmentEvidenceTable.table_observacao')} | ${environmentColumns.join(
+        ' | ',
+      )} | ${t('environmentEvidenceTable.table_evidencia')} |\n| --- | --- | --- | --- | ${environmentColumns
+        .map(() => '---')
+        .join(' | ')} | --- |\n${scenarioTableRows}`
     : `- ${t('environmentExport.noScenarios')}`;
 
   const bugTableRows = bugs
@@ -1365,7 +1452,10 @@ export const copyEnvironmentAsMarkdown = async (
   const markdown = `# ${markdownTitle}
 
 - ${t('environmentExport.statusLabel')}: ${statusLabel}
-- ${t('environmentExport.typeLabel')}: ${environment.tipoAmbiente} · ${testTypeLabel}
+- ${t('environmentExport.typeLabel')}: ${translateEnvironmentOption(
+    environment.tipoAmbiente,
+    t,
+  )} · ${testTypeLabel}
 ${environment.momento ? `- ${t('environmentExport.momentLabel')}: ${momentLabel}\n` : ''}${
     environment.release ? `- ${t('environmentExport.releaseLabel')}: ${environment.release}\n` : ''
   }- ${t('environmentExport.jiraLabel')}: ${environment.jiraTask || t('dynamic.identifierFallback')}

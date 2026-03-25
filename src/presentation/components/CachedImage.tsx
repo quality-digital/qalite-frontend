@@ -2,7 +2,11 @@ import { ImgHTMLAttributes, useEffect, useState } from 'react';
 
 const loadedImages = new Set<string>();
 
-export const CachedImage = ({ src, ...props }: ImgHTMLAttributes<HTMLImageElement>) => {
+export const CachedImage = ({
+  src,
+  fetchPriority,
+  ...props
+}: ImgHTMLAttributes<HTMLImageElement>) => {
   const [displaySrc, setDisplaySrc] = useState(src);
 
   useEffect(() => {
@@ -40,5 +44,17 @@ export const CachedImage = ({ src, ...props }: ImgHTMLAttributes<HTMLImageElemen
     return null;
   }
 
-  return <img src={displaySrc} decoding="async" {...props} />;
+  const imageProps = {
+    ...props,
+    fetchpriority: fetchPriority ?? 'auto',
+  } as ImgHTMLAttributes<HTMLImageElement> & { fetchpriority: string };
+
+  return (
+    <img
+      src={displaySrc}
+      decoding={props.decoding ?? 'async'}
+      loading={props.loading ?? 'lazy'}
+      {...imageProps}
+    />
+  );
 };

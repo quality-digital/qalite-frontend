@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '../hooks/useAuth';
+import { useSequencedAnimation } from '../hooks/useMotion';
 import { AuthLayout } from '../components/AuthLayout';
 import { Button } from '../components/Button';
 import { TextInput } from '../components/TextInput';
@@ -15,6 +16,7 @@ interface FeedbackState {
 export const ForgotPasswordPage = () => {
   const { t: translation } = useTranslation();
   const { resetPassword, isLoading } = useAuth();
+  const { pageTransitionClass, showContent } = useSequencedAnimation();
   const [email, setEmail] = useState('');
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
 
@@ -45,45 +47,53 @@ export const ForgotPasswordPage = () => {
   };
 
   return (
-    <AuthLayout
-      title={translation('forgotPassword.title')}
-      footer={
-        <div className="auth-links">
-          <span>
-            {translation('forgotPassword.backToLogin')}{' '}
-            <Link to="/login">{translation('forgotPassword.backToLoginLink')}</Link>
-          </span>
-        </div>
-      }
-    >
-      {feedback && (
-        <p
-          className={`form-message ${
-            feedback.isSuccess ? 'form-message--success' : 'form-message--error'
-          }`}
-        >
-          {feedback.message}
-        </p>
-      )}
+    <div className={pageTransitionClass}>
+      <AuthLayout
+        title={translation('forgotPassword.title')}
+        heroLogo="QALite"
+        pageLabel={translation('authPageLabels.forgotPassword')}
+        footer={
+          <div className="auth-links">
+            <span>
+              {translation('forgotPassword.backToLogin')}{' '}
+              <Link to="/login">{translation('forgotPassword.backToLoginLink')}</Link>
+            </span>
+          </div>
+        }
+      >
+        {showContent && (
+          <>
+            {feedback && (
+              <p
+                className={`form-message ${
+                  feedback.isSuccess ? 'form-message--success' : 'form-message--error'
+                }`}
+              >
+                {feedback.message}
+              </p>
+            )}
 
-      <form className="form-grid" onSubmit={handleSubmit}>
-        <TextInput
-          id="email"
-          label={translation('forgotPassword.emailLabel')}
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          required
-        />
+            <form className="form-grid" onSubmit={handleSubmit}>
+              <TextInput
+                id="email"
+                label={translation('forgotPassword.emailLabel')}
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+              />
 
-        <Button
-          type="submit"
-          isLoading={isLoading}
-          loadingText={translation('forgotPassword.loading')}
-        >
-          {translation('forgotPassword.submit')}
-        </Button>
-      </form>
-    </AuthLayout>
+              <Button
+                type="submit"
+                isLoading={isLoading}
+                loadingText={translation('forgotPassword.loading')}
+              >
+                {translation('forgotPassword.submit')}
+              </Button>
+            </form>
+          </>
+        )}
+      </AuthLayout>
+    </div>
   );
 };

@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { Environment, EnvironmentScenario } from '../../../domain/entities/environment';
-import type { StoreScenario, StoreSuite } from '../../../domain/entities/store';
+import type { StoreScenario, StoreSuite, Store } from '../../../domain/entities/store';
 import { environmentService } from '../../../infrastructure/services/environmentService';
 import { Button } from '../Button';
 import { SelectInput } from '../SelectInput';
@@ -18,14 +18,19 @@ import { useToast } from '../../context/ToastContext';
 
 interface CreateEnvironmentCardProps {
   storeId: string;
+  storeStage?: Store['stage'] | null;
   suites: StoreSuite[];
   scenarios: StoreScenario[];
   onCreated?: (environment: Environment | null) => void;
 }
 
+const getEnvironmentTypeByStoreStage = (storeStage?: Store['stage'] | null) =>
+  storeStage === 'Preview' ? 'Preview' : 'WS';
+
 const buildScenarioMap = (
   suite: StoreSuite | undefined,
   scenarioList: StoreScenario[],
+  environmentColumns: string[],
 ): Record<string, EnvironmentScenario> => {
   if (!suite) {
     return {};
@@ -45,6 +50,13 @@ const buildScenarioMap = (
       observacao: match.observation,
       automatizado: match.automation,
       status: 'pendente',
+      statusByEnvironment: environmentColumns.reduce<Record<string, EnvironmentScenario['status']>>(
+        (acc, column) => {
+          acc[column] = 'pendente';
+          return acc;
+        },
+        {},
+      ),
       statusMobile: 'pendente',
       statusDesktop: 'pendente',
       evidenciaArquivoUrl: null,
@@ -56,6 +68,7 @@ const buildScenarioMap = (
 
 export const CreateEnvironmentCard = ({
   storeId,
+  storeStage,
   suites,
   scenarios,
   onCreated,
@@ -63,22 +76,33 @@ export const CreateEnvironmentCard = ({
   const [identificador, setIdentificador] = useState('');
   const [urls, setUrls] = useState('');
   const [jiraTask, setJiraTask] = useState('');
-  const [tipoAmbiente, setTipoAmbiente] = useState('WS');
+  const [tipoAmbiente, setTipoAmbiente] = useState(() =>
+    getEnvironmentTypeByStoreStage(storeStage),
+  );
   const [tipoTeste, setTipoTeste] = useState('Smoke-test');
   const [momento, setMomento] = useState('');
   const [release, setRelease] = useState('');
   const [suiteId, setSuiteId] = useState('');
+  const [environmentColumnsInput, setEnvironmentColumnsInput] = useState('Desktop\nMobile');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
   const { t } = useTranslation();
 
+  const environmentColumns = useMemo(
+    () =>
+      environmentColumnsInput
+        .split('\n')
+        .map((entry) => entry.trim())
+        .filter((entry, index, array) => entry.length > 0 && array.indexOf(entry) === index),
+    [environmentColumnsInput],
+  );
   const selectedSuite = useMemo(
     () => suites.find((suite) => suite.id === suiteId),
     [suiteId, suites],
   );
   const scenarioMap = useMemo(
-    () => buildScenarioMap(selectedSuite, scenarios),
-    [selectedSuite, scenarios],
+    () => buildScenarioMap(selectedSuite, scenarios, environmentColumns),
+    [environmentColumns, scenarios, selectedSuite],
   );
   const totalCenarios = Object.keys(scenarioMap).length;
 
@@ -102,6 +126,20 @@ export const CreateEnvironmentCard = ({
   }, [momento, tipoAmbiente]);
 
   const shouldDisplayReleaseField = requiresReleaseField(tipoAmbiente);
+  const primaryEnvironmentOption = useMemo(
+    () => ({
+      value: getEnvironmentTypeByStoreStage(storeStage),
+      label:
+        storeStage === 'Preview'
+          ? t('storeSummary.storePlatformFaststore')
+          : t('storeSummary.storePlatformVtexio'),
+    }),
+    [storeStage, t],
+  );
+
+  useEffect(() => {
+    setTipoAmbiente(getEnvironmentTypeByStoreStage(storeStage));
+  }, [storeStage]);
 
   useEffect(() => {
     if (!shouldDisplayReleaseField && release) {
@@ -113,11 +151,12 @@ export const CreateEnvironmentCard = ({
     setIdentificador('');
     setUrls('');
     setJiraTask('');
-    setTipoAmbiente('WS');
+    setTipoAmbiente(getEnvironmentTypeByStoreStage(storeStage));
     setTipoTeste('Smoke-test');
     setMomento('');
     setRelease('');
     setSuiteId('');
+    setEnvironmentColumnsInput('Desktop\nMobile');
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -130,6 +169,11 @@ export const CreateEnvironmentCard = ({
 
     if (!suiteId) {
       showToast({ type: 'error', message: t('createEnvironment.suiteRequired') });
+      return;
+    }
+
+    if (environmentColumns.length === 0) {
+      showToast({ type: 'error', message: t('createEnvironment.environmentColumnsRequired') });
       return;
     }
 
@@ -172,6 +216,7 @@ export const CreateEnvironmentCard = ({
         totalCenarios,
         participants: [],
         publicShareLanguage: null,
+        environmentColumns,
       });
 
       onCreated?.(createdEnvironment);
@@ -220,9 +265,9 @@ export const CreateEnvironmentCard = ({
           value={tipoAmbiente}
           onChange={(event) => setTipoAmbiente(event.target.value)}
           options={[
-            { value: 'WS', label: 'WS' },
-            { value: 'TM', label: 'TM' },
-            { value: 'PROD', label: 'PROD' },
+            primaryEnvironmentOption,
+            { value: 'TM', label: t('environmentOptions.TM') },
+            { value: 'PROD', label: t('environmentOptions.PROD') },
           ]}
         />
         <SelectInput
@@ -241,6 +286,13 @@ export const CreateEnvironmentCard = ({
             { value: '', label: t('createEnvironment.none') },
             ...suites.map((suite) => ({ value: suite.id, label: suite.name })),
           ]}
+        />
+        <TextArea
+          id="environment-columns"
+          label={t('createEnvironment.environmentColumns')}
+          value={environmentColumnsInput}
+          onChange={(event) => setEnvironmentColumnsInput(event.target.value)}
+          placeholder={t('createEnvironment.environmentColumnsPlaceholder')}
         />
         {momentoOptions.length > 0 && (
           <SelectInput

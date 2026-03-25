@@ -14,7 +14,7 @@ import {
   type ScenarioSortConfig,
 } from '../ScenarioColumnSortControl';
 import { isAutomatedScenario } from '../../../shared/utils/automation';
-import { ENVIRONMENT_PLATFORM_LABEL } from '../../../shared/config/environmentLabels';
+import { getEnvironmentColumns } from '../../../infrastructure/external/environments';
 import { getCriticalityClassName, getCriticalityLabelKey } from '../../constants/scenarioOptions';
 import { normalizeCriticalityEnum } from '../../../shared/utils/scenarioEnums';
 import { useToast } from '../../context/ToastContext';
@@ -42,6 +42,7 @@ export const EnvironmentEvidenceTable = ({
   const [criticalityFilter, setCriticalityFilter] = useState('');
   const [visibleCount, setVisibleCount] = useState(20);
   const canViewDetails = Boolean(onViewDetails);
+  const environmentColumns = useMemo(() => getEnvironmentColumns(environment), [environment]);
 
   const BASE_STATUS_OPTIONS = [
     { value: 'pendente', label: translation('environmentEvidenceTable.status_pendente') },
@@ -226,100 +227,114 @@ export const EnvironmentEvidenceTable = ({
           </select>
         </label>
       </div>
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th>{translation('environmentEvidenceTable.table_titulo')}</th>
-            <th className="environment-table__cell-nowrap">
-              <ScenarioColumnSortControl
-                label={translation('environmentEvidenceTable.table_categoria')}
-                field="category"
-                sort={scenarioSort}
-                onChange={setScenarioSort}
-              />
-            </th>
-            <th className="environment-table__cell-nowrap">
-              <ScenarioColumnSortControl
-                label={translation('environmentEvidenceTable.table_criticidade')}
-                field="criticality"
-                sort={scenarioSort}
-                onChange={setScenarioSort}
-              />
-            </th>
-            <th>{translation('environmentEvidenceTable.table_status_mobile')}</th>
-            <th>{translation('environmentEvidenceTable.table_status_desktop')}</th>
-            {canViewDetails && (
-              <th className="scenario-actions-header">{translation('storeSummary.viewDetails')}</th>
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {paginatedScenarioEntries.map(([scenarioId, data]) => {
-            const statusOptions = getScenarioStatusOptions(data);
-            return (
-              <tr key={scenarioId}>
-                <td>{data.titulo}</td>
-                <td className="environment-table__cell-nowrap">{data.categoria}</td>
-                <td className="environment-table__cell-nowrap">
-                  <span
-                    className={`criticality-badge ${getCriticalityClassName(data.criticidade)}`}
+      <div className="table-scroll-area">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th className="scenario-title-column">
+                {translation('environmentEvidenceTable.table_titulo')}
+              </th>
+              <th className="environment-table__cell-nowrap">
+                <ScenarioColumnSortControl
+                  label={translation('environmentEvidenceTable.table_categoria')}
+                  field="category"
+                  sort={scenarioSort}
+                  onChange={setScenarioSort}
+                />
+              </th>
+              <th className="environment-table__cell-nowrap">
+                <ScenarioColumnSortControl
+                  label={translation('environmentEvidenceTable.table_criticidade')}
+                  field="criticality"
+                  sort={scenarioSort}
+                  onChange={setScenarioSort}
+                />
+              </th>
+              {environmentColumns.map((column) => (
+                <th key={column}>{column}</th>
+              ))}
+              {canViewDetails && (
+                <th className="scenario-actions-header">
+                  {translation('storeSummary.viewDetails')}
+                </th>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedScenarioEntries.map(([scenarioId, data]) => {
+              const statusOptions = getScenarioStatusOptions(data);
+              return (
+                <tr key={scenarioId}>
+                  <td
+                    className="scenario-title-cell"
+                    title={data.titulo || translation('storeSummary.emptyValue')}
                   >
-                    {formatCriticalityLabel(data.criticidade)}
-                  </span>
-                </td>
+                    <span className="scenario-title-text">
+                      {data.titulo || translation('storeSummary.emptyValue')}
+                    </span>
+                  </td>
+                  <td className="environment-table__cell-nowrap">{data.categoria}</td>
+                  <td className="environment-table__cell-nowrap">
+                    <span
+                      className={`criticality-badge ${getCriticalityClassName(data.criticidade)}`}
+                    >
+                      {formatCriticalityLabel(data.criticidade)}
+                    </span>
+                  </td>
 
-                {(['mobile', 'desktop'] as EnvironmentScenarioPlatform[]).map((platform) => {
-                  const currentStatus =
-                    platform === 'mobile'
-                      ? (data.statusMobile ?? data.status)
-                      : (data.statusDesktop ?? data.status);
-                  const selectId = `${scenarioId}-${platform}-status`;
-                  return (
-                    <td key={selectId} className="scenario-status-column">
-                      <div className="scenario-status-cell">
-                        <select
-                          id={selectId}
-                          className={`scenario-status-select scenario-status-select--${currentStatus}`}
-                          value={currentStatus}
-                          disabled={isReadOnly}
-                          aria-label={`Status ${ENVIRONMENT_PLATFORM_LABEL[platform]} do cenário ${data.titulo}`}
-                          onChange={(event) =>
-                            handleStatusChange(
-                              scenarioId,
+                  {environmentColumns.map((platform) => {
+                    const currentStatus = (data.statusByEnvironment ?? {})[platform] ?? data.status;
+                    const selectId = `${scenarioId}-${platform}-status`;
+                    return (
+                      <td key={selectId} className="scenario-status-column">
+                        <div className="scenario-status-cell">
+                          <select
+                            id={selectId}
+                            className={`scenario-status-select scenario-status-select--${currentStatus}`}
+                            value={currentStatus}
+                            disabled={isReadOnly}
+                            aria-label={translation('environmentEvidenceTable.statusAriaLabel', {
                               platform,
-                              event.target.value as EnvironmentScenarioStatus,
-                            )
-                          }
+                              scenario: data.titulo || translation('storeSummary.emptyValue'),
+                            })}
+                            onChange={(event) =>
+                              handleStatusChange(
+                                scenarioId,
+                                platform,
+                                event.target.value as EnvironmentScenarioStatus,
+                              )
+                            }
+                          >
+                            {statusOptions.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </td>
+                    );
+                  })}
+                  {canViewDetails && (
+                    <td className="scenario-actions">
+                      <div className="scenario-actions__content">
+                        <button
+                          type="button"
+                          onClick={() => onViewDetails?.(scenarioId)}
+                          className="action-button action-button--primary"
                         >
-                          {statusOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
+                          <EyeIcon aria-hidden className="action-button__icon" />
+                          {translation('storeSummary.viewDetails')}
+                        </button>
                       </div>
                     </td>
-                  );
-                })}
-                {canViewDetails && (
-                  <td className="scenario-actions">
-                    <div className="scenario-actions__content">
-                      <button
-                        type="button"
-                        onClick={() => onViewDetails?.(scenarioId)}
-                        className="action-button action-button--primary"
-                      >
-                        <EyeIcon aria-hidden className="action-button__icon" />
-                        {translation('storeSummary.viewDetails')}
-                      </button>
-                    </div>
-                  </td>
-                )}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
       <PaginationControls
         total={orderedScenarioEntries.length}
         visible={paginatedScenarioEntries.length}

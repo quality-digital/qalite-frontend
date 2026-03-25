@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '../hooks/useAuth';
+import { useSequencedAnimation } from '../hooks/useMotion';
 import { AuthLayout } from '../components/AuthLayout';
+import { SocialAuthButtons } from '../components/SocialAuthButtons';
 import { Button } from '../components/Button';
 import { TextInput } from '../components/TextInput';
 import { PasswordInput } from '../components/PasswordInput';
@@ -14,6 +16,7 @@ export const RegisterPage = () => {
   const { t: translation } = useTranslation();
   const navigate = useNavigate();
   const { register, isLoading } = useAuth();
+  const { pageTransitionClass, showContent } = useSequencedAnimation();
 
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
@@ -66,74 +69,84 @@ export const RegisterPage = () => {
   };
 
   return (
-    <AuthLayout
-      title={translation('registerPage.title')}
-      footer={
-        <div className="auth-links">
-          <span>
-            {translation('registerPage.haveAccount')}{' '}
-            <Link to="/login">{translation('registerPage.loginHere')}</Link>
-          </span>
-        </div>
-      }
-    >
-      {formError && <p className="form-message form-message--error">{formError}</p>}
+    <div className={pageTransitionClass}>
+      <AuthLayout
+        title={translation('registerPage.title')}
+        heroLogo="QALite"
+        pageLabel={translation('authPageLabels.register')}
+        footer={
+          <div className="auth-links">
+            <span>
+              {translation('registerPage.haveAccount')}{' '}
+              <Link to="/login">{translation('registerPage.loginHere')}</Link>
+            </span>
+          </div>
+        }
+      >
+        {showContent && (
+          <>
+            {formError && <p className="form-message form-message--error">{formError}</p>}
 
-      <form className="form-grid" onSubmit={handleSubmit} data-testid="register-form">
-        <TextInput
-          id="displayName"
-          label={translation('registerPage.nameLabel')}
-          value={displayName}
-          onChange={(event) => setDisplayName(event.target.value)}
-          required
-          dataTestId="register-name"
-        />
+            <SocialAuthButtons />
 
-        <TextInput
-          id="email"
-          label={translation('registerPage.emailLabel')}
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          required
-          dataTestId="register-email"
-        />
+            <form className="form-grid" onSubmit={handleSubmit} data-testid="register-form">
+              <TextInput
+                id="displayName"
+                label={translation('registerPage.nameLabel')}
+                value={displayName}
+                onChange={(event) => setDisplayName(event.target.value)}
+                required
+                dataTestId="register-name"
+              />
 
-        <p className="form-hint">{translation('registerPage.emailHint')}</p>
+              <TextInput
+                id="email"
+                label={translation('registerPage.emailLabel')}
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+                dataTestId="register-email"
+              />
 
-        <PasswordInput
-          id="password"
-          label={translation('registerPage.passwordLabel')}
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-          autoComplete="new-password"
-          dataTestId="register-password"
-        />
+              <PasswordInput
+                id="password"
+                label={translation('registerPage.passwordLabel')}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+                autoComplete="new-password"
+                dataTestId="register-password"
+              />
 
-        <PasswordInput
-          id="confirmPassword"
-          label={translation('registerPage.confirmPasswordLabel')}
-          value={confirmPassword}
-          onChange={(event) => setConfirmPassword(event.target.value)}
-          required
-          autoComplete="new-password"
-          dataTestId="register-confirm-password"
-        />
+              <PasswordInput
+                id="confirmPassword"
+                label={translation('registerPage.confirmPasswordLabel')}
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                required
+                autoComplete="new-password"
+                dataTestId="register-confirm-password"
+              />
 
-        <p className={`form-hint ${isPasswordStrong ? 'form-hint--success' : 'form-hint--danger'}`}>
-          {translation('registerPage.passwordRule', { min: MIN_PASSWORD_LENGTH })}
-        </p>
+              <p
+                className={`form-hint ${isPasswordStrong ? 'form-hint--success' : 'form-hint--danger'}`}
+              >
+                {translation('registerPage.passwordRule', { min: MIN_PASSWORD_LENGTH })}
+              </p>
 
-        <Button
-          type="submit"
-          isLoading={isLoading}
-          loadingText={translation('registerPage.loading')}
-          data-testid="register-submit"
-        >
-          {translation('registerPage.submit')}
-        </Button>
-      </form>
-    </AuthLayout>
+              <Button
+                type="submit"
+                isLoading={isLoading}
+                loadingText={translation('registerPage.loading')}
+                data-testid="register-submit"
+              >
+                {translation('registerPage.submit')}
+              </Button>
+            </form>
+          </>
+        )}
+      </AuthLayout>
+    </div>
   );
 };

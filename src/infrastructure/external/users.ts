@@ -1,11 +1,12 @@
 import { collection, doc, limit, query } from 'firebase/firestore';
 
+import i18n from '../../lib/i18n';
 import type { UserSummary } from '../../domain/entities/user';
 import { firebaseFirestore } from '../database/firebase';
 import { getDocCacheFirst, getDocsCacheThenServer } from './firestoreCache';
 
 const USERS_COLLECTION = 'users';
-const DEFAULT_DISPLAY_NAME = 'Usuário';
+const DEFAULT_DISPLAY_NAME = 'generic.user';
 const MAX_SUGGESTION_RESULTS = 15;
 
 export const getUserSummariesByIds = async (userIds: string[]): Promise<UserSummary[]> => {
@@ -92,5 +93,5 @@ const resolveDisplayName = (rawDisplayName: unknown, email: string): string => {
     return email;
   }
 
-  return DEFAULT_DISPLAY_NAME;
+  return i18n.t(DEFAULT_DISPLAY_NAME);
 };

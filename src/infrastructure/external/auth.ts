@@ -1,15 +1,20 @@
 import {
   User as FirebaseUser,
+  GithubAuthProvider,
+  GoogleAuthProvider,
+  confirmPasswordReset,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   onIdTokenChanged,
   sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   updateProfile as firebaseUpdateProfile,
+  verifyPasswordResetCode,
 } from 'firebase/auth';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
 
 import type {
   AuthUser,
@@ -46,7 +51,7 @@ const persistFirebaseAuthCookie = (firebaseUser: FirebaseUser | null): void => {
   const firebaseCookie = JSON.stringify({
     uid: firebaseUser.uid,
     email: firebaseUser.email,
-    stsTokenManager: firebaseUser.stsTokenManager,
+    accessToken: firebaseUser.refreshToken,
   });
 
   document.cookie = `${AUTH_COOKIE_NAME}=${encodeURIComponent(firebaseCookie)}; path=/;`;
@@ -135,6 +140,62 @@ export const loginUser = async ({ email, password }: LoginPayload): Promise<Auth
   return mapToAuthUser(credential.user, resolvedProfile);
 };
 
+const loginWithProvider = async (
+  provider: GoogleAuthProvider | GithubAuthProvider,
+): Promise<AuthUser> => {
+  const credential = await signInWithPopup(firebaseAuth, provider);
+  const firebaseUser = credential.user;
+
+  persistFirebaseAuthCookie(firebaseUser);
+
+  const displayName = (firebaseUser.displayName ?? '').trim();
+  const { firstName, lastName } = extractNameParts(displayName);
+  const existingProfile = await fetchUserProfile(firebaseUser.uid);
+
+  const organizationId = existingProfile.organizationId
+    ? existingProfile.organizationId
+    : await addUserToOrganizationByEmailDomain({
+        uid: firebaseUser.uid,
+        email: firebaseUser.email ?? '',
+        displayName: displayName || firebaseUser.email || '',
+        photoURL: firebaseUser.photoURL ?? null,
+      });
+
+  const resolvedProfile: StoredProfile = {
+    role: existingProfile.role ?? DEFAULT_ROLE,
+    displayName: displayName || existingProfile.displayName || firebaseUser.email || '',
+    firstName: existingProfile.firstName || firstName,
+    lastName: existingProfile.lastName || lastName,
+    photoURL: firebaseUser.photoURL ?? existingProfile.photoURL ?? null,
+    organizationId: organizationId ?? existingProfile.organizationId ?? null,
+    browserstackCredentials: existingProfile.browserstackCredentials ?? null,
+    preferences: existingProfile.preferences ?? getInitialPreferences(),
+  };
+
+  await persistUserProfile(
+    firebaseUser,
+    {
+      ...resolvedProfile,
+      isNew: false,
+    },
+    resolvedProfile.browserstackCredentials ?? null,
+  );
+
+  return mapToAuthUser(firebaseUser, resolvedProfile);
+};
+
+export const loginWithGoogle = async (): Promise<AuthUser> => {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  return loginWithProvider(provider);
+};
+
+export const loginWithGithub = async (): Promise<AuthUser> => {
+  const provider = new GithubAuthProvider();
+  provider.setCustomParameters({ allow_signup: 'true' });
+  return loginWithProvider(provider);
+};
+
 export const logoutUser = async (): Promise<void> => {
   persistFirebaseAuthCookie(null);
   await signOut(firebaseAuth);
@@ -142,6 +203,18 @@ export const logoutUser = async (): Promise<void> => {
 
 export const sendPasswordReset = (email: string): Promise<void> =>
   sendPasswordResetEmail(firebaseAuth, email);
+
+export const verifyPasswordResetCodeFunction = async (code: string): Promise<string> => {
+  const email = await verifyPasswordResetCode(firebaseAuth, code);
+  return email;
+};
+
+export const confirmPasswordResetFunction = async (
+  code: string,
+  newPassword: string,
+): Promise<void> => {
+  await confirmPasswordReset(firebaseAuth, code, newPassword);
+};
 
 export const getCurrentUser = async (): Promise<AuthUser | null> => {
   const user = firebaseAuth.currentUser;
@@ -154,7 +227,12 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
 };
 
 export const subscribeToAuthChanges = (onChange: (user: AuthUser | null) => void): (() => void) => {
+  let unsubscribeProfile: (() => void) | null = null;
+
   const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (user) => {
+    unsubscribeProfile?.();
+    unsubscribeProfile = null;
+
     if (!user) {
       persistFirebaseAuthCookie(null);
       onChange(null);
@@ -162,8 +240,46 @@ export const subscribeToAuthChanges = (onChange: (user: AuthUser | null) => void
     }
 
     try {
-      const profile = await fetchUserProfile(user.uid);
-      onChange(mapToAuthUser(user, profile));
+      const userDoc = doc(firebaseFirestore, USERS_COLLECTION, user.uid);
+
+      unsubscribeProfile = onSnapshot(
+        userDoc,
+        (snapshot) => {
+          const data = snapshot.exists()
+            ? snapshot.data({ serverTimestamps: 'estimate' })
+            : undefined;
+
+          const profile = data
+            ? {
+                role: (data.role as Role) ?? DEFAULT_ROLE,
+                displayName: (data.displayName as string) ?? '',
+                firstName: (data.firstName as string) ?? '',
+                lastName: (data.lastName as string) ?? '',
+                photoURL: (data.photoURL as string | null) ?? null,
+                organizationId: (data.organizationId as string | null) ?? null,
+                browserstackCredentials: parseBrowserstackCredentials(
+                  data?.browserstackCredentials,
+                ),
+                preferences: normalizeUserPreferences(data?.preferences, getInitialPreferences()),
+              }
+            : {
+                role: DEFAULT_ROLE,
+                displayName: '',
+                firstName: '',
+                lastName: '',
+                photoURL: null,
+                organizationId: null,
+                browserstackCredentials: null,
+                preferences: getInitialPreferences(),
+              };
+
+          onChange(mapToAuthUser(user, profile));
+        },
+        (error) => {
+          console.error(error);
+          onChange(null);
+        },
+      );
     } catch (error) {
       console.error(error);
       onChange(null);
@@ -175,6 +291,7 @@ export const subscribeToAuthChanges = (onChange: (user: AuthUser | null) => void
   });
 
   return () => {
+    unsubscribeProfile?.();
     unsubscribeAuth();
     unsubscribeToken();
   };
@@ -279,13 +396,13 @@ export const updateUserProfile = async (payload: UpdateProfilePayload): Promise<
 
 interface StoredProfile {
   role: Role;
-  displayName?: string | null;
-  firstName?: string | null;
-  lastName?: string | null;
-  photoURL?: string | null;
-  organizationId?: string | null;
-  browserstackCredentials?: BrowserstackCredentials | null;
-  preferences?: UserPreferences;
+  displayName: string;
+  firstName: string;
+  lastName: string;
+  photoURL: string | null;
+  organizationId: string | null;
+  browserstackCredentials: BrowserstackCredentials | null;
+  preferences: UserPreferences;
 }
 
 const mapToAuthUser = (user: FirebaseUser, profile: StoredProfile): AuthUser => {
@@ -311,7 +428,7 @@ const mapToAuthUser = (user: FirebaseUser, profile: StoredProfile): AuthUser => 
     role: profile.role,
     organizationId: profile.organizationId ?? null,
     browserstackCredentials: profile.browserstackCredentials ?? null,
-    photoURL: profile.photoURL ?? null,
+    photoURL: profile.photoURL ?? undefined,
     preferences: normalizeUserPreferences(profile.preferences, getInitialPreferences()),
     accessToken: user.refreshToken,
     isEmailVerified: user.emailVerified,

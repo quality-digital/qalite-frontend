@@ -51,7 +51,8 @@ export interface EnvironmentRepository {
     environment: Environment,
     bugs?: EnvironmentBug[],
     participantProfiles?: UserSummary[],
-    storeName?: string,
+    store?: { name?: string | null; logoUrl?: string | null } | null,
+    organization?: { name?: string | null; logoUrl?: string | null } | null,
   ) => void;
   copyAsMarkdown: (
     environment: Environment,

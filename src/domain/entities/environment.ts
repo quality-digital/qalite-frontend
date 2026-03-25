@@ -8,7 +8,7 @@ export type EnvironmentScenarioStatus =
   | 'concluido_automatizado'
   | 'nao_se_aplica';
 
-export type EnvironmentScenarioPlatform = 'mobile' | 'desktop';
+export type EnvironmentScenarioPlatform = string;
 
 export interface EnvironmentScenario {
   titulo: string;
@@ -17,6 +17,7 @@ export interface EnvironmentScenario {
   observacao: string;
   automatizado?: string;
   status: EnvironmentScenarioStatus;
+  statusByEnvironment?: Record<string, EnvironmentScenarioStatus>;
   statusMobile?: EnvironmentScenarioStatus;
   statusDesktop?: EnvironmentScenarioStatus;
   evidenciaArquivoUrl: string | null;
@@ -51,6 +52,7 @@ export interface Environment {
   totalCenarios: number;
   participants: string[];
   publicShareLanguage: string | null;
+  environmentColumns?: string[];
 }
 
 export interface CreateEnvironmentInput {
@@ -73,6 +75,7 @@ export interface CreateEnvironmentInput {
   totalCenarios: number;
   participants: string[];
   publicShareLanguage: string | null;
+  environmentColumns?: string[];
 }
 
 export type UpdateEnvironmentInput = Partial<Omit<Environment, 'id'>>;

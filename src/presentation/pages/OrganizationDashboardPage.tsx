@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import type { Organization } from '../../domain/entities/organization';
-import { organizationService } from '../../infrastructure/services/organizationService';
+import { listenToOrganizationDetail } from '../../infrastructure/external/organizations';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
 import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
@@ -37,11 +37,11 @@ export const OrganizationDashboardPage = () => {
       return;
     }
 
-    const fetchOrganization = async () => {
-      try {
-        setIsLoading(true);
-        const data = await organizationService.getDetail(user.organizationId as string);
+    setIsLoading(true);
 
+    return listenToOrganizationDetail(
+      user.organizationId as string,
+      (data) => {
         if (!data) {
           showToast({ type: 'error', message: t('organizationPage.notFound') });
           navigate('/no-organization', { replace: true });
@@ -49,15 +49,14 @@ export const OrganizationDashboardPage = () => {
         }
 
         setOrganization(data);
-      } catch (error) {
-        console.error(error);
-        showToast({ type: 'error', message: t('organizationPage.loadingError') });
-      } finally {
         setIsLoading(false);
-      }
-    };
-
-    void fetchOrganization();
+      },
+      (error) => {
+        console.error(error);
+        setIsLoading(false);
+        showToast({ type: 'error', message: t('organizationPage.loadingError') });
+      },
+    );
   }, [isInitializing, navigate, showToast, user, t]);
 
   useEffect(() => {

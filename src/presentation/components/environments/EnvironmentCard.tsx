@@ -36,8 +36,12 @@ export const EnvironmentCard = ({
   const hasParticipants = participants.length > 0;
   const visibleParticipants = participants.slice(0, 3);
   const hiddenParticipantsCount = Math.max(participants.length - visibleParticipants.length, 0);
+  const normalizedEnvironmentType =
+    typeof environment.tipoAmbiente === 'string'
+      ? environment.tipoAmbiente.trim().toUpperCase()
+      : '';
   const bugLabel =
-    environment.tipoAmbiente?.toUpperCase() === 'WS'
+    normalizedEnvironmentType === 'WS'
       ? t('environmentCard.bugStoryfix')
       : t('environmentCard.bugBugs');
   const totalScenariosWithPlatforms = environment.totalCenarios * 2;
@@ -66,118 +70,129 @@ export const EnvironmentCard = ({
       onDragStart={(event) => onDragStart?.(event, environment.id)}
       data-status={environment.status}
     >
-      <div className="environment-card-header">
-        <div className="environment-card-title">
-          <span className="environment-card-identifier">{environment.identificador}</span>
-          <span className="environment-card-type">{t(environment.tipoTeste)}</span>
+      {/* Header: Main title and status */}
+      <div className="environment-card__top-section">
+        <div className="environment-card__title-group">
+          <span className="environment-card__identifier">{environment.identificador}</span>
+          <span className="environment-card__type">{t(environment.tipoTeste)}</span>
         </div>
-        <div className="environment-card-actions">
-          <span
-            className={`environment-card-status-dot environment-card-status-dot--${environment.status}`}
+        <span
+          className={`environment-card__status-badge environment-card__status-badge--${environment.status}`}
+        >
+          {t(ENVIRONMENT_STATUS_LABEL[environment.status])}
+        </span>
+      </div>
+
+      {/* Info row: Suite and Moment */}
+      <div className="environment-card__info-row">
+        <div className="environment-card__info-item">
+          <LayersIcon aria-hidden className="environment-card__info-icon" />
+          <div className="environment-card__info-content">
+            <span className="environment-card__info-label">{t('environmentCard.suiteLabel')}</span>
+            <span className="environment-card__info-value" title={displaySuiteName}>
+              {displaySuiteName}
+            </span>
+          </div>
+        </div>
+        {environment.momento && (
+          <div className="environment-card__info-item">
+            <ClockIcon aria-hidden className="environment-card__info-icon" />
+            <div className="environment-card__info-content">
+              <span className="environment-card__info-label">
+                {t('environmentCard.momentLabel')}
+              </span>
+              <span className="environment-card__info-value" title={momentLabel}>
+                {momentLabel}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Stats and Participants row */}
+      <div className="environment-card__footer">
+        <div className="environment-card__stats">
+          <div className="environment-card__stat-item">
+            <ListIcon aria-hidden className="environment-card__stat-icon" />
+            <div className="environment-card__stat-content">
+              <span className="environment-card__stat-value">{totalScenariosWithPlatforms}</span>
+              <span className="environment-card__stat-label">{t('scenarios')}</span>
+            </div>
+          </div>
+          <div className="environment-card__stat-item">
+            <BugIcon aria-hidden className="environment-card__stat-icon" />
+            <div className="environment-card__stat-content">
+              <span className="environment-card__stat-value">{displayBugCount}</span>
+              <span className="environment-card__stat-label">{bugLabel}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Participants and Clone action */}
+        <div className="environment-card__side-actions">
+          <div
+            className="environment-card__participants-group"
+            aria-label={t('environmentCard.participantsLabel')}
           >
-            {t(ENVIRONMENT_STATUS_LABEL[environment.status])}
-          </span>
+            {hasParticipants ? (
+              <ul
+                className="environment-card__participant-avatars"
+                aria-label={t('environmentCard.participantsListLabel')}
+              >
+                {visibleParticipants.map((user) => {
+                  const readableName = getReadableUserName(user);
+                  const initials = getUserInitials(readableName);
+                  return (
+                    <li
+                      key={user.id}
+                      className="environment-card__participant-avatar"
+                      title={readableName}
+                    >
+                      {user.photoURL ? (
+                        <CachedImage
+                          src={user.photoURL}
+                          alt={readableName}
+                          className="environment-card__avatar-image"
+                        />
+                      ) : (
+                        <span
+                          className="environment-card__avatar-image environment-card__avatar-image--initials"
+                          aria-label={readableName}
+                        >
+                          {initials}
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+                {hiddenParticipantsCount > 0 && (
+                  <li className="environment-card__participant-avatar environment-card__participant-avatar--more">
+                    <span className="environment-card__avatar-image">
+                      +{hiddenParticipantsCount}
+                    </span>
+                  </li>
+                )}
+              </ul>
+            ) : (
+              <span className="environment-card__participants-empty">
+                <UsersIcon aria-hidden className="environment-card__participants-icon" />
+              </span>
+            )}
+          </div>
+
           {onClone && (
             <button
               type="button"
-              className="environment-card-action"
+              className="environment-card__clone-button"
               onClick={handleClone}
               onMouseDown={(event) => event.stopPropagation()}
               aria-label={t('environmentCard.clone')}
+              title={t('environmentCard.clone')}
             >
-              <CopyIcon aria-hidden className="icon" />
-              <span>{t('environmentCard.clone')}</span>
+              <CopyIcon aria-hidden className="environment-card__clone-icon" />
             </button>
           )}
         </div>
-      </div>
-
-      <div className="environment-card-suite-row">
-        <div className="environment-card-row-title">
-          <LayersIcon aria-hidden className="icon" />
-          <span className="environment-card-suite-label">{t('environmentCard.suiteLabel')}</span>
-        </div>
-        <span className="environment-card-suite-name">{displaySuiteName}</span>
-      </div>
-
-      {environment.momento && (
-        <div className="environment-card-moment-row">
-          <div className="environment-card-row-title">
-            <ClockIcon aria-hidden className="icon" />
-            <span className="environment-card-moment-label">
-              {t('environmentCard.momentLabel')}
-            </span>
-          </div>
-          <span className="environment-card-moment-name">{momentLabel}</span>
-        </div>
-      )}
-
-      <div className="environment-card-stats">
-        <div className="environment-card-stat">
-          <span className="environment-card-stat-label">
-            <ListIcon aria-hidden className="icon" />
-            {t('scenarios')}
-          </span>
-          <strong className="environment-card-stat-value">{totalScenariosWithPlatforms}</strong>
-        </div>
-        <div className="environment-card-stat">
-          <span className="environment-card-stat-label">
-            <BugIcon aria-hidden className="icon" />
-            {bugLabel}
-          </span>
-          <strong className="environment-card-stat-value">{displayBugCount}</strong>
-        </div>
-      </div>
-
-      <div
-        className="environment-card-participants"
-        aria-label={t('environmentCard.participantsLabel')}
-      >
-        {hasParticipants ? (
-          <>
-            <ul
-              className="environment-card-participant-list"
-              aria-label={t('environmentCard.participantsListLabel')}
-            >
-              {visibleParticipants.map((user) => {
-                const readableName = getReadableUserName(user);
-                const initials = getUserInitials(readableName);
-                return (
-                  <li key={user.id} className="environment-card-participant" title={readableName}>
-                    {user.photoURL ? (
-                      <CachedImage
-                        src={user.photoURL}
-                        alt={readableName}
-                        className="environment-card-avatar"
-                      />
-                    ) : (
-                      <span
-                        className="environment-card-avatar environment-card-avatar--initials"
-                        aria-label={readableName}
-                      >
-                        {initials}
-                      </span>
-                    )}
-                  </li>
-                );
-              })}
-              {hiddenParticipantsCount > 0 && (
-                <li className="environment-card-participant environment-card-participant--more">
-                  +{hiddenParticipantsCount}
-                </li>
-              )}
-            </ul>
-            <span className="environment-card-participants-label">
-              <UsersIcon aria-hidden className="icon" />
-              {t('environmentCard.participant', { count: participants.length })}
-            </span>
-          </>
-        ) : (
-          <span className="environment-card-avatars__placeholder">
-            <UsersIcon aria-hidden className="icon" />
-            {t('environmentCard.noParticipants')}
-          </span>
-        )}
       </div>
     </div>
   );
