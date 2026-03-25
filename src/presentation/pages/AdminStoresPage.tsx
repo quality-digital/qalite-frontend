@@ -23,6 +23,7 @@ import { UserAvatar } from '../components/UserAvatar';
 import { CachedImage } from '../components/CachedImage';
 import { Modal } from '../components/Modal';
 import { TextInput } from '../components/TextInput';
+import { TextArea } from '../components/TextArea';
 import { SelectInput } from '../components/SelectInput';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import {
