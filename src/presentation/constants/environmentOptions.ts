@@ -22,4 +22,24 @@ export const MOMENT_OPTIONS_BY_ENVIRONMENT: Record<string, string[]> = {
 
 export const requiresReleaseField = (tipoAmbiente: string): boolean => tipoAmbiente === 'TM';
 
+export const getEnvironmentTypeOptions = (
+  primaryOption: { value: string; label: string },
+  additionalEnvironmentTypes: string[] = [],
+): { value: string; label: string }[] => {
+  const defaults = [
+    { value: 'TM', label: 'environmentOptions.TM' },
+    { value: 'PROD', label: 'environmentOptions.PROD' },
+  ];
+
+  const customOptions = additionalEnvironmentTypes.map((value) => ({
+    value,
+    label: value,
+  }));
+
+  return [primaryOption, ...defaults, ...customOptions].filter(
+    (option, index, options) =>
+      options.findIndex((entry) => entry.value === option.value) === index,
+  );
+};
+
 export { translateEnvironmentOption } from '../../shared/utils/environmentOptions';

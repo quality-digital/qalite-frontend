@@ -17,10 +17,12 @@ import { TrashIcon } from '../icons';
 import {
   MOMENT_OPTIONS_BY_ENVIRONMENT,
   TEST_TYPES_BY_ENVIRONMENT,
+  getEnvironmentTypeOptions,
   requiresReleaseField,
 } from '../../constants/environmentOptions';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../../context/ToastContext';
+import { useOrganizationBranding } from '../../context/OrganizationBrandingContext';
 
 interface EditEnvironmentModalProps {
   isOpen: boolean;
@@ -79,6 +81,7 @@ export const EditEnvironmentModal = ({
   onDeleteRequest,
 }: EditEnvironmentModalProps) => {
   const { t: translation } = useTranslation();
+  const { activeOrganization } = useOrganizationBranding();
 
   const [identificador, setIdentificador] = useState('');
   const [urls, setUrls] = useState('');
@@ -144,6 +147,19 @@ export const EditEnvironmentModal = ({
   }, [momento, tipoAmbiente]);
 
   const shouldDisplayReleaseField = requiresReleaseField(tipoAmbiente);
+  const environmentTypeOptions = useMemo(
+    () =>
+      getEnvironmentTypeOptions(
+        { value: environment?.tipoAmbiente ?? 'WS', label: environment?.tipoAmbiente ?? 'WS' },
+        activeOrganization?.additionalEnvironmentTypes ?? [],
+      ).map((option) => ({
+        value: option.value,
+        label: option.label.startsWith('environmentOptions.')
+          ? translation(option.label)
+          : option.label,
+      })),
+    [activeOrganization?.additionalEnvironmentTypes, environment?.tipoAmbiente, translation],
+  );
 
   useEffect(() => {
     if (!shouldDisplayReleaseField && release) {
@@ -298,11 +314,7 @@ export const EditEnvironmentModal = ({
             value={tipoAmbiente}
             onChange={(event) => setTipoAmbiente(event.target.value)}
             disabled={isLocked}
-            options={[
-              { value: 'WS', label: 'WS' },
-              { value: 'TM', label: translation('environmentOptions.TM') },
-              { value: 'PROD', label: translation('environmentOptions.PROD') },
-            ]}
+            options={environmentTypeOptions}
           />
           <SelectInput
             id="tipoTesteEditar"

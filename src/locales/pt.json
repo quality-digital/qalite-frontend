@@ -265,7 +265,7 @@
       "cloneConfirmMessage": "Deseja clonar o ambiente {{identifier}}?",
       "cloneStartStatusLabel": "Começar em",
       "cloneStartStatusInProgress": "Em andamento",
-      "cloneStartStatusDone": "Concluído",
+      "cloneStartStatusDone": "Concluído (reiniciar em backlog)",
       "cloneConfirmAction": "Clonar",
       "cloneCancel": "Cancelar",
       "cloneLoading": "Clonando...",
@@ -616,7 +616,9 @@
         "totalScenarios": "Cenários totais",
         "averageAutomation": "Automação média",
         "manualCases": "Casos manuais"
-      }
+      },
+      "environment-types-label": "Tipos de ambiente adicionais",
+      "environment-types-placeholder": "Ex.: Homolog\nUAT\nSandbox"
     },
     "environment": {
       "loading": "Carregando dados do ambiente...",

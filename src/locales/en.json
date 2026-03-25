@@ -264,7 +264,7 @@
       "cloneConfirmMessage": "Do you want to clone the environment {{identifier}}?",
       "cloneStartStatusLabel": "Start in",
       "cloneStartStatusInProgress": "In progress",
-      "cloneStartStatusDone": "Completed",
+      "cloneStartStatusDone": "Done (restart in backlog)",
       "cloneConfirmAction": "Clone",
       "cloneCancel": "Cancel",
       "cloneLoading": "Cloning...",
@@ -615,7 +615,9 @@
         "totalScenarios": "Total scenarios",
         "averageAutomation": "Average automation",
         "manualCases": "Manual cases"
-      }
+      },
+      "environment-types-label": "Additional environment types",
+      "environment-types-placeholder": "Example: Staging\nUAT\nSandbox"
     },
     "environment": {
       "loading": "Loading environment data...",
