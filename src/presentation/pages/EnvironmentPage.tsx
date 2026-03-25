@@ -69,8 +69,6 @@ interface SlackSummaryBuilderOptions {
   totalTimeMs: number;
   scenarioCount: number;
   executedScenariosCount: number;
-  progressLabel: string;
-  publicLink: string;
   urls: string[];
   bugsCount: number;
   participantProfiles: UserSummary[];
@@ -168,8 +166,8 @@ const buildSlackTaskSummaryPayload = (
   } as const;
   const monitoredUrlsList =
     monitoredUrls.length > 0
-      ? monitoredUrls.map((url) => `  - ${url}`)
-      : [`  - ${translation('environment.slack.emptyList')}`];
+      ? monitoredUrls.map((url) => `• ${url}`)
+      : [`• ${translation('environment.slack.emptyList')}`];
   const attendeesList =
     attendeeList.length > 0
       ? attendeeList.map((attendee) =>
@@ -178,9 +176,22 @@ const buildSlackTaskSummaryPayload = (
             : `• ${attendee.name ?? ''} (${attendee.email ?? ''})`,
         )
       : [`• ${translation('environment.slack.emptyParticipants')}`];
-  const summaryMessage = [
-    translation('environment.slack.summaryHeader'),
+  const contextDetails = [
     `• ${translation('environment.slack.fields.environment')}: ${taskIdentifier}`,
+    environment.momento?.trim()
+      ? `• ${translation('environment.slack.fields.moment')}: ${environment.momento.trim()}`
+      : null,
+    environment.release?.trim()
+      ? `• ${translation('environment.slack.fields.release')}: ${environment.release.trim()}`
+      : null,
+  ].filter((item): item is string => Boolean(item));
+  const summaryMessage = [
+    `📢 ${translation('environment.slack.summaryHeader')}`,
+    '',
+    `🧭 ${translation('environment.slack.contextTitle')}`,
+    ...contextDetails,
+    '',
+    `📊 ${translation('environment.slack.executionTitle')}`,
     `• ${translation('environment.slack.fields.totalTime')}: ${options.formattedTime || '00:00:00'}`,
     `• ${translation('environment.slack.fields.scenarios')}: ${options.scenarioCount}`,
     `• ${translation('environment.slack.fields.execution')}: ${formatExecutedScenariosMessage(
@@ -196,10 +207,11 @@ const buildSlackTaskSummaryPayload = (
       translation,
     )}`,
     `• ${translation('environment.slack.fields.participants')}: ${participantsCount}`,
-    `${translation('environment.slack.fields.monitoredUrls')}:`,
+    '',
+    `🔗 ${translation('environment.slack.fields.monitoredUrls')}`,
     ...monitoredUrlsList,
     '',
-    translation('environment.slack.participantsTitle'),
+    `👥 ${translation('environment.slack.participantsTitle')}`,
     ...attendeesList,
   ].join('\n');
 
@@ -486,8 +498,6 @@ export const EnvironmentPage = () => {
           totalTimeMs: totalMs,
           scenarioCount,
           executedScenariosCount,
-          progressLabel,
-          publicLink: shareLinks.public,
           urls,
           bugsCount: bugs.length,
           participantProfiles,
@@ -510,9 +520,7 @@ export const EnvironmentPage = () => {
     formattedTime,
     isSendingSlackSummary,
     participantProfiles,
-    progressLabel,
     scenarioCount,
-    shareLinks.public,
     slackWebhookUrl,
     totalMs,
     translation,
