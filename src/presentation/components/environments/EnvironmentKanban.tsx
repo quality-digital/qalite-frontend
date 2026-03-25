@@ -18,6 +18,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { PaginationControls } from '../PaginationControls';
 import { Modal } from '../Modal';
 import { Button } from '../Button';
+import { SelectInput } from '../SelectInput';
 import { EnvironmentCard } from './EnvironmentCard';
 import { CreateEnvironmentCard } from './CreateEnvironmentCard';
 import { ArchiveIcon, CheckCircleIcon, InboxIcon, ProgressIcon } from '../icons';
@@ -38,17 +39,26 @@ const COLUMNS: { status: EnvironmentStatus; title: string; Icon: typeof InboxIco
   { status: 'done', title: 'environmentKanban.done', Icon: CheckCircleIcon },
 ];
 
+type CloneStartStatus = Extract<EnvironmentStatus, 'in_progress' | 'done'>;
+
 const cloneScenarioMap = (
   scenarios: Record<string, EnvironmentScenario>,
+  status: CloneStartStatus,
 ): Record<string, EnvironmentScenario> =>
   Object.fromEntries(
     Object.entries(scenarios).map(([id, scenario]) => [
       id,
       {
         ...scenario,
-        status: 'pendente',
-        statusMobile: 'pendente',
-        statusDesktop: 'pendente',
+        status: status === 'done' ? 'concluido' : 'em_andamento',
+        statusMobile: status === 'done' ? 'concluido' : 'em_andamento',
+        statusDesktop: status === 'done' ? 'concluido' : 'em_andamento',
+        statusByEnvironment: Object.fromEntries(
+          Object.keys(scenario.statusByEnvironment ?? {}).map((column) => [
+            column,
+            status === 'done' ? 'concluido' : 'em_andamento',
+          ]),
+        ),
         evidenciaArquivoUrl: null,
       },
     ]),
@@ -69,6 +79,7 @@ export const EnvironmentKanban = ({
   const [isArchiveMinimized, setIsArchiveMinimized] = useState(true);
   const [archivedVisibleCount, setArchivedVisibleCount] = useState(5);
   const [environmentToClone, setEnvironmentToClone] = useState<Environment | null>(null);
+  const [cloneStartStatus, setCloneStartStatus] = useState<CloneStartStatus>('in_progress');
   const [isCloning, setIsCloning] = useState(false);
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -229,6 +240,7 @@ export const EnvironmentKanban = ({
       return;
     }
     setEnvironmentToClone(null);
+    setCloneStartStatus('in_progress');
   };
 
   const handleConfirmClone = async () => {
@@ -242,7 +254,7 @@ export const EnvironmentKanban = ({
       const suffix = t('environmentKanban.cloneIdentifierSuffix').trim().replace(/\s+/g, '-');
       const stamp = Date.now().toString(36).slice(-4);
       const identifier = `${environment.identificador}-${suffix}-${stamp}`;
-      const clonedScenarios = cloneScenarioMap(environment.scenarios ?? {});
+      const clonedScenarios = cloneScenarioMap(environment.scenarios ?? {}, cloneStartStatus);
       const createdEnvironment = await environmentService.create({
         identificador: identifier,
         storeId: environment.storeId,
@@ -254,7 +266,7 @@ export const EnvironmentKanban = ({
         tipoTeste: environment.tipoTeste,
         momento: environment.momento,
         release: environment.release,
-        status: 'backlog',
+        status: cloneStartStatus,
         timeTracking: { start: null, end: null, totalMs: 0 },
         presentUsersIds: [],
         concludedBy: null,
@@ -263,6 +275,7 @@ export const EnvironmentKanban = ({
         totalCenarios: Object.keys(clonedScenarios).length,
         participants: [],
         publicShareLanguage: environment.publicShareLanguage ?? null,
+        environmentColumns: environment.environmentColumns ?? [],
       });
       showToast({ type: 'success', message: t('environmentKanban.cloneSuccess') });
       onEnvironmentCreated(createdEnvironment);
@@ -451,6 +464,23 @@ export const EnvironmentKanban = ({
             identifier: environmentToClone?.identificador ?? '',
           })}
         </p>
+        <SelectInput
+          id="clone-environment-start-status"
+          label={t('environmentKanban.cloneStartStatusLabel')}
+          value={cloneStartStatus}
+          onChange={(event) => setCloneStartStatus(event.target.value as CloneStartStatus)}
+          options={[
+            {
+              value: 'in_progress',
+              label: t('environmentKanban.cloneStartStatusInProgress'),
+            },
+            {
+              value: 'done',
+              label: t('environmentKanban.cloneStartStatusDone'),
+            },
+          ]}
+          disabled={isCloning}
+        />
         <div className="modal-actions">
           <Button
             type="button"
