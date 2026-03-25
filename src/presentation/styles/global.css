@@ -3308,13 +3308,8 @@ a.text-link:hover {
 }
 
 .scenario-details-criticality {
-<<<<<<< HEAD
-  font-size: 0.75rem;
-  padding: 0.15rem 0.75rem;
-=======
   font-size: 0.8rem;
   padding: 0.25rem 0.65rem;
->>>>>>> e54af45be1a96e4f13d6da40e51e835db3693915
 }
 
 .scenario-details-section {
@@ -4883,15 +4878,6 @@ button.store-summary-highlight:focus-visible {
   color: var(--color-text-primary);
 }
 
-<<<<<<< HEAD
-.form-title--with-icon {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-=======
->>>>>>> e5493a2 (chore: update version to 72.0.1 in package.json)
 .form-actions,
 .store-form-actions,
 .scenario-form-actions {
