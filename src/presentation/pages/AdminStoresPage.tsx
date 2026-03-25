@@ -37,6 +37,7 @@ interface OrganizationFormState {
   name: string;
   slackWebhookUrl: string;
   emailDomain: string;
+  additionalEnvironmentTypes: string;
 }
 
 interface StoreFormState {
@@ -51,6 +52,7 @@ const createOrganizationFormState = (organization: Organization | null): Organiz
   name: organization?.name ?? '',
   slackWebhookUrl: organization?.slackWebhookUrl ?? '',
   emailDomain: organization?.emailDomain ?? '',
+  additionalEnvironmentTypes: (organization?.additionalEnvironmentTypes ?? []).join('\n'),
 });
 
 const createEmptyStoreFormState = (): StoreFormState => ({
@@ -331,6 +333,10 @@ export const AdminStoresPage = () => {
         ? organizationForm.slackWebhookUrl.trim()
         : '';
       const emailDomain = organizationForm.emailDomain.trim();
+      const additionalEnvironmentTypes = organizationForm.additionalEnvironmentTypes
+        .split(/[\n,]/)
+        .map((entry) => entry.trim())
+        .filter((entry, index, array) => entry.length > 0 && array.indexOf(entry) === index);
       const logoUrl = organizationLogoFile
         ? await organizationService.uploadLogo(selectedOrganization.id, organizationLogoFile)
         : undefined;
@@ -341,6 +347,7 @@ export const AdminStoresPage = () => {
         ...(logoUrl !== undefined ? { logoUrl } : {}),
         slackWebhookUrl,
         emailDomain,
+        additionalEnvironmentTypes,
       });
 
       showToast({
@@ -812,6 +819,18 @@ export const AdminStoresPage = () => {
             onChange={(event) =>
               setOrganizationForm((previous) => ({ ...previous, emailDomain: event.target.value }))
             }
+          />
+          <TextArea
+            id="organization-environment-types"
+            label={translation('AdminStoresPage.environment-types-label')}
+            value={organizationForm.additionalEnvironmentTypes}
+            onChange={(event) =>
+              setOrganizationForm((previous) => ({
+                ...previous,
+                additionalEnvironmentTypes: event.target.value,
+              }))
+            }
+            placeholder={translation('AdminStoresPage.environment-types-placeholder')}
           />
 
           <div className="organization-logo-field">

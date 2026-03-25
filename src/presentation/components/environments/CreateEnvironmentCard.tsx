@@ -12,9 +12,11 @@ import { PlusCircleIcon } from '../icons';
 import {
   MOMENT_OPTIONS_BY_ENVIRONMENT,
   TEST_TYPES_BY_ENVIRONMENT,
+  getEnvironmentTypeOptions,
   requiresReleaseField,
 } from '../../constants/environmentOptions';
 import { useToast } from '../../context/ToastContext';
+import { useOrganizationBranding } from '../../context/OrganizationBrandingContext';
 
 interface CreateEnvironmentCardProps {
   storeId: string;
@@ -86,6 +88,7 @@ export const CreateEnvironmentCard = ({
   const [environmentColumnsInput, setEnvironmentColumnsInput] = useState('Desktop\nMobile');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
+  const { activeOrganization } = useOrganizationBranding();
   const { t } = useTranslation();
 
   const environmentColumns = useMemo(
@@ -135,6 +138,17 @@ export const CreateEnvironmentCard = ({
           : t('storeSummary.storePlatformVtexio'),
     }),
     [storeStage, t],
+  );
+  const environmentTypeOptions = useMemo(
+    () =>
+      getEnvironmentTypeOptions(
+        primaryEnvironmentOption,
+        activeOrganization?.additionalEnvironmentTypes ?? [],
+      ).map((option) => ({
+        value: option.value,
+        label: option.label.startsWith('environmentOptions.') ? t(option.label) : option.label,
+      })),
+    [activeOrganization?.additionalEnvironmentTypes, primaryEnvironmentOption, t],
   );
 
   useEffect(() => {
@@ -264,11 +278,7 @@ export const CreateEnvironmentCard = ({
           label={t('createEnvironment.environmentType')}
           value={tipoAmbiente}
           onChange={(event) => setTipoAmbiente(event.target.value)}
-          options={[
-            primaryEnvironmentOption,
-            { value: 'TM', label: t('environmentOptions.TM') },
-            { value: 'PROD', label: t('environmentOptions.PROD') },
-          ]}
+          options={environmentTypeOptions}
         />
         <SelectInput
           id="tipoTeste"

@@ -4291,6 +4291,53 @@ button.store-summary-highlight:focus-visible {
   margin-bottom: 0.75rem;
 }
 
+.no-organization-header {
+  margin-bottom: -0.5rem;
+}
+
+.no-organization-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.no-organization-card {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.no-organization-card__header {
+  align-items: center;
+}
+
+.no-organization-card__initial {
+  width: 44px;
+  height: 44px;
+  border-radius: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .no-organization-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .no-organization-card {
+    padding: 1.2rem;
+  }
+
+  .no-organization-card .badge {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 .list-with-icons {
   list-style: none;
   margin: 1rem 0 0;

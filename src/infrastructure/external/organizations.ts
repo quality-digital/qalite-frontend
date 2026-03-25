@@ -62,6 +62,7 @@ export interface CreateOrganizationPayload {
   description: string;
   slackWebhookUrl?: string | null;
   emailDomain?: string | null;
+  additionalEnvironmentTypes?: string[];
   browserstackCredentials?: BrowserstackCredentials | null;
 }
 
@@ -71,8 +72,19 @@ export interface UpdateOrganizationPayload {
   logoUrl?: string | null;
   slackWebhookUrl?: string | null;
   emailDomain?: string | null;
+  additionalEnvironmentTypes?: string[];
   browserstackCredentials?: BrowserstackCredentials | null;
 }
+
+const normalizeAdditionalEnvironmentTypes = (values: unknown): string[] => {
+  if (!Array.isArray(values)) {
+    return [];
+  }
+
+  return values
+    .map((value) => (typeof value === 'string' ? value.trim() : ''))
+    .filter((value, index, array) => value.length > 0 && array.indexOf(value) === index);
+};
 
 export interface AddUserToOrganizationPayload {
   organizationId: string;
@@ -269,6 +281,9 @@ export const createOrganization = async (
   const slackWebhookUrl = payload.slackWebhookUrl?.trim() || null;
   const emailDomain = normalizeEmailDomain(payload.emailDomain);
   const browserstackCredentials = normalizeBrowserstackCredentials(payload.browserstackCredentials);
+  const additionalEnvironmentTypes = normalizeAdditionalEnvironmentTypes(
+    payload.additionalEnvironmentTypes,
+  );
 
   const docRef = await addDoc(organizationsCollection, {
     name: trimmedName,
@@ -276,6 +291,7 @@ export const createOrganization = async (
     logoUrl: null,
     slackWebhookUrl,
     emailDomain,
+    additionalEnvironmentTypes,
     browserstackCredentials,
     members: [],
     createdAt: serverTimestamp(),
@@ -304,6 +320,9 @@ export const updateOrganization = async (
     description: payload.description.trim(),
     slackWebhookUrl: payload.slackWebhookUrl?.trim() || null,
     emailDomain: normalizeEmailDomain(payload.emailDomain),
+    additionalEnvironmentTypes: normalizeAdditionalEnvironmentTypes(
+      payload.additionalEnvironmentTypes,
+    ),
     updatedAt: serverTimestamp(),
   };
 
@@ -897,6 +916,9 @@ const mapOrganizationSummary = (
   const browserstackCredentials = normalizeBrowserstackCredentials(
     (data?.browserstackCredentials as BrowserstackCredentials | null | undefined) ?? null,
   );
+  const additionalEnvironmentTypes = normalizeAdditionalEnvironmentTypes(
+    data?.additionalEnvironmentTypes,
+  );
 
   return {
     id,
@@ -905,6 +927,7 @@ const mapOrganizationSummary = (
     logoUrl: ((data?.logoUrl as string) ?? '').trim() || null,
     slackWebhookUrl: ((data?.slackWebhookUrl as string) ?? '').trim() || null,
     emailDomain: normalizeEmailDomain((data?.emailDomain as string | null | undefined) ?? null),
+    additionalEnvironmentTypes,
     browserstackCredentials,
     members,
     memberIds,
@@ -926,6 +949,9 @@ const mapOrganizationDetail = async (
   const browserstackCredentials = normalizeBrowserstackCredentials(
     (data?.browserstackCredentials as BrowserstackCredentials | null | undefined) ?? null,
   );
+  const additionalEnvironmentTypes = normalizeAdditionalEnvironmentTypes(
+    data?.additionalEnvironmentTypes,
+  );
 
   return {
     id,
@@ -934,6 +960,7 @@ const mapOrganizationDetail = async (
     logoUrl: ((data?.logoUrl as string) ?? '').trim() || null,
     slackWebhookUrl: ((data?.slackWebhookUrl as string) ?? '').trim() || null,
     emailDomain: normalizeEmailDomain((data?.emailDomain as string | null | undefined) ?? null),
+    additionalEnvironmentTypes,
     browserstackCredentials,
     members,
     memberIds,

@@ -25,6 +25,7 @@ export interface Organization {
   logoUrl: string | null;
   slackWebhookUrl: string | null;
   emailDomain: string | null;
+  additionalEnvironmentTypes: string[];
   browserstackCredentials?: BrowserstackCredentials | null;
   members: OrganizationMember[];
   memberIds: string[];
@@ -38,6 +39,7 @@ export interface CreateOrganizationPayload {
   description: string;
   slackWebhookUrl?: string | null;
   emailDomain?: string | null;
+  additionalEnvironmentTypes?: string[];
   browserstackCredentials?: BrowserstackCredentials | null;
 }
 
@@ -47,6 +49,7 @@ export interface UpdateOrganizationPayload {
   logoUrl?: string | null;
   slackWebhookUrl?: string | null;
   emailDomain?: string | null;
+  additionalEnvironmentTypes?: string[];
   browserstackCredentials?: BrowserstackCredentials | null;
 }
 

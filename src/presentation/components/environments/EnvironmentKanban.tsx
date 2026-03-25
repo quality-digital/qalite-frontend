@@ -50,13 +50,13 @@ const cloneScenarioMap = (
       id,
       {
         ...scenario,
-        status: status === 'done' ? 'concluido' : 'em_andamento',
-        statusMobile: status === 'done' ? 'concluido' : 'em_andamento',
-        statusDesktop: status === 'done' ? 'concluido' : 'em_andamento',
+        status: status === 'done' ? 'pendente' : 'em_andamento',
+        statusMobile: status === 'done' ? 'pendente' : 'em_andamento',
+        statusDesktop: status === 'done' ? 'pendente' : 'em_andamento',
         statusByEnvironment: Object.fromEntries(
           Object.keys(scenario.statusByEnvironment ?? {}).map((column) => [
             column,
-            status === 'done' ? 'concluido' : 'em_andamento',
+            status === 'done' ? 'pendente' : 'em_andamento',
           ]),
         ),
         evidenciaArquivoUrl: null,
@@ -255,6 +255,8 @@ export const EnvironmentKanban = ({
       const stamp = Date.now().toString(36).slice(-4);
       const identifier = `${environment.identificador}-${suffix}-${stamp}`;
       const clonedScenarios = cloneScenarioMap(environment.scenarios ?? {}, cloneStartStatus);
+      const clonedEnvironmentStatus: EnvironmentStatus =
+        cloneStartStatus === 'done' ? 'backlog' : 'in_progress';
       const createdEnvironment = await environmentService.create({
         identificador: identifier,
         storeId: environment.storeId,
@@ -266,7 +268,7 @@ export const EnvironmentKanban = ({
         tipoTeste: environment.tipoTeste,
         momento: environment.momento,
         release: environment.release,
-        status: cloneStartStatus,
+        status: clonedEnvironmentStatus,
         timeTracking: { start: null, end: null, totalMs: 0 },
         presentUsersIds: [],
         concludedBy: null,

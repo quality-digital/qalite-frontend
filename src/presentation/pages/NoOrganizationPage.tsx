@@ -13,7 +13,6 @@ import { useToast } from '../context/ToastContext';
 import { Layout } from '../components/Layout';
 import { Button } from '../components/Button';
 import { CachedImage } from '../components/CachedImage';
-import { UsersGroupIcon } from '../components/icons';
 
 export const NoOrganizationPage = () => {
   const { t } = useTranslation();
@@ -146,7 +145,7 @@ export const NoOrganizationPage = () => {
   return (
     <Layout>
       <section className="page-container">
-        <div className="page-header">
+        <div className="page-header no-organization-header">
           <div>
             <h1 className="section-title">{t('noOrganization.title')}</h1>
             <p className="section-subtitle">{t('noOrganization.subtitle')}</p>
@@ -178,14 +177,14 @@ export const NoOrganizationPage = () => {
             <p className="section-subtitle">{t('organizationAccessRequests.emptyDescription')}</p>
           </div>
         ) : (
-          <div className="dashboard-grid">
+          <div className="dashboard-grid no-organization-grid">
             {organizations.map((organization) => {
               const hasPendingRequest = pendingRequestMap.has(organization.id);
               const isBlockedBySinglePendingRule = hasAnyPendingRequest && !hasPendingRequest;
 
               return (
-                <article key={organization.id} className="card">
-                  <div className="card-title-group">
+                <article key={organization.id} className="card no-organization-card">
+                  <div className="card-title-group no-organization-card__header">
                     {organization.logoUrl ? (
                       <CachedImage
                         src={organization.logoUrl}
@@ -193,8 +192,8 @@ export const NoOrganizationPage = () => {
                         style={{ width: 44, height: 44, objectFit: 'contain', borderRadius: 8 }}
                       />
                     ) : (
-                      <span className="card-title-icon" aria-hidden>
-                        <UsersGroupIcon className="icon icon--lg" />
+                      <span className="no-organization-card__initial" aria-hidden>
+                        {organization.name.charAt(0).toUpperCase()}
                       </span>
                     )}
                     <div>
