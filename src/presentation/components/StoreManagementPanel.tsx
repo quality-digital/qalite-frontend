@@ -40,6 +40,7 @@ import { exportScenarioExcel } from '../../utils/exportExcel';
 import { formatDateTime } from '../../shared/utils/time';
 import { buildExternalLink } from '../utils/externalLink';
 import { FileTextIcon, PencilIcon, TrashIcon } from './icons';
+import { useStoreOrganizationBranding } from '../hooks/useStoreOrganizationBranding';
 
 interface StoreManagementPanelProps {
   organizationId: string;
@@ -82,6 +83,7 @@ export const StoreManagementPanel = ({
   );
   const [isSavingStore, setIsSavingStore] = useState(false);
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
+  const { organization: storeOrganization } = useStoreOrganizationBranding(selectedStoreId);
 
   const [scenarios, setScenarios] = useState<StoreScenario[]>([]);
   const [isLoadingScenarios, setIsLoadingScenarios] = useState(false);
@@ -730,6 +732,10 @@ export const StoreManagementPanel = ({
           data,
           t('storeManagement.exportTitle', { name: selectedStore.name }),
           pdfWindow,
+          {
+            name: storeOrganization?.name ?? organizationName,
+            logoUrl: storeOrganization?.logoUrl ?? null,
+          },
         );
       }
 

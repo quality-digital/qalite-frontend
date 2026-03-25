@@ -600,9 +600,12 @@ export const EnvironmentPage = () => {
       return;
     }
 <<<<<<< HEAD
+<<<<<<< HEAD
     environmentService.exportAsPDF(environment, bugs, participantProfiles, storeName);
   }, [bugs, environment, participantProfiles, storeName]);
 =======
+=======
+>>>>>>> e54af45be1a96e4f13d6da40e51e835db3693915
     environmentService.exportAsPDF(
       environment,
       bugs,
@@ -622,7 +625,10 @@ export const EnvironmentPage = () => {
     storeLogoUrl,
     storeName,
   ]);
+<<<<<<< HEAD
 >>>>>>> e5493a2 (chore: update version to 72.0.1 in package.json)
+=======
+>>>>>>> e54af45be1a96e4f13d6da40e51e835db3693915
 
   const handleExportExcel = useCallback(() => {
     if (!environment) {

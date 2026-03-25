@@ -2,6 +2,7 @@ import {
   normalizeAutomationEnum,
   normalizeCriticalityEnum,
 } from '../../shared/utils/scenarioEnums';
+import { ArrowDownIcon, ArrowUpIcon } from './icons';
 
 const CRITICALITY_PRIORITY: Record<string, number> = {
   CRITICAL: 0,
@@ -143,7 +144,7 @@ export const ScenarioColumnSortControl = ({
           onClick={() => handleToggle('asc')}
           aria-label={`Ordenar ${label} em ordem crescente`}
         >
-          ↑
+          <ArrowUpIcon aria-hidden className="icon" />
         </button>
         <button
           type="button"
@@ -152,7 +153,7 @@ export const ScenarioColumnSortControl = ({
           onClick={() => handleToggle('desc')}
           aria-label={`Ordenar ${label} em ordem decrescente`}
         >
-          ↓
+          <ArrowDownIcon aria-hidden className="icon" />
         </button>
       </div>
     </div>
