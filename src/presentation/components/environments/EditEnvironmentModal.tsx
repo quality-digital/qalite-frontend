@@ -334,7 +334,19 @@ export const EditEnvironmentModal = ({
           {urls.length > 0 && (
             <div className="dynamic-links-list">
               {urls.map((url) => (
-                <span key={url}>{url}</span>
+                <span key={url} className="dynamic-link-item">
+                  <span>{url}</span>
+                  {!isLocked && (
+                    <button
+                      type="button"
+                      className="dynamic-link-remove"
+                      onClick={() => setUrls((current) => current.filter((item) => item !== url))}
+                      aria-label={translation('remove')}
+                    >
+                      ×
+                    </button>
+                  )}
+                </span>
               ))}
             </div>
           )}
@@ -370,7 +382,21 @@ export const EditEnvironmentModal = ({
           {jiraLinks.length > 0 && (
             <div className="dynamic-links-list">
               {jiraLinks.map((link) => (
-                <span key={link}>{link}</span>
+                <span key={link} className="dynamic-link-item">
+                  <span>{link}</span>
+                  {!isLocked && (
+                    <button
+                      type="button"
+                      className="dynamic-link-remove"
+                      onClick={() =>
+                        setJiraLinks((current) => current.filter((item) => item !== link))
+                      }
+                      aria-label={translation('remove')}
+                    >
+                      ×
+                    </button>
+                  )}
+                </span>
               ))}
             </div>
           )}

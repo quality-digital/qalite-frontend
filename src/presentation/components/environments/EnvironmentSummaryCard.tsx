@@ -105,8 +105,8 @@ export const EnvironmentSummaryCard = ({
         </div>
       </div>
 
-      <div className="summary-card__meta-grid summary-card__meta-grid--columns">
-        {isHomologationEnvironment && (
+      {isHomologationEnvironment && (
+        <div className="summary-card__meta-grid summary-card__meta-grid--columns">
           <div className="summary-card__meta-item">
             <span className="summary-card__meta-label">{translation('environmentSummary.moment')}</span>
             <strong>
@@ -115,17 +115,16 @@ export const EnvironmentSummaryCard = ({
                 : translation('environmentSummary.notRecorded')}
             </strong>
           </div>
-        )}
-
-        {isHomologationEnvironment && (
           <div className="summary-card__meta-item">
             <span className="summary-card__meta-label">
               {translation('environmentSummary.release')}
             </span>
             <strong>{environment.release || translation('environmentSummary.notRecorded')}</strong>
           </div>
-        )}
+        </div>
+      )}
 
+      <div className="summary-card__meta-grid summary-card__meta-grid--stats">
         <div className="summary-card__meta-item">
           <span className="summary-card__meta-label">
             {translation('environmentSummary.scenarios')}
