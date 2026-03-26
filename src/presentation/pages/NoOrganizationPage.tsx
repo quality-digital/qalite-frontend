@@ -185,17 +185,13 @@ export const NoOrganizationPage = () => {
               return (
                 <article key={organization.id} className="card no-organization-card">
                   <div className="card-title-group no-organization-card__header">
-                    {organization.logoUrl ? (
+                    <span className="organization-card-logo" aria-hidden={!organization.logoUrl}>
                       <CachedImage
-                        src={organization.logoUrl}
-                        alt={organization.name}
-                        style={{ width: 44, height: 44, objectFit: 'contain', borderRadius: 8 }}
+                        src={organization.logoUrl || '/assets/logo.png'}
+                        alt={organization.logoUrl ? organization.name : ''}
+                        className="organization-card-logo__image"
                       />
-                    ) : (
-                      <span className="no-organization-card__initial" aria-hidden>
-                        {organization.name.charAt(0).toUpperCase()}
-                      </span>
-                    )}
+                    </span>
                     <div>
                       <h3 className="card-title">{organization.name}</h3>
                       <p className="section-subtitle">

@@ -2261,6 +2261,26 @@ a.text-link:hover {
   border-radius: inherit;
 }
 
+.organization-card-logo {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.9rem;
+  background: #fff;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, transparent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: var(--shadow-xs, 0 0 0 1px rgba(0, 0, 0, 0.02));
+}
+
+.organization-card-logo__image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 0.35rem;
+}
+
 .header-auth {
   display: flex;
   align-items: center;
