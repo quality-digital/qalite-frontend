@@ -886,6 +886,11 @@ input[type='password']:invalid {
   color: var(--color-danger, #dc2626);
 }
 
+.dynamic-link-remove-icon {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
 .table-scroll-area,
 .scenario-table-wrapper,
 .suite-table-wrapper,

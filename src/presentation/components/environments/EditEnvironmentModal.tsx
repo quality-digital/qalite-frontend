@@ -341,9 +341,9 @@ export const EditEnvironmentModal = ({
                       type="button"
                       className="dynamic-link-remove"
                       onClick={() => setUrls((current) => current.filter((item) => item !== url))}
-                      aria-label={translation('remove')}
+                      aria-label={translation('delete')}
                     >
-                      ×
+                      <TrashIcon aria-hidden className="dynamic-link-remove-icon" />
                     </button>
                   )}
                 </span>
@@ -391,9 +391,9 @@ export const EditEnvironmentModal = ({
                       onClick={() =>
                         setJiraLinks((current) => current.filter((item) => item !== link))
                       }
-                      aria-label={translation('remove')}
+                      aria-label={translation('delete')}
                     >
-                      ×
+                      <TrashIcon aria-hidden className="dynamic-link-remove-icon" />
                     </button>
                   )}
                 </span>
