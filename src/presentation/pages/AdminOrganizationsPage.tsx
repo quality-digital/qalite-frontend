@@ -11,7 +11,7 @@ import { Modal } from '../components/Modal';
 import { TextInput } from '../components/TextInput';
 import { CachedImage } from '../components/CachedImage';
 import { useToast } from '../context/ToastContext';
-import { ActivityIcon, PieChartIcon, UsersGroupIcon } from '../components/icons';
+import { ActivityIcon, PieChartIcon, StorefrontIcon, UsersGroupIcon } from '../components/icons';
 
 export const AdminOrganizationsPage = () => {
   const navigate = useNavigate();
