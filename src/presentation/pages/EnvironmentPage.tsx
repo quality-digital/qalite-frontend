@@ -56,6 +56,7 @@ import {
   LinkIcon,
   LogoutIcon,
   SettingsIcon,
+  TrashIcon,
   UsersGroupIcon,
 } from '../components/icons';
 import { exportEnvironmentExcel } from '../../utils/exportExcel';
@@ -865,7 +866,7 @@ export const EnvironmentPage = () => {
         <div className="environment-toolbar">
           <BackButton label={translation('back')} />
           <div className="environment-actions">
-            {!hasEnteredEnvironment && !isLocked ? (
+            {!hasEnteredEnvironment && !isLocked && (
               <Button
                 type="button"
                 onClick={handleEnterEnvironment}
@@ -875,50 +876,57 @@ export const EnvironmentPage = () => {
               >
                 {translation('environment.enter')}
               </Button>
+            )}
+            {environment.status === 'backlog' && hasEnteredEnvironment && (
+              <Button
+                type="button"
+                onClick={() => handleStatusTransition('in_progress')}
+                data-testid="start-environment-button"
+              >
+                {translation('environment.startExecution')}
+              </Button>
+            )}
+            {environment.status === 'in_progress' && hasEnteredEnvironment && (
+              <Button
+                type="button"
+                onClick={() => handleStatusTransition('done')}
+                data-testid="finish-environment-button"
+              >
+                {translation('environment.finishEnvironment')}
+              </Button>
+            )}
+            {hasEnteredEnvironment && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleLeaveEnvironment}
+                isLoading={isLeavingEnvironment}
+                loadingText={translation('environment.leaving')}
+              >
+                <LogoutIcon aria-hidden className="icon" />
+                {translation('environment.leave')}
+              </Button>
+            )}
+            {environment.status === 'done' ? (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsDeleteOpen(true)}
+                data-testid="delete-environment-button"
+              >
+                <TrashIcon aria-hidden className="icon" />
+                {translation('deleteEnvironmentModal.deleteEnvironment')}
+              </Button>
             ) : (
-              <>
-                {environment.status === 'backlog' && (
-                  <Button
-                    type="button"
-                    onClick={() => handleStatusTransition('in_progress')}
-                    data-testid="start-environment-button"
-                  >
-                    {translation('environment.startExecution')}
-                  </Button>
-                )}
-                {environment.status === 'in_progress' && (
-                  <Button
-                    type="button"
-                    onClick={() => handleStatusTransition('done')}
-                    data-testid="finish-environment-button"
-                  >
-                    {translation('environment.finishEnvironment')}
-                  </Button>
-                )}
-                {hasEnteredEnvironment && environment.status !== 'done' && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={handleLeaveEnvironment}
-                    isLoading={isLeavingEnvironment}
-                    loadingText={translation('environment.leaving')}
-                  >
-                    <LogoutIcon aria-hidden className="icon" />
-                    {translation('environment.leave')}
-                  </Button>
-                )}
-                {hasEnteredEnvironment && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => setIsEditOpen(true)}
-                    data-testid="edit-environment-button"
-                  >
-                    <SettingsIcon aria-hidden className="icon" />
-                    {translation('environment.manage')}
-                  </Button>
-                )}
-              </>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setIsEditOpen(true)}
+                data-testid="edit-environment-button"
+              >
+                <SettingsIcon aria-hidden className="icon" />
+                {translation('environment.manage')}
+              </Button>
             )}
           </div>
         </div>

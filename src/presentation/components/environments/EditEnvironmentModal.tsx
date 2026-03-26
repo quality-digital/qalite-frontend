@@ -121,7 +121,7 @@ export const EditEnvironmentModal = ({
   );
 
   const isLocked = environment?.status === 'done';
-  const canDelete = Boolean(onDeleteRequest) && isLocked;
+  const canDelete = Boolean(onDeleteRequest) && !isLocked;
   const selectedSuite = useMemo(
     () => suites.find((suite) => suite.id === suiteId),
     [suiteId, suites],
