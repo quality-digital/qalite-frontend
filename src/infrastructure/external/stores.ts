@@ -97,6 +97,7 @@ const mapStore = (id: string, data: Record<string, unknown>): Store => {
     adminUrl: ((data.adminUrl as string) ?? '').trim(),
     stage: ((data.stage as string) ?? '').trim(),
     logoUrl: ((data.logoUrl as string) ?? '').trim() || null,
+    primaryColor: ((data.primaryColor as string) ?? '').trim() || null,
     slackWebhookUrl: ((data.slackWebhookUrl as string) ?? '').trim() || null,
     scenarioCount,
     automatedScenarioCount,
@@ -300,6 +301,7 @@ export const createStore = async (payload: CreateStorePayload): Promise<Store> =
     adminUrl: payload.adminUrl?.trim() || '',
     stage: payload.stage.trim(),
     logoUrl: payload.logoUrl?.trim() || null,
+    primaryColor: payload.primaryColor?.trim() || null,
     slackWebhookUrl: payload.slackWebhookUrl?.trim() || null,
     scenarioCount: 0,
     automatedScenarioCount: 0,
@@ -316,6 +318,7 @@ export const createStore = async (payload: CreateStorePayload): Promise<Store> =
     adminUrl: payload.adminUrl?.trim() || '',
     stage: payload.stage.trim(),
     logoUrl: payload.logoUrl?.trim() || null,
+    primaryColor: payload.primaryColor?.trim() || null,
     slackWebhookUrl: payload.slackWebhookUrl?.trim() || null,
     scenarioCount: 0,
     automatedScenarioCount: 0,
@@ -338,6 +341,9 @@ export const updateStore = async (storeId: string, payload: UpdateStorePayload):
     adminUrl: payload.adminUrl?.trim() || '',
     stage: payload.stage.trim(),
     ...(payload.logoUrl !== undefined ? { logoUrl: payload.logoUrl?.trim() || null } : {}),
+    ...(payload.primaryColor !== undefined
+      ? { primaryColor: payload.primaryColor?.trim() || null }
+      : {}),
     ...(payload.slackWebhookUrl !== undefined
       ? { slackWebhookUrl: payload.slackWebhookUrl?.trim() || null }
       : {}),

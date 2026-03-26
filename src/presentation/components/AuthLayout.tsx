@@ -26,10 +26,12 @@ export const AuthLayout = ({
     <div className="auth-page">
       <div className="auth-page__hero">
         <div className="auth-page__hero-content">
-          <div className="auth-page__hero-label">{resolvedPageLabel}</div>
-          <div className="auth-page__hero-logo auth-page__hero-logo--brand">
-            <img src={appLogo} alt="Qalite" className="auth-page__hero-logo-image" />
-            <span>{heroLogo}</span>
+          <div className="auth-page__hero-brand-card">
+            <div className="auth-page__hero-logo auth-page__hero-logo--brand">
+              <img src={appLogo} alt="qalite" className="auth-page__hero-logo-image" />
+              <span>{heroLogo.toLowerCase()}</span>
+            </div>
+            <span className="auth-page__hero-page-label">{resolvedPageLabel}</span>
           </div>
         </div>
       </div>

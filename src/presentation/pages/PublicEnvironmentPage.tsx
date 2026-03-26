@@ -79,6 +79,7 @@ export const PublicEnvironmentPage = () => {
                   id: store.id,
                   name: store.name.trim(),
                   logoUrl: store.logoUrl ?? null,
+                  primaryColor: store.primaryColor ?? null,
                 }
               : null,
           );

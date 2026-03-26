@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { CSSProperties, ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
@@ -8,6 +8,7 @@ import { CachedImage } from './CachedImage';
 import { LogoutIcon } from './icons';
 import qliteLogo from '../assets/logo.png';
 import { useTranslation } from 'react-i18next';
+import { buildBrandPalette } from '../../shared/utils/branding';
 
 interface LayoutProps {
   children: ReactNode;
@@ -21,9 +22,21 @@ export const Layout = ({ children }: LayoutProps) => {
   const { t } = useTranslation();
   const brandName = activeStore?.name || activeOrganization?.name || t('app.brandName');
   const brandLogo = activeStore?.logoUrl || activeOrganization?.logoUrl || qliteLogo;
+  const brandPrimaryColor = activeStore?.primaryColor || activeOrganization?.primaryColor || null;
+  const palette = buildBrandPalette(brandPrimaryColor);
 
   return (
-    <div className="app-shell">
+    <div
+      className="app-shell"
+      style={
+        {
+          '--color-primary': palette.primary,
+          '--color-primary-hover': palette.primaryHover,
+          '--color-primary-soft': palette.primarySoft,
+          '--color-on-primary': palette.onPrimary,
+        } as CSSProperties
+      }
+    >
       <header className="app-header">
         <Link to="/" className="app-brand" aria-label={t('layout.homeAriaLabel', { brandName })}>
           <CachedImage

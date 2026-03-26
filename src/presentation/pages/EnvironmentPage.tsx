@@ -481,6 +481,7 @@ export const EnvironmentPage = () => {
                   id: store.id,
                   name: resolvedStoreName,
                   logoUrl: resolvedStoreLogoUrl,
+                  primaryColor: store.primaryColor ?? null,
                 }
               : null,
           );

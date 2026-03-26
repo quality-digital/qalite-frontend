@@ -25,6 +25,7 @@ import { Modal } from '../components/Modal';
 import { TextInput } from '../components/TextInput';
 import { SelectInput } from '../components/SelectInput';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
+import { extractDominantColorFromFile } from '../../shared/utils/branding';
 import {
   ActivityIcon,
   PieChartIcon,
@@ -334,11 +335,15 @@ export const AdminStoresPage = () => {
       const logoUrl = organizationLogoFile
         ? await organizationService.uploadLogo(selectedOrganization.id, organizationLogoFile)
         : undefined;
+      const primaryColor = organizationLogoFile
+        ? await extractDominantColorFromFile(organizationLogoFile)
+        : undefined;
 
       await organizationService.update(selectedOrganization.id, {
         name: trimmedName,
         description: (selectedOrganization.description ?? '').trim(),
         ...(logoUrl !== undefined ? { logoUrl } : {}),
+        ...(primaryColor !== undefined ? { primaryColor } : {}),
         slackWebhookUrl,
         emailDomain,
       });
@@ -518,6 +523,9 @@ export const AdminStoresPage = () => {
         const logoUrl = storeLogoFile
           ? await storeService.uploadLogo(editingStore.id, storeLogoFile)
           : storeForm.logoUrl || null;
+        const primaryColor = storeLogoFile
+          ? await extractDominantColorFromFile(storeLogoFile)
+          : editingStore.primaryColor ?? null;
 
         await storeService.update(editingStore.id, {
           name: trimmedName,
@@ -525,6 +533,7 @@ export const AdminStoresPage = () => {
           adminUrl: trimmedAdminUrl,
           stage: storeForm.stage,
           logoUrl,
+          primaryColor,
         });
 
         showToast({
@@ -543,12 +552,14 @@ export const AdminStoresPage = () => {
 
         if (storeLogoFile) {
           const logoUrl = await storeService.uploadLogo(createdStore.id, storeLogoFile);
+          const primaryColor = await extractDominantColorFromFile(storeLogoFile);
           await storeService.update(createdStore.id, {
             name: trimmedName,
             site: trimmedSite,
             adminUrl: trimmedAdminUrl,
             stage: storeForm.stage,
             logoUrl,
+            primaryColor,
           });
         }
 
