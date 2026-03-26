@@ -107,24 +107,15 @@ export const CreateEnvironmentCard = ({
   );
   const totalCenarios = Object.keys(scenarioMap).length;
 
-  const tipoTesteOptions = useMemo(() => {
-    const options = TEST_TYPES_BY_ENVIRONMENT[tipoAmbiente] ?? ['Smoke-test'];
-    if (!options.includes(tipoTeste)) {
-      setTipoTeste(options[0]);
-    }
-    return options;
-  }, [tipoAmbiente, tipoTeste]);
+  const tipoTesteOptions = useMemo(
+    () => TEST_TYPES_BY_ENVIRONMENT[tipoAmbiente] ?? ['Smoke-test'],
+    [tipoAmbiente],
+  );
 
-  const momentoOptions = useMemo(() => {
-    const options = MOMENT_OPTIONS_BY_ENVIRONMENT[tipoAmbiente] ?? [];
-    if (options.length === 0 && momento) {
-      setMomento('');
-    }
-    if (options.length > 0 && !options.includes(momento)) {
-      setMomento(options[0]);
-    }
-    return options;
-  }, [momento, tipoAmbiente]);
+  const momentoOptions = useMemo(
+    () => MOMENT_OPTIONS_BY_ENVIRONMENT[tipoAmbiente] ?? [],
+    [tipoAmbiente],
+  );
 
   const shouldDisplayReleaseField = requiresReleaseField(tipoAmbiente);
   const primaryEnvironmentOption = useMemo(
@@ -141,6 +132,23 @@ export const CreateEnvironmentCard = ({
   useEffect(() => {
     setTipoAmbiente(getEnvironmentTypeByStoreStage(storeStage));
   }, [storeStage]);
+
+  useEffect(() => {
+    if (!tipoTesteOptions.includes(tipoTeste)) {
+      setTipoTeste(tipoTesteOptions[0]);
+    }
+  }, [tipoTeste, tipoTesteOptions]);
+
+  useEffect(() => {
+    if (momentoOptions.length === 0 && momento) {
+      setMomento('');
+      return;
+    }
+
+    if (momentoOptions.length > 0 && !momentoOptions.includes(momento)) {
+      setMomento(momentoOptions[0]);
+    }
+  }, [momento, momentoOptions]);
 
   useEffect(() => {
     if (!shouldDisplayReleaseField && release) {

@@ -178,7 +178,6 @@ export const listOrganizationsSummary = async (): Promise<Organization[]> => {
   });
 };
 
-export const listOrganizations = listOrganizationsSummary;
 
 export const listenToOrganizationsSummary = (
   onChange: (organizations: Organization[]) => void,
@@ -233,7 +232,6 @@ export const getOrganizationDetail = async (id: string): Promise<Organization | 
   });
 };
 
-export const getOrganization = getOrganizationDetail;
 
 export const listenToOrganizationDetail = (
   organizationId: string,

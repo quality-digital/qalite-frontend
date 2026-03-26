@@ -1,11 +1,22 @@
 # QaLite Frontend
 
-Aplicação web de QA construída com **React + Vite + TypeScript**, integrada ao **Firebase (Auth + Firestore)** e a um backend auxiliar para integrações (Slack/BrowserStack).
+Frontend do QaLite para gestão de qualidade de lojas e ambientes de teste.
 
-## Requisitos
+Projeto construído com **React + Vite + TypeScript** e integrado ao **Firebase** (Authentication, Firestore e Storage).
+
+## Stack principal
+
+- React 18
+- TypeScript 5
+- Vite 5
+- Firebase 10
+- React Router 6
+- i18next
+
+## Pré-requisitos
 
 - Node.js 18+
-- npm (este repositório usa `package-lock.json`)
+- npm 9+
 
 ## Instalação
 
@@ -14,11 +25,17 @@ npm install
 npm run prepare
 ```
 
-## Variáveis de ambiente
+## Configuração de ambiente
 
-Crie um `.env` a partir do `.env.example` e preencha:
+Crie um arquivo `.env` com base em `.env.example`.
 
 ```bash
+cp .env.example .env
+```
+
+Preencha as variáveis:
+
+```env
 VITE_FIREBASE_API_KEY=
 VITE_FIREBASE_AUTH_DOMAIN=
 VITE_FIREBASE_PROJECT_ID=
@@ -29,44 +46,50 @@ VITE_FIREBASE_MEASUREMENT_ID=
 VITE_QALITE_SERVICE_URL=
 ```
 
-`VITE_QALITE_SERVICE_URL` aponta para a API usada por Slack e BrowserStack.
+> `VITE_QALITE_SERVICE_URL` é a URL do serviço auxiliar utilizado nas integrações (ex.: Slack).
 
-## Scripts
+## Scripts disponíveis
 
-```bash
-npm run dev
-npm run build
-npm run preview
-npm run typecheck
-npm run lint
-npm run lint:fix
-npm run format
-npm run prepare
-```
+- `npm run dev` — inicia ambiente de desenvolvimento
+- `npm run build` — gera build de produção
+- `npm run preview` — serve a build localmente
+- `npm run typecheck` — valida tipos TypeScript
+- `npm run lint` — executa ESLint
+- `npm run lint:fix` — corrige problemas simples de lint
+- `npm run format` — formata arquivos com Prettier
 
-## Como rodar
+## Executando localmente
 
 ```bash
 npm run dev
 ```
 
-Abra `http://localhost:5173`.
+Acesse: `http://localhost:5173`
 
-## Estrutura (resumo)
+## Estrutura do projeto
 
-```
+```text
 src/
-├─ application/       # Casos de uso
 ├─ domain/            # Entidades e contratos
-├─ infrastructure/    # Firebase, cache e integrações externas
-├─ presentation/      # Páginas, componentes, hooks, rotas e providers
-├─ shared/            # Utilidades/configs agnósticas de UI
-├─ App.tsx
-└─ main.tsx
+├─ infrastructure/    # Firebase, integrações externas e cache
+├─ presentation/      # UI (páginas, componentes, rotas, hooks, providers)
+├─ shared/            # Utilitários e configurações compartilhadas
+├─ lib/               # Setup de bibliotecas (ex.: i18n)
+└─ main.tsx           # Bootstrap da aplicação
 ```
 
-## Troubleshooting
+## Qualidade e validação
 
-- **Erro de Firebase**: confirme todas as variáveis `VITE_FIREBASE_*`.
-- **Integrações sem resposta**: valide `VITE_QALITE_SERVICE_URL` e a disponibilidade da API.
-- **Warnings de bundle grande**: o build pode emitir alertas de chunk size, mas deve concluir sem erros.
+Antes de abrir PR, execute:
+
+```bash
+npm run lint
+npm run typecheck
+npm run build
+```
+
+## Troubleshooting rápido
+
+- **Erro de inicialização do Firebase**: revise variáveis `VITE_FIREBASE_*`.
+- **Falha em integrações externas**: valide `VITE_QALITE_SERVICE_URL`.
+- **Aviso de chunks grandes no build**: é apenas warning do bundler (não bloqueia o build).
