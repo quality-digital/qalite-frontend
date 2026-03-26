@@ -4,6 +4,7 @@ import { ENVIRONMENT_STATUS_LABEL } from '../../../shared/config/environmentLabe
 import { getReadableUserName, getUserInitials } from '../../utils/userDisplay';
 import { CachedImage } from '../CachedImage';
 import { translateEnvironmentOption } from '../../constants/environmentOptions';
+import { requiresReleaseField } from '../../constants/environmentOptions';
 import { useTranslation } from 'react-i18next';
 import { buildExternalLink } from '../../utils/externalLink';
 import { ClockIcon } from '../icons';
@@ -48,7 +49,6 @@ export const EnvironmentSummaryCard = ({
   urls,
   participants,
   bugsCount,
-  storeName,
 }: EnvironmentSummaryCardProps) => {
   const { t: translation } = useTranslation();
 
@@ -63,6 +63,7 @@ export const EnvironmentSummaryCard = ({
       ? environment.tipoAmbiente.trim().toUpperCase()
       : '';
   const isWsEnvironment = normalizedEnvironmentType === 'WS';
+  const isHomologationEnvironment = requiresReleaseField(environment.tipoAmbiente);
 
   const bugLabel = isWsEnvironment
     ? translation('environmentSummary.storyfix')
@@ -89,11 +90,6 @@ export const EnvironmentSummaryCard = ({
 
       <div className="summary-card__meta-grid summary-card__meta-grid--columns">
         <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">{translation('storeSummary.storeName')}</span>
-          <strong>{storeName || translation('storeSummary.emptyValue')}</strong>
-        </div>
-
-        <div className="summary-card__meta-item">
           <span className="summary-card__meta-label">{translation('createEnvironment.suiteId')}</span>
           <strong>{environment.suiteName || translation('storeSummary.emptyValue')}</strong>
         </div>
@@ -114,21 +110,25 @@ export const EnvironmentSummaryCard = ({
       </div>
 
       <div className="summary-card__meta-grid summary-card__meta-grid--columns">
-        <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">{translation('environmentSummary.moment')}</span>
-          <strong>
-            {environment.momento
-              ? translateEnvironmentOption(environment.momento, translation)
-              : translation('environmentSummary.notRecorded')}
-          </strong>
-        </div>
+        {isHomologationEnvironment && (
+          <div className="summary-card__meta-item">
+            <span className="summary-card__meta-label">{translation('environmentSummary.moment')}</span>
+            <strong>
+              {environment.momento
+                ? translateEnvironmentOption(environment.momento, translation)
+                : translation('environmentSummary.notRecorded')}
+            </strong>
+          </div>
+        )}
 
-        <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">
-            {translation('environmentSummary.release')}
-          </span>
-          <strong>{environment.release || translation('environmentSummary.notRecorded')}</strong>
-        </div>
+        {isHomologationEnvironment && (
+          <div className="summary-card__meta-item">
+            <span className="summary-card__meta-label">
+              {translation('environmentSummary.release')}
+            </span>
+            <strong>{environment.release || translation('environmentSummary.notRecorded')}</strong>
+          </div>
+        )}
 
         <div className="summary-card__meta-item">
           <span className="summary-card__meta-label">
