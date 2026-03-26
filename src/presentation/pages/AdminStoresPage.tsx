@@ -709,9 +709,11 @@ export const AdminStoresPage = () => {
                     <div className="card-header">
                       <div className="card-title-group">
                         <span className="card-title-icon" aria-hidden>
-                          {selectedOrganization?.logoUrl ? (
+                          {store.logoUrl || selectedOrganization?.logoUrl ? (
                             <CachedImage
-                              src={selectedOrganization.logoUrl}
+                              src={
+                                store.logoUrl || selectedOrganization?.logoUrl || '/assets/logo.png'
+                              }
                               alt=""
                               className="card-title-logo"
                             />
