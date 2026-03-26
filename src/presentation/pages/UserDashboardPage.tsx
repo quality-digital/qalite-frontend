@@ -170,8 +170,12 @@ export const UserDashboardPage = () => {
                   <div className="card-header">
                     <div className="card-title-group">
                       <span className="card-title-icon" aria-hidden>
-                        {store.logoUrl ? (
-                          <CachedImage src={store.logoUrl} alt="" className="icon icon--lg" />
+                        {organization?.logoUrl ? (
+                          <CachedImage
+                            src={organization.logoUrl}
+                            alt=""
+                            className="card-title-logo"
+                          />
                         ) : (
                           <StorefrontIcon className="icon icon--lg" />
                         )}

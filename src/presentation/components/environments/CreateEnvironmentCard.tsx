@@ -16,7 +16,6 @@ import {
   requiresReleaseField,
 } from '../../constants/environmentOptions';
 import { useToast } from '../../context/ToastContext';
-import { useOrganizationBranding } from '../../context/OrganizationBrandingContext';
 
 interface CreateEnvironmentCardProps {
   storeId: string;
@@ -88,7 +87,6 @@ export const CreateEnvironmentCard = ({
   const [environmentColumnsInput, setEnvironmentColumnsInput] = useState('Desktop\nMobile');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
-  const { activeOrganization } = useOrganizationBranding();
   const { t } = useTranslation();
 
   const environmentColumns = useMemo(
@@ -141,14 +139,11 @@ export const CreateEnvironmentCard = ({
   );
   const environmentTypeOptions = useMemo(
     () =>
-      getEnvironmentTypeOptions(
-        primaryEnvironmentOption,
-        activeOrganization?.additionalEnvironmentTypes ?? [],
-      ).map((option) => ({
+      getEnvironmentTypeOptions(primaryEnvironmentOption).map((option) => ({
         value: option.value,
         label: option.label.startsWith('environmentOptions.') ? t(option.label) : option.label,
       })),
-    [activeOrganization?.additionalEnvironmentTypes, primaryEnvironmentOption, t],
+    [primaryEnvironmentOption, t],
   );
 
   useEffect(() => {
