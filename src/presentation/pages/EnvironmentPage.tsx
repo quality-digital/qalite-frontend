@@ -935,7 +935,6 @@ export const EnvironmentPage = () => {
           <EnvironmentSummaryCard
             environment={environment}
             progressPercentage={progressPercentage}
-            progressLabel={progressLabel}
             scenarioCount={scenarioCount}
             urls={urls}
             participants={participantProfiles}

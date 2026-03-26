@@ -33,7 +33,6 @@ const buildJiraLink = (value: string | null | undefined): string | null => {
 interface EnvironmentSummaryCardProps {
   environment: Environment;
   progressPercentage: number;
-  progressLabel: string;
   scenarioCount: number;
   urls: string[];
   participants: UserSummary[];
@@ -44,7 +43,6 @@ interface EnvironmentSummaryCardProps {
 export const EnvironmentSummaryCard = ({
   environment,
   progressPercentage,
-  progressLabel,
   scenarioCount,
   urls,
   participants,
@@ -181,9 +179,7 @@ export const EnvironmentSummaryCard = ({
         >
           <span style={{ width: `${progressPercentage}%` }} />
         </div>
-        <span className="summary-card__meta-hint">
-          {progressLabel} · {progressPercentage}%
-        </span>
+        <span className="summary-card__meta-hint">{progressPercentage}%</span>
       </div>
 
       <div className="summary-card__chips-group">
