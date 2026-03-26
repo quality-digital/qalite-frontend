@@ -37,6 +37,7 @@ const COLUMNS: { status: EnvironmentStatus; title: string; Icon: typeof InboxIco
 
 const cloneScenarioMap = (
   scenarios: Record<string, EnvironmentScenario>,
+  environmentColumns: string[],
 ): Record<string, EnvironmentScenario> =>
   Object.fromEntries(
     Object.entries(scenarios).map(([id, scenario]) => [
@@ -46,6 +47,13 @@ const cloneScenarioMap = (
         status: 'pendente',
         statusMobile: 'pendente',
         statusDesktop: 'pendente',
+        statusByEnvironment: environmentColumns.reduce<Record<string, EnvironmentScenario['status']>>(
+          (acc, column) => {
+            acc[column] = 'pendente';
+            return acc;
+          },
+          {},
+        ),
         evidenciaArquivoUrl: null,
       },
     ]),
@@ -188,7 +196,11 @@ export const EnvironmentKanban = ({
       const suffix = t('environmentKanban.cloneIdentifierSuffix').trim().replace(/\s+/g, '-');
       const stamp = Date.now().toString(36).slice(-4);
       const identifier = `${environment.identificador}-${suffix}-${stamp}`;
-      const clonedScenarios = cloneScenarioMap(environment.scenarios ?? {});
+      const environmentColumns =
+        environment.environmentColumns && environment.environmentColumns.length > 0
+          ? environment.environmentColumns
+          : ['Desktop', 'Mobile'];
+      const clonedScenarios = cloneScenarioMap(environment.scenarios ?? {}, environmentColumns);
       const createdEnvironment = await environmentService.create({
         identificador: identifier,
         storeId: environment.storeId,
@@ -209,6 +221,7 @@ export const EnvironmentKanban = ({
         totalCenarios: Object.keys(clonedScenarios).length,
         participants: [],
         publicShareLanguage: environment.publicShareLanguage ?? null,
+        environmentColumns,
       });
       showToast({ type: 'success', message: t('environmentKanban.cloneSuccess') });
       onEnvironmentCreated(createdEnvironment);
