@@ -48,6 +48,7 @@ export const EnvironmentSummaryCard = ({
   urls,
   participants,
   bugsCount,
+  storeName,
 }: EnvironmentSummaryCardProps) => {
   const { t: translation } = useTranslation();
 
@@ -75,16 +76,60 @@ export const EnvironmentSummaryCard = ({
   return (
     <div className="summary-card summary-card--environment summary-card--compact">
       <div className="summary-card__minimal-header">
+        <div>
+          <span className="summary-card__meta-label">
+            {translation('editEnvironmentModal.identifier')}
+          </span>
+          <h3 className="section-title">{environment.identificador}</h3>
+        </div>
         <span className={`status-pill status-pill--${environment.status}`}>
           {translation(ENVIRONMENT_STATUS_LABEL[environment.status])}
         </span>
-        <div className="summary-card__progress-inline" aria-live="polite">
-          <span className="summary-card__progress-value">{progressPercentage}%</span>
-          <span className="summary-card__progress-caption">{progressLabel}</span>
+      </div>
+
+      <div className="summary-card__meta-grid summary-card__meta-grid--columns">
+        <div className="summary-card__meta-item">
+          <span className="summary-card__meta-label">{translation('storeSummary.storeName')}</span>
+          <strong>{storeName || translation('storeSummary.emptyValue')}</strong>
+        </div>
+
+        <div className="summary-card__meta-item">
+          <span className="summary-card__meta-label">{translation('createEnvironment.suiteId')}</span>
+          <strong>{environment.suiteName || translation('storeSummary.emptyValue')}</strong>
+        </div>
+
+        <div className="summary-card__meta-item">
+          <span className="summary-card__meta-label">
+            {translation('editEnvironmentModal.environmentType')}
+          </span>
+          <strong>{translateEnvironmentOption(environment.tipoAmbiente, translation)}</strong>
+        </div>
+
+        <div className="summary-card__meta-item">
+          <span className="summary-card__meta-label">
+            {translation('editEnvironmentModal.testType')}
+          </span>
+          <strong>{translateEnvironmentOption(environment.tipoTeste, translation)}</strong>
         </div>
       </div>
 
-      <div className="summary-card__meta-grid">
+      <div className="summary-card__meta-grid summary-card__meta-grid--columns">
+        <div className="summary-card__meta-item">
+          <span className="summary-card__meta-label">{translation('environmentSummary.moment')}</span>
+          <strong>
+            {environment.momento
+              ? translateEnvironmentOption(environment.momento, translation)
+              : translation('environmentSummary.notRecorded')}
+          </strong>
+        </div>
+
+        <div className="summary-card__meta-item">
+          <span className="summary-card__meta-label">
+            {translation('environmentSummary.release')}
+          </span>
+          <strong>{environment.release || translation('environmentSummary.notRecorded')}</strong>
+        </div>
+
         <div className="summary-card__meta-item">
           <span className="summary-card__meta-label">
             {translation('environmentSummary.scenarios')}
@@ -107,29 +152,6 @@ export const EnvironmentSummaryCard = ({
           <span className="summary-card__meta-label">{bugLabel}</span>
           <strong>{bugsCount}</strong>
         </div>
-      </div>
-
-      <div className="summary-card__meta-grid summary-card__meta-grid--columns">
-        {environment.momento && (
-          <div className="summary-card__meta-item">
-            <span className="summary-card__meta-label">
-              {translation('environmentSummary.moment')}
-            </span>
-            <strong>{translateEnvironmentOption(environment.momento, translation)}</strong>
-          </div>
-        )}
-
-        {environment.release && (
-          <div className="summary-card__meta-item">
-            <span className="summary-card__meta-label">
-              {translation('environmentSummary.release')}
-            </span>
-            <strong>{environment.release}</strong>
-          </div>
-        )}
-      </div>
-
-      <div className="summary-card__meta-grid summary-card__meta-grid--columns">
         <div className="summary-card__meta-item">
           <span className="summary-card__meta-label">
             {translation('environmentSummary.participants')}
@@ -146,6 +168,22 @@ export const EnvironmentSummaryCard = ({
               })}
           </span>
         </div>
+      </div>
+
+      <div className="summary-card__section">
+        <span className="summary-card__meta-label">{translation('environmentDetails.progress')}</span>
+        <div
+          className="summary-card__progress"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progressPercentage}
+        >
+          <span style={{ width: `${progressPercentage}%` }} />
+        </div>
+        <span className="summary-card__meta-hint">
+          {progressLabel} · {progressPercentage}%
+        </span>
       </div>
 
       <div className="summary-card__chips-group">

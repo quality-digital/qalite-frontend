@@ -206,24 +206,18 @@ export const EnvironmentCard = ({
           )}
         </div>
       </div>
-      <div className="environment-card__progress-wrapper">
-        <div className="environment-card__progress-header">
-          <span className="environment-card__progress-label">{t('environmentCard.progressLabel')}</span>
-          <span className="environment-card__progress-value">{progressPercentage}%</span>
-        </div>
+      <div
+        className="environment-card__progress"
+        role="progressbar"
+        aria-label={t('environmentCard.progressLabel')}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={progressPercentage}
+      >
         <div
-          className="environment-card__progress"
-          role="progressbar"
-          aria-label={t('environmentCard.progressLabel')}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={progressPercentage}
-        >
-          <div
-            className="environment-card__progress-bar"
-            style={{ width: `${progressPercentage}%` }}
-          />
-        </div>
+          className="environment-card__progress-bar"
+          style={{ width: `${progressPercentage}%` }}
+        />
       </div>
     </div>
   );
