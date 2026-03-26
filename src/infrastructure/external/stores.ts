@@ -235,7 +235,6 @@ export const listStoresSummary = async (organizationId: string): Promise<Store[]
   });
 };
 
-
 export const listenToStores = (
   organizationId: string,
   onChange: (stores: Store[]) => void,
@@ -286,7 +285,6 @@ export const getStoreDetail = async (storeId: string): Promise<Store | null> => 
     },
   });
 };
-
 
 export const createStore = async (payload: CreateStorePayload): Promise<Store> => {
   const storesCollection = collection(firebaseFirestore, STORES_COLLECTION);

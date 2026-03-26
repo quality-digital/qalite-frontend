@@ -318,26 +318,26 @@ export const EditEnvironmentModal = ({
               onChange={(event) => setUrlInput(event.target.value)}
               disabled={isLocked}
             />
-          {!isLocked && (
-            <Button
-              type="button"
-              variant="secondary"
-              className="dynamic-links-add-button"
-              onClick={() => {
-                const wasAdded = addUniqueItem(
-                  urlInput,
-                  urls,
-                  setUrls,
-                  translation('createEnvironment.duplicateUrlError'),
-                );
-                if (wasAdded) {
-                  setUrlInput('');
-                }
-              }}
-            >
-              +
-            </Button>
-          )}
+            {!isLocked && (
+              <Button
+                type="button"
+                variant="secondary"
+                className="dynamic-links-add-button"
+                onClick={() => {
+                  const wasAdded = addUniqueItem(
+                    urlInput,
+                    urls,
+                    setUrls,
+                    translation('createEnvironment.duplicateUrlError'),
+                  );
+                  if (wasAdded) {
+                    setUrlInput('');
+                  }
+                }}
+              >
+                +
+              </Button>
+            )}
           </div>
           {urls.length > 0 && (
             <div className="dynamic-links-list">
@@ -366,26 +366,26 @@ export const EditEnvironmentModal = ({
               onChange={(event) => setJiraInput(event.target.value)}
               disabled={isLocked}
             />
-          {!isLocked && (
-            <Button
-              type="button"
-              variant="secondary"
-              className="dynamic-links-add-button"
-              onClick={() => {
-                const wasAdded = addUniqueItem(
-                  jiraInput,
-                  jiraLinks,
-                  setJiraLinks,
-                  translation('createEnvironment.duplicateJiraError'),
-                );
-                if (wasAdded) {
-                  setJiraInput('');
-                }
-              }}
-            >
-              +
-            </Button>
-          )}
+            {!isLocked && (
+              <Button
+                type="button"
+                variant="secondary"
+                className="dynamic-links-add-button"
+                onClick={() => {
+                  const wasAdded = addUniqueItem(
+                    jiraInput,
+                    jiraLinks,
+                    setJiraLinks,
+                    translation('createEnvironment.duplicateJiraError'),
+                  );
+                  if (wasAdded) {
+                    setJiraInput('');
+                  }
+                }}
+              >
+                +
+              </Button>
+            )}
           </div>
           {jiraLinks.length > 0 && (
             <div className="dynamic-links-list">

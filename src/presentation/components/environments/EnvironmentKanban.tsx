@@ -47,13 +47,12 @@ const cloneScenarioMap = (
         status: 'pendente',
         statusMobile: 'pendente',
         statusDesktop: 'pendente',
-        statusByEnvironment: environmentColumns.reduce<Record<string, EnvironmentScenario['status']>>(
-          (acc, column) => {
-            acc[column] = 'pendente';
-            return acc;
-          },
-          {},
-        ),
+        statusByEnvironment: environmentColumns.reduce<
+          Record<string, EnvironmentScenario['status']>
+        >((acc, column) => {
+          acc[column] = 'pendente';
+          return acc;
+        }, {}),
         evidenciaArquivoUrl: null,
       },
     ]),
@@ -173,7 +172,6 @@ export const EnvironmentKanban = ({
     );
   }, [environments, suites]);
 
-
   const requestCloneEnvironment = (environment: Environment) => {
     setEnvironmentToClone(environment);
   };
@@ -284,10 +282,7 @@ export const EnvironmentKanban = ({
                 column.status === 'done' ? activeDoneEnvironments : grouped[column.status];
 
               return (
-                <div
-                  key={column.status}
-                  className="environment-kanban-column"
-                >
+                <div key={column.status} className="environment-kanban-column">
                   <div className="environment-kanban-column-header">
                     <h4 className="environment-kanban-column-title">
                       <column.Icon aria-hidden className="icon" />

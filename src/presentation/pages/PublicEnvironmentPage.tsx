@@ -27,10 +27,7 @@ export const PublicEnvironmentPage = () => {
   const { activeStore, setActiveOrganization, setActiveStore } = useOrganizationBranding();
   const { t, i18n } = useTranslation();
   const { bugs, isLoading: isLoadingBugs } = useEnvironmentBugs(environment?.id ?? null);
-  const { scenarioCount, urls } = useEnvironmentDetails(
-    environment,
-    bugs,
-  );
+  const { scenarioCount, urls } = useEnvironmentDetails(environment, bugs);
 
   useEffect(() => {
     setActiveOrganization(environmentOrganization ?? null);

@@ -218,7 +218,9 @@ export const CreateEnvironmentCard = ({
 
     setIsSubmitting(true);
     try {
-      const urlsList = Array.from(new Set([...urls, ...(urlInput.trim() ? [urlInput.trim()] : [])]));
+      const urlsList = Array.from(
+        new Set([...urls, ...(urlInput.trim() ? [urlInput.trim()] : [])]),
+      );
       const jiraList = [...jiraLinks, ...(jiraInput.trim() ? [jiraInput.trim()] : [])];
 
       const timeTracking = { start: null, end: null, totalMs: 0 };

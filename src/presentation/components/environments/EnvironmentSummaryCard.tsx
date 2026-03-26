@@ -86,7 +86,9 @@ export const EnvironmentSummaryCard = ({
 
       <div className="summary-card__meta-grid summary-card__meta-grid--columns">
         <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">{translation('createEnvironment.suiteId')}</span>
+          <span className="summary-card__meta-label">
+            {translation('createEnvironment.suiteId')}
+          </span>
           <strong>{environment.suiteName || translation('storeSummary.emptyValue')}</strong>
         </div>
 
@@ -108,7 +110,9 @@ export const EnvironmentSummaryCard = ({
       {isHomologationEnvironment && (
         <div className="summary-card__meta-grid summary-card__meta-grid--columns">
           <div className="summary-card__meta-item">
-            <span className="summary-card__meta-label">{translation('environmentSummary.moment')}</span>
+            <span className="summary-card__meta-label">
+              {translation('environmentSummary.moment')}
+            </span>
             <strong>
               {environment.momento
                 ? translateEnvironmentOption(environment.momento, translation)
