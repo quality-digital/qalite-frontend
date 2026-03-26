@@ -21,7 +21,6 @@ export const Layout = ({ children }: LayoutProps) => {
   const { t } = useTranslation();
   const brandName = activeStore?.name || activeOrganization?.name || t('app.brandName');
   const brandLogo = activeStore?.logoUrl || activeOrganization?.logoUrl || qliteLogo;
-
   return (
     <div className="app-shell">
       <header className="app-header">

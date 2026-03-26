@@ -4,8 +4,10 @@ import { ENVIRONMENT_STATUS_LABEL } from '../../../shared/config/environmentLabe
 import { getReadableUserName, getUserInitials } from '../../utils/userDisplay';
 import { CachedImage } from '../CachedImage';
 import { translateEnvironmentOption } from '../../constants/environmentOptions';
+import { requiresReleaseField } from '../../constants/environmentOptions';
 import { useTranslation } from 'react-i18next';
 import { buildExternalLink } from '../../utils/externalLink';
+import { ClockIcon } from '../icons';
 
 const buildJiraLink = (value: string | null | undefined): string | null => {
   if (!value) {
@@ -30,12 +32,7 @@ const buildJiraLink = (value: string | null | undefined): string | null => {
 
 interface EnvironmentSummaryCardProps {
   environment: Environment;
-  progressPercentage: number;
-  progressLabel: string;
   scenarioCount: number;
-  formattedTime: string;
-  formattedStart: string;
-  formattedEnd: string;
   urls: string[];
   participants: UserSummary[];
   bugsCount: number;
@@ -44,12 +41,7 @@ interface EnvironmentSummaryCardProps {
 
 export const EnvironmentSummaryCard = ({
   environment,
-  progressPercentage,
-  progressLabel,
   scenarioCount,
-  formattedTime,
-  formattedStart,
-  formattedEnd,
   urls,
   participants,
   bugsCount,
@@ -67,46 +59,72 @@ export const EnvironmentSummaryCard = ({
       ? environment.tipoAmbiente.trim().toUpperCase()
       : '';
   const isWsEnvironment = normalizedEnvironmentType === 'WS';
+  const isHomologationEnvironment = requiresReleaseField(environment.tipoAmbiente);
 
   const bugLabel = isWsEnvironment
     ? translation('environmentSummary.storyfix')
     : translation('environmentSummary.bugs');
 
-  const jiraTask = environment.jiraTask?.trim() ?? '';
-  const jiraUrl = buildJiraLink(jiraTask);
+  const jiraLinks = (environment.jiraTask ?? '')
+    .split('\n')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
 
   return (
     <div className="summary-card summary-card--environment summary-card--compact">
       <div className="summary-card__minimal-header">
+        <div>
+          <span className="summary-card__meta-label">
+            {translation('editEnvironmentModal.identifier')}
+          </span>
+          <h3 className="section-title">{environment.identificador}</h3>
+        </div>
         <span className={`status-pill status-pill--${environment.status}`}>
           {translation(ENVIRONMENT_STATUS_LABEL[environment.status])}
         </span>
-        <div className="summary-card__progress-inline" aria-live="polite">
-          <span className="summary-card__progress-value">{progressPercentage}%</span>
-          <span className="summary-card__progress-caption">{progressLabel}</span>
+      </div>
+
+      <div className="summary-card__meta-grid summary-card__meta-grid--columns">
+        <div className="summary-card__meta-item">
+          <span className="summary-card__meta-label">{translation('createEnvironment.suiteId')}</span>
+          <strong>{environment.suiteName || translation('storeSummary.emptyValue')}</strong>
+        </div>
+
+        <div className="summary-card__meta-item">
+          <span className="summary-card__meta-label">
+            {translation('editEnvironmentModal.environmentType')}
+          </span>
+          <strong>{translateEnvironmentOption(environment.tipoAmbiente, translation)}</strong>
+        </div>
+
+        <div className="summary-card__meta-item">
+          <span className="summary-card__meta-label">
+            {translation('editEnvironmentModal.testType')}
+          </span>
+          <strong>{translateEnvironmentOption(environment.tipoTeste, translation)}</strong>
         </div>
       </div>
 
-      <div className="summary-card__meta-grid">
-        <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">
-            {translation('environmentSummary.start')}
-          </span>
-          <strong>{formattedStart}</strong>
+      {isHomologationEnvironment && (
+        <div className="summary-card__meta-grid summary-card__meta-grid--columns">
+          <div className="summary-card__meta-item">
+            <span className="summary-card__meta-label">{translation('environmentSummary.moment')}</span>
+            <strong>
+              {environment.momento
+                ? translateEnvironmentOption(environment.momento, translation)
+                : translation('environmentSummary.notRecorded')}
+            </strong>
+          </div>
+          <div className="summary-card__meta-item">
+            <span className="summary-card__meta-label">
+              {translation('environmentSummary.release')}
+            </span>
+            <strong>{environment.release || translation('environmentSummary.notRecorded')}</strong>
+          </div>
         </div>
+      )}
 
-        <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">{translation('environmentSummary.end')}</span>
-          <strong>{formattedEnd}</strong>
-        </div>
-
-        <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">
-            {translation('environmentSummary.totalTime')}
-          </span>
-          <strong>{formattedTime}</strong>
-        </div>
-
+      <div className="summary-card__meta-grid summary-card__meta-grid--stats">
         <div className="summary-card__meta-item">
           <span className="summary-card__meta-label">
             {translation('environmentSummary.scenarios')}
@@ -129,46 +147,6 @@ export const EnvironmentSummaryCard = ({
           <span className="summary-card__meta-label">{bugLabel}</span>
           <strong>{bugsCount}</strong>
         </div>
-
-        <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">{translation('environmentSummary.jira')}</span>
-
-          {jiraUrl ? (
-            <a
-              href={jiraUrl}
-              className="summary-card__meta-link"
-              target="_blank"
-              rel="noreferrer noopener"
-            >
-              {jiraTask}
-            </a>
-          ) : (
-            <strong>{jiraTask || translation('environmentSummary.notInformed')}</strong>
-          )}
-        </div>
-      </div>
-
-      <div className="summary-card__meta-grid summary-card__meta-grid--columns">
-        {environment.momento && (
-          <div className="summary-card__meta-item">
-            <span className="summary-card__meta-label">
-              {translation('environmentSummary.moment')}
-            </span>
-            <strong>{translateEnvironmentOption(environment.momento, translation)}</strong>
-          </div>
-        )}
-
-        {environment.release && (
-          <div className="summary-card__meta-item">
-            <span className="summary-card__meta-label">
-              {translation('environmentSummary.release')}
-            </span>
-            <strong>{environment.release}</strong>
-          </div>
-        )}
-      </div>
-
-      <div className="summary-card__meta-grid summary-card__meta-grid--columns">
         <div className="summary-card__meta-item">
           <span className="summary-card__meta-label">
             {translation('environmentSummary.participants')}
@@ -185,6 +163,34 @@ export const EnvironmentSummaryCard = ({
               })}
           </span>
         </div>
+      </div>
+
+      <div className="summary-card__chips-group">
+        <span className="summary-card__meta-label">{translation('environmentSummary.jira')}</span>
+        {jiraLinks.length === 0 ? (
+          <p className="summary-card__empty">{translation('environmentSummary.notInformed')}</p>
+        ) : (
+          <div className="summary-card__chip-row">
+            {jiraLinks.map((jira) => {
+              const href = buildJiraLink(jira);
+              return href ? (
+                <a
+                  key={jira}
+                  href={href}
+                  className="summary-card__chip"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  {jira}
+                </a>
+              ) : (
+                <span key={jira} className="summary-card__chip">
+                  {jira}
+                </span>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="summary-card__chips-group">
@@ -231,12 +237,20 @@ export const EnvironmentSummaryCard = ({
             {visibleParticipants.map((participant) => {
               const readableName = getReadableUserName(participant);
               const initials = getUserInitials(readableName);
+              const isPending = !environment.presentUsersIds.includes(participant.id);
               return (
                 <li key={participant.id} className="summary-card__avatar-item">
                   {participant.photoURL ? (
-                    <CachedImage src={participant.photoURL} alt={readableName} />
+                    <CachedImage
+                      src={participant.photoURL}
+                      alt={readableName}
+                      className={isPending ? 'summary-card__avatar-image--pending' : undefined}
+                    />
                   ) : (
                     <span className="summary-card__avatar-fallback">{initials}</span>
+                  )}
+                  {isPending && (
+                    <ClockIcon aria-hidden className="summary-card__avatar-pending-icon" />
                   )}
                   <span>{readableName}</span>
                 </li>

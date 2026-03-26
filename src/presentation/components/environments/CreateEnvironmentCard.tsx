@@ -73,8 +73,10 @@ export const CreateEnvironmentCard = ({
   onCreated,
 }: CreateEnvironmentCardProps) => {
   const [identificador, setIdentificador] = useState('');
-  const [urls, setUrls] = useState('');
-  const [jiraTask, setJiraTask] = useState('');
+  const [urlInput, setUrlInput] = useState('');
+  const [jiraInput, setJiraInput] = useState('');
+  const [urls, setUrls] = useState<string[]>([]);
+  const [jiraLinks, setJiraLinks] = useState<string[]>([]);
   const [tipoAmbiente, setTipoAmbiente] = useState(() =>
     getEnvironmentTypeByStoreStage(storeStage),
   );
@@ -148,14 +150,34 @@ export const CreateEnvironmentCard = ({
 
   const resetForm = () => {
     setIdentificador('');
-    setUrls('');
-    setJiraTask('');
+    setUrlInput('');
+    setJiraInput('');
+    setUrls([]);
+    setJiraLinks([]);
     setTipoAmbiente(getEnvironmentTypeByStoreStage(storeStage));
     setTipoTeste('Smoke-test');
     setMomento('');
     setRelease('');
     setSuiteId('');
     setEnvironmentColumnsInput('Desktop\nMobile');
+  };
+
+  const addUniqueItem = (
+    currentValue: string,
+    items: string[],
+    setItems: (value: string[] | ((current: string[]) => string[])) => void,
+    duplicatedMessage: string,
+  ) => {
+    const value = currentValue.trim();
+    if (!value) {
+      return false;
+    }
+    if (items.includes(value)) {
+      showToast({ type: 'error', message: duplicatedMessage });
+      return false;
+    }
+    setItems((current) => [...current, value]);
+    return true;
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -188,10 +210,8 @@ export const CreateEnvironmentCard = ({
 
     setIsSubmitting(true);
     try {
-      const urlsList = urls
-        .split('\n')
-        .map((entry) => entry.trim())
-        .filter((entry) => entry.length > 0);
+      const urlsList = Array.from(new Set([...urls, ...(urlInput.trim() ? [urlInput.trim()] : [])]));
+      const jiraList = [...jiraLinks, ...(jiraInput.trim() ? [jiraInput.trim()] : [])];
 
       const timeTracking = { start: null, end: null, totalMs: 0 };
 
@@ -201,7 +221,7 @@ export const CreateEnvironmentCard = ({
         suiteId: selectedSuite?.id ?? null,
         suiteName: selectedSuite?.name ?? null,
         urls: urlsList,
-        jiraTask: jiraTask.trim(),
+        jiraTask: jiraList.join('\n').trim(),
         tipoAmbiente,
         tipoTeste,
         momento: momentoOptions.length > 0 ? momento : null,
@@ -242,19 +262,73 @@ export const CreateEnvironmentCard = ({
           onChange={(event) => setIdentificador(event.target.value)}
           required
         />
-        <TextArea
-          id="urls"
-          label={t('createEnvironment.urls')}
-          value={urls}
-          onChange={(event) => setUrls(event.target.value)}
-          placeholder={t('createEnvironment.example')}
-        />
-        <TextInput
-          id="jiraTask"
-          label={t('createEnvironment.jiraTask')}
-          value={jiraTask}
-          onChange={(event) => setJiraTask(event.target.value)}
-        />
+        <div className="dynamic-links-row">
+          <TextInput
+            id="urls"
+            label={t('createEnvironment.urls')}
+            value={urlInput}
+            onChange={(event) => setUrlInput(event.target.value)}
+            placeholder={t('createEnvironment.example')}
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            className="dynamic-links-add-button"
+            onClick={() => {
+              const wasAdded = addUniqueItem(
+                urlInput,
+                urls,
+                setUrls,
+                t('createEnvironment.duplicateUrlError'),
+              );
+              if (wasAdded) {
+                setUrlInput('');
+              }
+            }}
+          >
+            +
+          </Button>
+        </div>
+        {urls.length > 0 && (
+          <div className="dynamic-links-list">
+            {urls.map((url) => (
+              <span key={url}>{url}</span>
+            ))}
+          </div>
+        )}
+        <div className="dynamic-links-row">
+          <TextInput
+            id="jiraTask"
+            label={t('createEnvironment.jiraTask')}
+            value={jiraInput}
+            onChange={(event) => setJiraInput(event.target.value)}
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            className="dynamic-links-add-button"
+            onClick={() => {
+              const wasAdded = addUniqueItem(
+                jiraInput,
+                jiraLinks,
+                setJiraLinks,
+                t('createEnvironment.duplicateJiraError'),
+              );
+              if (wasAdded) {
+                setJiraInput('');
+              }
+            }}
+          >
+            +
+          </Button>
+        </div>
+        {jiraLinks.length > 0 && (
+          <div className="dynamic-links-list">
+            {jiraLinks.map((link) => (
+              <span key={link}>{link}</span>
+            ))}
+          </div>
+        )}
         <SelectInput
           id="tipoAmbiente"
           label={t('createEnvironment.environmentType')}

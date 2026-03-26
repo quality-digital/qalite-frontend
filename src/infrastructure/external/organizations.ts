@@ -310,7 +310,6 @@ export const updateOrganization = async (
   if (payload.logoUrl !== undefined) {
     updatePayload.logoUrl = payload.logoUrl;
   }
-
   if (payload.browserstackCredentials !== undefined) {
     updatePayload.browserstackCredentials = browserstackCredentials;
   }

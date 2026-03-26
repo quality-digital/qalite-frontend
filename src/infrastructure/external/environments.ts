@@ -515,10 +515,6 @@ export const removeEnvironmentUser = async (
     }
 
     const data = snapshot.data({ serverTimestamps: 'estimate' }) ?? {};
-    if (data?.status === 'done') {
-      throw new Error('Não é possível sair de um ambiente concluído.');
-    }
-
     const presentUsers: string[] = (data?.presentUsersIds as string[] | undefined) ?? [];
     const participants: string[] = (data?.participants as string[] | undefined) ?? [];
     const isPresent = presentUsers.includes(userId);
@@ -1058,8 +1054,7 @@ export const exportEnvironmentAsPDF = (
   const normalizedParticipants = normalizeParticipants(environment, participantProfiles, t);
   const timeSummary = buildTimeTrackingSummary(environment);
   const environmentColumns = getEnvironmentColumns(environment);
-  const scenarioCount =
-    Object.values(environment.scenarios ?? {}).length * environmentColumns.length;
+  const scenarioCount = Object.values(environment.scenarios ?? {}).length;
   const statusLabel = t(ENVIRONMENT_STATUS_LABEL[environment.status]);
   const testTypeLabel = translateEnvironmentOption(environment.tipoTeste, t);
   const momentLabel = translateEnvironmentOption(environment.momento, t);
@@ -1101,9 +1096,6 @@ export const exportEnvironmentAsPDF = (
   const scenarioRows = Object.values(environment.scenarios ?? {})
     .map((scenario) => {
       const statuses = getScenarioPlatformStatuses(scenario, environmentColumns);
-      const evidenceLabel = scenario.evidenciaArquivoUrl
-        ? t('environmentEvidenceTable.evidencia_abrir')
-        : t('environmentEvidenceTable.evidencia_sem');
       const criticalityLabel = formatCriticalityLabel(scenario.criticidade, t);
       const criticalityClass = getCriticalityClassName(scenario.criticidade);
       const observation =
@@ -1120,13 +1112,6 @@ export const exportEnvironmentAsPDF = (
               return `<td><span class="${getStatusClassName(statusLabel)}">${escapeHtml(statusLabel)}</span></td>`;
             })
             .join('')}
-          <td>${
-            scenario.evidenciaArquivoUrl
-              ? `<a href="${escapeHtml(
-                  scenario.evidenciaArquivoUrl,
-                )}" target="_blank" rel="noreferrer noopener">${escapeHtml(evidenceLabel)}</a>`
-              : escapeHtml(evidenceLabel)
-          }</td>
         </tr>
       `;
     })
@@ -1337,7 +1322,6 @@ export const exportEnvironmentAsPDF = (
               <th>${t('environmentEvidenceTable.table_criticidade')}</th>
               <th>${t('environmentEvidenceTable.table_observacao')}</th>
               ${environmentColumns.map((column) => `<th>${escapeHtml(column)}</th>`).join('')}
-              <th>${t('environmentEvidenceTable.table_evidencia')}</th>
             </tr>
           </thead>
           <tbody>${scenarioRows}</tbody>
@@ -1393,12 +1377,6 @@ export const copyEnvironmentAsMarkdown = async (
   const scenarioTableRows = Object.values(environment.scenarios ?? {})
     .map((scenario) => {
       const statuses = getScenarioPlatformStatuses(scenario, environmentColumns);
-      const evidenceLabel = scenario.evidenciaArquivoUrl
-        ? t('environmentEvidenceTable.evidencia_abrir')
-        : t('environmentEvidenceTable.evidencia_sem');
-      const evidenceLink = scenario.evidenciaArquivoUrl
-        ? `[${evidenceLabel}](${scenario.evidenciaArquivoUrl})`
-        : evidenceLabel;
       const observation =
         scenario.observacao?.trim() || t('environmentEvidenceTable.observacao_none');
       return `| ${normalizeMarkdownCell(scenario.titulo)} | ${normalizeMarkdownCell(
@@ -1407,15 +1385,15 @@ export const copyEnvironmentAsMarkdown = async (
         observation,
       )} | ${environmentColumns
         .map((column) => normalizeMarkdownCell(translateScenarioStatus(statuses[column], t)))
-        .join(' | ')} | ${evidenceLink} |`;
+        .join(' | ')} |`;
     })
     .join('\n');
   const scenarioTable = scenarioTableRows
     ? `| ${t('environmentEvidenceTable.table_titulo')} | ${t('environmentEvidenceTable.table_categoria')} | ${t('environmentEvidenceTable.table_criticidade')} | ${t('environmentEvidenceTable.table_observacao')} | ${environmentColumns.join(
         ' | ',
-      )} | ${t('environmentEvidenceTable.table_evidencia')} |\n| --- | --- | --- | --- | ${environmentColumns
+      )} |\n| --- | --- | --- | --- | ${environmentColumns
         .map(() => '---')
-        .join(' | ')} | --- |\n${scenarioTableRows}`
+        .join(' | ')} |\n${scenarioTableRows}`
     : `- ${t('environmentExport.noScenarios')}`;
 
   const bugTableRows = bugs

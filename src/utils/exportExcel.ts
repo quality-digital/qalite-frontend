@@ -303,6 +303,8 @@ export const exportEnvironmentExcel = async ({
   bugHeaderLabels: [string, string, string, string];
 }) => {
   const workbook = new ExcelJS.Workbook();
+  const statusColumnCount = Math.max(0, scenarioRows[0]?.statuses.length ?? 0);
+  const hasEvidenceColumn = scenarioHeaderLabels.length > 4 + statusColumnCount;
 
   buildInfoSheet(workbook, environmentSheetName, infoHeaderLabels, infoRows);
 
@@ -315,11 +317,13 @@ export const exportEnvironmentExcel = async ({
     { header: scenarioHeaderLabels[1], key: 'categoria' },
     { header: scenarioHeaderLabels[2], key: 'criticidade' },
     { header: scenarioHeaderLabels[3], key: 'observacao' },
-    ...scenarioHeaderLabels.slice(4, -1).map((header, index) => ({
+    ...scenarioHeaderLabels.slice(4, 4 + statusColumnCount).map((header, index) => ({
       header,
       key: `status_${index}`,
     })),
-    { header: scenarioHeaderLabels[scenarioHeaderLabels.length - 1], key: 'evidencia' },
+    ...(hasEvidenceColumn
+      ? [{ header: scenarioHeaderLabels[scenarioHeaderLabels.length - 1], key: 'evidencia' }]
+      : []),
   ];
 
   const headers = worksheet.getRow(1);
@@ -336,7 +340,7 @@ export const exportEnvironmentExcel = async ({
         acc[`status_${index}`] = status;
         return acc;
       }, {}),
-      evidencia: row.evidencia ?? '',
+      ...(hasEvidenceColumn ? { evidencia: row.evidencia ?? '' } : {}),
     }),
   );
 
@@ -348,10 +352,7 @@ export const exportEnvironmentExcel = async ({
     const criticality = criticidadeStyle(String(criticalityCell.value ?? ''));
     stylePill(criticalityCell, criticality.bg, criticality.fg);
 
-    for (let columnIndex = 5; columnIndex < worksheet.columnCount; columnIndex += 1) {
-      if (columnIndex === worksheet.columnCount) {
-        break;
-      }
+    for (let columnIndex = 5; columnIndex < 5 + statusColumnCount; columnIndex += 1) {
       const statusCell = row.getCell(columnIndex);
       const status = statusStyle(String(statusCell.value ?? ''));
       stylePill(statusCell, status.bg, status.fg);
@@ -364,15 +365,19 @@ export const exportEnvironmentExcel = async ({
     [worksheet.getColumn(3).header as string, ...scenarioRows.map((row) => row.criticidade)],
     [worksheet.getColumn(4).header as string, ...scenarioRows.map((row) => row.observacao ?? '')],
     ...scenarioHeaderLabels
-      .slice(4, -1)
+      .slice(4, 4 + statusColumnCount)
       .map((_, index) => [
         worksheet.getColumn(5 + index).header as string,
         ...scenarioRows.map((row) => row.statuses[index] ?? ''),
       ]),
-    [
-      worksheet.getColumn(5 + scenarioHeaderLabels.slice(4, -1).length).header as string,
-      ...scenarioRows.map((row) => row.evidencia ?? ''),
-    ],
+    ...(hasEvidenceColumn
+      ? [
+          [
+            worksheet.getColumn(5 + statusColumnCount).header as string,
+            ...scenarioRows.map((row) => row.evidencia ?? ''),
+          ],
+        ]
+      : []),
   ];
   const columnWidths = applyColumnWidths(worksheet, columnValues);
   applyAutoRowHeights(worksheet, columnWidths);

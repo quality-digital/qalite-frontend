@@ -11,7 +11,6 @@ import { getScenarioPlatformStatuses } from '../../../infrastructure/external/en
 import { Button } from '../Button';
 import { Modal } from '../Modal';
 import { SelectInput } from '../SelectInput';
-import { TextArea } from '../TextArea';
 import { TextInput } from '../TextInput';
 import { TrashIcon } from '../icons';
 import {
@@ -81,8 +80,10 @@ export const EditEnvironmentModal = ({
   const { t: translation } = useTranslation();
 
   const [identificador, setIdentificador] = useState('');
-  const [urls, setUrls] = useState('');
-  const [jiraTask, setJiraTask] = useState('');
+  const [urlInput, setUrlInput] = useState('');
+  const [jiraInput, setJiraInput] = useState('');
+  const [urls, setUrls] = useState<string[]>([]);
+  const [jiraLinks, setJiraLinks] = useState<string[]>([]);
   const [tipoAmbiente, setTipoAmbiente] = useState('WS');
   const [tipoTeste, setTipoTeste] = useState('Smoke-test');
   const [momento, setMomento] = useState('');
@@ -99,8 +100,15 @@ export const EditEnvironmentModal = ({
     }
 
     setIdentificador(environment.identificador);
-    setUrls(environment.urls.join('\n'));
-    setJiraTask(environment.jiraTask);
+    setUrls(environment.urls ?? []);
+    setJiraLinks(
+      environment.jiraTask
+        .split('\n')
+        .map((entry) => entry.trim())
+        .filter(Boolean),
+    );
+    setUrlInput('');
+    setJiraInput('');
     setTipoAmbiente(environment.tipoAmbiente);
     setTipoTeste(environment.tipoTeste);
     setMomento(environment.momento ?? '');
@@ -214,15 +222,13 @@ export const EditEnvironmentModal = ({
       return;
     }
 
-    const urlsList = urls
-      .split('\n')
-      .map((entry) => entry.trim())
-      .filter((entry) => entry.length > 0);
+    const urlsList = [...urls, ...(urlInput.trim() ? [urlInput.trim()] : [])];
+    const jiraList = [...jiraLinks, ...(jiraInput.trim() ? [jiraInput.trim()] : [])];
 
     const payload: UpdateEnvironmentInput = {
       identificador: identificador.trim(),
       urls: urlsList,
-      jiraTask: jiraTask.trim(),
+      jiraTask: jiraList.join('\n').trim(),
       tipoAmbiente,
       tipoTeste,
       momento: momentoOptions.length > 0 ? momento : null,
@@ -261,6 +267,24 @@ export const EditEnvironmentModal = ({
     setPendingUpdate(null);
   };
 
+  const addUniqueItem = (
+    currentValue: string,
+    items: string[],
+    setItems: (value: string[] | ((current: string[]) => string[])) => void,
+    duplicatedMessage: string,
+  ) => {
+    const value = currentValue.trim();
+    if (!value) {
+      return false;
+    }
+    if (items.includes(value)) {
+      showToast({ type: 'error', message: duplicatedMessage });
+      return false;
+    }
+    setItems((current) => [...current, value]);
+    return true;
+  };
+
   return (
     <>
       <Modal
@@ -278,20 +302,104 @@ export const EditEnvironmentModal = ({
             required
             disabled={isLocked}
           />
-          <TextArea
-            id="urlsEditar"
-            label={translation('editEnvironmentModal.urls')}
-            value={urls}
-            onChange={(event) => setUrls(event.target.value)}
-            disabled={isLocked}
-          />
-          <TextInput
-            id="jiraEditar"
-            label={translation('editEnvironmentModal.jiraTask')}
-            value={jiraTask}
-            onChange={(event) => setJiraTask(event.target.value)}
-            disabled={isLocked}
-          />
+          <div className="dynamic-links-row">
+            <TextInput
+              id="urlsEditar"
+              label={translation('editEnvironmentModal.urls')}
+              value={urlInput}
+              onChange={(event) => setUrlInput(event.target.value)}
+              disabled={isLocked}
+            />
+          {!isLocked && (
+            <Button
+              type="button"
+              variant="secondary"
+              className="dynamic-links-add-button"
+              onClick={() => {
+                const wasAdded = addUniqueItem(
+                  urlInput,
+                  urls,
+                  setUrls,
+                  translation('createEnvironment.duplicateUrlError'),
+                );
+                if (wasAdded) {
+                  setUrlInput('');
+                }
+              }}
+            >
+              +
+            </Button>
+          )}
+          </div>
+          {urls.length > 0 && (
+            <div className="dynamic-links-list">
+              {urls.map((url) => (
+                <span key={url} className="dynamic-link-item">
+                  <span>{url}</span>
+                  {!isLocked && (
+                    <button
+                      type="button"
+                      className="dynamic-link-remove"
+                      onClick={() => setUrls((current) => current.filter((item) => item !== url))}
+                      aria-label={translation('delete')}
+                    >
+                      <TrashIcon aria-hidden className="dynamic-link-remove-icon" />
+                    </button>
+                  )}
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="dynamic-links-row">
+            <TextInput
+              id="jiraEditar"
+              label={translation('editEnvironmentModal.jiraTask')}
+              value={jiraInput}
+              onChange={(event) => setJiraInput(event.target.value)}
+              disabled={isLocked}
+            />
+          {!isLocked && (
+            <Button
+              type="button"
+              variant="secondary"
+              className="dynamic-links-add-button"
+              onClick={() => {
+                const wasAdded = addUniqueItem(
+                  jiraInput,
+                  jiraLinks,
+                  setJiraLinks,
+                  translation('createEnvironment.duplicateJiraError'),
+                );
+                if (wasAdded) {
+                  setJiraInput('');
+                }
+              }}
+            >
+              +
+            </Button>
+          )}
+          </div>
+          {jiraLinks.length > 0 && (
+            <div className="dynamic-links-list">
+              {jiraLinks.map((link) => (
+                <span key={link} className="dynamic-link-item">
+                  <span>{link}</span>
+                  {!isLocked && (
+                    <button
+                      type="button"
+                      className="dynamic-link-remove"
+                      onClick={() =>
+                        setJiraLinks((current) => current.filter((item) => item !== link))
+                      }
+                      aria-label={translation('delete')}
+                    >
+                      <TrashIcon aria-hidden className="dynamic-link-remove-icon" />
+                    </button>
+                  )}
+                </span>
+              ))}
+            </div>
+          )}
           <SelectInput
             id="tipoAmbienteEditar"
             label={translation('editEnvironmentModal.environmentType')}
