@@ -515,10 +515,6 @@ export const removeEnvironmentUser = async (
     }
 
     const data = snapshot.data({ serverTimestamps: 'estimate' }) ?? {};
-    if (data?.status === 'done') {
-      throw new Error('Não é possível sair de um ambiente concluído.');
-    }
-
     const presentUsers: string[] = (data?.presentUsersIds as string[] | undefined) ?? [];
     const participants: string[] = (data?.participants as string[] | undefined) ?? [];
     const isPresent = presentUsers.includes(userId);

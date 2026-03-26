@@ -46,25 +46,8 @@ export const useEnvironmentEngagement = (
       setHasEnteredEnvironment(false);
       return;
     }
-
-    const hasPersistedEntry = environment?.participants?.includes(userId) ?? false;
-
-    if (hasPersistedEntry && !hasEnteredEnvironment) {
-      setHasEnteredEnvironment(true);
-      return;
-    }
-
-    if (!hasPersistedEntry && !isCurrentUserPresent) {
-      setHasEnteredEnvironment(false);
-    }
-  }, [
-    environment?.id,
-    environment?.participants,
-    environmentId,
-    hasEnteredEnvironment,
-    isCurrentUserPresent,
-    userId,
-  ]);
+    setHasEnteredEnvironment(isCurrentUserPresent);
+  }, [environmentId, isCurrentUserPresent, userId]);
 
   const joinEnvironment = useCallback(async () => {
     if (!environmentId || !userId || isLocked || hasJoinedRef.current) {
@@ -90,7 +73,7 @@ export const useEnvironmentEngagement = (
   }, [hasEnteredEnvironment, isLocked, isJoiningEnvironment, joinEnvironment]);
 
   const leaveEnvironment = useCallback(async () => {
-    if (!environmentId || !userId || isLocked || isLeavingEnvironment) {
+    if (!environmentId || !userId || isLeavingEnvironment) {
       return;
     }
 
@@ -102,7 +85,7 @@ export const useEnvironmentEngagement = (
     } finally {
       setIsLeavingEnvironment(false);
     }
-  }, [environmentId, isLocked, isLeavingEnvironment, userId]);
+  }, [environmentId, isLeavingEnvironment, userId]);
 
   const shouldAutoJoin = hasEnteredEnvironment && !isLocked;
 
