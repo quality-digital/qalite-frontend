@@ -579,21 +579,16 @@ export const StoreSummaryPage = () => {
 
         setStore(data);
 
-        const [organizationData, scenariosData] = await Promise.all([
-          organizationService.getDetail(data.organizationId),
-          storeService.listScenarios(data.id),
-        ]);
+        const organizationData = await organizationService.getDetail(data.organizationId);
 
         if (organizationData) {
           setOrganization(organizationData);
         }
-        setScenarios(scenariosData);
       } catch (error) {
         console.error(error);
         showToast({ type: 'error', message: t('storeSummary.storeLoadError') });
       } finally {
         setIsLoadingStore(false);
-        setIsLoadingScenarios(false);
       }
     };
 
@@ -737,39 +732,52 @@ export const StoreSummaryPage = () => {
   }, [storeId]);
 
   useEffect(() => {
-    if (!storeId || !user) {
-      setSuites([]);
-      setIsLoadingSuites(false);
-      return;
+    if (!store?.id) {
+      setScenarios([]);
+      setIsLoadingScenarios(false);
+      return () => undefined;
     }
 
-    let isMounted = true;
-
-    const fetchSuites = async () => {
-      try {
-        setIsLoadingSuites(true);
-        const suitesData = await storeService.listSuites(storeId);
-        if (isMounted) {
-          setSuites(suitesData);
-        }
-      } catch (error) {
+    setIsLoadingScenarios(true);
+    const unsubscribe = storeService.listenToScenarios(
+      store.id,
+      (nextScenarios) => {
+        setScenarios(nextScenarios);
+        setIsLoadingScenarios(false);
+      },
+      (error) => {
         console.error(error);
-        if (isMounted) {
-          showToast({ type: 'error', message: t('storeSummary.suitesLoadError') });
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoadingSuites(false);
-        }
-      }
-    };
+        showToast({ type: 'error', message: t('storeSummary.storeLoadError') });
+        setIsLoadingScenarios(false);
+      },
+    );
 
-    void fetchSuites();
+    return () => unsubscribe();
+  }, [showToast, store?.id, t]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [showToast, storeId, t, user]);
+  useEffect(() => {
+    if (!store?.id) {
+      setSuites([]);
+      setIsLoadingSuites(false);
+      return () => undefined;
+    }
+
+    setIsLoadingSuites(true);
+    const unsubscribe = storeService.listenToSuites(
+      store.id,
+      (nextSuites) => {
+        setSuites(nextSuites);
+        setIsLoadingSuites(false);
+      },
+      (error) => {
+        console.error(error);
+        showToast({ type: 'error', message: t('storeSummary.suitesLoadError') });
+        setIsLoadingSuites(false);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [showToast, store?.id, t]);
 
   useEffect(() => {
     if (!store?.id) {

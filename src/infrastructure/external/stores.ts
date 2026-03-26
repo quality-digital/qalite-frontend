@@ -667,6 +667,27 @@ export const listSuites = async (storeId: string): Promise<StoreSuite[]> => {
   });
 };
 
+export const listenToSuites = (
+  storeId: string,
+  onChange: (suites: StoreSuite[]) => void,
+  onError?: (error: Error) => void,
+): Unsubscribe => {
+  const storeRef = doc(firebaseFirestore, STORES_COLLECTION, storeId);
+  const suitesCollection = collection(storeRef, SUITES_SUBCOLLECTION);
+  const suitesQuery = query(suitesCollection, orderBy('name'));
+
+  return onSnapshot(
+    suitesQuery,
+    (snapshot) => {
+      const suites = snapshot.docs.map((docSnapshot) =>
+        mapSuite(storeId, docSnapshot.id, docSnapshot.data({ serverTimestamps: 'estimate' })),
+      );
+      onChange(suites);
+    },
+    (error) => onError?.(error),
+  );
+};
+
 export const createSuite = async (
   payload: { storeId: string } & StoreSuiteInput,
 ): Promise<StoreSuite> => {
