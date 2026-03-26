@@ -238,6 +238,8 @@ export const EnvironmentPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isInvitingUserId, setIsInvitingUserId] = useState<string | null>(null);
   const [isBugModalOpen, setIsBugModalOpen] = useState(false);
   const [editingBug, setEditingBug] = useState<EnvironmentBug | null>(null);
   const [defaultBugScenarioId, setDefaultBugScenarioId] = useState<string | null>(null);
@@ -349,6 +351,25 @@ export const EnvironmentPage = () => {
   const handleCloseScenarioDetails = useCallback(() => {
     setScenarioDetailsId(null);
   }, []);
+
+  const handleInviteParticipant = useCallback(
+    async (userId: string) => {
+      if (!environment) {
+        return;
+      }
+      try {
+        setIsInvitingUserId(userId);
+        await environmentService.addUser(environment.id, userId);
+        showToast({ type: 'success', message: translation('environment.inviteSuccess') });
+      } catch (error) {
+        console.error(error);
+        showToast({ type: 'error', message: translation('environment.inviteError') });
+      } finally {
+        setIsInvitingUserId(null);
+      }
+    },
+    [environment, showToast, translation],
+  );
 
   const handleModalEvidenceFileUpload = useCallback(async () => {
     if (!scenarioDetailsId || !modalEvidenceFile) {
@@ -938,7 +959,7 @@ export const EnvironmentPage = () => {
                     {translation('environment.leave')}
                   </Button>
                 )}
-                {hasEnteredEnvironment && environment.status !== 'done' && (
+                {hasEnteredEnvironment && environment.status === 'done' && (
                   <Button
                     type="button"
                     variant="secondary"
@@ -960,9 +981,6 @@ export const EnvironmentPage = () => {
             progressPercentage={progressPercentage}
             progressLabel={progressLabel}
             scenarioCount={scenarioCount}
-            formattedTime={formattedTime}
-            formattedStart={formattedStart}
-            formattedEnd={formattedEnd}
             urls={urls}
             participants={participantProfiles}
             bugsCount={bugs.length}
@@ -975,7 +993,7 @@ export const EnvironmentPage = () => {
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={() => handleCopyLink(shareLinks.invite)}
+                  onClick={() => setIsInviteModalOpen(true)}
                   disabled={isShareDisabled}
                   data-testid="copy-invite-button"
                 >
@@ -1079,6 +1097,42 @@ export const EnvironmentPage = () => {
           onSaved={refetchBugs}
         />
       )}
+
+      <Modal
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        title={translation('environment.share.invite')}
+        description={translation('environment.participantsDescription')}
+      >
+        <div className="form-grid">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => handleCopyLink(shareLinks.invite)}
+            disabled={isShareDisabled}
+          >
+            <CopyIcon aria-hidden className="icon" />
+            {translation('environment.copyInviteLink')}
+          </Button>
+          {(environmentOrganization?.members ?? []).map((member) => {
+            const alreadyParticipant = (environment.participants ?? []).includes(member.uid);
+            return (
+              <div key={member.uid} className="collaborator-card">
+                <span>{member.displayName || member.email}</span>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => handleInviteParticipant(member.uid)}
+                  disabled={alreadyParticipant || isInvitingUserId === member.uid}
+                  isLoading={isInvitingUserId === member.uid}
+                >
+                  {alreadyParticipant ? translation('environment.invited') : translation('add')}
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      </Modal>
 
       <Modal
         isOpen={Boolean(scenarioDetailsId)}

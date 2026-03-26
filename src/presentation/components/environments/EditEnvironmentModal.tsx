@@ -11,7 +11,6 @@ import { getScenarioPlatformStatuses } from '../../../infrastructure/external/en
 import { Button } from '../Button';
 import { Modal } from '../Modal';
 import { SelectInput } from '../SelectInput';
-import { TextArea } from '../TextArea';
 import { TextInput } from '../TextInput';
 import { TrashIcon } from '../icons';
 import {
@@ -81,8 +80,10 @@ export const EditEnvironmentModal = ({
   const { t: translation } = useTranslation();
 
   const [identificador, setIdentificador] = useState('');
-  const [urls, setUrls] = useState('');
-  const [jiraTask, setJiraTask] = useState('');
+  const [urlInput, setUrlInput] = useState('');
+  const [jiraInput, setJiraInput] = useState('');
+  const [urls, setUrls] = useState<string[]>([]);
+  const [jiraLinks, setJiraLinks] = useState<string[]>([]);
   const [tipoAmbiente, setTipoAmbiente] = useState('WS');
   const [tipoTeste, setTipoTeste] = useState('Smoke-test');
   const [momento, setMomento] = useState('');
@@ -99,8 +100,15 @@ export const EditEnvironmentModal = ({
     }
 
     setIdentificador(environment.identificador);
-    setUrls(environment.urls.join('\n'));
-    setJiraTask(environment.jiraTask);
+    setUrls(environment.urls ?? []);
+    setJiraLinks(
+      environment.jiraTask
+        .split('\n')
+        .map((entry) => entry.trim())
+        .filter(Boolean),
+    );
+    setUrlInput('');
+    setJiraInput('');
     setTipoAmbiente(environment.tipoAmbiente);
     setTipoTeste(environment.tipoTeste);
     setMomento(environment.momento ?? '');
@@ -113,7 +121,7 @@ export const EditEnvironmentModal = ({
   );
 
   const isLocked = environment?.status === 'done';
-  const canDelete = Boolean(onDeleteRequest) && !isLocked;
+  const canDelete = Boolean(onDeleteRequest) && isLocked;
   const selectedSuite = useMemo(
     () => suites.find((suite) => suite.id === suiteId),
     [suiteId, suites],
@@ -214,15 +222,13 @@ export const EditEnvironmentModal = ({
       return;
     }
 
-    const urlsList = urls
-      .split('\n')
-      .map((entry) => entry.trim())
-      .filter((entry) => entry.length > 0);
+    const urlsList = [...urls, ...(urlInput.trim() ? [urlInput.trim()] : [])];
+    const jiraList = [...jiraLinks, ...(jiraInput.trim() ? [jiraInput.trim()] : [])];
 
     const payload: UpdateEnvironmentInput = {
       identificador: identificador.trim(),
       urls: urlsList,
-      jiraTask: jiraTask.trim(),
+      jiraTask: jiraList.join('\n').trim(),
       tipoAmbiente,
       tipoTeste,
       momento: momentoOptions.length > 0 ? momento : null,
@@ -278,20 +284,64 @@ export const EditEnvironmentModal = ({
             required
             disabled={isLocked}
           />
-          <TextArea
+          <TextInput
             id="urlsEditar"
             label={translation('editEnvironmentModal.urls')}
-            value={urls}
-            onChange={(event) => setUrls(event.target.value)}
+            value={urlInput}
+            onChange={(event) => setUrlInput(event.target.value)}
             disabled={isLocked}
           />
+          {!isLocked && (
+            <Button
+              type="button"
+              variant="secondary"
+              className="dynamic-links-add-button"
+              onClick={() => {
+                const value = urlInput.trim();
+                if (!value || urls.includes(value)) return;
+                setUrls((current) => [...current, value]);
+                setUrlInput('');
+              }}
+            >
+              +
+            </Button>
+          )}
+          {urls.length > 0 && (
+            <div className="dynamic-links-list">
+              {urls.map((url) => (
+                <span key={url}>{url}</span>
+              ))}
+            </div>
+          )}
           <TextInput
             id="jiraEditar"
             label={translation('editEnvironmentModal.jiraTask')}
-            value={jiraTask}
-            onChange={(event) => setJiraTask(event.target.value)}
+            value={jiraInput}
+            onChange={(event) => setJiraInput(event.target.value)}
             disabled={isLocked}
           />
+          {!isLocked && (
+            <Button
+              type="button"
+              variant="secondary"
+              className="dynamic-links-add-button"
+              onClick={() => {
+                const value = jiraInput.trim();
+                if (!value || jiraLinks.includes(value)) return;
+                setJiraLinks((current) => [...current, value]);
+                setJiraInput('');
+              }}
+            >
+              +
+            </Button>
+          )}
+          {jiraLinks.length > 0 && (
+            <div className="dynamic-links-list">
+              {jiraLinks.map((link) => (
+                <span key={link}>{link}</span>
+              ))}
+            </div>
+          )}
           <SelectInput
             id="tipoAmbienteEditar"
             label={translation('editEnvironmentModal.environmentType')}

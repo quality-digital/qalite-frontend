@@ -779,6 +779,123 @@ input[type='password']:invalid {
   transition: transform 150ms ease;
 }
 
+/* UX/UI refinements */
+.auth-page__hero-logo--brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.auth-page__hero-logo-image {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+}
+
+.store-card-logo {
+  width: 2.6rem;
+  height: 2.6rem;
+  object-fit: cover;
+  border-radius: 0.65rem;
+  background: var(--color-surface);
+  padding: 0.2rem;
+  border: 1px solid var(--color-border);
+}
+
+.collaborator-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.collaborator-card {
+  min-width: 0;
+}
+
+.collaborator-card .avatar {
+  flex-shrink: 0;
+}
+
+.dynamic-links-add-button {
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.dynamic-links-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.dynamic-links-list span {
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.table-scroll-area,
+.scenario-table-wrapper,
+.suite-table-wrapper,
+.suite-scenario-table-wrapper {
+  max-height: min(68vh, 46rem);
+  overflow: auto;
+}
+
+.data-table thead th,
+.scenario-table thead th,
+.suite-table thead th,
+.suite-scenario-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+.suite-scenario-checkbox {
+  width: 112px;
+  min-width: 112px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.suite-scenario-checkbox input[type='checkbox'] {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.scenario-status-select {
+  min-height: 2.35rem;
+  color: var(--color-text-primary);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+[data-theme='dark'] .scenario-status-select {
+  color: var(--color-text-primary);
+  background-color: var(--color-surface);
+}
+
+.environment-card__participant-avatar--pending .environment-card__avatar-image {
+  filter: grayscale(1);
+  opacity: 0.7;
+}
+
+.environment-card__pending-icon {
+  position: absolute;
+  right: -0.05rem;
+  bottom: -0.05rem;
+  width: 0.9rem;
+  height: 0.9rem;
+  padding: 0.1rem;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
 .theme-toggle:hover .theme-toggle__icon {
   transform: rotate(15deg);
 }

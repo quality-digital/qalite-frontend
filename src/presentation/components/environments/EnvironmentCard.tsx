@@ -18,6 +18,7 @@ interface EnvironmentCardProps {
   onClone?: (environment: Environment) => void;
   draggable?: boolean;
   onDragStart?: (event: DragEvent<HTMLDivElement>, environmentId: string) => void;
+  pendingParticipantIds?: string[];
 }
 
 export const EnvironmentCard = ({
@@ -29,6 +30,7 @@ export const EnvironmentCard = ({
   onClone,
   draggable = false,
   onDragStart,
+  pendingParticipantIds = [],
 }: EnvironmentCardProps) => {
   const { t } = useTranslation();
   const isLocked = environment.status === 'done';
@@ -142,10 +144,11 @@ export const EnvironmentCard = ({
                 {visibleParticipants.map((user) => {
                   const readableName = getReadableUserName(user);
                   const initials = getUserInitials(readableName);
+                  const isPending = pendingParticipantIds.includes(user.id);
                   return (
                     <li
                       key={user.id}
-                      className="environment-card__participant-avatar"
+                      className={`environment-card__participant-avatar ${isPending ? 'environment-card__participant-avatar--pending' : ''}`}
                       title={readableName}
                     >
                       {user.photoURL ? (
@@ -161,6 +164,9 @@ export const EnvironmentCard = ({
                         >
                           {initials}
                         </span>
+                      )}
+                      {isPending && (
+                        <ClockIcon aria-hidden className="environment-card__pending-icon" />
                       )}
                     </li>
                   );

@@ -672,6 +672,11 @@
       "exportExcelBugsSheetName": "Bugs",
       "exportExcelStatusLabel": "Status",
       "enterError": "Não foi possível entrar no ambiente.",
+      "inviteSuccess": "Usuário adicionado ao ambiente.",
+      "inviteError": "Não foi possível adicionar o usuário ao ambiente.",
+      "copyInviteLink": "Copiar link de convite",
+      "invited": "Convidado",
+      "participantsDescription": "Selecione usuários da organização e adicione ao ambiente.",
       "leaveSuccess": "Você saiu do ambiente.",
       "leaveError": "Não foi possível sair do ambiente."
     },

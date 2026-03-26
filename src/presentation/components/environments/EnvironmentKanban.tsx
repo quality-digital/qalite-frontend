@@ -355,6 +355,9 @@ export const EnvironmentKanban = ({
                         onDragStart={handleDragStart}
                         onOpen={handleOpenEnvironment}
                         onClone={requestCloneEnvironment}
+                        pendingParticipantIds={(environment.participants ?? []).filter(
+                          (id) => !(environment.presentUsersIds ?? []).includes(id),
+                        )}
                       />
                     ))
                   )}
@@ -417,6 +420,9 @@ export const EnvironmentKanban = ({
                         onDragStart={handleDragStart}
                         onOpen={handleOpenEnvironment}
                         onClone={requestCloneEnvironment}
+                        pendingParticipantIds={(environment.participants ?? []).filter(
+                          (id) => !(environment.presentUsersIds ?? []).includes(id),
+                        )}
                       />
                     ))}
                   </div>

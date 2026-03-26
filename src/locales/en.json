@@ -671,6 +671,11 @@
       "exportExcelBugsSheetName": "Bugs",
       "exportExcelStatusLabel": "Status",
       "enterError": "Unable to join environment.",
+      "inviteSuccess": "User added to environment.",
+      "inviteError": "Unable to add user to environment.",
+      "copyInviteLink": "Copy invite link",
+      "invited": "Invited",
+      "participantsDescription": "Select organization users and add them to this environment.",
       "leaveSuccess": "You left the environment.",
       "leaveError": "Unable to leave the environment."
     },

@@ -33,9 +33,6 @@ interface EnvironmentSummaryCardProps {
   progressPercentage: number;
   progressLabel: string;
   scenarioCount: number;
-  formattedTime: string;
-  formattedStart: string;
-  formattedEnd: string;
   urls: string[];
   participants: UserSummary[];
   bugsCount: number;
@@ -47,9 +44,6 @@ export const EnvironmentSummaryCard = ({
   progressPercentage,
   progressLabel,
   scenarioCount,
-  formattedTime,
-  formattedStart,
-  formattedEnd,
   urls,
   participants,
   bugsCount,
@@ -72,8 +66,10 @@ export const EnvironmentSummaryCard = ({
     ? translation('environmentSummary.storyfix')
     : translation('environmentSummary.bugs');
 
-  const jiraTask = environment.jiraTask?.trim() ?? '';
-  const jiraUrl = buildJiraLink(jiraTask);
+  const jiraLinks = (environment.jiraTask ?? '')
+    .split('\n')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
 
   return (
     <div className="summary-card summary-card--environment summary-card--compact">
@@ -88,25 +84,6 @@ export const EnvironmentSummaryCard = ({
       </div>
 
       <div className="summary-card__meta-grid">
-        <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">
-            {translation('environmentSummary.start')}
-          </span>
-          <strong>{formattedStart}</strong>
-        </div>
-
-        <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">{translation('environmentSummary.end')}</span>
-          <strong>{formattedEnd}</strong>
-        </div>
-
-        <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">
-            {translation('environmentSummary.totalTime')}
-          </span>
-          <strong>{formattedTime}</strong>
-        </div>
-
         <div className="summary-card__meta-item">
           <span className="summary-card__meta-label">
             {translation('environmentSummary.scenarios')}
@@ -128,23 +105,6 @@ export const EnvironmentSummaryCard = ({
         <div className="summary-card__meta-item">
           <span className="summary-card__meta-label">{bugLabel}</span>
           <strong>{bugsCount}</strong>
-        </div>
-
-        <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">{translation('environmentSummary.jira')}</span>
-
-          {jiraUrl ? (
-            <a
-              href={jiraUrl}
-              className="summary-card__meta-link"
-              target="_blank"
-              rel="noreferrer noopener"
-            >
-              {jiraTask}
-            </a>
-          ) : (
-            <strong>{jiraTask || translation('environmentSummary.notInformed')}</strong>
-          )}
         </div>
       </div>
 
@@ -185,6 +145,34 @@ export const EnvironmentSummaryCard = ({
               })}
           </span>
         </div>
+      </div>
+
+      <div className="summary-card__chips-group">
+        <span className="summary-card__meta-label">{translation('environmentSummary.jira')}</span>
+        {jiraLinks.length === 0 ? (
+          <p className="summary-card__empty">{translation('environmentSummary.notInformed')}</p>
+        ) : (
+          <div className="summary-card__chip-row">
+            {jiraLinks.map((jira) => {
+              const href = buildJiraLink(jira);
+              return href ? (
+                <a
+                  key={jira}
+                  href={href}
+                  className="summary-card__chip"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  {jira}
+                </a>
+              ) : (
+                <span key={jira} className="summary-card__chip">
+                  {jira}
+                </span>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="summary-card__chips-group">
