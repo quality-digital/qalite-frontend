@@ -6,6 +6,7 @@ import { CachedImage } from '../CachedImage';
 import { translateEnvironmentOption } from '../../constants/environmentOptions';
 import { useTranslation } from 'react-i18next';
 import { buildExternalLink } from '../../utils/externalLink';
+import { ClockIcon } from '../icons';
 
 const buildJiraLink = (value: string | null | undefined): string | null => {
   if (!value) {
@@ -219,12 +220,20 @@ export const EnvironmentSummaryCard = ({
             {visibleParticipants.map((participant) => {
               const readableName = getReadableUserName(participant);
               const initials = getUserInitials(readableName);
+              const isPending = !environment.presentUsersIds.includes(participant.id);
               return (
                 <li key={participant.id} className="summary-card__avatar-item">
                   {participant.photoURL ? (
-                    <CachedImage src={participant.photoURL} alt={readableName} />
+                    <CachedImage
+                      src={participant.photoURL}
+                      alt={readableName}
+                      className={isPending ? 'summary-card__avatar-image--pending' : undefined}
+                    />
                   ) : (
                     <span className="summary-card__avatar-fallback">{initials}</span>
+                  )}
+                  {isPending && (
+                    <ClockIcon aria-hidden className="summary-card__avatar-pending-icon" />
                   )}
                   <span>{readableName}</span>
                 </li>

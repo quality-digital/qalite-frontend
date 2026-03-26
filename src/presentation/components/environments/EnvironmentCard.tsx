@@ -1,4 +1,4 @@
-import type { DragEvent, MouseEvent } from 'react';
+import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { Environment } from '../../../domain/entities/environment';
@@ -16,8 +16,6 @@ interface EnvironmentCardProps {
   bugCount?: number;
   onOpen: (environment: Environment) => void;
   onClone?: (environment: Environment) => void;
-  draggable?: boolean;
-  onDragStart?: (event: DragEvent<HTMLDivElement>, environmentId: string) => void;
   pendingParticipantIds?: string[];
 }
 
@@ -28,8 +26,6 @@ export const EnvironmentCard = ({
   bugCount,
   onOpen,
   onClone,
-  draggable = false,
-  onDragStart,
   pendingParticipantIds = [],
 }: EnvironmentCardProps) => {
   const { t } = useTranslation();
@@ -46,7 +42,19 @@ export const EnvironmentCard = ({
     normalizedEnvironmentType === 'WS'
       ? t('environmentCard.bugStoryfix')
       : t('environmentCard.bugBugs');
-  const totalScenariosWithPlatforms = environment.totalCenarios * 2;
+  const scenarioEntries = Object.values(environment.scenarios ?? {});
+  const completedStatuses = new Set(['concluido', 'concluido_automatizado', 'nao_se_aplica']);
+  const completedScenariosCount = scenarioEntries.filter((scenario) => {
+    const perColumnStatuses = Object.values(scenario.statusByEnvironment ?? {});
+    if (perColumnStatuses.length > 0) {
+      return perColumnStatuses.every((status) => completedStatuses.has(status));
+    }
+    return completedStatuses.has(scenario.status);
+  }).length;
+  const progressPercentage =
+    scenarioEntries.length > 0
+      ? Math.round((completedScenariosCount / scenarioEntries.length) * 100)
+      : 0;
   const momentLabel = translateEnvironmentOption(environment.momento, t);
   const displayBugCount = bugCount ?? environment.bugs ?? 0;
 
@@ -68,8 +76,6 @@ export const EnvironmentCard = ({
           handleOpen();
         }
       }}
-      draggable={draggable && !isLocked}
-      onDragStart={(event) => onDragStart?.(event, environment.id)}
       data-status={environment.status}
     >
       {/* Header: Main title and status */}
@@ -117,7 +123,7 @@ export const EnvironmentCard = ({
           <div className="environment-card__stat-item">
             <ListIcon aria-hidden className="environment-card__stat-icon" />
             <div className="environment-card__stat-content">
-              <span className="environment-card__stat-value">{totalScenariosWithPlatforms}</span>
+              <span className="environment-card__stat-value">{environment.totalCenarios}</span>
               <span className="environment-card__stat-label">{t('scenarios')}</span>
             </div>
           </div>
@@ -199,6 +205,12 @@ export const EnvironmentCard = ({
             </button>
           )}
         </div>
+      </div>
+      <div className="environment-card__progress" aria-label={t('environmentCard.progressLabel')}>
+        <div
+          className="environment-card__progress-bar"
+          style={{ width: `${progressPercentage}%` }}
+        />
       </div>
     </div>
   );

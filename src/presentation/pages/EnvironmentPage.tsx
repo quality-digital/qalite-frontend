@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
@@ -15,7 +15,9 @@ import { storeService } from '../../infrastructure/services/storeService';
 import { slackService } from '../../infrastructure/services/slackService';
 import { BackButton } from '../components/BackButton';
 import { Button } from '../components/Button';
+import { TextInput } from '../components/TextInput';
 import { Layout } from '../components/Layout';
+import { UserAvatar } from '../components/UserAvatar';
 import { useToast } from '../context/ToastContext';
 import { useEnvironmentRealtime } from '../hooks/useEnvironmentRealtime';
 import { useTimeTracking } from '../hooks/useTimeTracking';
@@ -240,6 +242,8 @@ export const EnvironmentPage = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isInvitingUserId, setIsInvitingUserId] = useState<string | null>(null);
+  const [inviteSearch, setInviteSearch] = useState('');
+  const [invitePage, setInvitePage] = useState(1);
   const [isBugModalOpen, setIsBugModalOpen] = useState(false);
   const [editingBug, setEditingBug] = useState<EnvironmentBug | null>(null);
   const [defaultBugScenarioId, setDefaultBugScenarioId] = useState<string | null>(null);
@@ -290,6 +294,22 @@ export const EnvironmentPage = () => {
   const inviteParam = searchParams.get('invite');
   const shouldAutoJoinFromInvite = inviteParam === 'true' || inviteParam === '1';
   const detailScenario = scenarioDetailsId ? environment?.scenarios?.[scenarioDetailsId] : null;
+  const filteredInviteMembers = useMemo(() => {
+    const members = environmentOrganization?.members ?? [];
+    const query = inviteSearch.trim().toLowerCase();
+    if (!query) {
+      return members;
+    }
+    return members.filter((member) =>
+      `${member.displayName ?? ''} ${member.email}`.toLowerCase().includes(query),
+    );
+  }, [environmentOrganization?.members, inviteSearch]);
+  const invitePageSize = 5;
+  const totalInvitePages = Math.max(1, Math.ceil(filteredInviteMembers.length / invitePageSize));
+  const paginatedInviteMembers = filteredInviteMembers.slice(
+    (invitePage - 1) * invitePageSize,
+    invitePage * invitePageSize,
+  );
   const detailScenarioStatus =
     detailScenario && environment
       ? getScenarioPlatformStatuses(detailScenario, getEnvironmentColumns(environment))
@@ -360,7 +380,7 @@ export const EnvironmentPage = () => {
       try {
         setIsInvitingUserId(userId);
         await environmentService.addUser(environment.id, userId);
-        showToast({ type: 'success', message: translation('environment.inviteSuccess') });
+        showToast({ type: 'success', message: translation('environment.inviteSent') });
       } catch (error) {
         console.error(error);
         showToast({ type: 'error', message: translation('environment.inviteError') });
@@ -878,6 +898,7 @@ export const EnvironmentPage = () => {
 
     const attemptAutoJoin = async () => {
       await handleEnterEnvironment();
+      showToast({ type: 'success', message: translation('environment.inviteReceived') });
       clearInviteParam();
     };
 
@@ -887,7 +908,9 @@ export const EnvironmentPage = () => {
     handleEnterEnvironment,
     hasEnteredEnvironment,
     isLocked,
+    showToast,
     shouldAutoJoinFromInvite,
+    translation,
   ]);
 
   if (isLoading) {
@@ -959,7 +982,7 @@ export const EnvironmentPage = () => {
                     {translation('environment.leave')}
                   </Button>
                 )}
-                {hasEnteredEnvironment && environment.status === 'done' && (
+                {hasEnteredEnvironment && (
                   <Button
                     type="button"
                     variant="secondary"
@@ -993,7 +1016,11 @@ export const EnvironmentPage = () => {
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={() => setIsInviteModalOpen(true)}
+                  onClick={() => {
+                    setInvitePage(1);
+                    setInviteSearch('');
+                    setIsInviteModalOpen(true);
+                  }}
                   disabled={isShareDisabled}
                   data-testid="copy-invite-button"
                 >
@@ -1105,6 +1132,16 @@ export const EnvironmentPage = () => {
         description={translation('environment.participantsDescription')}
       >
         <div className="form-grid">
+          <TextInput
+            id="invite-search"
+            label={translation('environment.inviteSearch')}
+            value={inviteSearch}
+            onChange={(event) => {
+              setInviteSearch(event.target.value);
+              setInvitePage(1);
+            }}
+            placeholder={translation('environment.inviteSearchPlaceholder')}
+          />
           <Button
             type="button"
             variant="ghost"
@@ -1114,11 +1151,21 @@ export const EnvironmentPage = () => {
             <CopyIcon aria-hidden className="icon" />
             {translation('environment.copyInviteLink')}
           </Button>
-          {(environmentOrganization?.members ?? []).map((member) => {
+          {paginatedInviteMembers.map((member) => {
             const alreadyParticipant = (environment.participants ?? []).includes(member.uid);
             return (
               <div key={member.uid} className="collaborator-card">
-                <span>{member.displayName || member.email}</span>
+                <div className="flex items-center gap-2">
+                  <UserAvatar
+                    name={member.displayName || member.email}
+                    photoUrl={member.photoURL ?? null}
+                    size="sm"
+                  />
+                  <div className="collaborator-card__details">
+                    <strong>{member.displayName || member.email}</strong>
+                    <span>{member.email}</span>
+                  </div>
+                </div>
                 <Button
                   type="button"
                   variant="secondary"
@@ -1126,11 +1173,36 @@ export const EnvironmentPage = () => {
                   disabled={alreadyParticipant || isInvitingUserId === member.uid}
                   isLoading={isInvitingUserId === member.uid}
                 >
-                  {alreadyParticipant ? translation('environment.invited') : translation('add')}
+                  {alreadyParticipant ? translation('environment.invited') : translation('invite')}
                 </Button>
               </div>
             );
           })}
+          {filteredInviteMembers.length > invitePageSize && (
+            <div className="modal-actions">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setInvitePage((current) => Math.max(1, current - 1))}
+                disabled={invitePage === 1}
+              >
+                {translation('previous')}
+              </Button>
+              <span>
+                {invitePage}/{totalInvitePages}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() =>
+                  setInvitePage((current) => Math.min(totalInvitePages, current + 1))
+                }
+                disabled={invitePage === totalInvitePages}
+              >
+                {translation('next')}
+              </Button>
+            </div>
+          )}
         </div>
       </Modal>
 

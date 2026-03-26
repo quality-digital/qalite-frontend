@@ -267,6 +267,24 @@ export const EditEnvironmentModal = ({
     setPendingUpdate(null);
   };
 
+  const addUniqueItem = (
+    currentValue: string,
+    items: string[],
+    setItems: (value: string[] | ((current: string[]) => string[])) => void,
+    duplicatedMessage: string,
+  ) => {
+    const value = currentValue.trim();
+    if (!value) {
+      return false;
+    }
+    if (items.includes(value)) {
+      showToast({ type: 'error', message: duplicatedMessage });
+      return false;
+    }
+    setItems((current) => [...current, value]);
+    return true;
+  };
+
   return (
     <>
       <Modal
@@ -284,28 +302,35 @@ export const EditEnvironmentModal = ({
             required
             disabled={isLocked}
           />
-          <TextInput
-            id="urlsEditar"
-            label={translation('editEnvironmentModal.urls')}
-            value={urlInput}
-            onChange={(event) => setUrlInput(event.target.value)}
-            disabled={isLocked}
-          />
+          <div className="dynamic-links-row">
+            <TextInput
+              id="urlsEditar"
+              label={translation('editEnvironmentModal.urls')}
+              value={urlInput}
+              onChange={(event) => setUrlInput(event.target.value)}
+              disabled={isLocked}
+            />
           {!isLocked && (
             <Button
               type="button"
               variant="secondary"
               className="dynamic-links-add-button"
               onClick={() => {
-                const value = urlInput.trim();
-                if (!value || urls.includes(value)) return;
-                setUrls((current) => [...current, value]);
-                setUrlInput('');
+                const wasAdded = addUniqueItem(
+                  urlInput,
+                  urls,
+                  setUrls,
+                  translation('createEnvironment.duplicateUrlError'),
+                );
+                if (wasAdded) {
+                  setUrlInput('');
+                }
               }}
             >
               +
             </Button>
           )}
+          </div>
           {urls.length > 0 && (
             <div className="dynamic-links-list">
               {urls.map((url) => (
@@ -313,28 +338,35 @@ export const EditEnvironmentModal = ({
               ))}
             </div>
           )}
-          <TextInput
-            id="jiraEditar"
-            label={translation('editEnvironmentModal.jiraTask')}
-            value={jiraInput}
-            onChange={(event) => setJiraInput(event.target.value)}
-            disabled={isLocked}
-          />
+          <div className="dynamic-links-row">
+            <TextInput
+              id="jiraEditar"
+              label={translation('editEnvironmentModal.jiraTask')}
+              value={jiraInput}
+              onChange={(event) => setJiraInput(event.target.value)}
+              disabled={isLocked}
+            />
           {!isLocked && (
             <Button
               type="button"
               variant="secondary"
               className="dynamic-links-add-button"
               onClick={() => {
-                const value = jiraInput.trim();
-                if (!value || jiraLinks.includes(value)) return;
-                setJiraLinks((current) => [...current, value]);
-                setJiraInput('');
+                const wasAdded = addUniqueItem(
+                  jiraInput,
+                  jiraLinks,
+                  setJiraLinks,
+                  translation('createEnvironment.duplicateJiraError'),
+                );
+                if (wasAdded) {
+                  setJiraInput('');
+                }
               }}
             >
               +
             </Button>
           )}
+          </div>
           {jiraLinks.length > 0 && (
             <div className="dynamic-links-list">
               {jiraLinks.map((link) => (
