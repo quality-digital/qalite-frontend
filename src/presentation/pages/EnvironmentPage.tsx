@@ -276,7 +276,6 @@ export const EnvironmentPage = () => {
   const { t: translation, i18n } = useTranslation();
   const {
     bugCountByScenario,
-    progressPercentage,
     progressLabel,
     scenarioCount,
     executedScenariosCount,
@@ -934,7 +933,6 @@ export const EnvironmentPage = () => {
         <div className="environment-summary-grid">
           <EnvironmentSummaryCard
             environment={environment}
-            progressPercentage={progressPercentage}
             scenarioCount={scenarioCount}
             urls={urls}
             participants={participantProfiles}

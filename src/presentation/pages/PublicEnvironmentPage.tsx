@@ -27,7 +27,7 @@ export const PublicEnvironmentPage = () => {
   const { activeStore, setActiveOrganization, setActiveStore } = useOrganizationBranding();
   const { t, i18n } = useTranslation();
   const { bugs, isLoading: isLoadingBugs } = useEnvironmentBugs(environment?.id ?? null);
-  const { progressPercentage, scenarioCount, urls } = useEnvironmentDetails(
+  const { scenarioCount, urls } = useEnvironmentDetails(
     environment,
     bugs,
   );
@@ -124,7 +124,6 @@ export const PublicEnvironmentPage = () => {
         <div className="environment-summary-grid">
           <EnvironmentSummaryCard
             environment={environment}
-            progressPercentage={progressPercentage}
             scenarioCount={scenarioCount}
             urls={urls}
             participants={participants}

@@ -2097,30 +2097,32 @@ export const StoreSummaryPage = () => {
                             onChange={handleScenarioFilterChange('search')}
                             aria-label={t('storeSummary.scenarioSearchAriaLabel')}
                           />
-                          <select
-                            className="scenario-filter-input"
-                            value={scenarioFilters.category}
-                            onChange={handleScenarioFilterChange('category')}
-                            aria-label={t('storeSummary.scenarioCategoryFilterAriaLabel')}
-                          >
-                            {categoryFilterOptions.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
-                          <select
-                            className="scenario-filter-input"
-                            value={scenarioFilters.criticality}
-                            onChange={handleScenarioFilterChange('criticality')}
-                            aria-label={t('storeSummary.scenarioCriticalityFilterAriaLabel')}
-                          >
-                            {criticalityFilterOptions.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
+                          <div className="scenario-filter-group">
+                            <select
+                              className="scenario-filter-input"
+                              value={scenarioFilters.category}
+                              onChange={handleScenarioFilterChange('category')}
+                              aria-label={t('storeSummary.scenarioCategoryFilterAriaLabel')}
+                            >
+                              {categoryFilterOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                            <select
+                              className="scenario-filter-input"
+                              value={scenarioFilters.criticality}
+                              onChange={handleScenarioFilterChange('criticality')}
+                              aria-label={t('storeSummary.scenarioCriticalityFilterAriaLabel')}
+                            >
+                              {criticalityFilterOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                           {(scenarioFilters.search ||
                             scenarioFilters.category ||
                             scenarioFilters.criticality) && (
@@ -2545,36 +2547,38 @@ export const StoreSummaryPage = () => {
                                         aria-label={t('storeSummary.scenarioSearchAriaLabel')}
                                         data-testid="suite-filter-search"
                                       />
-                                      <select
-                                        className="scenario-filter-input"
-                                        value={suiteScenarioFilters.category}
-                                        onChange={handleSuiteScenarioFilterChange('category')}
-                                        aria-label={t(
-                                          'storeSummary.scenarioCategoryFilterAriaLabel',
-                                        )}
-                                        data-testid="suite-filter-category"
-                                      >
-                                        {categoryFilterOptions.map((option) => (
-                                          <option key={option.value} value={option.value}>
-                                            {option.label}
-                                          </option>
-                                        ))}
-                                      </select>
-                                      <select
-                                        className="scenario-filter-input"
-                                        value={suiteScenarioFilters.criticality}
-                                        onChange={handleSuiteScenarioFilterChange('criticality')}
-                                        aria-label={t(
-                                          'storeSummary.scenarioCriticalityFilterAriaLabel',
-                                        )}
-                                        data-testid="suite-filter-criticality"
-                                      >
-                                        {criticalityFilterOptions.map((option) => (
-                                          <option key={option.value} value={option.value}>
-                                            {option.label}
-                                          </option>
-                                        ))}
-                                      </select>
+                                      <div className="scenario-filter-group">
+                                        <select
+                                          className="scenario-filter-input"
+                                          value={suiteScenarioFilters.category}
+                                          onChange={handleSuiteScenarioFilterChange('category')}
+                                          aria-label={t(
+                                            'storeSummary.scenarioCategoryFilterAriaLabel',
+                                          )}
+                                          data-testid="suite-filter-category"
+                                        >
+                                          {categoryFilterOptions.map((option) => (
+                                            <option key={option.value} value={option.value}>
+                                              {option.label}
+                                            </option>
+                                          ))}
+                                        </select>
+                                        <select
+                                          className="scenario-filter-input"
+                                          value={suiteScenarioFilters.criticality}
+                                          onChange={handleSuiteScenarioFilterChange('criticality')}
+                                          aria-label={t(
+                                            'storeSummary.scenarioCriticalityFilterAriaLabel',
+                                          )}
+                                          data-testid="suite-filter-criticality"
+                                        >
+                                          {criticalityFilterOptions.map((option) => (
+                                            <option key={option.value} value={option.value}>
+                                              {option.label}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </div>
                                       <div className="suite-scenario-filters-actions">
                                         {(suiteScenarioFilters.search ||
                                           suiteScenarioFilters.category ||
