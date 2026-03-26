@@ -41,7 +41,6 @@ import { useEnvironmentDetails } from '../hooks/useEnvironmentDetails';
 import { useEnvironmentEngagement } from '../hooks/useEnvironmentEngagement';
 import { EnvironmentSummaryCard } from '../components/environments/EnvironmentSummaryCard';
 import { TOptions } from 'i18next';
-import { useScenarioEvidence } from '../hooks/useScenarioEvidence';
 import {
   getEnvironmentColumns,
   getScenarioPlatformStatuses,
@@ -248,13 +247,10 @@ export const EnvironmentPage = () => {
   const [editingBug, setEditingBug] = useState<EnvironmentBug | null>(null);
   const [defaultBugScenarioId, setDefaultBugScenarioId] = useState<string | null>(null);
   const [scenarioDetailsId, setScenarioDetailsId] = useState<string | null>(null);
-  const [modalEvidenceFile, setModalEvidenceFile] = useState<File | null>(null);
-  const [isCopyingMarkdown, setIsCopyingMarkdown] = useState(false);
   const [isSendingSlackSummary, setIsSendingSlackSummary] = useState(false);
   const [suites, setSuites] = useState<StoreSuite[]>([]);
   const [scenarios, setScenarios] = useState<StoreScenario[]>([]);
   const [storeName, setStoreName] = useState<string>('');
-  const [storeLogoUrl, setStoreLogoUrl] = useState<string | null>(null);
   const [storeSlackWebhookUrl, setStoreSlackWebhookUrl] = useState<string | null>(null);
   const { setActiveOrganization, setActiveStore } = useOrganizationBranding();
   const participantProfiles = useUserProfiles(environment?.participants ?? []);
@@ -276,9 +272,6 @@ export const EnvironmentPage = () => {
     enterEnvironment,
     leaveEnvironment,
   } = useEnvironmentEngagement(environment);
-  const { isUpdating: isUpdatingEvidence, handleEvidenceUpload } = useScenarioEvidence(
-    environment?.id,
-  );
   const { t: translation, i18n } = useTranslation();
   const {
     bugCountByScenario,
@@ -314,7 +307,6 @@ export const EnvironmentPage = () => {
     detailScenario && environment
       ? getScenarioPlatformStatuses(detailScenario, getEnvironmentColumns(environment))
       : null;
-  const canManageEvidence = !isInteractionLocked;
   const formatAutomationLabel = (value?: string | null) => {
     const labelKey = getAutomationLabelKey(value);
     if (labelKey) {
@@ -391,23 +383,6 @@ export const EnvironmentPage = () => {
     [environment, showToast, translation],
   );
 
-  const handleModalEvidenceFileUpload = useCallback(async () => {
-    if (!scenarioDetailsId || !modalEvidenceFile) {
-      return;
-    }
-
-    try {
-      await handleEvidenceUpload(scenarioDetailsId, modalEvidenceFile);
-      setModalEvidenceFile(null);
-    } catch (error) {
-      console.error(error);
-    }
-  }, [handleEvidenceUpload, modalEvidenceFile, scenarioDetailsId]);
-
-  useEffect(() => {
-    setModalEvidenceFile(null);
-  }, [detailScenario]);
-
   useEffect(() => {
     const nextOrganizationId = environmentOrganization?.id ?? null;
     if (activeOrganizationIdRef.current === nextOrganizationId) {
@@ -458,7 +433,6 @@ export const EnvironmentPage = () => {
   useEffect(() => {
     if (!environment?.storeId) {
       setStoreName('');
-      setStoreLogoUrl(null);
       setStoreSlackWebhookUrl(null);
       setActiveStore(null);
       return;
@@ -473,7 +447,6 @@ export const EnvironmentPage = () => {
           const resolvedStoreName = store?.name?.trim() || '';
           const resolvedStoreLogoUrl = store?.logoUrl ?? null;
           setStoreName(resolvedStoreName);
-          setStoreLogoUrl(resolvedStoreLogoUrl);
           setStoreSlackWebhookUrl(store?.slackWebhookUrl ?? null);
           setActiveStore(
             store
@@ -489,7 +462,6 @@ export const EnvironmentPage = () => {
         console.error(error);
         if (isMounted) {
           setStoreName('');
-          setStoreLogoUrl(null);
           setStoreSlackWebhookUrl(null);
           setActiveStore(null);
         }
@@ -636,30 +608,6 @@ export const EnvironmentPage = () => {
     await handleCopyLink(shareLinks.public);
   }, [environment, handleCopyLink, i18n.language, shareLinks.public]);
 
-  const handleExportPDF = useCallback(() => {
-    if (!environment) {
-      return;
-    }
-    environmentService.exportAsPDF(
-      environment,
-      bugs,
-      participantProfiles,
-      { name: storeName, logoUrl: storeLogoUrl },
-      {
-        name: environmentOrganization?.name ?? null,
-        logoUrl: environmentOrganization?.logoUrl ?? null,
-      },
-    );
-  }, [
-    bugs,
-    environment,
-    environmentOrganization?.logoUrl,
-    environmentOrganization?.name,
-    participantProfiles,
-    storeLogoUrl,
-    storeName,
-  ]);
-
   const handleExportExcel = useCallback(() => {
     if (!environment) {
       return;
@@ -670,9 +618,6 @@ export const EnvironmentPage = () => {
       const statuses = getScenarioPlatformStatuses(scenario, environmentColumns);
       const observation =
         scenario.observacao?.trim() || translation('environmentEvidenceTable.observacao_none');
-      const evidence = scenario.evidenciaArquivoUrl
-        ? scenario.evidenciaArquivoUrl
-        : translation('environmentEvidenceTable.evidencia_sem');
 
       return {
         titulo: scenario.titulo || translation('storeSummary.emptyValue'),
@@ -680,7 +625,6 @@ export const EnvironmentPage = () => {
         criticidade: formatCriticalityLabel(scenario.criticidade),
         observacao: observation,
         statuses: environmentColumns.map((column) => formatScenarioStatusLabel(statuses[column])),
-        evidencia: evidence,
       };
     });
 
@@ -794,7 +738,6 @@ export const EnvironmentPage = () => {
         translation('environmentEvidenceTable.table_criticidade'),
         translation('environmentEvidenceTable.table_observacao'),
         ...environmentColumns,
-        translation('environmentEvidenceTable.table_evidencia'),
       ],
       bugRows,
       bugHeaderLabels: [
@@ -820,24 +763,6 @@ export const EnvironmentPage = () => {
     translation,
     urls,
   ]);
-
-  const handleCopyMarkdown = useCallback(async () => {
-    if (!environment) {
-      return;
-    }
-
-    setIsCopyingMarkdown(true);
-
-    try {
-      await environmentService.copyAsMarkdown(environment, bugs, participantProfiles, storeName);
-      showToast({ type: 'success', message: translation('environment.copyMarkdownSuccess') });
-    } catch (error) {
-      console.error(error);
-      showToast({ type: 'error', message: translation('environment.copyMarkdownError') });
-    } finally {
-      setIsCopyingMarkdown(false);
-    }
-  }, [bugs, environment, participantProfiles, showToast, storeName, translation]);
 
   const openCreateBugModal = useCallback((scenarioId: string) => {
     setEditingBug(null);
@@ -1041,34 +966,12 @@ export const EnvironmentPage = () => {
               <Button
                 type="button"
                 variant="ghost"
-                onClick={handleExportPDF}
-                disabled={isShareDisabled}
-                data-testid="export-environment-pdf"
-              >
-                <FileTextIcon aria-hidden className="icon" />
-                {translation('environment.exportPDF')}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
                 onClick={handleExportExcel}
                 disabled={isShareDisabled}
                 data-testid="export-environment-excel"
               >
                 <FileTextIcon aria-hidden className="icon" />
                 {translation('environment.exportExcel')}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={handleCopyMarkdown}
-                disabled={isShareDisabled}
-                isLoading={isCopyingMarkdown}
-                loadingText={translation('environment.copying')}
-                data-testid="copy-markdown-button"
-              >
-                <CopyIcon aria-hidden className="icon" />
-                {translation('environment.copyMarkdown')}
               </Button>
             </div>
           </div>
@@ -1173,7 +1076,9 @@ export const EnvironmentPage = () => {
                   disabled={alreadyParticipant || isInvitingUserId === member.uid}
                   isLoading={isInvitingUserId === member.uid}
                 >
-                  {alreadyParticipant ? translation('environment.invited') : translation('invite')}
+                  {alreadyParticipant
+                    ? translation('environment.invited')
+                    : translation('environment.inviteAction')}
                 </Button>
               </div>
             );
@@ -1186,7 +1091,7 @@ export const EnvironmentPage = () => {
                 onClick={() => setInvitePage((current) => Math.max(1, current - 1))}
                 disabled={invitePage === 1}
               >
-                {translation('previous')}
+                {translation('environment.previousPage')}
               </Button>
               <span>
                 {invitePage}/{totalInvitePages}
@@ -1194,12 +1099,10 @@ export const EnvironmentPage = () => {
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() =>
-                  setInvitePage((current) => Math.min(totalInvitePages, current + 1))
-                }
+                onClick={() => setInvitePage((current) => Math.min(totalInvitePages, current + 1))}
                 disabled={invitePage === totalInvitePages}
               >
-                {translation('next')}
+                {translation('environment.nextPage')}
               </Button>
             </div>
           )}
@@ -1273,51 +1176,6 @@ export const EnvironmentPage = () => {
                 className="scenario-details-text"
                 as="p"
               />
-            </div>
-            <div className="scenario-details-section">
-              <span className="scenario-details-label">
-                {translation('environmentEvidenceTable.table_evidencia')}
-              </span>
-              {detailScenario.evidenciaArquivoUrl ? (
-                <a
-                  href={detailScenario.evidenciaArquivoUrl}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="text-link"
-                >
-                  {translation('environmentEvidenceTable.evidencia_abrir')}
-                </a>
-              ) : canManageEvidence ? (
-                <div className="scenario-evidence-actions">
-                  <div className="scenario-evidence-field">
-                    <input
-                      id="scenario-evidence-upload"
-                      type="file"
-                      accept="image/*,application/pdf"
-                      className="file-input"
-                      onChange={(event) => setModalEvidenceFile(event.target.files?.[0] ?? null)}
-                    />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className="scenario-evidence-upload-button"
-                      onClick={handleModalEvidenceFileUpload}
-                      disabled={!modalEvidenceFile}
-                      isLoading={isUpdatingEvidence}
-                      loadingText={translation('saving')}
-                    >
-                      {translation('environmentEvidenceTable.evidencia_upload')}
-                    </Button>
-                  </div>
-                  <span className="form-hint">
-                    {translation('environmentEvidenceTable.evidencia_upload_hint')}
-                  </span>
-                </div>
-              ) : (
-                <span className="section-subtitle">
-                  {translation('environmentEvidenceTable.evidencia_sem')}
-                </span>
-              )}
             </div>
             <div className="scenario-details-section">
               <span className="scenario-details-label">
