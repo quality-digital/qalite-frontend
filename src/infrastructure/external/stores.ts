@@ -235,8 +235,6 @@ export const listStoresSummary = async (organizationId: string): Promise<Store[]
   });
 };
 
-export const listStores = listStoresSummary;
-
 export const listenToStores = (
   organizationId: string,
   onChange: (stores: Store[]) => void,
@@ -287,8 +285,6 @@ export const getStoreDetail = async (storeId: string): Promise<Store | null> => 
     },
   });
 };
-
-export const getStore = getStoreDetail;
 
 export const createStore = async (payload: CreateStorePayload): Promise<Store> => {
   const storesCollection = collection(firebaseFirestore, STORES_COLLECTION);
@@ -948,7 +944,7 @@ const updateScenarioCategories = async (
 };
 
 export const exportStoreData = async (storeId: string): Promise<StoreExportPayload> => {
-  const store = await getStore(storeId);
+  const store = await getStoreDetail(storeId);
 
   if (!store) {
     throw new Error('Loja não encontrada.');

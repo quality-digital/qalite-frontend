@@ -9,10 +9,10 @@ import {
   deleteStore,
   deleteSuite,
   exportStoreData,
-  getStore,
+  getStoreDetail,
   listCategories,
   listScenarios,
-  listStores,
+  listStoresSummary,
   listSuites,
   listenToScenarios,
   listenToSuites,
@@ -24,10 +24,10 @@ import {
 } from '../external/stores';
 
 export const firebaseStoreRepository: StoreRepository = {
-  listByOrganization: listStores,
-  getById: getStore,
-  listSummary: listStores,
-  getDetail: getStore,
+  listByOrganization: listStoresSummary,
+  getById: getStoreDetail,
+  listSummary: listStoresSummary,
+  getDetail: getStoreDetail,
   create: createStore,
   update: updateStore,
   uploadLogo: uploadStoreLogo,

@@ -5,9 +5,9 @@ import {
   cancelOrganizationAccessRequest,
   createOrganization,
   deleteOrganization,
-  getOrganization,
+  getOrganizationDetail,
   getUserOrganization,
-  listOrganizations,
+  listOrganizationsSummary,
   requestOrganizationAccess,
   removeUserFromOrganization,
   updateOrganization,
@@ -15,10 +15,10 @@ import {
 } from '../external/organizations';
 
 export const firebaseOrganizationRepository: OrganizationRepository = {
-  list: listOrganizations,
-  getById: getOrganization,
-  listSummary: listOrganizations,
-  getDetail: getOrganization,
+  list: listOrganizationsSummary,
+  getById: getOrganizationDetail,
+  listSummary: listOrganizationsSummary,
+  getDetail: getOrganizationDetail,
   create: createOrganization,
   update: updateOrganization,
   uploadLogo: uploadOrganizationLogo,

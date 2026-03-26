@@ -2110,13 +2110,7 @@ input[type='password']:invalid {
 :root {
   color-scheme: light;
   --font-family-qa:
-    'Inter',
-    'Segoe UI',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Helvetica Neue',
-    Arial,
-    sans-serif;
+    'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
   font-family: var(--font-family-qa);
   font-size: 16px;
   line-height: 1.5;
