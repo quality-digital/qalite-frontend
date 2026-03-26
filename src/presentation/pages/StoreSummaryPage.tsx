@@ -239,6 +239,7 @@ export const StoreSummaryPage = () => {
     };
   }, [store?.adminUrl, t]);
   const [isStoreSettingsOpen, setIsStoreSettingsOpen] = useState(false);
+  const [isStoreSlackSectionOpen, setIsStoreSlackSectionOpen] = useState(false);
   const [storeSettings, setStoreSettings] = useState({
     name: '',
     site: '',
@@ -615,6 +616,7 @@ export const StoreSummaryPage = () => {
       slackWebhookUrl: store.slackWebhookUrl ?? '',
       stage: store.stage === 'Preview' ? 'Preview' : 'WS',
     });
+    setIsStoreSlackSectionOpen(Boolean(store.slackWebhookUrl?.trim()));
     setStoreSettingsLogoFile(null);
     setStoreSettingsLogoPreview(store.logoUrl ?? null);
     setStoreSettingsError(null);
@@ -649,7 +651,9 @@ export const StoreSummaryPage = () => {
     const trimmedSite = storeSettings.site.trim();
     const trimmedAdminUrl = storeSettings.adminUrl.trim();
 
-    const trimmedSlackWebhookUrl = storeSettings.slackWebhookUrl.trim();
+    const trimmedSlackWebhookUrl = isStoreSlackSectionOpen
+      ? storeSettings.slackWebhookUrl.trim()
+      : '';
 
     if (!trimmedName) {
       setStoreSettingsError(t('storeSummary.storeNameRequired'));
@@ -2895,20 +2899,60 @@ export const StoreSummaryPage = () => {
               <p className="form-hint">{t('storeSummary.storeLogoHint')}</p>
             </div>
           </div>
-          <TextInput
-            id="store-settings-slack-webhook"
-            label={t('storeSummary.storeSlackWebhookLabel')}
-            value={storeSettings.slackWebhookUrl}
-            onChange={(event) =>
-              setStoreSettings((previous) => ({
-                ...previous,
-                slackWebhookUrl: event.target.value,
-              }))
-            }
-            placeholder={t('storeSummary.storeSlackWebhookPlaceholder')}
-            dataTestId="store-settings-slack-webhook"
-          />
-          <p className="form-hint">{t('storeSummary.storeSlackWebhookHint')}</p>
+          <div className="collapsible-section">
+            <div className="collapsible-section__header">
+              <div className="collapsible-section__titles">
+                <img
+                  className="collapsible-section__icon"
+                  src="https://img.icons8.com/external-tal-revivo-color-tal-revivo/24/external-slack-replace-email-text-messaging-and-instant-messaging-for-your-team-logo-color-tal-revivo.png"
+                  alt={t('adminOrganizationsPage.form.slack.iconAlt')}
+                  width={24}
+                  height={24}
+                />
+                <p className="collapsible-section__title">
+                  {t('storeSummary.storeSlackWebhookLabel')}
+                </p>
+              </div>
+              <label className="collapsible-section__toggle">
+                <input
+                  type="checkbox"
+                  checked={isStoreSlackSectionOpen}
+                  onChange={() => {
+                    setIsStoreSlackSectionOpen((previous) => {
+                      const nextValue = !previous;
+                      if (!nextValue) {
+                        setStoreSettings((form) => ({ ...form, slackWebhookUrl: '' }));
+                      }
+                      return nextValue;
+                    });
+                  }}
+                />
+                <span>
+                  {isStoreSlackSectionOpen
+                    ? t('adminOrganizationsPage.form.slack.enabled')
+                    : t('adminOrganizationsPage.form.slack.disabled')}
+                </span>
+              </label>
+            </div>
+            {isStoreSlackSectionOpen && (
+              <>
+                <TextInput
+                  id="store-settings-slack-webhook"
+                  label={t('storeSummary.storeSlackWebhookLabel')}
+                  value={storeSettings.slackWebhookUrl}
+                  onChange={(event) =>
+                    setStoreSettings((previous) => ({
+                      ...previous,
+                      slackWebhookUrl: event.target.value,
+                    }))
+                  }
+                  placeholder={t('storeSummary.storeSlackWebhookPlaceholder')}
+                  dataTestId="store-settings-slack-webhook"
+                />
+                <p className="form-hint">{t('storeSummary.storeSlackWebhookHint')}</p>
+              </>
+            )}
+          </div>
           <div className="form-actions">
             <Button
               type="submit"
