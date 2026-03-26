@@ -60,7 +60,6 @@ import { useTranslation } from 'react-i18next';
 import { buildExternalLink } from '../utils/externalLink';
 import { exportScenarioExcel } from '../../utils/exportExcel';
 import { formatDateTime } from '../../shared/utils/time';
-import { extractDominantColorFromFile } from '../../shared/utils/branding';
 
 const emptyScenarioForm: StoreScenarioInput = {
   title: '',
@@ -672,9 +671,6 @@ export const StoreSummaryPage = () => {
       const uploadedLogoUrl = storeSettingsLogoFile
         ? await storeService.uploadLogo(store.id, storeSettingsLogoFile)
         : undefined;
-      const primaryColor = storeSettingsLogoFile
-        ? await extractDominantColorFromFile(storeSettingsLogoFile)
-        : store.primaryColor ?? null;
       const updated = await storeService.update(store.id, {
         name: trimmedName,
         site: trimmedSite,
@@ -684,7 +680,6 @@ export const StoreSummaryPage = () => {
         ...(uploadedLogoUrl !== undefined
           ? { logoUrl: uploadedLogoUrl }
           : { logoUrl: storeSettings.logoUrl || null }),
-        primaryColor,
         slackWebhookUrl: trimmedSlackWebhookUrl || null,
       });
 
@@ -926,7 +921,6 @@ export const StoreSummaryPage = () => {
             id: store.id,
             name: store.name,
             logoUrl: store.logoUrl,
-            primaryColor: store.primaryColor ?? null,
           }
         : null,
     );

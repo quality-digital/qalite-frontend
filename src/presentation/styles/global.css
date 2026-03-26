@@ -872,8 +872,8 @@ input[type='password']:invalid {
 .scenario-table-wrapper,
 .suite-table-wrapper,
 .suite-scenario-table-wrapper {
-  max-height: min(68vh, 46rem);
-  overflow: auto;
+  max-height: none;
+  overflow: visible;
 }
 
 .data-table thead th,
@@ -910,6 +910,10 @@ input[type='password']:invalid {
   color: var(--color-text-primary);
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
+}
+
+.icon {
+  color: currentColor;
 }
 
 [data-theme='dark'] .scenario-status-select {
@@ -5091,8 +5095,7 @@ button.store-summary-highlight:focus-visible {
 
 .scenario-table-wrapper {
   width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: visible;
 }
 
 .scenario-filter-bar {
@@ -5277,9 +5280,8 @@ button.store-summary-highlight:focus-visible {
 
 .table-scroll-area {
   width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 0.25rem;
+  overflow: visible;
+  padding-bottom: 0;
 }
 
 .table-scroll-area::-webkit-scrollbar,
@@ -5791,7 +5793,7 @@ button.store-summary-highlight:focus-visible {
   border: none;
   background: transparent;
   width: 100%;
-  overflow-x: auto;
+  overflow: visible;
 }
 
 .suite-table-header {

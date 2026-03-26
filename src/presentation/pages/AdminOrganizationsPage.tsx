@@ -12,7 +12,6 @@ import { TextInput } from '../components/TextInput';
 import { CachedImage } from '../components/CachedImage';
 import { useToast } from '../context/ToastContext';
 import { ActivityIcon, PieChartIcon, StorefrontIcon, UsersGroupIcon } from '../components/icons';
-import { extractDominantColorFromFile } from '../../shared/utils/branding';
 
 export const AdminOrganizationsPage = () => {
   const navigate = useNavigate();
@@ -105,12 +104,10 @@ export const AdminOrganizationsPage = () => {
 
       if (logoFile) {
         const logoUrl = await organizationService.uploadLogo(newOrganization.id, logoFile);
-        const primaryColor = await extractDominantColorFromFile(logoFile);
         await organizationService.update(newOrganization.id, {
           name: trimmedName,
           description: createFormState.description.trim(),
           logoUrl,
-          primaryColor,
         });
       }
 

@@ -6,7 +6,6 @@ export interface BrandingStore {
   id?: string | null;
   name: string;
   logoUrl?: string | null;
-  primaryColor?: string | null;
 }
 
 interface OrganizationBrandingContextValue {

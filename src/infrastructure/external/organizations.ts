@@ -69,7 +69,6 @@ export interface UpdateOrganizationPayload {
   name: string;
   description: string;
   logoUrl?: string | null;
-  primaryColor?: string | null;
   slackWebhookUrl?: string | null;
   emailDomain?: string | null;
   browserstackCredentials?: BrowserstackCredentials | null;
@@ -275,7 +274,6 @@ export const createOrganization = async (
     name: trimmedName,
     description: trimmedDescription,
     logoUrl: null,
-    primaryColor: null,
     slackWebhookUrl,
     emailDomain,
     browserstackCredentials,
@@ -312,10 +310,6 @@ export const updateOrganization = async (
   if (payload.logoUrl !== undefined) {
     updatePayload.logoUrl = payload.logoUrl;
   }
-  if (payload.primaryColor !== undefined) {
-    updatePayload.primaryColor = payload.primaryColor;
-  }
-
   if (payload.browserstackCredentials !== undefined) {
     updatePayload.browserstackCredentials = browserstackCredentials;
   }
@@ -908,7 +902,6 @@ const mapOrganizationSummary = (
     name: ((data?.name as string) ?? '').trim(),
     description: ((data?.description as string) ?? '').trim(),
     logoUrl: ((data?.logoUrl as string) ?? '').trim() || null,
-    primaryColor: ((data?.primaryColor as string) ?? '').trim() || null,
     slackWebhookUrl: ((data?.slackWebhookUrl as string) ?? '').trim() || null,
     emailDomain: normalizeEmailDomain((data?.emailDomain as string | null | undefined) ?? null),
     browserstackCredentials,
@@ -938,7 +931,6 @@ const mapOrganizationDetail = async (
     name: ((data?.name as string) ?? '').trim(),
     description: ((data?.description as string) ?? '').trim(),
     logoUrl: ((data?.logoUrl as string) ?? '').trim() || null,
-    primaryColor: ((data?.primaryColor as string) ?? '').trim() || null,
     slackWebhookUrl: ((data?.slackWebhookUrl as string) ?? '').trim() || null,
     emailDomain: normalizeEmailDomain((data?.emailDomain as string | null | undefined) ?? null),
     browserstackCredentials,

@@ -23,7 +23,6 @@ export interface Organization {
   name: string;
   description: string;
   logoUrl: string | null;
-  primaryColor?: string | null;
   slackWebhookUrl: string | null;
   emailDomain: string | null;
   browserstackCredentials?: BrowserstackCredentials | null;
@@ -46,7 +45,6 @@ export interface UpdateOrganizationPayload {
   name: string;
   description: string;
   logoUrl?: string | null;
-  primaryColor?: string | null;
   slackWebhookUrl?: string | null;
   emailDomain?: string | null;
   browserstackCredentials?: BrowserstackCredentials | null;

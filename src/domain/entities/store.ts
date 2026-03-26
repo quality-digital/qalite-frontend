@@ -6,7 +6,6 @@ export interface Store {
   adminUrl: string;
   stage: string;
   logoUrl: string | null;
-  primaryColor?: string | null;
   slackWebhookUrl: string | null;
   scenarioCount: number;
   automatedScenarioCount: number;
@@ -76,7 +75,6 @@ export interface CreateStorePayload {
   adminUrl?: string;
   stage: string;
   logoUrl?: string | null;
-  primaryColor?: string | null;
   slackWebhookUrl?: string | null;
 }
 
@@ -86,7 +84,6 @@ export interface UpdateStorePayload {
   adminUrl?: string;
   stage: string;
   logoUrl?: string | null;
-  primaryColor?: string | null;
   slackWebhookUrl?: string | null;
 }
 
