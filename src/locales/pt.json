@@ -616,9 +616,7 @@
         "totalScenarios": "Cenários totais",
         "averageAutomation": "Automação média",
         "manualCases": "Casos manuais"
-      },
-      "environment-types-label": "Tipos de ambiente adicionais",
-      "environment-types-placeholder": "Ex.: Homolog\nUAT\nSandbox"
+      }
     },
     "environment": {
       "loading": "Carregando dados do ambiente...",
