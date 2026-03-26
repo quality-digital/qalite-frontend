@@ -5169,6 +5169,61 @@ button.store-summary-highlight:focus-visible {
   text-decoration: underline;
 }
 
+.environment-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.environment-table__filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  padding: 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.9rem;
+  background: var(--color-surface-alt);
+}
+
+.environment-table__filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.environment-table__filter-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.environment-table__filter-select {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.55rem 0.75rem;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
+}
+
+.environment-table__filter-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-ring);
+}
+
+.environment-table__filter-select option {
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+}
+
+@media (max-width: 768px) {
+  .environment-table__filters {
+    grid-template-columns: 1fr;
+  }
+}
+
 .scenario-column-sort {
   display: flex;
   align-items: center;
@@ -8213,7 +8268,6 @@ textarea:focus-visible {
     max-width: min(56vw, 240px);
   }
 
-  .environment-table__filters,
   .scenario-table-header,
   .suite-table-header,
   .scenario-table-actions,
