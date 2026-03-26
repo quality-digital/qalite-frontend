@@ -28,36 +28,19 @@ export const useStoreEnvironments = (
   const [isLoading, setIsLoading] = useState(Boolean(storeId));
 
   useEffect(() => {
-    let isMounted = true;
-
     if (!storeId) {
       setEnvironments([]);
       setIsLoading(false);
-      return () => {
-        isMounted = false;
-      };
+      return () => undefined;
     }
 
-    const load = async () => {
-      setIsLoading(true);
-      try {
-        const list = await environmentService.listSummary({ storeId });
-        if (isMounted) {
-          setEnvironments(list);
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error(error);
-        if (isMounted) {
-          setEnvironments([]);
-          setIsLoading(false);
-        }
-      }
-    };
-    void load();
-    return () => {
-      isMounted = false;
-    };
+    setIsLoading(true);
+    const unsubscribe = environmentService.observeAll({ storeId }, (list) => {
+      setEnvironments(list);
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [storeId]);
 
   const addEnvironment = useCallback((environment: Environment) => {
