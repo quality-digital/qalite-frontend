@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom
 import { ProtectedRoute, RoleProtectedRoute } from './ProtectedRoute';
 import { AppProviders, PublicAppProviders } from '../providers/AppProviders';
 import { PageLoader } from '../components/PageLoader';
+import { RouteSeo } from './RouteSeo';
 
 const HomePage = lazy(() =>
   import('../pages/HomePage').then((module) => ({ default: module.HomePage })),
@@ -71,6 +72,7 @@ const PublicAppProvidersOutlet = () => (
 
 export const AppRoutes = () => (
   <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <RouteSeo />
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route element={<PublicAppProvidersOutlet />}>

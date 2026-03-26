@@ -11,7 +11,7 @@ import { Modal } from '../components/Modal';
 import { TextInput } from '../components/TextInput';
 import { CachedImage } from '../components/CachedImage';
 import { useToast } from '../context/ToastContext';
-import { ActivityIcon, PieChartIcon, StorefrontIcon, UsersGroupIcon } from '../components/icons';
+import { ActivityIcon, PieChartIcon, UsersGroupIcon } from '../components/icons';
 
 export const AdminOrganizationsPage = () => {
   const navigate = useNavigate();
@@ -198,17 +198,13 @@ export const AdminOrganizationsPage = () => {
             {organizations.map((organization) => (
               <article key={organization.id} className="card card-interactive">
                 <div className="card-title-group">
-                  {organization.logoUrl ? (
+                  <span className="organization-card-logo" aria-hidden={!organization.logoUrl}>
                     <CachedImage
-                      src={organization.logoUrl}
-                      alt={organization.name}
-                      style={{ width: 44, height: 44, objectFit: 'contain', borderRadius: 8 }}
+                      src={organization.logoUrl || '/assets/logo.png'}
+                      alt={organization.logoUrl ? organization.name : ''}
+                      className="organization-card-logo__image"
                     />
-                  ) : (
-                    <span className="card-title-icon" aria-hidden>
-                      <StorefrontIcon className="icon icon--lg" />
-                    </span>
-                  )}
+                  </span>
                   <div>
                     <h3 className="card-title">{organization.name}</h3>
                     <p className="section-subtitle">
