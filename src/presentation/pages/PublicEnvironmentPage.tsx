@@ -97,7 +97,7 @@ export const PublicEnvironmentPage = () => {
 
   if (isLoading) {
     return (
-      <Layout>
+      <Layout showHeader={false}>
         <section className="page-container">
           <p className="section-subtitle">{t('publicEnvironment.loading')}</p>
         </section>
@@ -107,7 +107,7 @@ export const PublicEnvironmentPage = () => {
 
   if (!environment) {
     return (
-      <Layout>
+      <Layout showHeader={false}>
         <section className="page-container">
           <h1 className="section-title">{t('publicEnvironment.notFound')}</h1>
           <p className="section-subtitle">{t('publicEnvironment.tryAgain')}</p>
@@ -117,7 +117,7 @@ export const PublicEnvironmentPage = () => {
   }
 
   return (
-    <Layout>
+    <Layout showHeader={false}>
       <section className="page-container environment-page environment-page--public">
         <div className="environment-summary-grid">
           <EnvironmentSummaryCard
@@ -127,6 +127,7 @@ export const PublicEnvironmentPage = () => {
             participants={participants}
             bugsCount={bugs.length}
             storeName={activeStore?.name ?? ''}
+            storeLogoUrl={activeStore?.logoUrl ?? null}
           />
         </div>
 

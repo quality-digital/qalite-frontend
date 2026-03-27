@@ -252,6 +252,7 @@ export const EnvironmentPage = () => {
   const [suites, setSuites] = useState<StoreSuite[]>([]);
   const [scenarios, setScenarios] = useState<StoreScenario[]>([]);
   const [storeName, setStoreName] = useState<string>('');
+  const [storeLogoUrl, setStoreLogoUrl] = useState<string | null>(null);
   const [storeSlackWebhookUrl, setStoreSlackWebhookUrl] = useState<string | null>(null);
   const { setActiveOrganization, setActiveStore } = useOrganizationBranding();
   const participantProfiles = useUserProfiles(environment?.participants ?? []);
@@ -433,6 +434,7 @@ export const EnvironmentPage = () => {
   useEffect(() => {
     if (!environment?.storeId) {
       setStoreName('');
+      setStoreLogoUrl(null);
       setStoreSlackWebhookUrl(null);
       setActiveStore(null);
       return;
@@ -447,6 +449,7 @@ export const EnvironmentPage = () => {
           const resolvedStoreName = store?.name?.trim() || '';
           const resolvedStoreLogoUrl = store?.logoUrl ?? null;
           setStoreName(resolvedStoreName);
+          setStoreLogoUrl(resolvedStoreLogoUrl);
           setStoreSlackWebhookUrl(store?.slackWebhookUrl ?? null);
           setActiveStore(
             store
@@ -462,6 +465,7 @@ export const EnvironmentPage = () => {
         console.error(error);
         if (isMounted) {
           setStoreName('');
+          setStoreLogoUrl(null);
           setStoreSlackWebhookUrl(null);
           setActiveStore(null);
         }
@@ -894,7 +898,7 @@ export const EnvironmentPage = () => {
                 {translation('environment.finishEnvironment')}
               </Button>
             )}
-            {hasEnteredEnvironment && (
+            {hasEnteredEnvironment && !isLocked && (
               <Button
                 type="button"
                 variant="ghost"
@@ -938,6 +942,7 @@ export const EnvironmentPage = () => {
             participants={participantProfiles}
             bugsCount={bugs.length}
             storeName={storeName}
+            storeLogoUrl={storeLogoUrl}
           />
           <div className="summary-card">
             <h3>{translation('environment.actions.shareExport')}</h3>

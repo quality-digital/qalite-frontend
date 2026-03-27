@@ -37,6 +37,7 @@ interface EnvironmentSummaryCardProps {
   participants: UserSummary[];
   bugsCount: number;
   storeName?: string;
+  storeLogoUrl?: string | null;
 }
 
 export const EnvironmentSummaryCard = ({
@@ -45,6 +46,8 @@ export const EnvironmentSummaryCard = ({
   urls,
   participants,
   bugsCount,
+  storeName,
+  storeLogoUrl,
 }: EnvironmentSummaryCardProps) => {
   const { t: translation } = useTranslation();
 
@@ -85,6 +88,20 @@ export const EnvironmentSummaryCard = ({
       </div>
 
       <div className="summary-card__meta-grid summary-card__meta-grid--columns">
+        <div className="summary-card__meta-item">
+          <span className="summary-card__meta-label">{translation('storeSummary.storeName')}</span>
+          <div className="summary-card__store-meta">
+            {storeLogoUrl ? (
+              <CachedImage src={storeLogoUrl} alt={storeName || translation('storeSummary.storeName')} />
+            ) : (
+              <span className="summary-card__store-logo-fallback">
+                {storeName?.trim().charAt(0).toUpperCase() || 'S'}
+              </span>
+            )}
+            <strong>{storeName || translation('storeSummary.emptyValue')}</strong>
+          </div>
+        </div>
+
         <div className="summary-card__meta-item">
           <span className="summary-card__meta-label">
             {translation('createEnvironment.suiteId')}
