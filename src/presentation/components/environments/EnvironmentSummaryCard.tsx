@@ -264,12 +264,13 @@ export const EnvironmentSummaryCard = ({
             {visibleParticipants.map((participant) => {
               const readableName = getReadableUserName(participant);
               const initials = getUserInitials(readableName);
+              const participantPhotoUrl = participant.photoURL?.trim() || null;
               const isPending = !environment.presentUsersIds.includes(participant.id);
               return (
                 <li key={participant.id} className="summary-card__avatar-item">
-                  {participant.photoURL ? (
+                  {participantPhotoUrl ? (
                     <CachedImage
-                      src={participant.photoURL}
+                      src={participantPhotoUrl}
                       alt={readableName}
                       className={isPending ? 'summary-card__avatar-image--pending' : undefined}
                     />

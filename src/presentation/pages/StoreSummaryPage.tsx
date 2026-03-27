@@ -752,7 +752,7 @@ export const StoreSummaryPage = () => {
     setScenarioFilters(emptyScenarioFilters);
     setSuiteScenarioFilters(emptyScenarioFilters);
     setSelectedSuitePreviewId(null);
-  }, [storeId]);
+  }, [storeId, updateViewMode]);
 
   useEffect(() => {
     if (!store?.id) {

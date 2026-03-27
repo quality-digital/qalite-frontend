@@ -253,7 +253,7 @@ export const EnvironmentPage = () => {
   const [scenarios, setScenarios] = useState<StoreScenario[]>([]);
   const [storeName, setStoreName] = useState<string>('');
   const [storeSlackWebhookUrl, setStoreSlackWebhookUrl] = useState<string | null>(null);
-  const { setActiveOrganization, setActiveStore } = useOrganizationBranding();
+  const { activeStore, setActiveOrganization, setActiveStore } = useOrganizationBranding();
   const participantProfiles = useUserProfiles(environment?.participants ?? []);
   const activeOrganizationIdRef = useRef<string | null>(null);
   const {
@@ -281,7 +281,10 @@ export const EnvironmentPage = () => {
     executedScenariosCount,
     urls,
     shareLinks,
-  } = useEnvironmentDetails(environment, bugs);
+  } = useEnvironmentDetails(environment, bugs, {
+    storeName,
+    storeLogoUrl: activeStore?.logoUrl ?? null,
+  });
   const slackWebhookUrl =
     storeSlackWebhookUrl?.trim() || environmentOrganization?.slackWebhookUrl?.trim() || null;
   const inviteParam = searchParams.get('invite');
