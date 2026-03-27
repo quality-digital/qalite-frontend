@@ -8,7 +8,6 @@ import { requiresReleaseField } from '../../constants/environmentOptions';
 import { useTranslation } from 'react-i18next';
 import { buildExternalLink } from '../../utils/externalLink';
 import { ClockIcon } from '../icons';
-import qliteLogo from '../../assets/logo.png';
 
 const buildJiraLink = (value: string | null | undefined): string | null => {
   if (!value) {
@@ -39,6 +38,7 @@ interface EnvironmentSummaryCardProps {
   bugsCount: number;
   storeName?: string;
   storeLogoUrl?: string | null;
+  showStoreBranding?: boolean;
 }
 
 export const EnvironmentSummaryCard = ({
@@ -49,6 +49,7 @@ export const EnvironmentSummaryCard = ({
   bugsCount,
   storeName,
   storeLogoUrl,
+  showStoreBranding = false,
 }: EnvironmentSummaryCardProps) => {
   const { t: translation } = useTranslation();
 
@@ -73,8 +74,8 @@ export const EnvironmentSummaryCard = ({
     .split('\n')
     .map((entry) => entry.trim())
     .filter(Boolean);
-  const resolvedStoreName = storeName?.trim() || environment.storeId;
-  const resolvedStoreLogo = storeLogoUrl?.trim() || qliteLogo;
+  const resolvedStoreName = storeName?.trim() || translation('storeSummary.emptyValue');
+  const resolvedStoreLogo = storeLogoUrl?.trim() || null;
 
   return (
     <div className="summary-card summary-card--environment summary-card--compact">
@@ -91,13 +92,21 @@ export const EnvironmentSummaryCard = ({
       </div>
 
       <div className="summary-card__meta-grid summary-card__meta-grid--columns">
-        <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">{translation('storeSummary.storeName')}</span>
-          <div className="summary-card__store-meta">
-            <CachedImage src={resolvedStoreLogo} alt={resolvedStoreName} />
-            <strong>{resolvedStoreName}</strong>
+        {showStoreBranding && (
+          <div className="summary-card__meta-item">
+            <span className="summary-card__meta-label">{translation('storeSummary.storeName')}</span>
+            <div className="summary-card__store-meta">
+              {resolvedStoreLogo ? (
+                <CachedImage src={resolvedStoreLogo} alt={resolvedStoreName} />
+              ) : (
+                <span className="summary-card__store-logo-fallback">
+                  {resolvedStoreName.charAt(0).toUpperCase() || 'S'}
+                </span>
+              )}
+              <strong>{resolvedStoreName}</strong>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="summary-card__meta-item">
           <span className="summary-card__meta-label">

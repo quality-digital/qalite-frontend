@@ -128,6 +128,7 @@ export const PublicEnvironmentPage = () => {
             bugsCount={bugs.length}
             storeName={activeStore?.name ?? ''}
             storeLogoUrl={activeStore?.logoUrl ?? null}
+            showStoreBranding
           />
         </div>
 
