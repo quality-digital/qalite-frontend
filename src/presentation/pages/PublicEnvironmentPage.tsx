@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
 import { storeService } from '../../infrastructure/services/storeService';
 import { Layout } from '../components/Layout';
@@ -17,7 +17,8 @@ import { useTranslation } from 'react-i18next';
 import { normalizeLanguagePreference } from '../../shared/config/userPreferences';
 
 export const PublicEnvironmentPage = () => {
-  const { environmentId } = useParams<{ environmentId: string }>();
+  const [searchParams] = useSearchParams();
+  const environmentId = searchParams.get('id') ?? undefined;
   const requestedLanguageRef = useRef<string | null>(null);
   const { environment, isLoading } = useEnvironmentRealtime(environmentId);
   const participants = useUserProfiles(environment?.participants ?? []);

@@ -1,5 +1,5 @@
 import { type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import type { Organization } from '../../domain/entities/organization';
 import type {
@@ -170,7 +170,8 @@ const filterScenarios = (list: StoreScenario[], filters: ScenarioFilters) => {
 
 export const StoreSummaryPage = () => {
   const navigate = useNavigate();
-  const { storeId } = useParams<{ storeId: string }>();
+  const [searchParams] = useSearchParams();
+  const storeId = searchParams.get('id') ?? '';
   const { user, isInitializing } = useAuth();
   const { showToast } = useToast();
   const { setActiveOrganization, setActiveStore } = useOrganizationBranding();
@@ -714,7 +715,7 @@ export const StoreSummaryPage = () => {
       closeStoreSettings();
       showToast({ type: 'success', message: t('storeSummary.storeRemoveSuccess') });
       const redirectTo =
-        user?.role === 'admin' ? `/admin/organizations?Id=${store.organizationId}` : '/dashboard';
+        user?.role === 'admin' ? `/admin/organizations?id=${store.organizationId}` : '/dashboard';
       navigate(redirectTo, { replace: true });
     } catch (error) {
       console.error(error);
@@ -1653,7 +1654,7 @@ export const StoreSummaryPage = () => {
     if (user?.role === 'admin') {
       const targetOrganizationId = organization?.id ?? store?.organizationId;
 
-      navigate(targetOrganizationId ? `/admin/organizations?Id=${targetOrganizationId}` : '/admin');
+      navigate(targetOrganizationId ? `/admin/organizations?id=${targetOrganizationId}` : '/admin');
       return;
     }
 

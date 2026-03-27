@@ -31,11 +31,6 @@ const PublicEnvironmentPage = lazy(() =>
 const UserDashboardPage = lazy(() =>
   import('../pages/UserDashboardPage').then((module) => ({ default: module.UserDashboardPage })),
 );
-const OrganizationDashboardPage = lazy(() =>
-  import('../pages/OrganizationDashboardPage').then((module) => ({
-    default: module.OrganizationDashboardPage,
-  })),
-);
 const NoOrganizationPage = lazy(() =>
   import('../pages/NoOrganizationPage').then((module) => ({ default: module.NoOrganizationPage })),
 );
@@ -74,7 +69,7 @@ export const AppRoutes = () => (
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route element={<PublicAppProvidersOutlet />}>
-          <Route path="/environments/:environmentId/public" element={<PublicEnvironmentPage />} />
+          <Route path="/environments/public" element={<PublicEnvironmentPage />} />
         </Route>
 
         <Route element={<AppProvidersOutlet />}>
@@ -87,11 +82,10 @@ export const AppRoutes = () => (
 
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<UserDashboardPage />} />
-            <Route path="/organization" element={<OrganizationDashboardPage />} />
             <Route path="/no-organization" element={<NoOrganizationPage />} />
             <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/stores/:storeId" element={<StoreSummaryPage />} />
-            <Route path="/environments/:environmentId" element={<EnvironmentPage />} />
+            <Route path="/stores" element={<StoreSummaryPage />} />
+            <Route path="/environments" element={<EnvironmentPage />} />
           </Route>
 
           <Route element={<RoleProtectedRoute allowedRoles={['admin']} />}>

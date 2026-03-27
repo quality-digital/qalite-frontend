@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { EnvironmentStatusError } from '../../shared/errors/firebaseErrors';
@@ -229,15 +229,15 @@ const buildSlackTaskSummaryPayload = (
 };
 
 export const EnvironmentPage = () => {
-  const { environmentId } = useParams<{ environmentId: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const environmentId = searchParams.get('id') ?? undefined;
   const { environment, isLoading } = useEnvironmentRealtime(environmentId);
   const { organization: environmentOrganization } = useStoreOrganizationBranding(
     environment?.storeId ?? null,
   );
-  const [searchParams, setSearchParams] = useSearchParams();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);

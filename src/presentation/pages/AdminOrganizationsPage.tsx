@@ -228,7 +228,7 @@ export const AdminOrganizationsPage = () => {
 
                 <Button
                   type="button"
-                  onClick={() => navigate(`/admin/organizations?Id=${organization.id}`)}
+                  onClick={() => navigate(`/admin/organizations?id=${organization.id}`)}
                 >
                   {t('adminOrganizationsPage.viewStores')}
                 </Button>
