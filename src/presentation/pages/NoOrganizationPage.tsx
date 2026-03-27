@@ -28,7 +28,7 @@ export const NoOrganizationPage = () => {
 
   useEffect(() => {
     if (user?.organizationId) {
-      navigate('/organization', { replace: true });
+      navigate('/dashboard', { replace: true });
     }
   }, [navigate, user?.organizationId]);
 

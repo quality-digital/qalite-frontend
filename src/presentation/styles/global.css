@@ -896,7 +896,10 @@ input[type='password']:invalid {
 .suite-table-wrapper,
 .suite-scenario-table-wrapper {
   max-height: none;
-  overflow: visible;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
 }
 
 .data-table thead th,
@@ -2267,6 +2270,11 @@ body {
     background 0.5s ease,
     color 0.5s ease;
   overflow-x: hidden;
+}
+
+html,
+body {
+  scroll-behavior: smooth;
 }
 
 img,
@@ -5373,7 +5381,8 @@ button.store-summary-highlight:focus-visible {
 
 .table-scroll-area {
   width: 100%;
-  overflow: visible;
+  overflow-x: auto;
+  overflow-y: visible;
   padding-bottom: 0;
 }
 
@@ -5397,7 +5406,22 @@ button.store-summary-highlight:focus-visible {
 }
 
 .scenario-table {
-  min-width: 0;
+  min-width: 760px;
+}
+
+.suite-table,
+.suite-scenario-table,
+.data-table {
+  min-width: 760px;
+}
+
+@media (max-width: 768px) {
+  .scenario-table,
+  .suite-table,
+  .suite-scenario-table,
+  .data-table {
+    min-width: 680px;
+  }
 }
 
 .scenario-observation,
@@ -7258,6 +7282,31 @@ button.store-summary-highlight:focus-visible {
 
 .summary-card__meta-item strong {
   font-size: 1.1rem;
+}
+
+.summary-card__store-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.summary-card__store-meta img,
+.summary-card__store-logo-fallback {
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 0.45rem;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.summary-card__store-logo-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--color-primary) 16%, transparent);
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 0.8rem;
 }
 
 .summary-card__meta-label {

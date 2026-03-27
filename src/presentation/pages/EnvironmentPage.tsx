@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { EnvironmentStatusError } from '../../shared/errors/firebaseErrors';
@@ -229,15 +229,15 @@ const buildSlackTaskSummaryPayload = (
 };
 
 export const EnvironmentPage = () => {
-  const { environmentId } = useParams<{ environmentId: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const environmentId = searchParams.get('id') ?? undefined;
   const { environment, isLoading } = useEnvironmentRealtime(environmentId);
   const { organization: environmentOrganization } = useStoreOrganizationBranding(
     environment?.storeId ?? null,
   );
-  const [searchParams, setSearchParams] = useSearchParams();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -253,7 +253,7 @@ export const EnvironmentPage = () => {
   const [scenarios, setScenarios] = useState<StoreScenario[]>([]);
   const [storeName, setStoreName] = useState<string>('');
   const [storeSlackWebhookUrl, setStoreSlackWebhookUrl] = useState<string | null>(null);
-  const { setActiveOrganization, setActiveStore } = useOrganizationBranding();
+  const { activeStore, setActiveOrganization, setActiveStore } = useOrganizationBranding();
   const participantProfiles = useUserProfiles(environment?.participants ?? []);
   const activeOrganizationIdRef = useRef<string | null>(null);
   const {
@@ -281,7 +281,10 @@ export const EnvironmentPage = () => {
     executedScenariosCount,
     urls,
     shareLinks,
-  } = useEnvironmentDetails(environment, bugs);
+  } = useEnvironmentDetails(environment, bugs, {
+    storeName,
+    storeLogoUrl: activeStore?.logoUrl ?? null,
+  });
   const slackWebhookUrl =
     storeSlackWebhookUrl?.trim() || environmentOrganization?.slackWebhookUrl?.trim() || null;
   const inviteParam = searchParams.get('invite');
@@ -894,7 +897,7 @@ export const EnvironmentPage = () => {
                 {translation('environment.finishEnvironment')}
               </Button>
             )}
-            {hasEnteredEnvironment && (
+            {hasEnteredEnvironment && !isLocked && (
               <Button
                 type="button"
                 variant="ghost"
@@ -937,7 +940,6 @@ export const EnvironmentPage = () => {
             urls={urls}
             participants={participantProfiles}
             bugsCount={bugs.length}
-            storeName={storeName}
           />
           <div className="summary-card">
             <h3>{translation('environment.actions.shareExport')}</h3>

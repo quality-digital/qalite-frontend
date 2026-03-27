@@ -240,7 +240,7 @@ export const EnvironmentKanban = ({
   };
 
   const handleOpenEnvironment = (environment: Environment) => {
-    navigate(`/environments/${environment.id}`);
+    navigate(`/environments?id=${environment.id}`);
   };
 
   const PAGE_SIZE = 5;

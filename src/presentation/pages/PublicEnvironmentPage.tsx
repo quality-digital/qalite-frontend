@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
 import { storeService } from '../../infrastructure/services/storeService';
 import { Layout } from '../components/Layout';
@@ -17,7 +17,10 @@ import { useTranslation } from 'react-i18next';
 import { normalizeLanguagePreference } from '../../shared/config/userPreferences';
 
 export const PublicEnvironmentPage = () => {
-  const { environmentId } = useParams<{ environmentId: string }>();
+  const [searchParams] = useSearchParams();
+  const environmentId = searchParams.get('id') ?? undefined;
+  const sharedStoreName = searchParams.get('storeName') ?? '';
+  const sharedStoreLogoUrl = searchParams.get('storeLogoUrl') ?? '';
   const requestedLanguageRef = useRef<string | null>(null);
   const { environment, isLoading } = useEnvironmentRealtime(environmentId);
   const participants = useUserProfiles(environment?.participants ?? []);
@@ -96,7 +99,7 @@ export const PublicEnvironmentPage = () => {
 
   if (isLoading) {
     return (
-      <Layout>
+      <Layout showHeader={false}>
         <section className="page-container">
           <p className="section-subtitle">{t('publicEnvironment.loading')}</p>
         </section>
@@ -106,7 +109,7 @@ export const PublicEnvironmentPage = () => {
 
   if (!environment) {
     return (
-      <Layout>
+      <Layout showHeader={false}>
         <section className="page-container">
           <h1 className="section-title">{t('publicEnvironment.notFound')}</h1>
           <p className="section-subtitle">{t('publicEnvironment.tryAgain')}</p>
@@ -116,7 +119,7 @@ export const PublicEnvironmentPage = () => {
   }
 
   return (
-    <Layout>
+    <Layout showHeader={false}>
       <section className="page-container environment-page environment-page--public">
         <div className="environment-summary-grid">
           <EnvironmentSummaryCard
@@ -125,7 +128,9 @@ export const PublicEnvironmentPage = () => {
             urls={urls}
             participants={participants}
             bugsCount={bugs.length}
-            storeName={activeStore?.name ?? ''}
+            storeName={activeStore?.name ?? sharedStoreName}
+            storeLogoUrl={activeStore?.logoUrl ?? (sharedStoreLogoUrl || null)}
+            showStoreBranding
           />
         </div>
 

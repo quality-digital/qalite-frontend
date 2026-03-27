@@ -73,7 +73,7 @@ export const useEnvironmentEngagement = (
   }, [hasEnteredEnvironment, isLocked, isJoiningEnvironment, joinEnvironment]);
 
   const leaveEnvironment = useCallback(async () => {
-    if (!environmentId || !userId || isLeavingEnvironment) {
+    if (!environmentId || !userId || isLeavingEnvironment || isLocked) {
       return;
     }
 
@@ -85,7 +85,7 @@ export const useEnvironmentEngagement = (
     } finally {
       setIsLeavingEnvironment(false);
     }
-  }, [environmentId, isLeavingEnvironment, userId]);
+  }, [environmentId, isLeavingEnvironment, isLocked, userId]);
 
   const shouldAutoJoin = hasEnteredEnvironment && !isLocked;
 

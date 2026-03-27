@@ -37,6 +37,8 @@ interface EnvironmentSummaryCardProps {
   participants: UserSummary[];
   bugsCount: number;
   storeName?: string;
+  storeLogoUrl?: string | null;
+  showStoreBranding?: boolean;
 }
 
 export const EnvironmentSummaryCard = ({
@@ -45,6 +47,9 @@ export const EnvironmentSummaryCard = ({
   urls,
   participants,
   bugsCount,
+  storeName,
+  storeLogoUrl,
+  showStoreBranding = false,
 }: EnvironmentSummaryCardProps) => {
   const { t: translation } = useTranslation();
 
@@ -69,6 +74,8 @@ export const EnvironmentSummaryCard = ({
     .split('\n')
     .map((entry) => entry.trim())
     .filter(Boolean);
+  const resolvedStoreName = storeName?.trim() || translation('storeSummary.emptyValue');
+  const resolvedStoreLogo = storeLogoUrl?.trim() || null;
 
   return (
     <div className="summary-card summary-card--environment summary-card--compact">
@@ -85,6 +92,22 @@ export const EnvironmentSummaryCard = ({
       </div>
 
       <div className="summary-card__meta-grid summary-card__meta-grid--columns">
+        {showStoreBranding && (
+          <div className="summary-card__meta-item">
+            <span className="summary-card__meta-label">{translation('storeSummary.storeName')}</span>
+            <div className="summary-card__store-meta">
+              {resolvedStoreLogo ? (
+                <CachedImage src={resolvedStoreLogo} alt={resolvedStoreName} />
+              ) : (
+                <span className="summary-card__store-logo-fallback">
+                  {resolvedStoreName.charAt(0).toUpperCase() || 'S'}
+                </span>
+              )}
+              <strong>{resolvedStoreName}</strong>
+            </div>
+          </div>
+        )}
+
         <div className="summary-card__meta-item">
           <span className="summary-card__meta-label">
             {translation('createEnvironment.suiteId')}
@@ -241,12 +264,13 @@ export const EnvironmentSummaryCard = ({
             {visibleParticipants.map((participant) => {
               const readableName = getReadableUserName(participant);
               const initials = getUserInitials(readableName);
+              const participantPhotoUrl = participant.photoURL?.trim() || null;
               const isPending = !environment.presentUsersIds.includes(participant.id);
               return (
                 <li key={participant.id} className="summary-card__avatar-item">
-                  {participant.photoURL ? (
+                  {participantPhotoUrl ? (
                     <CachedImage
-                      src={participant.photoURL}
+                      src={participantPhotoUrl}
                       alt={readableName}
                       className={isPending ? 'summary-card__avatar-image--pending' : undefined}
                     />

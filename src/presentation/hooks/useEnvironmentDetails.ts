@@ -37,6 +37,11 @@ interface UseEnvironmentDetailsResult {
   };
 }
 
+interface EnvironmentShareBranding {
+  storeName?: string | null;
+  storeLogoUrl?: string | null;
+}
+
 const createEmptyScenarioStats = (): ScenarioStats => ({
   total: 0,
   concluded: 0,
@@ -56,18 +61,37 @@ const formatProgressLabel = (
   return t('environmentDetails.progress', { concluded, total });
 };
 
-const buildShareLinks = (environment: Environment | null | undefined) => {
+const buildShareLinks = (
+  environment: Environment | null | undefined,
+  branding?: EnvironmentShareBranding,
+) => {
   if (!environment) {
     return { private: '', invite: '', public: '' };
   }
 
   const origin = typeof window === 'undefined' ? '' : window.location.origin;
-  const baseUrl = `${origin}/environments/${environment.id}`;
-  const publicLink = `${baseUrl}/public`;
+  const basePath = `${origin}/environments`;
+  const publicPath = `${origin}/environments/public`;
+  const params = new URLSearchParams({ id: environment.id });
+  const trimmedStoreName = branding?.storeName?.trim();
+  const trimmedStoreLogoUrl = branding?.storeLogoUrl?.trim();
+
+  if (trimmedStoreName) {
+    params.set('storeName', trimmedStoreName);
+  }
+
+  if (trimmedStoreLogoUrl) {
+    params.set('storeLogoUrl', trimmedStoreLogoUrl);
+  }
+
+  const baseUrl = `${basePath}?${params.toString()}`;
+  const publicLink = `${publicPath}?${params.toString()}`;
+  const inviteParams = new URLSearchParams(params);
+  inviteParams.set('invite', 'true');
 
   return {
     private: baseUrl,
-    invite: `${baseUrl}?invite=true`,
+    invite: `${basePath}?${inviteParams.toString()}`,
     public: publicLink,
   };
 };
@@ -75,6 +99,7 @@ const buildShareLinks = (environment: Environment | null | undefined) => {
 export const useEnvironmentDetails = (
   environment: Environment | null | undefined,
   bugs: EnvironmentBug[],
+  branding?: EnvironmentShareBranding,
 ): UseEnvironmentDetailsResult => {
   const { t } = useTranslation();
 
@@ -157,7 +182,7 @@ export const useEnvironmentDetails = (
           : []),
       ],
       urls: environment?.urls ?? [],
-      shareLinks: buildShareLinks(environment),
+      shareLinks: buildShareLinks(environment, branding),
     };
-  }, [bugs, environment, t]);
+  }, [bugs, environment, branding, t]);
 };

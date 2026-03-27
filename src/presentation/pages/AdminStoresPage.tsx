@@ -119,7 +119,7 @@ export const AdminStoresPage = () => {
     totalScenarios > 0 ? Math.round((totalAutomated / totalScenarios) * 100) : 0;
 
   useEffect(() => {
-    const organizationFromParam = searchParams.get('Id');
+    const organizationFromParam = searchParams.get('id') ?? searchParams.get('Id');
     const unsubscribe = listenToOrganizationsSummary(
       (data) => {
         const hasValidOrganizationParam = Boolean(
@@ -701,9 +701,9 @@ export const AdminStoresPage = () => {
                     data-testid={`store-card-${store.id}`}
                     role="button"
                     tabIndex={0}
-                    onClick={() => navigate(`/stores/${store.id}`)}
+                    onClick={() => navigate(`/stores?id=${store.id}`)}
                     onKeyDown={(event) =>
-                      handleCardKeyDown(event, () => navigate(`/stores/${store.id}`))
+                      handleCardKeyDown(event, () => navigate(`/stores?id=${store.id}`))
                     }
                   >
                     <div className="card-header">

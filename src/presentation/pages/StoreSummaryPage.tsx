@@ -1,5 +1,5 @@
-import { type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import type { Organization } from '../../domain/entities/organization';
 import type {
@@ -103,6 +103,7 @@ interface StoreHighlight {
 }
 
 type ExportFormat = 'pdf' | 'xlsx';
+type StoreViewMode = 'scenarios' | 'suites' | 'environments';
 
 const emptyScenarioFilters: ScenarioFilters = {
   search: '',
@@ -170,7 +171,11 @@ const filterScenarios = (list: StoreScenario[], filters: ScenarioFilters) => {
 
 export const StoreSummaryPage = () => {
   const navigate = useNavigate();
-  const { storeId } = useParams<{ storeId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const storeId = searchParams.get('id') ?? '';
+  const viewParam = searchParams.get('view');
+  const viewMode: StoreViewMode =
+    viewParam === 'suites' || viewParam === 'environments' ? viewParam : 'scenarios';
   const { user, isInitializing } = useAuth();
   const { showToast } = useToast();
   const { setActiveOrganization, setActiveStore } = useOrganizationBranding();
@@ -207,7 +212,6 @@ export const StoreSummaryPage = () => {
   const [suiteFormError, setSuiteFormError] = useState<string | null>(null);
   const [editingSuiteId, setEditingSuiteId] = useState<string | null>(null);
   const [isSavingSuite, setIsSavingSuite] = useState(false);
-  const [viewMode, setViewMode] = useState<'scenarios' | 'suites' | 'environments'>('scenarios');
   const [scenarioFilters, setScenarioFilters] = useState<ScenarioFilters>(emptyScenarioFilters);
   const [suiteScenarioFilters, setSuiteScenarioFilters] =
     useState<ScenarioFilters>(emptyScenarioFilters);
@@ -253,6 +257,21 @@ export const StoreSummaryPage = () => {
   const [isDeletingStore, setIsDeletingStore] = useState(false);
   const [storeSettingsLogoFile, setStoreSettingsLogoFile] = useState<File | null>(null);
   const [storeSettingsLogoPreview, setStoreSettingsLogoPreview] = useState<string | null>(null);
+
+  const updateViewMode = useCallback(
+    (nextViewMode: StoreViewMode) => {
+      if (nextViewMode === viewMode) {
+        return;
+      }
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set('view', nextViewMode);
+      if (storeId) {
+        nextParams.set('id', storeId);
+      }
+      setSearchParams(nextParams, { replace: true });
+    },
+    [searchParams, setSearchParams, storeId, viewMode],
+  );
 
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     message: string;
@@ -304,7 +323,7 @@ export const StoreSummaryPage = () => {
         description: scenarioDescription,
         isActive: viewMode === 'scenarios',
         onClick: () => {
-          setViewMode('scenarios');
+          updateViewMode('scenarios');
           setIsViewingSuitesOnly(false);
         },
       },
@@ -314,7 +333,7 @@ export const StoreSummaryPage = () => {
         value: suites.length.toString(),
         description: suitesDescription,
         isActive: viewMode === 'suites',
-        onClick: () => setViewMode('suites'),
+        onClick: () => updateViewMode('suites'),
       },
       {
         id: 'environments',
@@ -325,7 +344,7 @@ export const StoreSummaryPage = () => {
           : `${environmentInProgressCount} ${t('storeSummary.environmentsInProgress')}`,
         isActive: viewMode === 'environments',
         onClick: () => {
-          setViewMode('environments');
+          updateViewMode('environments');
           setIsViewingSuitesOnly(false);
         },
       },
@@ -339,7 +358,7 @@ export const StoreSummaryPage = () => {
     suites.length,
     suitesWithScenariosCount,
     viewMode,
-    setViewMode,
+    updateViewMode,
     setIsViewingSuitesOnly,
     t,
   ]);
@@ -601,7 +620,7 @@ export const StoreSummaryPage = () => {
     setScenarioSort(null);
     setSuiteScenarioSort(null);
     setSuitePreviewSort(null);
-  }, [storeId]);
+  }, [storeId, updateViewMode]);
 
   const openStoreSettings = () => {
     if (!store || !canManageStoreSettings) {
@@ -714,7 +733,7 @@ export const StoreSummaryPage = () => {
       closeStoreSettings();
       showToast({ type: 'success', message: t('storeSummary.storeRemoveSuccess') });
       const redirectTo =
-        user?.role === 'admin' ? `/admin/organizations?Id=${store.organizationId}` : '/dashboard';
+        user?.role === 'admin' ? `/admin/organizations?id=${store.organizationId}` : '/dashboard';
       navigate(redirectTo, { replace: true });
     } catch (error) {
       console.error(error);
@@ -729,11 +748,11 @@ export const StoreSummaryPage = () => {
     setSuiteForm(emptySuiteForm);
     setSuiteFormError(null);
     setEditingSuiteId(null);
-    setViewMode('scenarios');
+    updateViewMode('scenarios');
     setScenarioFilters(emptyScenarioFilters);
     setSuiteScenarioFilters(emptyScenarioFilters);
     setSelectedSuitePreviewId(null);
-  }, [storeId]);
+  }, [storeId, updateViewMode]);
 
   useEffect(() => {
     if (!store?.id) {
@@ -1552,7 +1571,7 @@ export const StoreSummaryPage = () => {
     });
     setEditingSuiteId(suite.id);
     setSuiteFormError(null);
-    setViewMode('suites');
+    updateViewMode('suites');
     setSelectedSuitePreviewId(suite.id);
     setIsViewingSuitesOnly(false);
   };
@@ -1653,7 +1672,7 @@ export const StoreSummaryPage = () => {
     if (user?.role === 'admin') {
       const targetOrganizationId = organization?.id ?? store?.organizationId;
 
-      navigate(targetOrganizationId ? `/admin/organizations?Id=${targetOrganizationId}` : '/admin');
+      navigate(targetOrganizationId ? `/admin/organizations?id=${targetOrganizationId}` : '/admin');
       return;
     }
 

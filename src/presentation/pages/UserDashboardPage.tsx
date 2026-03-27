@@ -77,7 +77,7 @@ export const UserDashboardPage = () => {
   }, [organization, setActiveOrganization]);
 
   const handleSelectStore = (storeId: string) => {
-    navigate(`/stores/${storeId}`);
+    navigate(`/stores?id=${storeId}`);
   };
 
   const subtitle = useMemo(() => {
