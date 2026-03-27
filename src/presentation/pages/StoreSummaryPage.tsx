@@ -1,4 +1,12 @@
-import { type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type ChangeEvent,
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import type { Organization } from '../../domain/entities/organization';
@@ -752,7 +760,8 @@ export const StoreSummaryPage = () => {
     setScenarioFilters(emptyScenarioFilters);
     setSuiteScenarioFilters(emptyScenarioFilters);
     setSelectedSuitePreviewId(null);
-  }, [storeId, updateViewMode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeId]);
 
   useEffect(() => {
     if (!store?.id) {

@@ -252,8 +252,9 @@ export const EnvironmentPage = () => {
   const [suites, setSuites] = useState<StoreSuite[]>([]);
   const [scenarios, setScenarios] = useState<StoreScenario[]>([]);
   const [storeName, setStoreName] = useState<string>('');
+  const [storeLogoUrl, setStoreLogoUrl] = useState<string | null>(null);
   const [storeSlackWebhookUrl, setStoreSlackWebhookUrl] = useState<string | null>(null);
-  const { activeStore, setActiveOrganization, setActiveStore } = useOrganizationBranding();
+  const { setActiveOrganization, setActiveStore } = useOrganizationBranding();
   const participantProfiles = useUserProfiles(environment?.participants ?? []);
   const activeOrganizationIdRef = useRef<string | null>(null);
   const {
@@ -281,10 +282,7 @@ export const EnvironmentPage = () => {
     executedScenariosCount,
     urls,
     shareLinks,
-  } = useEnvironmentDetails(environment, bugs, {
-    storeName,
-    storeLogoUrl: activeStore?.logoUrl ?? null,
-  });
+  } = useEnvironmentDetails(environment, bugs);
   const slackWebhookUrl =
     storeSlackWebhookUrl?.trim() || environmentOrganization?.slackWebhookUrl?.trim() || null;
   const inviteParam = searchParams.get('invite');
@@ -436,6 +434,7 @@ export const EnvironmentPage = () => {
   useEffect(() => {
     if (!environment?.storeId) {
       setStoreName('');
+      setStoreLogoUrl(null);
       setStoreSlackWebhookUrl(null);
       setActiveStore(null);
       return;
@@ -450,6 +449,7 @@ export const EnvironmentPage = () => {
           const resolvedStoreName = store?.name?.trim() || '';
           const resolvedStoreLogoUrl = store?.logoUrl ?? null;
           setStoreName(resolvedStoreName);
+          setStoreLogoUrl(resolvedStoreLogoUrl);
           setStoreSlackWebhookUrl(store?.slackWebhookUrl ?? null);
           setActiveStore(
             store
@@ -465,6 +465,7 @@ export const EnvironmentPage = () => {
         console.error(error);
         if (isMounted) {
           setStoreName('');
+          setStoreLogoUrl(null);
           setStoreSlackWebhookUrl(null);
           setActiveStore(null);
         }
@@ -940,6 +941,8 @@ export const EnvironmentPage = () => {
             urls={urls}
             participants={participantProfiles}
             bugsCount={bugs.length}
+            storeName={storeName}
+            storeLogoUrl={storeLogoUrl}
           />
           <div className="summary-card">
             <h3>{translation('environment.actions.shareExport')}</h3>
