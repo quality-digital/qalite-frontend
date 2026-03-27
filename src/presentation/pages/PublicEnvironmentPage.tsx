@@ -19,8 +19,6 @@ import { normalizeLanguagePreference } from '../../shared/config/userPreferences
 export const PublicEnvironmentPage = () => {
   const [searchParams] = useSearchParams();
   const environmentId = searchParams.get('id') ?? undefined;
-  const sharedStoreName = searchParams.get('storeName') ?? '';
-  const sharedStoreLogoUrl = searchParams.get('storeLogoUrl') ?? '';
   const requestedLanguageRef = useRef<string | null>(null);
   const { environment, isLoading } = useEnvironmentRealtime(environmentId);
   const participants = useUserProfiles(environment?.participants ?? []);
@@ -128,9 +126,8 @@ export const PublicEnvironmentPage = () => {
             urls={urls}
             participants={participants}
             bugsCount={bugs.length}
-            storeName={activeStore?.name ?? sharedStoreName}
-            storeLogoUrl={activeStore?.logoUrl ?? (sharedStoreLogoUrl || null)}
-            showStoreBranding
+            storeName={activeStore?.name ?? ''}
+            storeLogoUrl={activeStore?.logoUrl ?? null}
           />
         </div>
 

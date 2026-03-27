@@ -94,7 +94,9 @@ export const EnvironmentSummaryCard = ({
       <div className="summary-card__meta-grid summary-card__meta-grid--columns">
         {showStoreBranding && (
           <div className="summary-card__meta-item">
-            <span className="summary-card__meta-label">{translation('storeSummary.storeName')}</span>
+            <span className="summary-card__meta-label">
+              {translation('storeSummary.storeName')}
+            </span>
             <div className="summary-card__store-meta">
               {resolvedStoreLogo ? (
                 <CachedImage src={resolvedStoreLogo} alt={resolvedStoreName} />

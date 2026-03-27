@@ -11,14 +11,7 @@ interface AuthLayoutProps {
   pageLabel?: string;
 }
 
-export const AuthLayout = ({
-  title,
-  subtitle,
-  children,
-  footer,
-  heroLogo = 'QAlite',
-  pageLabel,
-}: AuthLayoutProps) => {
+export const AuthLayout = ({ title, subtitle, children, footer, pageLabel }: AuthLayoutProps) => {
   const { t } = useTranslation();
   const resolvedPageLabel = pageLabel ?? t('authPageLabels.login');
 
@@ -29,7 +22,6 @@ export const AuthLayout = ({
           <div className="auth-page__hero-brand-card">
             <div className="auth-page__hero-logo auth-page__hero-logo--brand">
               <img src={appLogo} alt="qalite" className="auth-page__hero-logo-image" />
-              <span>{heroLogo.toLowerCase()}</span>
             </div>
             <span className="auth-page__hero-page-label">{resolvedPageLabel}</span>
           </div>
