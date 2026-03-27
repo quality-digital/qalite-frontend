@@ -17,10 +17,11 @@ const getInitials = (name: string) => {
 export const UserAvatar = ({ name, photoUrl, size = 'md', onClick }: UserAvatarProps) => {
   const { t } = useTranslation();
   const dimension = size === 'sm' ? '2.5rem' : '3rem';
+  const normalizedPhotoUrl = photoUrl?.trim() || null;
   const renderContent = () =>
-    photoUrl ? (
+    normalizedPhotoUrl ? (
       <CachedImage
-        src={photoUrl}
+        src={normalizedPhotoUrl}
         alt={t('userAvatar.avatarLabel', { name })}
         className="avatar-image"
       />

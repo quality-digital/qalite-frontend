@@ -1,5 +1,13 @@
-import { type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import {
+  type ChangeEvent,
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import type { Organization } from '../../domain/entities/organization';
 import type {
@@ -103,6 +111,7 @@ interface StoreHighlight {
 }
 
 type ExportFormat = 'pdf' | 'xlsx';
+type StoreViewMode = 'scenarios' | 'suites' | 'environments';
 
 const emptyScenarioFilters: ScenarioFilters = {
   search: '',
@@ -170,7 +179,11 @@ const filterScenarios = (list: StoreScenario[], filters: ScenarioFilters) => {
 
 export const StoreSummaryPage = () => {
   const navigate = useNavigate();
-  const { storeId } = useParams<{ storeId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const storeId = searchParams.get('id') ?? '';
+  const viewParam = searchParams.get('view');
+  const viewMode: StoreViewMode =
+    viewParam === 'suites' || viewParam === 'environments' ? viewParam : 'scenarios';
   const { user, isInitializing } = useAuth();
   const { showToast } = useToast();
   const { setActiveOrganization, setActiveStore } = useOrganizationBranding();
@@ -207,7 +220,6 @@ export const StoreSummaryPage = () => {
   const [suiteFormError, setSuiteFormError] = useState<string | null>(null);
   const [editingSuiteId, setEditingSuiteId] = useState<string | null>(null);
   const [isSavingSuite, setIsSavingSuite] = useState(false);
-  const [viewMode, setViewMode] = useState<'scenarios' | 'suites' | 'environments'>('scenarios');
   const [scenarioFilters, setScenarioFilters] = useState<ScenarioFilters>(emptyScenarioFilters);
   const [suiteScenarioFilters, setSuiteScenarioFilters] =
     useState<ScenarioFilters>(emptyScenarioFilters);
@@ -239,6 +251,7 @@ export const StoreSummaryPage = () => {
     };
   }, [store?.adminUrl, t]);
   const [isStoreSettingsOpen, setIsStoreSettingsOpen] = useState(false);
+  const [isStoreSlackSectionOpen, setIsStoreSlackSectionOpen] = useState(false);
   const [storeSettings, setStoreSettings] = useState({
     name: '',
     site: '',
@@ -252,6 +265,21 @@ export const StoreSummaryPage = () => {
   const [isDeletingStore, setIsDeletingStore] = useState(false);
   const [storeSettingsLogoFile, setStoreSettingsLogoFile] = useState<File | null>(null);
   const [storeSettingsLogoPreview, setStoreSettingsLogoPreview] = useState<string | null>(null);
+
+  const updateViewMode = useCallback(
+    (nextViewMode: StoreViewMode) => {
+      if (nextViewMode === viewMode) {
+        return;
+      }
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set('view', nextViewMode);
+      if (storeId) {
+        nextParams.set('id', storeId);
+      }
+      setSearchParams(nextParams, { replace: true });
+    },
+    [searchParams, setSearchParams, storeId, viewMode],
+  );
 
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     message: string;
@@ -303,7 +331,7 @@ export const StoreSummaryPage = () => {
         description: scenarioDescription,
         isActive: viewMode === 'scenarios',
         onClick: () => {
-          setViewMode('scenarios');
+          updateViewMode('scenarios');
           setIsViewingSuitesOnly(false);
         },
       },
@@ -313,7 +341,7 @@ export const StoreSummaryPage = () => {
         value: suites.length.toString(),
         description: suitesDescription,
         isActive: viewMode === 'suites',
-        onClick: () => setViewMode('suites'),
+        onClick: () => updateViewMode('suites'),
       },
       {
         id: 'environments',
@@ -324,7 +352,7 @@ export const StoreSummaryPage = () => {
           : `${environmentInProgressCount} ${t('storeSummary.environmentsInProgress')}`,
         isActive: viewMode === 'environments',
         onClick: () => {
-          setViewMode('environments');
+          updateViewMode('environments');
           setIsViewingSuitesOnly(false);
         },
       },
@@ -338,7 +366,7 @@ export const StoreSummaryPage = () => {
     suites.length,
     suitesWithScenariosCount,
     viewMode,
-    setViewMode,
+    updateViewMode,
     setIsViewingSuitesOnly,
     t,
   ]);
@@ -579,21 +607,16 @@ export const StoreSummaryPage = () => {
 
         setStore(data);
 
-        const [organizationData, scenariosData] = await Promise.all([
-          organizationService.getDetail(data.organizationId),
-          storeService.listScenarios(data.id),
-        ]);
+        const organizationData = await organizationService.getDetail(data.organizationId);
 
         if (organizationData) {
           setOrganization(organizationData);
         }
-        setScenarios(scenariosData);
       } catch (error) {
         console.error(error);
         showToast({ type: 'error', message: t('storeSummary.storeLoadError') });
       } finally {
         setIsLoadingStore(false);
-        setIsLoadingScenarios(false);
       }
     };
 
@@ -605,7 +628,7 @@ export const StoreSummaryPage = () => {
     setScenarioSort(null);
     setSuiteScenarioSort(null);
     setSuitePreviewSort(null);
-  }, [storeId]);
+  }, [storeId, updateViewMode]);
 
   const openStoreSettings = () => {
     if (!store || !canManageStoreSettings) {
@@ -620,6 +643,7 @@ export const StoreSummaryPage = () => {
       slackWebhookUrl: store.slackWebhookUrl ?? '',
       stage: store.stage === 'Preview' ? 'Preview' : 'WS',
     });
+    setIsStoreSlackSectionOpen(Boolean(store.slackWebhookUrl?.trim()));
     setStoreSettingsLogoFile(null);
     setStoreSettingsLogoPreview(store.logoUrl ?? null);
     setStoreSettingsError(null);
@@ -654,7 +678,9 @@ export const StoreSummaryPage = () => {
     const trimmedSite = storeSettings.site.trim();
     const trimmedAdminUrl = storeSettings.adminUrl.trim();
 
-    const trimmedSlackWebhookUrl = storeSettings.slackWebhookUrl.trim();
+    const trimmedSlackWebhookUrl = isStoreSlackSectionOpen
+      ? storeSettings.slackWebhookUrl.trim()
+      : '';
 
     if (!trimmedName) {
       setStoreSettingsError(t('storeSummary.storeNameRequired'));
@@ -715,7 +741,7 @@ export const StoreSummaryPage = () => {
       closeStoreSettings();
       showToast({ type: 'success', message: t('storeSummary.storeRemoveSuccess') });
       const redirectTo =
-        user?.role === 'admin' ? `/admin/organizations?Id=${store.organizationId}` : '/dashboard';
+        user?.role === 'admin' ? `/admin/organizations?id=${store.organizationId}` : '/dashboard';
       navigate(redirectTo, { replace: true });
     } catch (error) {
       console.error(error);
@@ -730,46 +756,60 @@ export const StoreSummaryPage = () => {
     setSuiteForm(emptySuiteForm);
     setSuiteFormError(null);
     setEditingSuiteId(null);
-    setViewMode('scenarios');
+    updateViewMode('scenarios');
     setScenarioFilters(emptyScenarioFilters);
     setSuiteScenarioFilters(emptyScenarioFilters);
     setSelectedSuitePreviewId(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
   useEffect(() => {
-    if (!storeId || !user) {
-      setSuites([]);
-      setIsLoadingSuites(false);
-      return;
+    if (!store?.id) {
+      setScenarios([]);
+      setIsLoadingScenarios(false);
+      return () => undefined;
     }
 
-    let isMounted = true;
-
-    const fetchSuites = async () => {
-      try {
-        setIsLoadingSuites(true);
-        const suitesData = await storeService.listSuites(storeId);
-        if (isMounted) {
-          setSuites(suitesData);
-        }
-      } catch (error) {
+    setIsLoadingScenarios(true);
+    const unsubscribe = storeService.listenToScenarios(
+      store.id,
+      (nextScenarios) => {
+        setScenarios(nextScenarios);
+        setIsLoadingScenarios(false);
+      },
+      (error) => {
         console.error(error);
-        if (isMounted) {
-          showToast({ type: 'error', message: t('storeSummary.suitesLoadError') });
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoadingSuites(false);
-        }
-      }
-    };
+        showToast({ type: 'error', message: t('storeSummary.storeLoadError') });
+        setIsLoadingScenarios(false);
+      },
+    );
 
-    void fetchSuites();
+    return () => unsubscribe();
+  }, [showToast, store?.id, t]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [showToast, storeId, t, user]);
+  useEffect(() => {
+    if (!store?.id) {
+      setSuites([]);
+      setIsLoadingSuites(false);
+      return () => undefined;
+    }
+
+    setIsLoadingSuites(true);
+    const unsubscribe = storeService.listenToSuites(
+      store.id,
+      (nextSuites) => {
+        setSuites(nextSuites);
+        setIsLoadingSuites(false);
+      },
+      (error) => {
+        console.error(error);
+        showToast({ type: 'error', message: t('storeSummary.suitesLoadError') });
+        setIsLoadingSuites(false);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [showToast, store?.id, t]);
 
   useEffect(() => {
     if (!store?.id) {
@@ -1540,7 +1580,7 @@ export const StoreSummaryPage = () => {
     });
     setEditingSuiteId(suite.id);
     setSuiteFormError(null);
-    setViewMode('suites');
+    updateViewMode('suites');
     setSelectedSuitePreviewId(suite.id);
     setIsViewingSuitesOnly(false);
   };
@@ -1641,7 +1681,7 @@ export const StoreSummaryPage = () => {
     if (user?.role === 'admin') {
       const targetOrganizationId = organization?.id ?? store?.organizationId;
 
-      navigate(targetOrganizationId ? `/admin/organizations?Id=${targetOrganizationId}` : '/admin');
+      navigate(targetOrganizationId ? `/admin/organizations?id=${targetOrganizationId}` : '/admin');
       return;
     }
 
@@ -2097,30 +2137,32 @@ export const StoreSummaryPage = () => {
                             onChange={handleScenarioFilterChange('search')}
                             aria-label={t('storeSummary.scenarioSearchAriaLabel')}
                           />
-                          <select
-                            className="scenario-filter-input"
-                            value={scenarioFilters.category}
-                            onChange={handleScenarioFilterChange('category')}
-                            aria-label={t('storeSummary.scenarioCategoryFilterAriaLabel')}
-                          >
-                            {categoryFilterOptions.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
-                          <select
-                            className="scenario-filter-input"
-                            value={scenarioFilters.criticality}
-                            onChange={handleScenarioFilterChange('criticality')}
-                            aria-label={t('storeSummary.scenarioCriticalityFilterAriaLabel')}
-                          >
-                            {criticalityFilterOptions.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
+                          <div className="scenario-filter-group">
+                            <select
+                              className="scenario-filter-input"
+                              value={scenarioFilters.category}
+                              onChange={handleScenarioFilterChange('category')}
+                              aria-label={t('storeSummary.scenarioCategoryFilterAriaLabel')}
+                            >
+                              {categoryFilterOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                            <select
+                              className="scenario-filter-input"
+                              value={scenarioFilters.criticality}
+                              onChange={handleScenarioFilterChange('criticality')}
+                              aria-label={t('storeSummary.scenarioCriticalityFilterAriaLabel')}
+                            >
+                              {criticalityFilterOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                           {(scenarioFilters.search ||
                             scenarioFilters.category ||
                             scenarioFilters.criticality) && (
@@ -2545,36 +2587,38 @@ export const StoreSummaryPage = () => {
                                         aria-label={t('storeSummary.scenarioSearchAriaLabel')}
                                         data-testid="suite-filter-search"
                                       />
-                                      <select
-                                        className="scenario-filter-input"
-                                        value={suiteScenarioFilters.category}
-                                        onChange={handleSuiteScenarioFilterChange('category')}
-                                        aria-label={t(
-                                          'storeSummary.scenarioCategoryFilterAriaLabel',
-                                        )}
-                                        data-testid="suite-filter-category"
-                                      >
-                                        {categoryFilterOptions.map((option) => (
-                                          <option key={option.value} value={option.value}>
-                                            {option.label}
-                                          </option>
-                                        ))}
-                                      </select>
-                                      <select
-                                        className="scenario-filter-input"
-                                        value={suiteScenarioFilters.criticality}
-                                        onChange={handleSuiteScenarioFilterChange('criticality')}
-                                        aria-label={t(
-                                          'storeSummary.scenarioCriticalityFilterAriaLabel',
-                                        )}
-                                        data-testid="suite-filter-criticality"
-                                      >
-                                        {criticalityFilterOptions.map((option) => (
-                                          <option key={option.value} value={option.value}>
-                                            {option.label}
-                                          </option>
-                                        ))}
-                                      </select>
+                                      <div className="scenario-filter-group">
+                                        <select
+                                          className="scenario-filter-input"
+                                          value={suiteScenarioFilters.category}
+                                          onChange={handleSuiteScenarioFilterChange('category')}
+                                          aria-label={t(
+                                            'storeSummary.scenarioCategoryFilterAriaLabel',
+                                          )}
+                                          data-testid="suite-filter-category"
+                                        >
+                                          {categoryFilterOptions.map((option) => (
+                                            <option key={option.value} value={option.value}>
+                                              {option.label}
+                                            </option>
+                                          ))}
+                                        </select>
+                                        <select
+                                          className="scenario-filter-input"
+                                          value={suiteScenarioFilters.criticality}
+                                          onChange={handleSuiteScenarioFilterChange('criticality')}
+                                          aria-label={t(
+                                            'storeSummary.scenarioCriticalityFilterAriaLabel',
+                                          )}
+                                          data-testid="suite-filter-criticality"
+                                        >
+                                          {criticalityFilterOptions.map((option) => (
+                                            <option key={option.value} value={option.value}>
+                                              {option.label}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </div>
                                       <div className="suite-scenario-filters-actions">
                                         {(suiteScenarioFilters.search ||
                                           suiteScenarioFilters.category ||
@@ -2883,20 +2927,60 @@ export const StoreSummaryPage = () => {
               <p className="form-hint">{t('storeSummary.storeLogoHint')}</p>
             </div>
           </div>
-          <TextInput
-            id="store-settings-slack-webhook"
-            label={t('storeSummary.storeSlackWebhookLabel')}
-            value={storeSettings.slackWebhookUrl}
-            onChange={(event) =>
-              setStoreSettings((previous) => ({
-                ...previous,
-                slackWebhookUrl: event.target.value,
-              }))
-            }
-            placeholder={t('storeSummary.storeSlackWebhookPlaceholder')}
-            dataTestId="store-settings-slack-webhook"
-          />
-          <p className="form-hint">{t('storeSummary.storeSlackWebhookHint')}</p>
+          <div className="collapsible-section">
+            <div className="collapsible-section__header">
+              <div className="collapsible-section__titles">
+                <img
+                  className="collapsible-section__icon"
+                  src="https://img.icons8.com/external-tal-revivo-color-tal-revivo/24/external-slack-replace-email-text-messaging-and-instant-messaging-for-your-team-logo-color-tal-revivo.png"
+                  alt={t('adminOrganizationsPage.form.slack.iconAlt')}
+                  width={24}
+                  height={24}
+                />
+                <p className="collapsible-section__title">
+                  {t('storeSummary.storeSlackWebhookLabel')}
+                </p>
+              </div>
+              <label className="collapsible-section__toggle">
+                <input
+                  type="checkbox"
+                  checked={isStoreSlackSectionOpen}
+                  onChange={() => {
+                    setIsStoreSlackSectionOpen((previous) => {
+                      const nextValue = !previous;
+                      if (!nextValue) {
+                        setStoreSettings((form) => ({ ...form, slackWebhookUrl: '' }));
+                      }
+                      return nextValue;
+                    });
+                  }}
+                />
+                <span>
+                  {isStoreSlackSectionOpen
+                    ? t('adminOrganizationsPage.form.slack.enabled')
+                    : t('adminOrganizationsPage.form.slack.disabled')}
+                </span>
+              </label>
+            </div>
+            {isStoreSlackSectionOpen && (
+              <>
+                <TextInput
+                  id="store-settings-slack-webhook"
+                  label={t('storeSummary.storeSlackWebhookLabel')}
+                  value={storeSettings.slackWebhookUrl}
+                  onChange={(event) =>
+                    setStoreSettings((previous) => ({
+                      ...previous,
+                      slackWebhookUrl: event.target.value,
+                    }))
+                  }
+                  placeholder={t('storeSummary.storeSlackWebhookPlaceholder')}
+                  dataTestId="store-settings-slack-webhook"
+                />
+                <p className="form-hint">{t('storeSummary.storeSlackWebhookHint')}</p>
+              </>
+            )}
+          </div>
           <div className="form-actions">
             <Button
               type="submit"

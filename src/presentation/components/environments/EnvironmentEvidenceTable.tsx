@@ -193,8 +193,11 @@ export const EnvironmentEvidenceTable = ({
     <div className="environment-table">
       <div className="environment-table__filters">
         <label className="environment-table__filter">
-          <span>{translation('environmentEvidenceTable.filters_categoria')}</span>
+          <span className="environment-table__filter-label">
+            {translation('environmentEvidenceTable.filters_categoria')}
+          </span>
           <select
+            className="environment-table__filter-select"
             value={categoryFilter}
             onChange={(event) => setCategoryFilter(event.target.value)}
             aria-label={translation('environmentEvidenceTable.filters_categoria')}
@@ -208,8 +211,11 @@ export const EnvironmentEvidenceTable = ({
           </select>
         </label>
         <label className="environment-table__filter">
-          <span>{translation('environmentEvidenceTable.filters_criticidade')}</span>
+          <span className="environment-table__filter-label">
+            {translation('environmentEvidenceTable.filters_criticidade')}
+          </span>
           <select
+            className="environment-table__filter-select"
             value={criticalityFilter}
             onChange={(event) => setCriticalityFilter(event.target.value)}
             aria-label={translation('environmentEvidenceTable.filters_criticidade')}

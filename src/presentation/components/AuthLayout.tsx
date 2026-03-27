@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import appLogo from '../assets/logo.png';
 
 interface AuthLayoutProps {
   title: string;
@@ -10,14 +11,7 @@ interface AuthLayoutProps {
   pageLabel?: string;
 }
 
-export const AuthLayout = ({
-  title,
-  subtitle,
-  children,
-  footer,
-  heroLogo = 'QAlite',
-  pageLabel,
-}: AuthLayoutProps) => {
+export const AuthLayout = ({ title, subtitle, children, footer, pageLabel }: AuthLayoutProps) => {
   const { t } = useTranslation();
   const resolvedPageLabel = pageLabel ?? t('authPageLabels.login');
 
@@ -25,8 +19,12 @@ export const AuthLayout = ({
     <div className="auth-page">
       <div className="auth-page__hero">
         <div className="auth-page__hero-content">
-          <div className="auth-page__hero-label">{resolvedPageLabel}</div>
-          <div className="auth-page__hero-logo">{heroLogo}</div>
+          <div className="auth-page__hero-brand-card">
+            <div className="auth-page__hero-logo auth-page__hero-logo--brand">
+              <img src={appLogo} alt="qalite" className="auth-page__hero-logo-image" />
+            </div>
+            <span className="auth-page__hero-page-label">{resolvedPageLabel}</span>
+          </div>
         </div>
       </div>
 

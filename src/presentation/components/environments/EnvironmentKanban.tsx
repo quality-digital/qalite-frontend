@@ -1,9 +1,7 @@
-import type { DragEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import { EnvironmentStatusError } from '../../../shared/errors/firebaseErrors';
 import type {
   Environment,
   EnvironmentScenario,
@@ -14,7 +12,6 @@ import type { UserSummary } from '../../../domain/entities/user';
 import { environmentService } from '../../../infrastructure/services/environmentService';
 import { userService } from '../../../infrastructure/services/userService';
 import { useToast } from '../../context/ToastContext';
-import { useAuth } from '../../hooks/useAuth';
 import { PaginationControls } from '../PaginationControls';
 import { Modal } from '../Modal';
 import { Button } from '../Button';
@@ -40,6 +37,7 @@ const COLUMNS: { status: EnvironmentStatus; title: string; Icon: typeof InboxIco
 
 const cloneScenarioMap = (
   scenarios: Record<string, EnvironmentScenario>,
+  environmentColumns: string[],
 ): Record<string, EnvironmentScenario> =>
   Object.fromEntries(
     Object.entries(scenarios).map(([id, scenario]) => [
@@ -49,6 +47,12 @@ const cloneScenarioMap = (
         status: 'pendente',
         statusMobile: 'pendente',
         statusDesktop: 'pendente',
+        statusByEnvironment: environmentColumns.reduce<
+          Record<string, EnvironmentScenario['status']>
+        >((acc, column) => {
+          acc[column] = 'pendente';
+          return acc;
+        }, {}),
         evidenciaArquivoUrl: null,
       },
     ]),
@@ -70,7 +74,6 @@ export const EnvironmentKanban = ({
   const [archivedVisibleCount, setArchivedVisibleCount] = useState(5);
   const [environmentToClone, setEnvironmentToClone] = useState<Environment | null>(null);
   const [isCloning, setIsCloning] = useState(false);
-  const { user } = useAuth();
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -169,57 +172,6 @@ export const EnvironmentKanban = ({
     );
   }, [environments, suites]);
 
-  const handleDragStart = (event: DragEvent<HTMLDivElement>, environmentId: string) => {
-    event.dataTransfer.setData('text/environment-id', environmentId);
-  };
-
-  const handleDrop = (status: EnvironmentStatus) => async (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const environmentId = event.dataTransfer.getData('text/environment-id');
-    const environment = environments.find((item) => item.id === environmentId);
-
-    if (!environment) {
-      return;
-    }
-
-    await moveEnvironment(environment, status);
-  };
-
-  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-  };
-
-  const moveEnvironment = async (environment: Environment, status: EnvironmentStatus) => {
-    if (environment.status === status) {
-      return;
-    }
-
-    if (status === 'backlog' && environment.status !== 'backlog') {
-      showToast({ type: 'info', message: t('environmentKanban.done') });
-      return;
-    }
-
-    try {
-      await environmentService.transitionStatus({
-        environment,
-        targetStatus: status,
-        currentUserId: user?.uid ?? null,
-      });
-      showToast({ type: 'success', message: t('environmentKanban.statusUpdate') });
-    } catch (error) {
-      if (error instanceof EnvironmentStatusError && error.code === 'PENDING_SCENARIOS') {
-        showToast({
-          type: 'error',
-          message: t('environmentKanban.statusError'),
-        });
-        return;
-      }
-
-      console.error(error);
-      showToast({ type: 'error', message: t('environmentKanban.updateError') });
-    }
-  };
-
   const requestCloneEnvironment = (environment: Environment) => {
     setEnvironmentToClone(environment);
   };
@@ -242,7 +194,11 @@ export const EnvironmentKanban = ({
       const suffix = t('environmentKanban.cloneIdentifierSuffix').trim().replace(/\s+/g, '-');
       const stamp = Date.now().toString(36).slice(-4);
       const identifier = `${environment.identificador}-${suffix}-${stamp}`;
-      const clonedScenarios = cloneScenarioMap(environment.scenarios ?? {});
+      const environmentColumns =
+        environment.environmentColumns && environment.environmentColumns.length > 0
+          ? environment.environmentColumns
+          : ['Desktop', 'Mobile'];
+      const clonedScenarios = cloneScenarioMap(environment.scenarios ?? {}, environmentColumns);
       const createdEnvironment = await environmentService.create({
         identificador: identifier,
         storeId: environment.storeId,
@@ -263,6 +219,7 @@ export const EnvironmentKanban = ({
         totalCenarios: Object.keys(clonedScenarios).length,
         participants: [],
         publicShareLanguage: environment.publicShareLanguage ?? null,
+        environmentColumns,
       });
       showToast({ type: 'success', message: t('environmentKanban.cloneSuccess') });
       onEnvironmentCreated(createdEnvironment);
@@ -283,7 +240,7 @@ export const EnvironmentKanban = ({
   };
 
   const handleOpenEnvironment = (environment: Environment) => {
-    navigate(`/environments/${environment.id}`);
+    navigate(`/environments?id=${environment.id}`);
   };
 
   const PAGE_SIZE = 5;
@@ -325,12 +282,7 @@ export const EnvironmentKanban = ({
                 column.status === 'done' ? activeDoneEnvironments : grouped[column.status];
 
               return (
-                <div
-                  key={column.status}
-                  className="environment-kanban-column"
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop(column.status)}
-                >
+                <div key={column.status} className="environment-kanban-column">
                   <div className="environment-kanban-column-header">
                     <h4 className="environment-kanban-column-title">
                       <column.Icon aria-hidden className="icon" />
@@ -351,10 +303,11 @@ export const EnvironmentKanban = ({
                           .map((id) => userProfilesMap[id])
                           .filter((user): user is UserSummary => Boolean(user))}
                         suiteName={suiteNameByEnvironment[environment.id]}
-                        draggable
-                        onDragStart={handleDragStart}
                         onOpen={handleOpenEnvironment}
                         onClone={requestCloneEnvironment}
+                        pendingParticipantIds={(environment.participants ?? []).filter(
+                          (id) => !(environment.presentUsersIds ?? []).includes(id),
+                        )}
                       />
                     ))
                   )}
@@ -372,8 +325,6 @@ export const EnvironmentKanban = ({
                 ]
                   .filter(Boolean)
                   .join(' ')}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop('done')}
               >
                 <div className="environment-kanban-column-header">
                   <div className="environment-kanban-column-title">
@@ -413,10 +364,11 @@ export const EnvironmentKanban = ({
                           .map((id) => userProfilesMap[id])
                           .filter((user): user is UserSummary => Boolean(user))}
                         suiteName={suiteNameByEnvironment[environment.id]}
-                        draggable
-                        onDragStart={handleDragStart}
                         onOpen={handleOpenEnvironment}
                         onClone={requestCloneEnvironment}
+                        pendingParticipantIds={(environment.participants ?? []).filter(
+                          (id) => !(environment.presentUsersIds ?? []).includes(id),
+                        )}
                       />
                     ))}
                   </div>

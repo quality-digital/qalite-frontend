@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react';
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 
 import { ProtectedRoute, RoleProtectedRoute } from './ProtectedRoute';
 import { AppProviders, PublicAppProviders } from '../providers/AppProviders';
@@ -30,11 +31,6 @@ const PublicEnvironmentPage = lazy(() =>
 );
 const UserDashboardPage = lazy(() =>
   import('../pages/UserDashboardPage').then((module) => ({ default: module.UserDashboardPage })),
-);
-const OrganizationDashboardPage = lazy(() =>
-  import('../pages/OrganizationDashboardPage').then((module) => ({
-    default: module.OrganizationDashboardPage,
-  })),
 );
 const NoOrganizationPage = lazy(() =>
   import('../pages/NoOrganizationPage').then((module) => ({ default: module.NoOrganizationPage })),
@@ -69,12 +65,23 @@ const PublicAppProvidersOutlet = () => (
   </PublicAppProviders>
 );
 
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+  }, [pathname]);
+
+  return null;
+};
+
 export const AppRoutes = () => (
   <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
     <Suspense fallback={<PageLoader />}>
+      <ScrollToTop />
       <Routes>
         <Route element={<PublicAppProvidersOutlet />}>
-          <Route path="/environments/:environmentId/public" element={<PublicEnvironmentPage />} />
+          <Route path="/environments/public" element={<PublicEnvironmentPage />} />
         </Route>
 
         <Route element={<AppProvidersOutlet />}>
@@ -87,11 +94,10 @@ export const AppRoutes = () => (
 
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<UserDashboardPage />} />
-            <Route path="/organization" element={<OrganizationDashboardPage />} />
             <Route path="/no-organization" element={<NoOrganizationPage />} />
             <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/stores/:storeId" element={<StoreSummaryPage />} />
-            <Route path="/environments/:environmentId" element={<EnvironmentPage />} />
+            <Route path="/stores" element={<StoreSummaryPage />} />
+            <Route path="/environments" element={<EnvironmentPage />} />
           </Route>
 
           <Route element={<RoleProtectedRoute allowedRoles={['admin']} />}>

@@ -1,16 +1,13 @@
+const DEFAULT_TEST_TYPES = [
+  'environmentOptions.smokeTest',
+  'environmentOptions.seo',
+  'environmentOptions.performance',
+  'environmentOptions.regressive',
+];
+
 export const TEST_TYPES_BY_ENVIRONMENT: Record<string, string[]> = {
-  WS: [
-    'environmentOptions.smokeTest',
-    'environmentOptions.seo',
-    'environmentOptions.performance',
-    'environmentOptions.regressive',
-  ],
-  Preview: [
-    'environmentOptions.smokeTest',
-    'environmentOptions.seo',
-    'environmentOptions.performance',
-    'environmentOptions.regressive',
-  ],
+  WS: DEFAULT_TEST_TYPES,
+  Preview: DEFAULT_TEST_TYPES,
   TM: ['environmentOptions.smoke', 'environmentOptions.seo', 'environmentOptions.performance'],
   PROD: ['environmentOptions.smokeTest', 'environmentOptions.regressive'],
 };

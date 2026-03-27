@@ -22,6 +22,11 @@ export interface StoreRepository {
   uploadLogo: (storeId: string, file: File) => Promise<string>;
   delete: (id: string) => Promise<void>;
   listScenarios: (storeId: string) => Promise<StoreScenario[]>;
+  listenToScenarios: (
+    storeId: string,
+    onChange: (scenarios: StoreScenario[]) => void,
+    onError?: (error: Error) => void,
+  ) => () => void;
   createScenario: (scenario: CreateStoreScenarioPayload) => Promise<StoreScenario>;
   updateScenario: (
     storeId: string,
@@ -30,6 +35,11 @@ export interface StoreRepository {
   ) => Promise<StoreScenario>;
   deleteScenario: (storeId: string, scenarioId: string) => Promise<void>;
   listSuites: (storeId: string) => Promise<StoreSuite[]>;
+  listenToSuites: (
+    storeId: string,
+    onChange: (suites: StoreSuite[]) => void,
+    onError?: (error: Error) => void,
+  ) => () => void;
   createSuite: (suite: { storeId: string } & StoreSuiteInput) => Promise<StoreSuite>;
   updateSuite: (storeId: string, suiteId: string, suite: StoreSuiteInput) => Promise<StoreSuite>;
   deleteSuite: (storeId: string, suiteId: string) => Promise<void>;

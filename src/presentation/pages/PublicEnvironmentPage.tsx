@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
 import { storeService } from '../../infrastructure/services/storeService';
 import { Layout } from '../components/Layout';
@@ -7,7 +7,6 @@ import { EnvironmentEvidenceTable } from '../components/environments/Environment
 import { EnvironmentBugList } from '../components/environments/EnvironmentBugList';
 import { EnvironmentSummaryCard } from '../components/environments/EnvironmentSummaryCard';
 import { useEnvironmentRealtime } from '../hooks/useEnvironmentRealtime';
-import { useTimeTracking } from '../hooks/useTimeTracking';
 import { useUserProfiles } from '../hooks/useUserProfiles';
 import { useStoreOrganizationBranding } from '../hooks/useStoreOrganizationBranding';
 import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
@@ -18,7 +17,8 @@ import { useTranslation } from 'react-i18next';
 import { normalizeLanguagePreference } from '../../shared/config/userPreferences';
 
 export const PublicEnvironmentPage = () => {
-  const { environmentId } = useParams<{ environmentId: string }>();
+  const [searchParams] = useSearchParams();
+  const environmentId = searchParams.get('id') ?? undefined;
   const requestedLanguageRef = useRef<string | null>(null);
   const { environment, isLoading } = useEnvironmentRealtime(environmentId);
   const participants = useUserProfiles(environment?.participants ?? []);
@@ -27,19 +27,8 @@ export const PublicEnvironmentPage = () => {
   );
   const { activeStore, setActiveOrganization, setActiveStore } = useOrganizationBranding();
   const { t, i18n } = useTranslation();
-  const { formattedTime, formattedStart, formattedEnd } = useTimeTracking(
-    environment?.timeTracking ?? null,
-    Boolean(environment?.status === 'in_progress'),
-    {
-      translation: t,
-      locale: i18n.language,
-    },
-  );
   const { bugs, isLoading: isLoadingBugs } = useEnvironmentBugs(environment?.id ?? null);
-  const { progressPercentage, progressLabel, scenarioCount, urls } = useEnvironmentDetails(
-    environment,
-    bugs,
-  );
+  const { scenarioCount, urls } = useEnvironmentDetails(environment, bugs);
 
   useEffect(() => {
     setActiveOrganization(environmentOrganization ?? null);
@@ -108,7 +97,7 @@ export const PublicEnvironmentPage = () => {
 
   if (isLoading) {
     return (
-      <Layout>
+      <Layout showHeader={false}>
         <section className="page-container">
           <p className="section-subtitle">{t('publicEnvironment.loading')}</p>
         </section>
@@ -118,7 +107,7 @@ export const PublicEnvironmentPage = () => {
 
   if (!environment) {
     return (
-      <Layout>
+      <Layout showHeader={false}>
         <section className="page-container">
           <h1 className="section-title">{t('publicEnvironment.notFound')}</h1>
           <p className="section-subtitle">{t('publicEnvironment.tryAgain')}</p>
@@ -128,21 +117,17 @@ export const PublicEnvironmentPage = () => {
   }
 
   return (
-    <Layout>
+    <Layout showHeader={false}>
       <section className="page-container environment-page environment-page--public">
         <div className="environment-summary-grid">
           <EnvironmentSummaryCard
             environment={environment}
-            progressPercentage={progressPercentage}
-            progressLabel={progressLabel}
             scenarioCount={scenarioCount}
-            formattedTime={formattedTime}
-            formattedStart={formattedStart}
-            formattedEnd={formattedEnd}
             urls={urls}
             participants={participants}
             bugsCount={bugs.length}
             storeName={activeStore?.name ?? ''}
+            storeLogoUrl={activeStore?.logoUrl ?? null}
           />
         </div>
 

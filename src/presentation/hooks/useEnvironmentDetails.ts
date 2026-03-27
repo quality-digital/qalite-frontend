@@ -62,12 +62,12 @@ const buildShareLinks = (environment: Environment | null | undefined) => {
   }
 
   const origin = typeof window === 'undefined' ? '' : window.location.origin;
-  const baseUrl = `${origin}/environments/${environment.id}`;
-  const publicLink = `${baseUrl}/public`;
+  const baseUrl = `${origin}/environments?id=${environment.id}`;
+  const publicLink = `${origin}/environments/public?id=${environment.id}`;
 
   return {
     private: baseUrl,
-    invite: `${baseUrl}?invite=true`,
+    invite: `${baseUrl}&invite=true`,
     public: publicLink,
   };
 };

@@ -77,7 +77,7 @@ export const UserDashboardPage = () => {
   }, [organization, setActiveOrganization]);
 
   const handleSelectStore = (storeId: string) => {
-    navigate(`/stores/${storeId}`);
+    navigate(`/stores?id=${storeId}`);
   };
 
   const subtitle = useMemo(() => {
@@ -171,7 +171,7 @@ export const UserDashboardPage = () => {
                     <div className="card-title-group">
                       <span className="card-title-icon" aria-hidden>
                         {store.logoUrl ? (
-                          <CachedImage src={store.logoUrl} alt="" className="icon icon--lg" />
+                          <CachedImage src={store.logoUrl} alt="" className="store-card-logo" />
                         ) : (
                           <StorefrontIcon className="icon icon--lg" />
                         )}
