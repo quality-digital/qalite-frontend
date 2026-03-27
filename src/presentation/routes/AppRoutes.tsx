@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react';
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 
 import { ProtectedRoute, RoleProtectedRoute } from './ProtectedRoute';
 import { AppProviders, PublicAppProviders } from '../providers/AppProviders';
@@ -64,9 +65,20 @@ const PublicAppProvidersOutlet = () => (
   </PublicAppProviders>
 );
 
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+  }, [pathname]);
+
+  return null;
+};
+
 export const AppRoutes = () => (
   <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
     <Suspense fallback={<PageLoader />}>
+      <ScrollToTop />
       <Routes>
         <Route element={<PublicAppProvidersOutlet />}>
           <Route path="/environments/public" element={<PublicEnvironmentPage />} />

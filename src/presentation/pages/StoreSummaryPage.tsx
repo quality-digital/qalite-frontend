@@ -174,7 +174,7 @@ export const StoreSummaryPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const storeId = searchParams.get('id') ?? '';
   const viewParam = searchParams.get('view');
-  const initialViewMode: StoreViewMode =
+  const viewMode: StoreViewMode =
     viewParam === 'suites' || viewParam === 'environments' ? viewParam : 'scenarios';
   const { user, isInitializing } = useAuth();
   const { showToast } = useToast();
@@ -212,7 +212,6 @@ export const StoreSummaryPage = () => {
   const [suiteFormError, setSuiteFormError] = useState<string | null>(null);
   const [editingSuiteId, setEditingSuiteId] = useState<string | null>(null);
   const [isSavingSuite, setIsSavingSuite] = useState(false);
-  const [viewMode, setViewMode] = useState<StoreViewMode>(initialViewMode);
   const [scenarioFilters, setScenarioFilters] = useState<ScenarioFilters>(emptyScenarioFilters);
   const [suiteScenarioFilters, setSuiteScenarioFilters] =
     useState<ScenarioFilters>(emptyScenarioFilters);
@@ -261,7 +260,9 @@ export const StoreSummaryPage = () => {
 
   const updateViewMode = useCallback(
     (nextViewMode: StoreViewMode) => {
-      setViewMode(nextViewMode);
+      if (nextViewMode === viewMode) {
+        return;
+      }
       const nextParams = new URLSearchParams(searchParams);
       nextParams.set('view', nextViewMode);
       if (storeId) {
@@ -269,7 +270,7 @@ export const StoreSummaryPage = () => {
       }
       setSearchParams(nextParams, { replace: true });
     },
-    [searchParams, setSearchParams, storeId],
+    [searchParams, setSearchParams, storeId, viewMode],
   );
 
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
@@ -379,15 +380,6 @@ export const StoreSummaryPage = () => {
       ),
     [scenarios],
   );
-
-  useEffect(() => {
-    const nextView = searchParams.get('view');
-    const resolvedViewMode: StoreViewMode =
-      nextView === 'suites' || nextView === 'environments' ? nextView : 'scenarios';
-    if (resolvedViewMode !== viewMode) {
-      setViewMode(resolvedViewMode);
-    }
-  }, [searchParams, viewMode]);
 
   const persistedCategoryNames = useMemo(
     () =>

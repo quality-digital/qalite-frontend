@@ -8,6 +8,7 @@ import { requiresReleaseField } from '../../constants/environmentOptions';
 import { useTranslation } from 'react-i18next';
 import { buildExternalLink } from '../../utils/externalLink';
 import { ClockIcon } from '../icons';
+import qliteLogo from '../../assets/logo.png';
 
 const buildJiraLink = (value: string | null | undefined): string | null => {
   if (!value) {
@@ -72,6 +73,8 @@ export const EnvironmentSummaryCard = ({
     .split('\n')
     .map((entry) => entry.trim())
     .filter(Boolean);
+  const resolvedStoreName = storeName?.trim() || environment.storeId;
+  const resolvedStoreLogo = storeLogoUrl?.trim() || qliteLogo;
 
   return (
     <div className="summary-card summary-card--environment summary-card--compact">
@@ -91,14 +94,8 @@ export const EnvironmentSummaryCard = ({
         <div className="summary-card__meta-item">
           <span className="summary-card__meta-label">{translation('storeSummary.storeName')}</span>
           <div className="summary-card__store-meta">
-            {storeLogoUrl ? (
-              <CachedImage src={storeLogoUrl} alt={storeName || translation('storeSummary.storeName')} />
-            ) : (
-              <span className="summary-card__store-logo-fallback">
-                {storeName?.trim().charAt(0).toUpperCase() || 'S'}
-              </span>
-            )}
-            <strong>{storeName || translation('storeSummary.emptyValue')}</strong>
+            <CachedImage src={resolvedStoreLogo} alt={resolvedStoreName} />
+            <strong>{resolvedStoreName}</strong>
           </div>
         </div>
 
