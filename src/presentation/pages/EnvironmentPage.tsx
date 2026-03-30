@@ -42,6 +42,8 @@ import { useEnvironmentEngagement } from '../hooks/useEnvironmentEngagement';
 import { EnvironmentSummaryCard } from '../components/environments/EnvironmentSummaryCard';
 import { TOptions } from 'i18next';
 import {
+  copyEnvironmentAsMarkdown,
+  exportEnvironmentAsPDF,
   getEnvironmentColumns,
   getScenarioPlatformStatuses,
 } from '../../infrastructure/external/environments';
@@ -768,6 +770,48 @@ export const EnvironmentPage = () => {
     urls,
   ]);
 
+  const handleCopyMarkdown = useCallback(async () => {
+    if (!environment) {
+      return;
+    }
+
+    try {
+      await copyEnvironmentAsMarkdown(environment, bugs, participantProfiles, storeName);
+      showToast({ type: 'success', message: translation('environment.copyMarkdownSuccess') });
+    } catch (error) {
+      console.error(error);
+      showToast({ type: 'error', message: translation('environment.copyMarkdownError') });
+    }
+  }, [bugs, environment, participantProfiles, showToast, storeName, translation]);
+
+  const handleExportPdf = useCallback(() => {
+    if (!environment) {
+      return;
+    }
+
+    try {
+      exportEnvironmentAsPDF(
+        environment,
+        bugs,
+        participantProfiles,
+        { name: storeName, logoUrl: storeLogoUrl },
+        environmentOrganization,
+      );
+    } catch (error) {
+      console.error(error);
+      showToast({ type: 'error', message: translation('storeSummary.pdfOpenError') });
+    }
+  }, [
+    bugs,
+    environment,
+    environmentOrganization,
+    participantProfiles,
+    showToast,
+    storeLogoUrl,
+    storeName,
+    translation,
+  ]);
+
   const openCreateBugModal = useCallback((scenarioId: string) => {
     setEditingBug(null);
     setDefaultBugScenarioId(scenarioId);
@@ -982,6 +1026,24 @@ export const EnvironmentPage = () => {
               >
                 <FileTextIcon aria-hidden className="icon" />
                 {translation('environment.exportExcel')}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleExportPdf}
+                data-testid="export-environment-pdf"
+              >
+                <FileTextIcon aria-hidden className="icon" />
+                {translation('environment.exportPDF')}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => void handleCopyMarkdown()}
+                data-testid="copy-environment-markdown"
+              >
+                <CopyIcon aria-hidden className="icon" />
+                {translation('environment.copyMarkdown')}
               </Button>
             </div>
           </div>
