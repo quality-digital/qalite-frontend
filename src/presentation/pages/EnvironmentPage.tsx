@@ -607,12 +607,19 @@ export const EnvironmentPage = () => {
         (status) => !SCENARIO_COMPLETED_STATUSES.includes(status),
       );
 
+      const hasMobileColumn = environmentColumns.length > 0;
+      const hasDesktopColumn = environmentColumns.length > 1;
+
       acc[scenarioId] = {
         ...scenario,
         status: hasIncompleteStatus ? 'concluido' : scenario.status,
         statusByEnvironment: updatedStatusByEnvironment,
-        statusMobile: updatedStatusByEnvironment[environmentColumns[0]] ?? scenario.statusMobile,
-        statusDesktop: updatedStatusByEnvironment[environmentColumns[1]] ?? scenario.statusDesktop,
+        statusMobile: hasMobileColumn
+          ? updatedStatusByEnvironment[environmentColumns[0]] ?? scenario.statusMobile
+          : scenario.statusMobile,
+        statusDesktop: hasDesktopColumn
+          ? updatedStatusByEnvironment[environmentColumns[1]] ?? scenario.statusDesktop
+          : scenario.statusDesktop,
       };
       return acc;
     }, {});
