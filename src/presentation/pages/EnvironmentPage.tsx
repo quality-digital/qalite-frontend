@@ -317,10 +317,10 @@ export const EnvironmentPage = () => {
       return false;
     }
 
+    const columns = getEnvironmentColumns(environment);
+
     return Object.values(environment.scenarios ?? {}).some((scenario) => {
-      const statuses = Object.values(
-        getScenarioPlatformStatuses(scenario, getEnvironmentColumns(environment)),
-      );
+      const statuses = Object.values(getScenarioPlatformStatuses(scenario, columns));
       return statuses.some((status) => !SCENARIO_COMPLETED_STATUSES.includes(status));
     });
   }, [environment]);
