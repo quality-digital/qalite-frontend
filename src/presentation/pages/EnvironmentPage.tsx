@@ -70,7 +70,6 @@ import {
 } from '../../shared/config/environmentLabels';
 
 interface SlackSummaryBuilderOptions {
-  formattedTime: string;
   totalTimeMs: number;
   scenarioCount: number;
   executedScenariosCount: number;
@@ -171,47 +170,47 @@ const buildSlackTaskSummaryPayload = (
     type: isWorkspaceEnvironment ? 'storyfixes' : 'bug',
     value: options.bugsCount,
   } as const;
-  const monitoredUrlsList =
-    monitoredUrls.length > 0
-      ? monitoredUrls.map((url) => `  - ${url}`)
-      : [`  - ${translation('environment.slack.emptyList')}`];
-  const attendeesList =
-    attendeeList.length > 0
-      ? attendeeList.map((attendee) =>
-          typeof attendee === 'string'
-            ? `• ${attendee}`
-            : `• ${attendee.name ?? ''} (${attendee.email ?? ''})`,
-        )
-      : [`• ${translation('environment.slack.emptyParticipants')}`];
+  const jiraLinks = (environment.jiraTask ?? '')
+    .split('\n')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  const jiraList = jiraLinks.length > 0 ? jiraLinks : [translation('environment.slack.emptyList')];
+  const validatedEnvironment = environment.tipoAmbiente?.trim() || translation('dynamic.noValue');
+  const releaseLabel = environment.release?.trim() || translation('dynamic.identifierFallback');
+  const testTypeLabel = environment.tipoTeste?.trim() || 'Smoke tests';
+  const bugStatus = options.bugsCount === 0 ? 'sem bloqueios' : 'com bloqueios';
+  const monitoredUrlLabel = monitoredUrls[0]?.trim() || translation('environment.slack.emptyList');
+  const platformLabel = normalizedEnvironmentType === 'WS' ? 'VTEX IO' : normalizedEnvironmentType;
+  const responsible = attendeeList[0];
+  const responsibleName =
+    typeof responsible === 'string'
+      ? responsible
+      : (responsible?.name ?? translation('environment.slack.emptyParticipants'));
   const summaryMessage = [
-    translation('environment.slack.summaryHeader'),
-    `• ${translation('environment.slack.fields.environment')}: ${taskIdentifier}`,
-    `• ${translation('environment.slack.fields.totalTime')}: ${options.formattedTime || '00:00:00'}`,
-    `• ${translation('environment.slack.fields.scenarios')}: ${options.scenarioCount}`,
-    `• ${translation('environment.slack.fields.execution')}: ${formatExecutedScenariosMessage(
-      options.executedScenariosCount,
-      translation,
-    )}`,
-    `• ${translation('environment.slack.fields.bugs')}: ${fix.value}`,
-    `• ${translation('environment.slack.fields.jira')}: ${
-      environment.jiraTask?.trim() || translation('dynamic.identifierFallback')
-    }`,
-    `• ${translation('environment.slack.fields.suite')}: ${suiteName} — ${buildSuiteDetails(
-      options.scenarioCount,
-      translation,
-    )}`,
-    `• ${translation('environment.slack.fields.participants')}: ${participantsCount}`,
-    `${translation('environment.slack.fields.monitoredUrls')}:`,
-    ...monitoredUrlsList,
+    `📊 **Resumo QA — QALITE (Release ${releaseLabel})**`,
     '',
-    translation('environment.slack.participantsTitle'),
-    ...attendeesList,
+    `• 🧪 **Execução:** ${options.executedScenariosCount}/${options.scenarioCount} cenários`,
+    `• 🐞 **Bugs:** ${options.bugsCount} (${bugStatus})`,
+    `• 📦 **Status:** ${testTypeLabel} estáveis em ambiente ${validatedEnvironment}`,
+    '',
+    '**Cobertura**',
+    `• Suíte: ${suiteName} (${options.progressLabel} executada)`,
+    `• Ambiente validado: ${validatedEnvironment}`,
+    '',
+    '**Links Jira**',
+    ...jiraList.map((jira) => `• ${jira}`),
+    '',
+    '**URL monitorada**',
+    `• ${monitoredUrlLabel} (${platformLabel})`,
+    '',
+    '**Responsável**',
+    `• ${responsibleName}`,
   ].join('\n');
 
   return {
     environmentSummary: {
       identifier: taskIdentifier,
-      totalTime: options.formattedTime || '00:00:00',
+      totalTime: '00:00:00',
       totalTimeMs: options.totalTimeMs,
       scenariosCount: options.scenarioCount,
       executedScenariosCount: options.executedScenariosCount,
@@ -312,7 +311,7 @@ export const EnvironmentPage = () => {
     detailScenario && environment
       ? getScenarioPlatformStatuses(detailScenario, getEnvironmentColumns(environment))
       : null;
-  const hasAnyConcludedScenario = useMemo(() => {
+  const hasIncompleteScenarios = useMemo(() => {
     if (!environment) {
       return false;
     }
@@ -321,10 +320,7 @@ export const EnvironmentPage = () => {
       const statuses = Object.values(
         getScenarioPlatformStatuses(scenario, getEnvironmentColumns(environment)),
       );
-
-      return statuses.some(
-        (status) => status === 'concluido' || status === 'concluido_automatizado',
-      );
+      return statuses.some((status) => !SCENARIO_COMPLETED_STATUSES.includes(status));
     });
   }, [environment]);
   const formatAutomationLabel = (value?: string | null) => {
@@ -518,7 +514,6 @@ export const EnvironmentPage = () => {
       const payload = buildSlackTaskSummaryPayload(
         environment,
         {
-          formattedTime,
           totalTimeMs: totalMs,
           scenarioCount,
           executedScenariosCount,
@@ -543,7 +538,6 @@ export const EnvironmentPage = () => {
     bugs,
     environment,
     executedScenariosCount,
-    formattedTime,
     isSendingSlackSummary,
     participantProfiles,
     progressLabel,
@@ -581,10 +575,7 @@ export const EnvironmentPage = () => {
         });
       } catch (error) {
         if (error instanceof EnvironmentStatusError && error.code === 'PENDING_SCENARIOS') {
-          showToast({
-            type: 'error',
-            message: translation('environment.pendingScenariosError'),
-          });
+          setIsFinishWithoutCompletedModalOpen(true);
           return;
         }
 
@@ -635,13 +626,13 @@ export const EnvironmentPage = () => {
       return;
     }
 
-    if (!hasAnyConcludedScenario && scenarioCount > 0) {
+    if (hasIncompleteScenarios && scenarioCount > 0) {
       setIsFinishWithoutCompletedModalOpen(true);
       return;
     }
 
     await handleStatusTransition('done');
-  }, [environment, handleStatusTransition, hasAnyConcludedScenario, scenarioCount]);
+  }, [environment, handleStatusTransition, hasIncompleteScenarios, scenarioCount]);
 
   const handleConfirmFinishWithoutCompletedScenarios = useCallback(async () => {
     try {
