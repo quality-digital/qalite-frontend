@@ -176,7 +176,8 @@ const buildSlackTaskSummaryPayload = (
     .filter(Boolean);
   const jiraList = jiraLinks.length > 0 ? jiraLinks : [translation('environment.slack.emptyList')];
   const validatedEnvironment = environment.tipoAmbiente?.trim() || translation('dynamic.noValue');
-  const releaseLabel = environment.release?.trim() || translation('dynamic.identifierFallback');
+  const releaseLabel = environment.release?.trim();
+  const releaseSummaryLabel = releaseLabel ? ` (Release ${releaseLabel})` : '';
   const testTypeLabel = environment.tipoTeste?.trim() || 'Smoke tests';
   const bugStatus = options.bugsCount === 0 ? 'sem bloqueios' : 'com bloqueios';
   const monitoredUrlLabel = monitoredUrls[0]?.trim() || translation('environment.slack.emptyList');
@@ -187,7 +188,7 @@ const buildSlackTaskSummaryPayload = (
       ? responsible
       : (responsible?.name ?? translation('environment.slack.emptyParticipants'));
   const summaryMessage = [
-    `📊 **Resumo QA — QALITE (Release ${releaseLabel})**`,
+    `📊 **Resumo QA — QALITE${releaseSummaryLabel}**`,
     '',
     `• 🧪 **Execução:** ${options.executedScenariosCount}/${options.scenarioCount} cenários`,
     `• 🐞 **Bugs:** ${options.bugsCount} (${bugStatus})`,
