@@ -8153,6 +8153,16 @@ button.store-summary-highlight:focus-visible {
     min-height: auto;
   }
 
+  .dynamic-links-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .dynamic-links-add-button {
+    width: 100%;
+    min-width: 0;
+  }
+
   .environment-card-suite-row,
   .environment-card-moment-row {
     flex-direction: column;

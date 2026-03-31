@@ -42,6 +42,7 @@ import { useEnvironmentEngagement } from '../hooks/useEnvironmentEngagement';
 import { EnvironmentSummaryCard } from '../components/environments/EnvironmentSummaryCard';
 import { TOptions } from 'i18next';
 import {
+  SCENARIO_COMPLETED_STATUSES,
   copyEnvironmentAsMarkdown,
   exportEnvironmentAsPDF,
   getEnvironmentColumns,
@@ -247,6 +248,7 @@ export const EnvironmentPage = () => {
   const [inviteSearch, setInviteSearch] = useState('');
   const [invitePage, setInvitePage] = useState(1);
   const [isBugModalOpen, setIsBugModalOpen] = useState(false);
+  const [isFinishWithoutCompletedModalOpen, setIsFinishWithoutCompletedModalOpen] = useState(false);
   const [editingBug, setEditingBug] = useState<EnvironmentBug | null>(null);
   const [defaultBugScenarioId, setDefaultBugScenarioId] = useState<string | null>(null);
   const [scenarioDetailsId, setScenarioDetailsId] = useState<string | null>(null);
@@ -310,6 +312,21 @@ export const EnvironmentPage = () => {
     detailScenario && environment
       ? getScenarioPlatformStatuses(detailScenario, getEnvironmentColumns(environment))
       : null;
+  const hasAnyConcludedScenario = useMemo(() => {
+    if (!environment) {
+      return false;
+    }
+
+    return Object.values(environment.scenarios ?? {}).some((scenario) => {
+      const statuses = Object.values(
+        getScenarioPlatformStatuses(scenario, getEnvironmentColumns(environment)),
+      );
+
+      return statuses.some(
+        (status) => status === 'concluido' || status === 'concluido_automatizado',
+      );
+    });
+  }, [environment]);
   const formatAutomationLabel = (value?: string | null) => {
     const labelKey = getAutomationLabelKey(value);
     if (labelKey) {
@@ -577,6 +594,65 @@ export const EnvironmentPage = () => {
     },
     [environment, sendSlackSummary, showToast, translation, user?.uid],
   );
+
+  const concludeAllScenariosBeforeFinishing = useCallback(async () => {
+    if (!environment) {
+      return;
+    }
+
+    const environmentColumns = getEnvironmentColumns(environment);
+    const updatedScenarios = Object.entries(environment.scenarios ?? {}).reduce<
+      NonNullable<Environment['scenarios']>
+    >((acc, [scenarioId, scenario]) => {
+      const currentStatuses = getScenarioPlatformStatuses(scenario, environmentColumns);
+      const updatedStatusByEnvironment = Object.entries(currentStatuses).reduce<
+        Record<string, EnvironmentScenarioStatus>
+      >((statusAcc, [platform, status]) => {
+        statusAcc[platform] = SCENARIO_COMPLETED_STATUSES.includes(status) ? status : 'concluido';
+        return statusAcc;
+      }, {});
+      const hasIncompleteStatus = Object.values(currentStatuses).some(
+        (status) => !SCENARIO_COMPLETED_STATUSES.includes(status),
+      );
+
+      acc[scenarioId] = {
+        ...scenario,
+        status: hasIncompleteStatus ? 'concluido' : scenario.status,
+        statusByEnvironment: updatedStatusByEnvironment,
+        statusMobile: updatedStatusByEnvironment[environmentColumns[0]] ?? scenario.statusMobile,
+        statusDesktop: updatedStatusByEnvironment[environmentColumns[1]] ?? scenario.statusDesktop,
+      };
+      return acc;
+    }, {});
+
+    await environmentService.update(environment.id, {
+      scenarios: updatedScenarios,
+    });
+  }, [environment]);
+
+  const handleFinishEnvironment = useCallback(async () => {
+    if (!environment) {
+      return;
+    }
+
+    if (!hasAnyConcludedScenario && scenarioCount > 0) {
+      setIsFinishWithoutCompletedModalOpen(true);
+      return;
+    }
+
+    await handleStatusTransition('done');
+  }, [environment, handleStatusTransition, hasAnyConcludedScenario, scenarioCount]);
+
+  const handleConfirmFinishWithoutCompletedScenarios = useCallback(async () => {
+    try {
+      await concludeAllScenariosBeforeFinishing();
+      await handleStatusTransition('done');
+      setIsFinishWithoutCompletedModalOpen(false);
+    } catch (error) {
+      console.error(error);
+      showToast({ type: 'error', message: translation('environment.statusUpdateError') });
+    }
+  }, [concludeAllScenariosBeforeFinishing, handleStatusTransition, showToast, translation]);
 
   const handleCopyLink = useCallback(
     async (url: string) => {
@@ -936,7 +1012,7 @@ export const EnvironmentPage = () => {
             {environment.status === 'in_progress' && hasEnteredEnvironment && (
               <Button
                 type="button"
-                onClick={() => handleStatusTransition('done')}
+                onClick={() => void handleFinishEnvironment()}
                 data-testid="finish-environment-button"
               >
                 {translation('environment.finishEnvironment')}
@@ -1090,14 +1166,40 @@ export const EnvironmentPage = () => {
         onDeleted={() => navigate(-1)}
       />
       {environment && (
-        <EnvironmentBugModal
-          environment={environment}
-          isOpen={isBugModalOpen}
-          bug={editingBug}
-          onClose={closeBugModal}
-          initialScenarioId={editingBug ? (editingBug.scenarioId ?? null) : defaultBugScenarioId}
-          onSaved={refetchBugs}
-        />
+        <>
+          <EnvironmentBugModal
+            environment={environment}
+            isOpen={isBugModalOpen}
+            bug={editingBug}
+            onClose={closeBugModal}
+            initialScenarioId={editingBug ? (editingBug.scenarioId ?? null) : defaultBugScenarioId}
+            onSaved={refetchBugs}
+          />
+          <Modal
+            isOpen={isFinishWithoutCompletedModalOpen}
+            title={translation('environment.confirmFinishWithoutConcludedScenariosTitle')}
+            description={translation(
+              'environment.confirmFinishWithoutConcludedScenariosDescription',
+            )}
+            onClose={() => setIsFinishWithoutCompletedModalOpen(false)}
+          >
+            <div className="modal-actions">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsFinishWithoutCompletedModalOpen(false)}
+              >
+                {translation('cancel')}
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void handleConfirmFinishWithoutCompletedScenarios()}
+              >
+                {translation('environment.confirmFinishWithoutConcludedScenariosConfirm')}
+              </Button>
+            </div>
+          </Modal>
+        </>
       )}
 
       <Modal
