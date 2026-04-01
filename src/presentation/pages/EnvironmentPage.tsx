@@ -42,6 +42,9 @@ import { useEnvironmentEngagement } from '../hooks/useEnvironmentEngagement';
 import { EnvironmentSummaryCard } from '../components/environments/EnvironmentSummaryCard';
 import { TOptions } from 'i18next';
 import {
+  SCENARIO_COMPLETED_STATUSES,
+  copyEnvironmentAsMarkdown,
+  exportEnvironmentAsPDF,
   getEnvironmentColumns,
   getScenarioPlatformStatuses,
 } from '../../infrastructure/external/environments';
@@ -67,7 +70,6 @@ import {
 } from '../../shared/config/environmentLabels';
 
 interface SlackSummaryBuilderOptions {
-  formattedTime: string;
   totalTimeMs: number;
   scenarioCount: number;
   executedScenariosCount: number;
@@ -168,47 +170,48 @@ const buildSlackTaskSummaryPayload = (
     type: isWorkspaceEnvironment ? 'storyfixes' : 'bug',
     value: options.bugsCount,
   } as const;
-  const monitoredUrlsList =
-    monitoredUrls.length > 0
-      ? monitoredUrls.map((url) => `  - ${url}`)
-      : [`  - ${translation('environment.slack.emptyList')}`];
-  const attendeesList =
-    attendeeList.length > 0
-      ? attendeeList.map((attendee) =>
-          typeof attendee === 'string'
-            ? `• ${attendee}`
-            : `• ${attendee.name ?? ''} (${attendee.email ?? ''})`,
-        )
-      : [`• ${translation('environment.slack.emptyParticipants')}`];
+  const jiraLinks = (environment.jiraTask ?? '')
+    .split('\n')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  const jiraList = jiraLinks.length > 0 ? jiraLinks : [translation('environment.slack.emptyList')];
+  const validatedEnvironment = environment.tipoAmbiente?.trim() || translation('dynamic.noValue');
+  const releaseLabel = environment.release?.trim();
+  const releaseSummaryLabel = releaseLabel ? ` (Release ${releaseLabel})` : '';
+  const testTypeLabel = environment.tipoTeste?.trim() || 'Smoke tests';
+  const bugStatus = options.bugsCount === 0 ? 'sem bloqueios' : 'com bloqueios';
+  const monitoredUrlLabel = monitoredUrls[0]?.trim() || translation('environment.slack.emptyList');
+  const platformLabel = normalizedEnvironmentType === 'WS' ? 'VTEX IO' : normalizedEnvironmentType;
+  const responsible = attendeeList[0];
+  const responsibleName =
+    typeof responsible === 'string'
+      ? responsible
+      : (responsible?.name ?? translation('environment.slack.emptyParticipants'));
   const summaryMessage = [
-    translation('environment.slack.summaryHeader'),
-    `• ${translation('environment.slack.fields.environment')}: ${taskIdentifier}`,
-    `• ${translation('environment.slack.fields.totalTime')}: ${options.formattedTime || '00:00:00'}`,
-    `• ${translation('environment.slack.fields.scenarios')}: ${options.scenarioCount}`,
-    `• ${translation('environment.slack.fields.execution')}: ${formatExecutedScenariosMessage(
-      options.executedScenariosCount,
-      translation,
-    )}`,
-    `• ${translation('environment.slack.fields.bugs')}: ${fix.value}`,
-    `• ${translation('environment.slack.fields.jira')}: ${
-      environment.jiraTask?.trim() || translation('dynamic.identifierFallback')
-    }`,
-    `• ${translation('environment.slack.fields.suite')}: ${suiteName} — ${buildSuiteDetails(
-      options.scenarioCount,
-      translation,
-    )}`,
-    `• ${translation('environment.slack.fields.participants')}: ${participantsCount}`,
-    `${translation('environment.slack.fields.monitoredUrls')}:`,
-    ...monitoredUrlsList,
+    `📊 **Resumo QA — QALITE${releaseSummaryLabel}**`,
     '',
-    translation('environment.slack.participantsTitle'),
-    ...attendeesList,
+    `• 🧪 **Execução:** ${options.executedScenariosCount}/${options.scenarioCount} cenários`,
+    `• 🐞 **Bugs:** ${options.bugsCount} (${bugStatus})`,
+    `• 📦 **Status:** ${testTypeLabel} estáveis em ambiente ${validatedEnvironment}`,
+    '',
+    '**Cobertura**',
+    `• Suíte: ${suiteName} (${options.progressLabel} executada)`,
+    `• Ambiente validado: ${validatedEnvironment}`,
+    '',
+    '**Links Jira**',
+    ...jiraList.map((jira) => `• ${jira}`),
+    '',
+    '**URL monitorada**',
+    `• ${monitoredUrlLabel} (${platformLabel})`,
+    '',
+    '**Responsável**',
+    `• ${responsibleName}`,
   ].join('\n');
 
   return {
     environmentSummary: {
       identifier: taskIdentifier,
-      totalTime: options.formattedTime || '00:00:00',
+      totalTime: '00:00:00',
       totalTimeMs: options.totalTimeMs,
       scenariosCount: options.scenarioCount,
       executedScenariosCount: options.executedScenariosCount,
@@ -245,6 +248,7 @@ export const EnvironmentPage = () => {
   const [inviteSearch, setInviteSearch] = useState('');
   const [invitePage, setInvitePage] = useState(1);
   const [isBugModalOpen, setIsBugModalOpen] = useState(false);
+  const [isFinishWithoutCompletedModalOpen, setIsFinishWithoutCompletedModalOpen] = useState(false);
   const [editingBug, setEditingBug] = useState<EnvironmentBug | null>(null);
   const [defaultBugScenarioId, setDefaultBugScenarioId] = useState<string | null>(null);
   const [scenarioDetailsId, setScenarioDetailsId] = useState<string | null>(null);
@@ -308,6 +312,18 @@ export const EnvironmentPage = () => {
     detailScenario && environment
       ? getScenarioPlatformStatuses(detailScenario, getEnvironmentColumns(environment))
       : null;
+  const hasIncompleteScenarios = useMemo(() => {
+    if (!environment) {
+      return false;
+    }
+
+    const columns = getEnvironmentColumns(environment);
+
+    return Object.values(environment.scenarios ?? {}).some((scenario) => {
+      const statuses = Object.values(getScenarioPlatformStatuses(scenario, columns));
+      return statuses.some((status) => !SCENARIO_COMPLETED_STATUSES.includes(status));
+    });
+  }, [environment]);
   const formatAutomationLabel = (value?: string | null) => {
     const labelKey = getAutomationLabelKey(value);
     if (labelKey) {
@@ -499,7 +515,6 @@ export const EnvironmentPage = () => {
       const payload = buildSlackTaskSummaryPayload(
         environment,
         {
-          formattedTime,
           totalTimeMs: totalMs,
           scenarioCount,
           executedScenariosCount,
@@ -524,7 +539,6 @@ export const EnvironmentPage = () => {
     bugs,
     environment,
     executedScenariosCount,
-    formattedTime,
     isSendingSlackSummary,
     participantProfiles,
     progressLabel,
@@ -562,10 +576,7 @@ export const EnvironmentPage = () => {
         });
       } catch (error) {
         if (error instanceof EnvironmentStatusError && error.code === 'PENDING_SCENARIOS') {
-          showToast({
-            type: 'error',
-            message: translation('environment.pendingScenariosError'),
-          });
+          setIsFinishWithoutCompletedModalOpen(true);
           return;
         }
 
@@ -575,6 +586,72 @@ export const EnvironmentPage = () => {
     },
     [environment, sendSlackSummary, showToast, translation, user?.uid],
   );
+
+  const concludeAllScenariosBeforeFinishing = useCallback(async () => {
+    if (!environment) {
+      return;
+    }
+
+    const environmentColumns = getEnvironmentColumns(environment);
+    const updatedScenarios = Object.entries(environment.scenarios ?? {}).reduce<
+      NonNullable<Environment['scenarios']>
+    >((acc, [scenarioId, scenario]) => {
+      const currentStatuses = getScenarioPlatformStatuses(scenario, environmentColumns);
+      const updatedStatusByEnvironment = Object.entries(currentStatuses).reduce<
+        Record<string, EnvironmentScenarioStatus>
+      >((statusAcc, [platform, status]) => {
+        statusAcc[platform] = SCENARIO_COMPLETED_STATUSES.includes(status) ? status : 'concluido';
+        return statusAcc;
+      }, {});
+      const hasIncompleteStatus = Object.values(currentStatuses).some(
+        (status) => !SCENARIO_COMPLETED_STATUSES.includes(status),
+      );
+
+      const hasMobileColumn = environmentColumns.length > 0;
+      const hasDesktopColumn = environmentColumns.length > 1;
+
+      acc[scenarioId] = {
+        ...scenario,
+        status: hasIncompleteStatus ? 'concluido' : scenario.status,
+        statusByEnvironment: updatedStatusByEnvironment,
+        statusMobile: hasMobileColumn
+          ? updatedStatusByEnvironment[environmentColumns[0]] ?? scenario.statusMobile
+          : scenario.statusMobile,
+        statusDesktop: hasDesktopColumn
+          ? updatedStatusByEnvironment[environmentColumns[1]] ?? scenario.statusDesktop
+          : scenario.statusDesktop,
+      };
+      return acc;
+    }, {});
+
+    await environmentService.update(environment.id, {
+      scenarios: updatedScenarios,
+    });
+  }, [environment]);
+
+  const handleFinishEnvironment = useCallback(async () => {
+    if (!environment) {
+      return;
+    }
+
+    if (hasIncompleteScenarios && scenarioCount > 0) {
+      setIsFinishWithoutCompletedModalOpen(true);
+      return;
+    }
+
+    await handleStatusTransition('done');
+  }, [environment, handleStatusTransition, hasIncompleteScenarios, scenarioCount]);
+
+  const handleConfirmFinishWithoutCompletedScenarios = useCallback(async () => {
+    try {
+      await concludeAllScenariosBeforeFinishing();
+      await handleStatusTransition('done');
+      setIsFinishWithoutCompletedModalOpen(false);
+    } catch (error) {
+      console.error(error);
+      showToast({ type: 'error', message: translation('environment.statusUpdateError') });
+    }
+  }, [concludeAllScenariosBeforeFinishing, handleStatusTransition, showToast, translation]);
 
   const handleCopyLink = useCallback(
     async (url: string) => {
@@ -768,6 +845,48 @@ export const EnvironmentPage = () => {
     urls,
   ]);
 
+  const handleCopyMarkdown = useCallback(async () => {
+    if (!environment) {
+      return;
+    }
+
+    try {
+      await copyEnvironmentAsMarkdown(environment, bugs, participantProfiles, storeName);
+      showToast({ type: 'success', message: translation('environment.copyMarkdownSuccess') });
+    } catch (error) {
+      console.error(error);
+      showToast({ type: 'error', message: translation('environment.copyMarkdownError') });
+    }
+  }, [bugs, environment, participantProfiles, showToast, storeName, translation]);
+
+  const handleExportPdf = useCallback(() => {
+    if (!environment) {
+      return;
+    }
+
+    try {
+      exportEnvironmentAsPDF(
+        environment,
+        bugs,
+        participantProfiles,
+        { name: storeName, logoUrl: storeLogoUrl },
+        environmentOrganization,
+      );
+    } catch (error) {
+      console.error(error);
+      showToast({ type: 'error', message: translation('storeSummary.pdfOpenError') });
+    }
+  }, [
+    bugs,
+    environment,
+    environmentOrganization,
+    participantProfiles,
+    showToast,
+    storeLogoUrl,
+    storeName,
+    translation,
+  ]);
+
   const openCreateBugModal = useCallback((scenarioId: string) => {
     setEditingBug(null);
     setDefaultBugScenarioId(scenarioId);
@@ -892,7 +1011,7 @@ export const EnvironmentPage = () => {
             {environment.status === 'in_progress' && hasEnteredEnvironment && (
               <Button
                 type="button"
-                onClick={() => handleStatusTransition('done')}
+                onClick={() => void handleFinishEnvironment()}
                 data-testid="finish-environment-button"
               >
                 {translation('environment.finishEnvironment')}
@@ -983,6 +1102,24 @@ export const EnvironmentPage = () => {
                 <FileTextIcon aria-hidden className="icon" />
                 {translation('environment.exportExcel')}
               </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleExportPdf}
+                data-testid="export-environment-pdf"
+              >
+                <FileTextIcon aria-hidden className="icon" />
+                {translation('environment.exportPDF')}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => void handleCopyMarkdown()}
+                data-testid="copy-environment-markdown"
+              >
+                <CopyIcon aria-hidden className="icon" />
+                {translation('environment.copyMarkdown')}
+              </Button>
             </div>
           </div>
         </div>
@@ -1028,14 +1165,40 @@ export const EnvironmentPage = () => {
         onDeleted={() => navigate(-1)}
       />
       {environment && (
-        <EnvironmentBugModal
-          environment={environment}
-          isOpen={isBugModalOpen}
-          bug={editingBug}
-          onClose={closeBugModal}
-          initialScenarioId={editingBug ? (editingBug.scenarioId ?? null) : defaultBugScenarioId}
-          onSaved={refetchBugs}
-        />
+        <>
+          <EnvironmentBugModal
+            environment={environment}
+            isOpen={isBugModalOpen}
+            bug={editingBug}
+            onClose={closeBugModal}
+            initialScenarioId={editingBug ? (editingBug.scenarioId ?? null) : defaultBugScenarioId}
+            onSaved={refetchBugs}
+          />
+          <Modal
+            isOpen={isFinishWithoutCompletedModalOpen}
+            title={translation('environment.confirmFinishWithoutConcludedScenariosTitle')}
+            description={translation(
+              'environment.confirmFinishWithoutConcludedScenariosDescription',
+            )}
+            onClose={() => setIsFinishWithoutCompletedModalOpen(false)}
+          >
+            <div className="modal-actions">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsFinishWithoutCompletedModalOpen(false)}
+              >
+                {translation('cancel')}
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void handleConfirmFinishWithoutCompletedScenarios()}
+              >
+                {translation('environment.confirmFinishWithoutConcludedScenariosConfirm')}
+              </Button>
+            </div>
+          </Modal>
+        </>
       )}
 
       <Modal

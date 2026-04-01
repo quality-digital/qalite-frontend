@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
@@ -22,15 +22,27 @@ export const Layout = ({ children, showHeader = true }: LayoutProps) => {
   const { t } = useTranslation();
   const brandName = activeStore?.name || activeOrganization?.name || t('app.brandName');
   const brandLogo = activeStore?.logoUrl || activeOrganization?.logoUrl || qliteLogo;
+  const [brandLogoSrc, setBrandLogoSrc] = useState(brandLogo);
+
+  useEffect(() => {
+    setBrandLogoSrc(brandLogo);
+  }, [brandLogo]);
+
   return (
     <div className="app-shell">
       {showHeader && (
         <header className="app-header">
           <Link to="/" className="app-brand" aria-label={t('layout.homeAriaLabel', { brandName })}>
             <CachedImage
-              src={brandLogo}
+              src={brandLogoSrc}
               alt={t('layout.brandLogoAlt', { brandName })}
               className="app-brand-logo"
+              loading="eager"
+              onError={() => {
+                if (brandLogoSrc !== qliteLogo) {
+                  setBrandLogoSrc(qliteLogo);
+                }
+              }}
             />
             <span className="app-brand-name">{brandName}</span>
           </Link>

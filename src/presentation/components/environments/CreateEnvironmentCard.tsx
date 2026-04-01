@@ -304,7 +304,9 @@ export const CreateEnvironmentCard = ({
         {urls.length > 0 && (
           <div className="dynamic-links-list">
             {urls.map((url) => (
-              <span key={url}>{url}</span>
+              <span key={url} className="dynamic-link-item">
+                <span>{url}</span>
+              </span>
             ))}
           </div>
         )}
@@ -337,7 +339,9 @@ export const CreateEnvironmentCard = ({
         {jiraLinks.length > 0 && (
           <div className="dynamic-links-list">
             {jiraLinks.map((link) => (
-              <span key={link}>{link}</span>
+              <span key={link} className="dynamic-link-item">
+                <span>{link}</span>
+              </span>
             ))}
           </div>
         )}
