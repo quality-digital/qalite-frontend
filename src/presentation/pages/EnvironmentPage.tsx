@@ -179,11 +179,32 @@ const buildSlackTaskSummaryPayload = (
   const jiraList = jiraLinks.length > 0 ? jiraLinks : [translation('environment.slack.emptyList')];
   const validatedEnvironment = environment.tipoAmbiente?.trim() || translation('dynamic.noValue');
   const releaseLabel = environment.release?.trim();
-  const shouldShowReleaseLabel = requiresReleaseField(environment.tipoAmbiente);
-  const releaseSummaryLabel =
-    shouldShowReleaseLabel && releaseLabel ? ` (Release ${releaseLabel})` : '';
-  const testTypeLabel = options.testTypeLabel?.trim() || environment.tipoTeste?.trim() || 'Smoke tests';
-  const bugStatus = options.bugsCount === 0 ? 'sem bloqueios' : 'com bloqueios';
+const shouldShowReleaseLabel = requiresReleaseField(environment.tipoAmbiente);
+
+const releaseSummaryLabel =
+  shouldShowReleaseLabel && releaseLabel
+    ? ` (Release ${releaseLabel})`
+    : '';
+
+const testTypeLabel =
+  options.testTypeLabel?.trim() ||
+  environment.tipoTeste?.trim() ||
+  'Smoke tests';
+
+const executionStatus =
+  options.executedScenariosCount === options.scenarioCount
+    ? translation('environment.slack.executionStatusSuccess')
+    : translation('environment.slack.executionStatusPartial', {
+        executed: options.executedScenariosCount,
+        total: options.scenarioCount,
+      });
+
+const bugStatus =
+  options.bugsCount === 0
+    ? translation('environment.slack.noBugsStatus')
+    : translation('environment.slack.bugsStatus', {
+        count: options.bugsCount,
+      });
   const monitoredUrlLabel = monitoredUrls[0]?.trim() || translation('environment.slack.emptyList');
   const platformLabel = normalizedEnvironmentType === 'WS' ? 'VTEX IO' : normalizedEnvironmentType;
   const responsible = attendeeList[0];
@@ -192,24 +213,32 @@ const buildSlackTaskSummaryPayload = (
       ? responsible
       : (responsible?.name ?? translation('environment.slack.emptyParticipants'));
   const summaryMessage = [
-    `📊 **Resumo QA — QALITE${releaseSummaryLabel}**`,
+    `📊 ${translation('environment.slack.summaryHeader')}${releaseSummaryLabel}`,
     '',
-    `• 🧪 **Execução:** ${options.executedScenariosCount}/${options.scenarioCount} cenários`,
-    `• 🐞 **Bugs:** ${options.bugsCount} (${bugStatus})`,
-    `• 📦 **Status:** ${testTypeLabel} estáveis em ambiente ${validatedEnvironment}`,
+    `🔖 ${translation('environment.slack.sections.identification')}`,
+    `• ${translation('environment.slack.labels.environment')}: ${validatedEnvironment}`,
+    `• ${translation('environment.slack.labels.testType')}: ${testTypeLabel}`,
+    `• ${translation('environment.slack.labels.executionType')}: ${suiteName}`,
+    `• ${translation('environment.slack.labels.release')}: ${releaseLabel ?? translation('dynamic.noValue')}`,
     '',
-    '**Cobertura**',
-    `• Suíte: ${suiteName} (${options.progressLabel} executada)`,
-    `• Ambiente validado: ${validatedEnvironment}`,
+    `🧪 ${translation('environment.slack.sections.execution')}`,
+    `• ${translation('environment.slack.labels.totalScenarios')}: ${options.scenarioCount}`,
+    `• ${translation('environment.slack.labels.executedScenarios')}: ${options.executedScenariosCount}`,
+    `• ${translation('environment.slack.labels.status')}: ${executionStatus}`,
+    `• ${translation('environment.slack.labels.bugs')}: ${bugStatus}`,
     '',
-    '**Links Jira**',
-    ...jiraList.map((jira) => `• ${jira}`),
+    `📦 ${translation('environment.slack.sections.suite')}`,
+    `• ${translation('environment.slack.labels.suiteName')}: ${suiteName}`,
+    `• ${translation('environment.slack.labels.suiteCoverage')}: ${options.progressLabel}`,
     '',
-    '**URL monitorada**',
+    `🌐 ${translation('environment.slack.sections.monitoredUrls')}`,
     `• ${monitoredUrlLabel} (${platformLabel})`,
     '',
-    '**Responsável**',
+    `👥 ${translation('environment.slack.sections.participants')}`,
     `• ${responsibleName}`,
+    '',
+    `🔗 ${translation('environment.slack.sections.jira')}`,
+    ...jiraList.map((jira) => `• ${jira}`),
   ].join('\n');
 
   return {
