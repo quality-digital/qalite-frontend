@@ -53,6 +53,7 @@ import {
   getCriticalityClassName,
   getCriticalityLabelKey,
 } from '../constants/scenarioOptions';
+import { requiresReleaseField } from '../constants/environmentOptions';
 import {
   CopyIcon,
   FileTextIcon,
@@ -78,6 +79,7 @@ interface SlackSummaryBuilderOptions {
   urls: string[];
   bugsCount: number;
   participantProfiles: UserSummary[];
+  testTypeLabel: string;
 }
 
 const formatExecutedScenariosMessage = (
@@ -177,8 +179,10 @@ const buildSlackTaskSummaryPayload = (
   const jiraList = jiraLinks.length > 0 ? jiraLinks : [translation('environment.slack.emptyList')];
   const validatedEnvironment = environment.tipoAmbiente?.trim() || translation('dynamic.noValue');
   const releaseLabel = environment.release?.trim();
-  const releaseSummaryLabel = releaseLabel ? ` (Release ${releaseLabel})` : '';
-  const testTypeLabel = environment.tipoTeste?.trim() || 'Smoke tests';
+  const shouldShowReleaseLabel = requiresReleaseField(environment.tipoAmbiente);
+  const releaseSummaryLabel =
+    shouldShowReleaseLabel && releaseLabel ? ` (Release ${releaseLabel})` : '';
+  const testTypeLabel = options.testTypeLabel?.trim() || environment.tipoTeste?.trim() || 'Smoke tests';
   const bugStatus = options.bugsCount === 0 ? 'sem bloqueios' : 'com bloqueios';
   const monitoredUrlLabel = monitoredUrls[0]?.trim() || translation('environment.slack.emptyList');
   const platformLabel = normalizedEnvironmentType === 'WS' ? 'VTEX IO' : normalizedEnvironmentType;
@@ -523,6 +527,7 @@ export const EnvironmentPage = () => {
           urls,
           bugsCount: bugs.length,
           participantProfiles,
+          testTypeLabel: translateOptionValue(environment.tipoTeste),
         },
         translation,
       );
@@ -546,6 +551,7 @@ export const EnvironmentPage = () => {
     shareLinks.public,
     slackWebhookUrl,
     totalMs,
+    translateOptionValue,
     translation,
     urls,
   ]);
@@ -615,10 +621,10 @@ export const EnvironmentPage = () => {
         status: hasIncompleteStatus ? 'concluido' : scenario.status,
         statusByEnvironment: updatedStatusByEnvironment,
         statusMobile: hasMobileColumn
-          ? updatedStatusByEnvironment[environmentColumns[0]] ?? scenario.statusMobile
+          ? (updatedStatusByEnvironment[environmentColumns[0]] ?? scenario.statusMobile)
           : scenario.statusMobile,
         statusDesktop: hasDesktopColumn
-          ? updatedStatusByEnvironment[environmentColumns[1]] ?? scenario.statusDesktop
+          ? (updatedStatusByEnvironment[environmentColumns[1]] ?? scenario.statusDesktop)
           : scenario.statusDesktop,
       };
       return acc;
