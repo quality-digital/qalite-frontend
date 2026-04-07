@@ -17,6 +17,7 @@ export const MOMENT_OPTIONS_BY_ENVIRONMENT: Record<string, string[]> = {
   PROD: ['environmentOptions.post', 'environmentOptions.prod'],
 };
 
-export const requiresReleaseField = (tipoAmbiente: string): boolean => tipoAmbiente === 'TM';
-
-export { translateEnvironmentOption } from '../../shared/utils/environmentOptions';
+export {
+  requiresReleaseField,
+  translateEnvironmentOption,
+} from '../../shared/utils/environmentOptions';

@@ -14,3 +14,9 @@ export const translateEnvironmentOption = (
   const translated = t(key);
   return translated === key ? value : translated;
 };
+
+export const requiresReleaseField = (environmentType: string | null | undefined): boolean => {
+  const normalized =
+    typeof environmentType === 'string' ? environmentType.trim().toUpperCase() : '';
+  return normalized === 'TM';
+};
