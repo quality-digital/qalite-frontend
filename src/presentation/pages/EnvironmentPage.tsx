@@ -179,7 +179,17 @@ const buildSlackTaskSummaryPayload = (
   const releaseLabel = environment.release?.trim();
   const releaseSummaryLabel = releaseLabel ? ` (Release ${releaseLabel})` : '';
   const testTypeLabel = environment.tipoTeste?.trim() || 'Smoke tests';
-  const bugStatus = options.bugsCount === 0 ? 'sem bloqueios' : 'com bloqueios';
+  const executionStatus =
+    options.executedScenariosCount === options.scenarioCount
+      ? translation('environment.slack.executionStatusSuccess')
+      : translation('environment.slack.executionStatusPartial', {
+          executed: options.executedScenariosCount,
+          total: options.scenarioCount,
+        });
+  const bugStatus =
+    options.bugsCount === 0
+      ? translation('environment.slack.noBugsStatus')
+      : translation('environment.slack.bugsStatus', { count: options.bugsCount });
   const monitoredUrlLabel = monitoredUrls[0]?.trim() || translation('environment.slack.emptyList');
   const platformLabel = normalizedEnvironmentType === 'WS' ? 'VTEX IO' : normalizedEnvironmentType;
   const responsible = attendeeList[0];
@@ -188,24 +198,32 @@ const buildSlackTaskSummaryPayload = (
       ? responsible
       : (responsible?.name ?? translation('environment.slack.emptyParticipants'));
   const summaryMessage = [
-    `📊 **Resumo QA — QALITE${releaseSummaryLabel}**`,
+    `📊 ${translation('environment.slack.summaryHeader')}${releaseSummaryLabel}`,
     '',
-    `• 🧪 **Execução:** ${options.executedScenariosCount}/${options.scenarioCount} cenários`,
-    `• 🐞 **Bugs:** ${options.bugsCount} (${bugStatus})`,
-    `• 📦 **Status:** ${testTypeLabel} estáveis em ambiente ${validatedEnvironment}`,
+    `🔖 ${translation('environment.slack.sections.identification')}`,
+    `• ${translation('environment.slack.labels.environment')}: ${validatedEnvironment}`,
+    `• ${translation('environment.slack.labels.testType')}: ${testTypeLabel}`,
+    `• ${translation('environment.slack.labels.executionType')}: ${suiteName}`,
+    `• ${translation('environment.slack.labels.release')}: ${releaseLabel ?? translation('dynamic.noValue')}`,
     '',
-    '**Cobertura**',
-    `• Suíte: ${suiteName} (${options.progressLabel} executada)`,
-    `• Ambiente validado: ${validatedEnvironment}`,
+    `🧪 ${translation('environment.slack.sections.execution')}`,
+    `• ${translation('environment.slack.labels.totalScenarios')}: ${options.scenarioCount}`,
+    `• ${translation('environment.slack.labels.executedScenarios')}: ${options.executedScenariosCount}`,
+    `• ${translation('environment.slack.labels.status')}: ${executionStatus}`,
+    `• ${translation('environment.slack.labels.bugs')}: ${bugStatus}`,
     '',
-    '**Links Jira**',
-    ...jiraList.map((jira) => `• ${jira}`),
+    `📦 ${translation('environment.slack.sections.suite')}`,
+    `• ${translation('environment.slack.labels.suiteName')}: ${suiteName}`,
+    `• ${translation('environment.slack.labels.suiteCoverage')}: ${options.progressLabel}`,
     '',
-    '**URL monitorada**',
+    `🌐 ${translation('environment.slack.sections.monitoredUrls')}`,
     `• ${monitoredUrlLabel} (${platformLabel})`,
     '',
-    '**Responsável**',
+    `👥 ${translation('environment.slack.sections.participants')}`,
     `• ${responsibleName}`,
+    '',
+    `🔗 ${translation('environment.slack.sections.jira')}`,
+    ...jiraList.map((jira) => `• ${jira}`),
   ].join('\n');
 
   return {
@@ -615,10 +633,10 @@ export const EnvironmentPage = () => {
         status: hasIncompleteStatus ? 'concluido' : scenario.status,
         statusByEnvironment: updatedStatusByEnvironment,
         statusMobile: hasMobileColumn
-          ? updatedStatusByEnvironment[environmentColumns[0]] ?? scenario.statusMobile
+          ? (updatedStatusByEnvironment[environmentColumns[0]] ?? scenario.statusMobile)
           : scenario.statusMobile,
         statusDesktop: hasDesktopColumn
-          ? updatedStatusByEnvironment[environmentColumns[1]] ?? scenario.statusDesktop
+          ? (updatedStatusByEnvironment[environmentColumns[1]] ?? scenario.statusDesktop)
           : scenario.statusDesktop,
       };
       return acc;
