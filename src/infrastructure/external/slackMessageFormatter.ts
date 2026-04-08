@@ -49,7 +49,9 @@ const addIdentification = (lines: string[], data: ExecutionReportData): void => 
   if (data.executionType)
     details.push(`• *${t('environment.slack.labels.executionType')}:* ${data.executionType}`);
 
-  const shouldShowRelease = requiresReleaseField(data.environmentType ?? data.environment);
+  const shouldShowRelease = data.environmentType
+    ? requiresReleaseField(data.environmentType)
+    : false;
   if (shouldShowRelease && data.release) {
     details.push(`• *${t('environment.slack.labels.release')}:* ${data.release}`);
   }
