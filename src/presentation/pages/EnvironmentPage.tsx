@@ -176,7 +176,8 @@ const buildSlackTaskSummaryPayload = (
     .split('\n')
     .map((entry) => entry.trim())
     .filter(Boolean);
-  const jiraList = jiraLinks.length > 0 ? jiraLinks : [translation('environment.slack.emptyList')];
+  const jiraList =
+    jiraLinks.length > 0 ? jiraLinks : [translation('environment.slack.emptyJiraList')];
   const validatedEnvironment = environment.tipoAmbiente?.trim() || translation('dynamic.noValue');
   const releaseLabel = environment.release?.trim();
   const shouldShowReleaseLabel = requiresReleaseField(environment.tipoAmbiente);
