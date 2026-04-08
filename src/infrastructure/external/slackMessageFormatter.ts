@@ -31,7 +31,7 @@ export const formatExecutionReportToSlack = (data: ExecutionReportData): string 
   addParticipants(lines, data);
   addJiraTasks(lines, data);
 
-  return lines.filter(Boolean).join('\n').trim();
+  return lines.join('\n').trim();
 };
 
 const addHeader = (lines: string[]): void => {
