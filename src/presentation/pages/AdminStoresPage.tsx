@@ -1,8 +1,6 @@
 import { ChangeEvent, FormEvent, KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { FaChartLine, FaGithub } from 'react-icons/fa';
-import { SiVtex } from 'react-icons/si';
 
 import type { Organization, OrganizationAccessRequest } from '../../domain/entities/organization';
 import type { Store } from '../../domain/entities/store';
@@ -1085,37 +1083,28 @@ export const AdminStoresPage = () => {
           />
           <TextInput
             id="store-admin-url"
-            label={translation('storeManagement.storeAdminUrlLabel')}
+            label="🌐 VTEX Admin URL"
             value={storeForm.adminUrl}
             onChange={(event) =>
               setStoreForm((previous) => ({ ...previous, adminUrl: event.target.value }))
             }
           />
-          <p className="form-hint store-link-hint store-link-hint--vtex">
-            <SiVtex aria-hidden className="icon" /> VTEX Admin
-          </p>
           <TextInput
             id="store-automation-repo-url"
-            label="URL automação (GitHub)"
+            label="🐙 URL automação (GitHub)"
             value={storeForm.automationRepoUrl}
             onChange={(event) =>
               setStoreForm((previous) => ({ ...previous, automationRepoUrl: event.target.value }))
             }
           />
-          <p className="form-hint store-link-hint store-link-hint--github">
-            <FaGithub aria-hidden className="icon" /> GitHub
-          </p>
           <TextInput
             id="store-allure-url"
-            label="URL automação (Allure)"
+            label="📊 URL automação (Allure)"
             value={storeForm.allureUrl}
             onChange={(event) =>
               setStoreForm((previous) => ({ ...previous, allureUrl: event.target.value }))
             }
           />
-          <p className="form-hint store-link-hint store-link-hint--allure">
-            <FaChartLine aria-hidden className="icon" /> Allure
-          </p>
           <SelectInput
             id="store-stage"
             label={translation('storeManagement.storeEnvironmentLabel')}

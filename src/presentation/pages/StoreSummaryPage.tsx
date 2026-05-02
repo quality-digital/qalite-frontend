@@ -240,9 +240,13 @@ export const StoreSummaryPage = () => {
   const { t, i18n } = useTranslation();
   const storeSiteInfo = useMemo(() => {
     const link = buildExternalLink(store?.site);
+    const favicon = link.href
+      ? `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(link.href)}`
+      : null;
     return {
       label: link.label || t('storeSummary.notInformed'),
       href: link.href,
+      favicon,
     };
   }, [store?.site, t]);
   const storeAdminInfo = useMemo(() => {
@@ -1801,7 +1805,11 @@ export const StoreSummaryPage = () => {
                           target="_blank"
                           rel="noreferrer noopener"
                         >
-                          <SiVtex aria-hidden className="icon" />
+                          {storeSiteInfo.favicon ? (
+                            <img src={storeSiteInfo.favicon} alt="" className="store-site-favicon" />
+                          ) : (
+                            <SiVtex aria-hidden className="icon" />
+                          )}
                           <strong>{t('storeSummary.storeUrl')}</strong>
                         </a>
                       </span>
@@ -2931,7 +2939,6 @@ export const StoreSummaryPage = () => {
         isOpen={isStoreSettingsOpen}
         onClose={closeStoreSettings}
         title={t('storeSummary.storeSettings')}
-        modalClassName="modal--compact"
       >
         {storeSettingsError && (
           <p className="form-message form-message--error">{storeSettingsError}</p>
@@ -2964,19 +2971,16 @@ export const StoreSummaryPage = () => {
 
           <TextInput
             id="store-settings-admin-url"
-            label={t('storeSummary.storeAdminUrl')}
+            label="🌐 VTEX Admin URL"
             value={storeSettings.adminUrl}
             onChange={(event) =>
               setStoreSettings((previous) => ({ ...previous, adminUrl: event.target.value }))
             }
             dataTestId="store-settings-admin-url"
           />
-          <p className="form-hint store-link-hint store-link-hint--vtex">
-            <SiVtex aria-hidden className="icon" /> VTEX Admin
-          </p>
           <TextInput
             id="store-settings-automation-repo-url"
-            label="URL automação (GitHub)"
+            label="🐙 URL automação (GitHub)"
             value={storeSettings.automationRepoUrl}
             onChange={(event) =>
               setStoreSettings((previous) => ({
@@ -2985,20 +2989,14 @@ export const StoreSummaryPage = () => {
               }))
             }
           />
-          <p className="form-hint store-link-hint store-link-hint--github">
-            <FaGithub aria-hidden className="icon" /> GitHub
-          </p>
           <TextInput
             id="store-settings-allure-url"
-            label="URL automação (Allure)"
+            label="📊 URL automação (Allure)"
             value={storeSettings.allureUrl}
             onChange={(event) =>
               setStoreSettings((previous) => ({ ...previous, allureUrl: event.target.value }))
             }
           />
-          <p className="form-hint store-link-hint store-link-hint--allure">
-            <FaChartLine aria-hidden className="icon" /> Allure
-          </p>
           <SelectInput
             id="store-settings-stage"
             label={t('storeSummary.storeEnvironmentLabel')}

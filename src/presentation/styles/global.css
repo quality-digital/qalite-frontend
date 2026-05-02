@@ -3353,12 +3353,6 @@ a.text-link:hover {
   gap: 1.5rem;
 }
 
-.modal--compact {
-  width: min(28rem, 100%);
-  padding: 1.4rem;
-  gap: 1rem;
-}
-
 @media (max-width: 640px) {
   .modal-overlay {
     padding: 1rem;
@@ -3577,8 +3571,7 @@ a.text-link:hover {
   gap: 0.35rem;
 }
 
-.store-summary-context-item__title,
-.store-link-hint {
+.store-summary-context-item__title {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
@@ -3594,29 +3587,10 @@ a.text-link:hover {
   color: var(--color-primary);
 }
 
-.store-link-hint {
-  width: fit-content;
-  padding: 0.22rem 0.55rem;
-  border-radius: 999px;
-  font-weight: 600;
-  border: 1px solid var(--color-border);
-}
-
-.store-link-hint .icon {
-  width: 0.95rem;
-  height: 0.95rem;
-}
-
-.store-link-hint--vtex {
-  background: color-mix(in srgb, #ff3366 12%, white);
-}
-
-.store-link-hint--github {
-  background: color-mix(in srgb, #24292f 12%, white);
-}
-
-.store-link-hint--allure {
-  background: color-mix(in srgb, #22c55e 12%, white);
+.store-site-favicon {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 3px;
 }
 
 .store-summary-context strong {
