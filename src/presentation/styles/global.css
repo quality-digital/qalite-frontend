@@ -1400,6 +1400,12 @@ input[type='password']:invalid {
   animation: floatLabel var(--motion-duration-fast) var(--motion-easing-ease-out) forwards;
 }
 
+.field-label-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
 /* ===========================
    PASSWORD STRENGTH INDICATOR
    =========================== */

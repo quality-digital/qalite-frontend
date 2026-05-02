@@ -240,13 +240,9 @@ export const StoreSummaryPage = () => {
   const { t, i18n } = useTranslation();
   const storeSiteInfo = useMemo(() => {
     const link = buildExternalLink(store?.site);
-    const favicon = link.href
-      ? `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(link.href)}`
-      : null;
     return {
       label: link.label || t('storeSummary.notInformed'),
       href: link.href,
-      favicon,
     };
   }, [store?.site, t]);
   const storeAdminInfo = useMemo(() => {
@@ -285,8 +281,6 @@ export const StoreSummaryPage = () => {
   const [storeSettingsError, setStoreSettingsError] = useState<string | null>(null);
   const [isUpdatingStore, setIsUpdatingStore] = useState(false);
   const [isDeletingStore, setIsDeletingStore] = useState(false);
-  const [storeSettingsLogoFile, setStoreSettingsLogoFile] = useState<File | null>(null);
-  const [storeSettingsLogoPreview, setStoreSettingsLogoPreview] = useState<string | null>(null);
 
   const updateViewMode = useCallback(
     (nextViewMode: StoreViewMode) => {
@@ -668,28 +662,15 @@ export const StoreSummaryPage = () => {
       stage: store.stage === 'Preview' ? 'Preview' : 'WS',
     });
     setIsStoreSlackSectionOpen(Boolean(store.slackWebhookUrl?.trim()));
-    setStoreSettingsLogoFile(null);
-    setStoreSettingsLogoPreview(store.logoUrl ?? null);
     setStoreSettingsError(null);
     setIsStoreSettingsOpen(true);
   };
 
   const closeStoreSettings = () => {
     setIsStoreSettingsOpen(false);
-    setStoreSettingsLogoFile(null);
-    setStoreSettingsLogoPreview(null);
     setStoreSettingsError(null);
   };
 
-  useEffect(() => {
-    if (!storeSettingsLogoFile) {
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(storeSettingsLogoFile);
-    setStoreSettingsLogoPreview(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [storeSettingsLogoFile]);
 
   const handleStoreSettingsSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -720,9 +701,6 @@ export const StoreSummaryPage = () => {
 
     try {
       setIsUpdatingStore(true);
-      const uploadedLogoUrl = storeSettingsLogoFile
-        ? await storeService.uploadLogo(store.id, storeSettingsLogoFile)
-        : undefined;
       const updated = await storeService.update(store.id, {
         name: trimmedName,
         site: trimmedSite,
@@ -731,9 +709,6 @@ export const StoreSummaryPage = () => {
         allureUrl: trimmedAllureUrl || null,
         stage: storeSettings.stage,
 
-        ...(uploadedLogoUrl !== undefined
-          ? { logoUrl: uploadedLogoUrl }
-          : { logoUrl: storeSettings.logoUrl || null }),
         slackWebhookUrl: trimmedSlackWebhookUrl || null,
       });
 
@@ -1805,11 +1780,7 @@ export const StoreSummaryPage = () => {
                           target="_blank"
                           rel="noreferrer noopener"
                         >
-                          {storeSiteInfo.favicon ? (
-                            <img src={storeSiteInfo.favicon} alt="" className="store-site-favicon" />
-                          ) : (
-                            <SiVtex aria-hidden className="icon" />
-                          )}
+                          <SiVtex aria-hidden className="icon" />
                           <strong>{t('storeSummary.storeUrl')}</strong>
                         </a>
                       </span>
@@ -2971,7 +2942,11 @@ export const StoreSummaryPage = () => {
 
           <TextInput
             id="store-settings-admin-url"
-            label="🌐 VTEX Admin URL"
+            label={
+              <span className="field-label-with-icon">
+                <SiVtex aria-hidden className="icon" /> {t('storeSummary.storeAdminUrl')}
+              </span>
+            }
             value={storeSettings.adminUrl}
             onChange={(event) =>
               setStoreSettings((previous) => ({ ...previous, adminUrl: event.target.value }))
@@ -2980,7 +2955,7 @@ export const StoreSummaryPage = () => {
           />
           <TextInput
             id="store-settings-automation-repo-url"
-            label="🐙 URL automação (GitHub)"
+            label={<span className="field-label-with-icon"><FaGithub aria-hidden className="icon" /> URL automação (GitHub)</span>}
             value={storeSettings.automationRepoUrl}
             onChange={(event) =>
               setStoreSettings((previous) => ({
@@ -2991,7 +2966,7 @@ export const StoreSummaryPage = () => {
           />
           <TextInput
             id="store-settings-allure-url"
-            label="📊 URL automação (Allure)"
+            label={<span className="field-label-with-icon"><FaChartLine aria-hidden className="icon" /> URL automação (Allure)</span>}
             value={storeSettings.allureUrl}
             onChange={(event) =>
               setStoreSettings((previous) => ({ ...previous, allureUrl: event.target.value }))
@@ -3015,25 +2990,16 @@ export const StoreSummaryPage = () => {
 
           <div className="organization-logo-field">
             <div className="organization-logo-preview">
-              {storeSettingsLogoPreview ? (
-                <img src={storeSettingsLogoPreview} alt={t('storeSummary.storeLogoPreview')} />
+              {storeSettings.site ? (
+                <img
+                  src={`https://www.google.com/s2/favicons?sz=128&domain_url=${encodeURIComponent(storeSettings.site)}`}
+                  alt={t('storeSummary.storeLogoPreview')}
+                />
               ) : (
                 <span className="organization-logo-fallback">
                   {t('storeSummary.storeLogoPlaceholder')}
                 </span>
               )}
-            </div>
-            <div className="organization-logo-actions">
-              <label htmlFor="store-settings-logo" className="field-label">
-                {t('storeSummary.storeLogoLabel')}
-              </label>
-              <input
-                id="store-settings-logo"
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                onChange={(event) => setStoreSettingsLogoFile(event.target.files?.[0] ?? null)}
-              />
-              <p className="form-hint">{t('storeSummary.storeLogoHint')}</p>
             </div>
           </div>
           <div className="collapsible-section">
