@@ -1,8 +1,8 @@
-import { ChangeEvent } from 'react';
+import { ChangeEvent, ReactNode } from 'react';
 
 interface TextInputProps {
   id: string;
-  label: string;
+  label: ReactNode;
   type?: string;
   value: string;
   onChange?: (event: ChangeEvent<HTMLInputElement>) => void;

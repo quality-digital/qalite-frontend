@@ -41,6 +41,7 @@ export interface Environment {
   tipoTeste: string;
   momento: string | null;
   release: string | null;
+  executionDate: string | null;
   status: EnvironmentStatus;
   createdAt: string | null;
   updatedAt: string | null;
@@ -66,6 +67,7 @@ export interface CreateEnvironmentInput {
   tipoTeste: string;
   momento: string | null;
   release: string | null;
+  executionDate: string | null;
   status: EnvironmentStatus;
   timeTracking: EnvironmentTimeTracking;
   presentUsersIds: string[];

@@ -79,7 +79,7 @@ export const EditEnvironmentModal = ({
 }: EditEnvironmentModalProps) => {
   const { t: translation } = useTranslation();
 
-  const [identificador, setIdentificador] = useState('');
+  const [executionDate, setExecutionDate] = useState('');
   const [urlInput, setUrlInput] = useState('');
   const [jiraInput, setJiraInput] = useState('');
   const [urls, setUrls] = useState<string[]>([]);
@@ -99,7 +99,7 @@ export const EditEnvironmentModal = ({
       return;
     }
 
-    setIdentificador(environment.identificador);
+    setExecutionDate(environment.executionDate ?? '');
     setUrls(environment.urls ?? []);
     setJiraLinks(
       environment.jiraTask
@@ -143,6 +143,13 @@ export const EditEnvironmentModal = ({
   );
 
   const shouldDisplayReleaseField = requiresReleaseField(tipoAmbiente);
+  const autoIdentifier = useMemo(() => {
+    const dateToken = executionDate ? executionDate.replaceAll('-', '') : 'DATA';
+    if (tipoAmbiente === 'Release')
+      return `[WS/PREVIEW][${tipoTeste.toUpperCase()}][RELEASE${(release || 'XXX').toUpperCase()}][${dateToken}]`;
+    if (tipoAmbiente === 'Produção') return `[PROD][${tipoTeste.toUpperCase()}][${dateToken}]`;
+    return `[${tipoAmbiente.toUpperCase()}][${tipoTeste.toUpperCase()}][${dateToken}]`;
+  }, [executionDate, release, tipoAmbiente, tipoTeste]);
 
   useEffect(() => {
     if (!tipoTesteOptions.includes(tipoTeste)) {
@@ -234,13 +241,14 @@ export const EditEnvironmentModal = ({
     const jiraList = [...jiraLinks, ...(jiraInput.trim() ? [jiraInput.trim()] : [])];
 
     const payload: UpdateEnvironmentInput = {
-      identificador: identificador.trim(),
+      identificador: autoIdentifier,
       urls: urlsList,
       jiraTask: jiraList.join('\n').trim(),
       tipoAmbiente,
       tipoTeste,
       momento: momentoOptions.length > 0 ? momento : null,
       release: shouldDisplayReleaseField ? release.trim() : null,
+      executionDate: executionDate || null,
     };
 
     if (suiteHasChanged) {
@@ -305,8 +313,15 @@ export const EditEnvironmentModal = ({
           <TextInput
             id="identificadorEditar"
             label={translation('editEnvironmentModal.identifier')}
-            value={identificador}
-            onChange={(event) => setIdentificador(event.target.value)}
+            value={autoIdentifier}
+            disabled
+          />
+          <TextInput
+            id="executionDateEditar"
+            label="Data de execução"
+            value={executionDate}
+            type="date"
+            onChange={(event) => setExecutionDate(event.target.value)}
             required
             disabled={isLocked}
           />

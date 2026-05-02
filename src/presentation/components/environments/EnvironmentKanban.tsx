@@ -210,6 +210,7 @@ export const EnvironmentKanban = ({
         tipoTeste: environment.tipoTeste,
         momento: environment.momento,
         release: environment.release,
+        executionDate: environment.executionDate ?? null,
         status: 'backlog',
         timeTracking: { start: null, end: null, totalMs: 0 },
         presentUsersIds: [],
