@@ -1835,7 +1835,7 @@ export const StoreSummaryPage = () => {
                             target="_blank"
                             rel="noreferrer noopener"
                           >
-                            {storeAutomationRepoInfo.label}
+                            Abrir Automação GitHub
                           </a>
                         ) : (
                           storeAutomationRepoInfo.label
@@ -1850,7 +1850,7 @@ export const StoreSummaryPage = () => {
                       <span className="store-summary-context-item__value">
                         {storeAllureInfo.href ? (
                           <a href={storeAllureInfo.href} target="_blank" rel="noreferrer noopener">
-                            {storeAllureInfo.label}
+                            Abrir Automação Allure
                           </a>
                         ) : (
                           storeAllureInfo.label
