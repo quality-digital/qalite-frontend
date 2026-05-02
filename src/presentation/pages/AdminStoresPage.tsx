@@ -1091,7 +1091,7 @@ export const AdminStoresPage = () => {
               setStoreForm((previous) => ({ ...previous, adminUrl: event.target.value }))
             }
           />
-          <p className="form-hint store-link-hint">
+          <p className="form-hint store-link-hint store-link-hint--vtex">
             <SiVtex aria-hidden className="icon" /> VTEX Admin
           </p>
           <TextInput
@@ -1102,7 +1102,7 @@ export const AdminStoresPage = () => {
               setStoreForm((previous) => ({ ...previous, automationRepoUrl: event.target.value }))
             }
           />
-          <p className="form-hint store-link-hint">
+          <p className="form-hint store-link-hint store-link-hint--github">
             <FaGithub aria-hidden className="icon" /> GitHub
           </p>
           <TextInput
@@ -1113,7 +1113,7 @@ export const AdminStoresPage = () => {
               setStoreForm((previous) => ({ ...previous, allureUrl: event.target.value }))
             }
           />
-          <p className="form-hint store-link-hint">
+          <p className="form-hint store-link-hint store-link-hint--allure">
             <FaChartLine aria-hidden className="icon" /> Allure
           </p>
           <SelectInput

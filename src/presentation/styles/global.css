@@ -3578,8 +3578,43 @@ a.text-link:hover {
   gap: 0.45rem;
 }
 
+.store-summary-context-item__title--link {
+  text-decoration: none;
+  color: var(--color-text-primary);
+}
+
+.store-summary-context-item__title--link:hover,
+.store-summary-context-item__title--link:focus-visible {
+  color: var(--color-primary);
+}
+
 .store-summary-context-item__value {
   font-weight: 500;
+}
+
+.store-link-hint {
+  width: fit-content;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  font-weight: 600;
+  border: 1px solid var(--color-border);
+}
+
+.store-link-hint .icon {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.store-link-hint--vtex {
+  background: color-mix(in srgb, #ff3366 12%, white);
+}
+
+.store-link-hint--github {
+  background: color-mix(in srgb, #24292f 12%, white);
+}
+
+.store-link-hint--allure {
+  background: color-mix(in srgb, #22c55e 12%, white);
 }
 
 .store-summary-context strong {

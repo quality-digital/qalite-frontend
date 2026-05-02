@@ -1823,40 +1823,32 @@ export const StoreSummaryPage = () => {
                         )}
                       </span>
                     </span>
-                    <span className="store-summary-context-item">
-                      <span className="store-summary-context-item__title">
-                        <FaGithub aria-hidden className="icon" />
-                        <strong>Automação GitHub</strong>
+                    {storeAutomationRepoInfo.href && (
+                      <span className="store-summary-context-item">
+                        <a
+                          className="store-summary-context-item__title store-summary-context-item__title--link"
+                          href={storeAutomationRepoInfo.href}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                        >
+                          <FaGithub aria-hidden className="icon" />
+                          <strong>Automação GitHub</strong>
+                        </a>
                       </span>
-                      <span className="store-summary-context-item__value">
-                        {storeAutomationRepoInfo.href ? (
-                          <a
-                            href={storeAutomationRepoInfo.href}
-                            target="_blank"
-                            rel="noreferrer noopener"
-                          >
-                            Abrir Automação GitHub
-                          </a>
-                        ) : (
-                          storeAutomationRepoInfo.label
-                        )}
+                    )}
+                    {storeAllureInfo.href && (
+                      <span className="store-summary-context-item">
+                        <a
+                          className="store-summary-context-item__title store-summary-context-item__title--link"
+                          href={storeAllureInfo.href}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                        >
+                          <FaChartLine aria-hidden className="icon" />
+                          <strong>Automação Allure</strong>
+                        </a>
                       </span>
-                    </span>
-                    <span className="store-summary-context-item">
-                      <span className="store-summary-context-item__title">
-                        <FaChartLine aria-hidden className="icon" />
-                        <strong>Automação Allure</strong>
-                      </span>
-                      <span className="store-summary-context-item__value">
-                        {storeAllureInfo.href ? (
-                          <a href={storeAllureInfo.href} target="_blank" rel="noreferrer noopener">
-                            Abrir Automação Allure
-                          </a>
-                        ) : (
-                          storeAllureInfo.label
-                        )}
-                      </span>
-                    </span>
+                    )}
                   </div>
                   <div
                     className="store-summary-highlights"
@@ -2982,7 +2974,7 @@ export const StoreSummaryPage = () => {
             }
             dataTestId="store-settings-admin-url"
           />
-          <p className="form-hint store-link-hint">
+          <p className="form-hint store-link-hint store-link-hint--vtex">
             <SiVtex aria-hidden className="icon" /> VTEX Admin
           </p>
           <TextInput
@@ -2996,7 +2988,7 @@ export const StoreSummaryPage = () => {
               }))
             }
           />
-          <p className="form-hint store-link-hint">
+          <p className="form-hint store-link-hint store-link-hint--github">
             <FaGithub aria-hidden className="icon" /> GitHub
           </p>
           <TextInput
@@ -3007,7 +2999,7 @@ export const StoreSummaryPage = () => {
               setStoreSettings((previous) => ({ ...previous, allureUrl: event.target.value }))
             }
           />
-          <p className="form-hint store-link-hint">
+          <p className="form-hint store-link-hint store-link-hint--allure">
             <FaChartLine aria-hidden className="icon" /> Allure
           </p>
           <SelectInput
