@@ -72,7 +72,7 @@ export const CreateEnvironmentCard = ({
   scenarios,
   onCreated,
 }: CreateEnvironmentCardProps) => {
-  const [identificador, setIdentificador] = useState('');
+  const [executionDate, setExecutionDate] = useState('');
   const [urlInput, setUrlInput] = useState('');
   const [jiraInput, setJiraInput] = useState('');
   const [urls, setUrls] = useState<string[]>([]);
@@ -118,6 +118,13 @@ export const CreateEnvironmentCard = ({
   );
 
   const shouldDisplayReleaseField = requiresReleaseField(tipoAmbiente);
+  const autoIdentifier = useMemo(() => {
+    const dateToken = executionDate ? executionDate.replaceAll('-', '') : 'DATA';
+    if (tipoAmbiente === 'Release')
+      return `[WS/PREVIEW][${tipoTeste.toUpperCase()}][RELEASE${(release || 'XXX').toUpperCase()}][${dateToken}]`;
+    if (tipoAmbiente === 'Produção') return `[PROD][${tipoTeste.toUpperCase()}][${dateToken}]`;
+    return `[${tipoAmbiente.toUpperCase()}][${tipoTeste.toUpperCase()}][${dateToken}]`;
+  }, [executionDate, release, tipoAmbiente, tipoTeste]);
   const primaryEnvironmentOption = useMemo(
     () => ({
       value: getEnvironmentTypeByStoreStage(storeStage),
@@ -157,7 +164,7 @@ export const CreateEnvironmentCard = ({
   }, [shouldDisplayReleaseField, release]);
 
   const resetForm = () => {
-    setIdentificador('');
+    setExecutionDate('');
     setUrlInput('');
     setJiraInput('');
     setUrls([]);
@@ -191,11 +198,6 @@ export const CreateEnvironmentCard = ({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!identificador.trim()) {
-      showToast({ type: 'error', message: t('createEnvironment.identifier') });
-      return;
-    }
-
     if (!suiteId) {
       showToast({ type: 'error', message: t('createEnvironment.suiteRequired') });
       return;
@@ -228,7 +230,7 @@ export const CreateEnvironmentCard = ({
       const timeTracking = { start: null, end: null, totalMs: 0 };
 
       const createdEnvironment = await environmentService.create({
-        identificador: identificador.trim(),
+        identificador: autoIdentifier,
         storeId,
         suiteId: selectedSuite?.id ?? null,
         suiteName: selectedSuite?.name ?? null,
@@ -238,6 +240,7 @@ export const CreateEnvironmentCard = ({
         tipoTeste,
         momento: momentoOptions.length > 0 ? momento : null,
         release: shouldDisplayReleaseField ? release.trim() : null,
+        executionDate: executionDate || null,
         status: 'backlog',
         timeTracking,
         presentUsersIds: [],
@@ -270,8 +273,15 @@ export const CreateEnvironmentCard = ({
         <TextInput
           id="identificador"
           label={t('createEnvironment.id')}
-          value={identificador}
-          onChange={(event) => setIdentificador(event.target.value)}
+          value={autoIdentifier}
+          disabled
+        />
+        <TextInput
+          id="executionDate"
+          label="Data de execução"
+          value={executionDate}
+          type="date"
+          onChange={(event) => setExecutionDate(event.target.value)}
           required
         />
         <div className="dynamic-links-row">

@@ -1,6 +1,8 @@
 import { ChangeEvent, FormEvent, KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { FaChartLine, FaGithub } from 'react-icons/fa';
+import { SiVtex } from 'react-icons/si';
 
 import type { Organization, OrganizationAccessRequest } from '../../domain/entities/organization';
 import type { Store } from '../../domain/entities/store';
@@ -43,6 +45,8 @@ interface StoreFormState {
   name: string;
   site: string;
   adminUrl: string;
+  automationRepoUrl: string;
+  allureUrl: string;
   logoUrl: string;
   stage: 'WS' | 'Preview';
 }
@@ -57,8 +61,20 @@ const createEmptyStoreFormState = (): StoreFormState => ({
   name: '',
   site: '',
   adminUrl: '',
+  automationRepoUrl: '',
+  allureUrl: '',
   logoUrl: '',
   stage: 'WS',
+});
+
+const createStoreFormState = (store: Store | null): StoreFormState => ({
+  name: store?.name ?? '',
+  site: store?.site ?? '',
+  adminUrl: store?.adminUrl ?? '',
+  automationRepoUrl: store?.automationRepoUrl ?? '',
+  allureUrl: store?.allureUrl ?? '',
+  logoUrl: store?.logoUrl ?? '',
+  stage: (store?.stage as 'WS' | 'Preview') ?? 'WS',
 });
 
 export const AdminStoresPage = () => {
@@ -236,6 +252,13 @@ export const AdminStoresPage = () => {
     setStoreLogoPreview(objectUrl);
     return () => URL.revokeObjectURL(objectUrl);
   }, [storeLogoFile]);
+
+  useEffect(() => {
+    if (!editingStore) {
+      return;
+    }
+    setStoreForm(createStoreFormState(editingStore));
+  }, [editingStore]);
 
   useEffect(() => {
     const searchTerm = newMemberEmail.trim();
@@ -495,6 +518,8 @@ export const AdminStoresPage = () => {
     const trimmedName = storeForm.name.trim();
     const trimmedSite = storeForm.site.trim();
     const trimmedAdminUrl = storeForm.adminUrl.trim();
+    const trimmedAutomationRepoUrl = storeForm.automationRepoUrl.trim();
+    const trimmedAllureUrl = storeForm.allureUrl.trim();
 
     if (!organizationId) {
       setStoreError(translation('AdminStoresPage.form-error-no-org-selected'));
@@ -523,6 +548,8 @@ export const AdminStoresPage = () => {
           name: trimmedName,
           site: trimmedSite,
           adminUrl: trimmedAdminUrl,
+          automationRepoUrl: trimmedAutomationRepoUrl || null,
+          allureUrl: trimmedAllureUrl || null,
           stage: storeForm.stage,
           logoUrl,
         });
@@ -537,6 +564,8 @@ export const AdminStoresPage = () => {
           name: trimmedName,
           site: trimmedSite,
           adminUrl: trimmedAdminUrl,
+          automationRepoUrl: trimmedAutomationRepoUrl || null,
+          allureUrl: trimmedAllureUrl || null,
           stage: storeForm.stage,
           logoUrl: null,
         });
@@ -547,6 +576,8 @@ export const AdminStoresPage = () => {
             name: trimmedName,
             site: trimmedSite,
             adminUrl: trimmedAdminUrl,
+            automationRepoUrl: trimmedAutomationRepoUrl || null,
+            allureUrl: trimmedAllureUrl || null,
             stage: storeForm.stage,
             logoUrl,
           });
@@ -1060,6 +1091,31 @@ export const AdminStoresPage = () => {
               setStoreForm((previous) => ({ ...previous, adminUrl: event.target.value }))
             }
           />
+          <p className="form-hint store-link-hint">
+            <SiVtex aria-hidden className="icon" /> VTEX Admin
+          </p>
+          <TextInput
+            id="store-automation-repo-url"
+            label="URL automação (GitHub)"
+            value={storeForm.automationRepoUrl}
+            onChange={(event) =>
+              setStoreForm((previous) => ({ ...previous, automationRepoUrl: event.target.value }))
+            }
+          />
+          <p className="form-hint store-link-hint">
+            <FaGithub aria-hidden className="icon" /> GitHub
+          </p>
+          <TextInput
+            id="store-allure-url"
+            label="URL automação (Allure)"
+            value={storeForm.allureUrl}
+            onChange={(event) =>
+              setStoreForm((previous) => ({ ...previous, allureUrl: event.target.value }))
+            }
+          />
+          <p className="form-hint store-link-hint">
+            <FaChartLine aria-hidden className="icon" /> Allure
+          </p>
           <SelectInput
             id="store-stage"
             label={translation('storeManagement.storeEnvironmentLabel')}
