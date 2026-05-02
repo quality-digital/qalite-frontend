@@ -1780,7 +1780,11 @@ export const StoreSummaryPage = () => {
                           target="_blank"
                           rel="noreferrer noopener"
                         >
-                          <SiVtex aria-hidden className="icon" />
+                          <img
+                            src={`https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(storeSiteInfo.href)}`}
+                            alt=""
+                            className="store-site-favicon"
+                          />
                           <strong>{t('storeSummary.storeUrl')}</strong>
                         </a>
                       </span>

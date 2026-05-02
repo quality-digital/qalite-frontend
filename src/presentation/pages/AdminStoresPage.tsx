@@ -540,10 +540,6 @@ export const AdminStoresPage = () => {
       setIsSavingStore(true);
 
       if (editingStore) {
-        const logoUrl = storeLogoFile
-          ? await storeService.uploadLogo(editingStore.id, storeLogoFile)
-          : storeForm.logoUrl || null;
-
         await storeService.update(editingStore.id, {
           name: trimmedName,
           site: trimmedSite,
@@ -551,7 +547,7 @@ export const AdminStoresPage = () => {
           automationRepoUrl: trimmedAutomationRepoUrl || null,
           allureUrl: trimmedAllureUrl || null,
           stage: storeForm.stage,
-          logoUrl,
+          logoUrl: null,
         });
 
         showToast({
@@ -569,19 +565,6 @@ export const AdminStoresPage = () => {
           stage: storeForm.stage,
           logoUrl: null,
         });
-
-        if (storeLogoFile) {
-          const logoUrl = await storeService.uploadLogo(createdStore.id, storeLogoFile);
-          await storeService.update(createdStore.id, {
-            name: trimmedName,
-            site: trimmedSite,
-            adminUrl: trimmedAdminUrl,
-            automationRepoUrl: trimmedAutomationRepoUrl || null,
-            allureUrl: trimmedAllureUrl || null,
-            stage: storeForm.stage,
-            logoUrl,
-          });
-        }
 
         showToast({
           type: 'success',
@@ -740,8 +723,12 @@ export const AdminStoresPage = () => {
                     <div className="card-header">
                       <div className="card-title-group">
                         <span className="card-title-icon" aria-hidden>
-                          {store.logoUrl ? (
-                            <CachedImage src={store.logoUrl} alt="" className="store-card-logo" />
+                          {store.site ? (
+                            <img
+                              src={`https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(store.site)}`}
+                              alt=""
+                              className="store-card-logo"
+                            />
                           ) : (
                             <StorefrontIcon className="icon icon--lg" />
                           )}
@@ -845,316 +832,6 @@ export const AdminStoresPage = () => {
             }
           />
 
-          <div className="organization-logo-field">
-            <div className="organization-logo-preview">
-              {organizationLogoSource ? (
-                <CachedImage
-                  src={organizationLogoSource}
-                  alt={selectedOrganization?.name ?? 'Logo'}
-                />
-              ) : (
-                <span className="organization-logo-fallback">Logo</span>
-              )}
-            </div>
-            <div className="organization-logo-actions">
-              <label htmlFor="organization-logo-upload" className="field-label">
-                {translation('AdminStoresPage.organization-logo-label')}
-              </label>
-              <input
-                id="organization-logo-upload"
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                  setOrganizationLogoFile(event.target.files?.[0] ?? null)
-                }
-              />
-            </div>
-          </div>
-
-          <div className="collapsible-section">
-            <div className="collapsible-section__header">
-              <div className="collapsible-section__titles">
-                <CachedImage
-                  className="collapsible-section__icon"
-                  src="https://img.icons8.com/external-tal-revivo-color-tal-revivo/24/external-slack-replace-email-text-messaging-and-instant-messaging-for-your-team-logo-color-tal-revivo.png"
-                  alt={translation('adminOrganizationsPage.form.slack.iconAlt')}
-                  width={24}
-                  height={24}
-                />
-                <p className="collapsible-section__title">
-                  {translation('adminOrganizationsPage.form.slack.title')}
-                </p>
-              </div>
-              <label className="collapsible-section__toggle">
-                <input
-                  type="checkbox"
-                  checked={isOrganizationSlackSectionOpen}
-                  onChange={() => {
-                    setIsOrganizationSlackSectionOpen((previous) => {
-                      const nextValue = !previous;
-                      if (!nextValue) {
-                        setOrganizationForm((form) => ({ ...form, slackWebhookUrl: '' }));
-                      }
-                      return nextValue;
-                    });
-                  }}
-                />
-                <span>
-                  {isOrganizationSlackSectionOpen
-                    ? translation('adminOrganizationsPage.form.slack.enabled')
-                    : translation('adminOrganizationsPage.form.slack.disabled')}
-                </span>
-              </label>
-            </div>
-            {isOrganizationSlackSectionOpen && (
-              <TextInput
-                id="organization-slack-webhook"
-                label={translation('adminOrganizationsPage.form.slack.webhookLabel')}
-                value={organizationForm.slackWebhookUrl}
-                onChange={(event) =>
-                  setOrganizationForm((previous) => ({
-                    ...previous,
-                    slackWebhookUrl: event.target.value,
-                  }))
-                }
-              />
-            )}
-          </div>
-
-          <div className="card">
-            <strong>{translation('AdminStoresPage.collaborators-card-title')}</strong>
-            <div className="form-grid organization-member-form-row">
-              <TextInput
-                id="organization-member-email"
-                label={translation('AdminStoresPage.member-email-label')}
-                value={newMemberEmail}
-                onChange={(event) => setNewMemberEmail(event.target.value)}
-                placeholder={translation('AdminStoresPage.member-email-placeholder')}
-              />
-              <div className="form-actions organization-member-actions">
-                <Button
-                  type="button"
-                  onClick={() => void handleAddMember()}
-                  isLoading={isManagingMembers}
-                >
-                  {translation('AdminStoresPage.member-add-button')}
-                </Button>
-              </div>
-            </div>
-            {isSearchingUsers ? <p className="form-hint">{translation('loadingAccess')}</p> : null}
-            {userSuggestions.length > 0 ? (
-              <div className="suggestions-list">
-                {userSuggestions.map((user) => (
-                  <button
-                    key={user.id}
-                    type="button"
-                    className="suggestions-list__item"
-                    onClick={() => setNewMemberEmail(user.email)}
-                  >
-                    {user.displayName || user.email}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            <div className="organization-pending-requests">
-              <div className="organization-pending-requests__header">
-                <strong>{translation('AdminStoresPage.pending-requests-title')}</strong>
-                <span className="form-hint">
-                  {translation('AdminStoresPage.pending-requests-count', {
-                    count: pendingAccessRequests.length,
-                  })}
-                </span>
-              </div>
-
-              {pendingAccessRequests.length === 0 ? (
-                <p className="form-hint">{translation('AdminStoresPage.pending-requests-empty')}</p>
-              ) : (
-                <ul className="collaborator-list organization-members-list">
-                  {pendingAccessRequests.map((request) => (
-                    <li key={request.id} className="collaborator-card">
-                      <UserAvatar
-                        name={request.displayName || request.email}
-                        size="sm"
-                        photoUrl={request.photoURL ?? null}
-                      />
-                      <div className="collaborator-card__details">
-                        <strong>{request.displayName || request.email}</strong>
-                        <span className="collaborator-card__email">{request.email}</span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() => void handleApproveAccessRequest(request.id)}
-                        isLoading={approvingRequestId === request.id}
-                      >
-                        {translation('AdminStoresPage.pending-request-approve')}
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <ul className="collaborator-list organization-members-list">
-              {selectedOrganization?.members.map((member) => (
-                <li key={member.uid} className="collaborator-card">
-                  <UserAvatar
-                    name={member.displayName || member.email}
-                    size="sm"
-                    photoUrl={member.photoURL ?? null}
-                  />
-                  <div className="collaborator-card__details">
-                    <strong>{member.displayName || member.email}</strong>
-                    <span className="collaborator-card__email">{member.email}</span>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="organization-member-remove-button"
-                    onClick={() => void handleRemoveMember(member.uid)}
-                    disabled={isManagingMembers}
-                  >
-                    {translation('AdminStoresPage.member-remove-button')}
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="form-actions">
-            <Button type="submit" isLoading={isSavingOrganization}>
-              {translation('storeSummary.saveChanges')}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={closeOrganizationModal}
-              disabled={isSavingOrganization}
-            >
-              {translation('cancel')}
-            </Button>
-          </div>
-        </form>
-
-        <div className="modal-danger-zone">
-          <div>
-            <h4>{translation('AdminStoresPage.manage-organization-button')}</h4>
-            <p>{translation('storeSummary.removeStoreWarning')}</p>
-          </div>
-          <button
-            type="button"
-            className="link-danger"
-            onClick={() => setOrganizationDeleteModalOpen(true)}
-          >
-            {translation('delete')}
-          </button>
-        </div>
-      </Modal>
-
-      <Modal
-        isOpen={isStoreModalOpen}
-        onClose={closeStoreModal}
-        title={
-          editingStore
-            ? translation('storeSummary.storeSettings')
-            : translation('AdminStoresPage.new-store-button')
-        }
-        description={
-          selectedOrganization?.name ?? translation('AdminStoresPage.stores-title-no-org-selected')
-        }
-      >
-        {storeError && <p className="form-message form-message--error">{storeError}</p>}
-        <form className="form-grid" onSubmit={handleStoreSubmit} data-testid="store-form">
-          <TextInput
-            id="store-name"
-            label={translation('storeManagement.storeNameLabel')}
-            value={storeForm.name}
-            onChange={(event) =>
-              setStoreForm((previous) => ({ ...previous, name: event.target.value }))
-            }
-            required
-          />
-          <TextInput
-            id="store-site"
-            label={translation('storeManagement.storeSiteLabel')}
-            value={storeForm.site}
-            onChange={(event) =>
-              setStoreForm((previous) => ({ ...previous, site: event.target.value }))
-            }
-            required
-          />
-          <TextInput
-            id="store-admin-url"
-            label={translation('storeManagement.storeAdminUrlLabel')}
-            value={storeForm.adminUrl}
-            onChange={(event) =>
-              setStoreForm((previous) => ({ ...previous, adminUrl: event.target.value }))
-            }
-          />
-          <p className="form-hint store-link-hint store-link-hint--vtex">
-            <SiVtex aria-hidden className="icon" /> VTEX Admin
-          </p>
-          <TextInput
-            id="store-automation-repo-url"
-            label="URL automação (GitHub)"
-            value={storeForm.automationRepoUrl}
-            onChange={(event) =>
-              setStoreForm((previous) => ({ ...previous, automationRepoUrl: event.target.value }))
-            }
-          />
-          <p className="form-hint store-link-hint store-link-hint--github">
-            <FaGithub aria-hidden className="icon" /> GitHub
-          </p>
-          <TextInput
-            id="store-allure-url"
-            label="URL automação (Allure)"
-            value={storeForm.allureUrl}
-            onChange={(event) =>
-              setStoreForm((previous) => ({ ...previous, allureUrl: event.target.value }))
-            }
-          />
-          <p className="form-hint store-link-hint store-link-hint--allure">
-            <FaChartLine aria-hidden className="icon" /> Allure
-          </p>
-          <SelectInput
-            id="store-stage"
-            label={translation('storeManagement.storeEnvironmentLabel')}
-            value={storeForm.stage}
-            onChange={(event) =>
-              setStoreForm((previous) => ({
-                ...previous,
-                stage: event.target.value as 'WS' | 'Preview',
-              }))
-            }
-            options={[
-              { value: 'WS', label: translation('storeManagement.storePlatformVtexio') },
-              { value: 'Preview', label: translation('storeManagement.storePlatformFaststore') },
-            ]}
-          />
-
-          <div className="organization-logo-field">
-            <div className="organization-logo-preview">
-              {storeLogoSource ? (
-                <CachedImage src={storeLogoSource} alt={storeForm.name || 'Logo da loja'} />
-              ) : (
-                <span className="organization-logo-fallback">Logo</span>
-              )}
-            </div>
-            <div className="organization-logo-actions">
-              <label htmlFor="store-logo-upload" className="field-label">
-                {translation('AdminStoresPage.store-logo-label')}
-              </label>
-              <input
-                id="store-logo-upload"
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                  setStoreLogoFile(event.target.files?.[0] ?? null)
-                }
-              />
-              <p className="form-hint">{translation('AdminStoresPage.store-logo-hint')}</p>
-            </div>
-          </div>
           <div className="form-actions">
             <Button type="submit" isLoading={isSavingStore}>
               {editingStore
