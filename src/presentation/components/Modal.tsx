@@ -9,6 +9,7 @@ interface ModalProps {
   onClose: () => void;
   children: ReactNode;
   bodyClassName?: string;
+  modalClassName?: string;
 }
 
 export const Modal = ({
@@ -18,6 +19,7 @@ export const Modal = ({
   onClose,
   children,
   bodyClassName,
+  modalClassName,
 }: ModalProps) => {
   const { t } = useTranslation();
   useEffect(() => {
@@ -41,7 +43,7 @@ export const Modal = ({
 
   const modalContent = (
     <div className="modal-overlay" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="modal" role="document">
+      <div className={['modal', modalClassName].filter(Boolean).join(' ')} role="document">
         <div className="modal-header">
           <div>
             <h2 className="modal-title">{title}</h2>

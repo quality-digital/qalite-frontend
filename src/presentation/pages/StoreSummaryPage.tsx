@@ -1793,36 +1793,32 @@ export const StoreSummaryPage = () => {
               <div className="store-summary">
                 <div className="store-summary-meta">
                   <div className="store-summary-context">
-                    <span className="store-summary-context-item">
-                      <span className="store-summary-context-item__title">
-                        <SiVtex aria-hidden className="icon" />
-                        <strong>{t('storeSummary.storeUrl')}</strong>
+                    {storeSiteInfo.href && (
+                      <span className="store-summary-context-item">
+                        <a
+                          className="store-summary-context-item__title store-summary-context-item__title--link"
+                          href={storeSiteInfo.href}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                        >
+                          <SiVtex aria-hidden className="icon" />
+                          <strong>{t('storeSummary.storeUrl')}</strong>
+                        </a>
                       </span>
-                      <span className="store-summary-context-item__value">
-                        {storeSiteInfo.href ? (
-                          <a href={storeSiteInfo.href} target="_blank" rel="noreferrer noopener">
-                            {storeSiteInfo.label}
-                          </a>
-                        ) : (
-                          storeSiteInfo.label
-                        )}
+                    )}
+                    {storeAdminInfo.href && (
+                      <span className="store-summary-context-item">
+                        <a
+                          className="store-summary-context-item__title store-summary-context-item__title--link"
+                          href={storeAdminInfo.href}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                        >
+                          <SiVtex aria-hidden className="icon" />
+                          <strong>{t('storeSummary.storeAdminUrl')}</strong>
+                        </a>
                       </span>
-                    </span>
-                    <span className="store-summary-context-item">
-                      <span className="store-summary-context-item__title">
-                        <SiVtex aria-hidden className="icon" />
-                        <strong>{t('storeSummary.storeAdminUrl')}</strong>
-                      </span>
-                      <span className="store-summary-context-item__value">
-                        {storeAdminInfo.href ? (
-                          <a href={storeAdminInfo.href} target="_blank" rel="noreferrer noopener">
-                            {storeAdminInfo.label}
-                          </a>
-                        ) : (
-                          storeAdminInfo.label
-                        )}
-                      </span>
-                    </span>
+                    )}
                     {storeAutomationRepoInfo.href && (
                       <span className="store-summary-context-item">
                         <a
@@ -2935,6 +2931,7 @@ export const StoreSummaryPage = () => {
         isOpen={isStoreSettingsOpen}
         onClose={closeStoreSettings}
         title={t('storeSummary.storeSettings')}
+        modalClassName="modal--compact"
       >
         {storeSettingsError && (
           <p className="form-message form-message--error">{storeSettingsError}</p>

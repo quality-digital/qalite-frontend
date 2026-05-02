@@ -3353,6 +3353,12 @@ a.text-link:hover {
   gap: 1.5rem;
 }
 
+.modal--compact {
+  width: min(28rem, 100%);
+  padding: 1.4rem;
+  gap: 1rem;
+}
+
 @media (max-width: 640px) {
   .modal-overlay {
     padding: 1rem;
@@ -3586,10 +3592,6 @@ a.text-link:hover {
 .store-summary-context-item__title--link:hover,
 .store-summary-context-item__title--link:focus-visible {
   color: var(--color-primary);
-}
-
-.store-summary-context-item__value {
-  font-weight: 500;
 }
 
 .store-link-hint {
