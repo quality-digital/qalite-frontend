@@ -1,207 +1,61 @@
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+
 import type { Environment } from '../../../domain/entities/environment';
 import type { UserSummary } from '../../../domain/entities/user';
-import { ENVIRONMENT_STATUS_LABEL } from '../../../shared/config/environmentLabels';
+import { buildExternalLink } from '../../utils/externalLink';
 import { getReadableUserName, getUserInitials } from '../../utils/userDisplay';
 import { CachedImage } from '../CachedImage';
-import { translateEnvironmentOption } from '../../constants/environmentOptions';
-import { requiresReleaseField } from '../../constants/environmentOptions';
-import { useTranslation } from 'react-i18next';
-import { buildExternalLink } from '../../utils/externalLink';
 import { ClockIcon } from '../icons';
-
-const buildJiraLink = (value: string | null | undefined): string | null => {
-  if (!value) {
-    return null;
-  }
-
-  const trimmed = value.trim();
-  if (trimmed.length === 0) {
-    return null;
-  }
-
-  if (/^https?:\/\//i.test(trimmed)) {
-    return trimmed;
-  }
-
-  if (trimmed.includes('.')) {
-    return `https://${trimmed}`;
-  }
-
-  return null;
-};
 
 interface EnvironmentSummaryCardProps {
   environment: Environment;
-  scenarioCount: number;
-  urls: string[];
+  scenarioCount?: number;
+  urls?: string[];
   participants: UserSummary[];
-  bugsCount: number;
+  bugsCount?: number;
   storeName?: string;
   storeLogoUrl?: string | null;
-  showStoreBranding?: boolean;
 }
 
 export const EnvironmentSummaryCard = ({
   environment,
-  scenarioCount,
-  urls,
-  participants,
-  bugsCount,
-  storeName,
-  storeLogoUrl,
-  showStoreBranding = false,
+  urls = [],
+  participants = [],
 }: EnvironmentSummaryCardProps) => {
-  const { t: translation } = useTranslation();
-
-  const visibleParticipants = participants.slice(0, 4);
-  const remainingParticipants = participants.length - visibleParticipants.length;
-
-  const visibleUrls = urls.slice(0, 3);
-  const remainingUrls = urls.length - visibleUrls.length;
-
-  const normalizedEnvironmentType =
-    typeof environment.tipoAmbiente === 'string'
-      ? environment.tipoAmbiente.trim().toUpperCase()
-      : '';
-  const isWsEnvironment = normalizedEnvironmentType === 'WS';
-  const isHomologationEnvironment = requiresReleaseField(environment.tipoAmbiente);
-
-  const bugLabel = isWsEnvironment
-    ? translation('environmentSummary.storyfix')
-    : translation('environmentSummary.bugs');
+  const { t } = useTranslation();
 
   const jiraLinks = (environment.jiraTask ?? '')
     .split('\n')
-    .map((entry) => entry.trim())
+    .map((s) => s.trim())
     .filter(Boolean);
-  const resolvedStoreName = storeName?.trim() || translation('storeSummary.emptyValue');
-  const resolvedStoreLogo = storeLogoUrl?.trim() || null;
+
+  const visibleUrls = (urls ?? []).filter(Boolean).slice(0, 3);
+  const remainingUrls = Math.max((urls ?? []).length - visibleUrls.length, 0);
+
+  const visibleParticipants = participants.slice(0, 4);
+  const remainingParticipants = Math.max(participants.length - visibleParticipants.length, 0);
 
   return (
     <div className="summary-card summary-card--environment summary-card--compact">
       <div className="summary-card__minimal-header">
         <div>
-          <span className="summary-card__meta-label">
-            {translation('editEnvironmentModal.identifier')}
-          </span>
+          <span className="summary-card__meta-label">{t('editEnvironmentModal.identifier')}</span>
           <h3 className="section-title">{environment.identificador}</h3>
         </div>
         <span className={`status-pill status-pill--${environment.status}`}>
-          {translation(ENVIRONMENT_STATUS_LABEL[environment.status])}
+          {t(`environmentStatus.${environment.status}`)}
         </span>
       </div>
 
-      <div className="summary-card__meta-grid summary-card__meta-grid--columns">
-        {showStoreBranding && (
-          <div className="summary-card__meta-item">
-            <span className="summary-card__meta-label">
-              {translation('storeSummary.storeName')}
-            </span>
-            <div className="summary-card__store-meta">
-              {resolvedStoreLogo ? (
-                <CachedImage src={resolvedStoreLogo} alt={resolvedStoreName} />
-              ) : (
-                <span className="summary-card__store-logo-fallback">
-                  {resolvedStoreName.charAt(0).toUpperCase() || 'S'}
-                </span>
-              )}
-              <strong>{resolvedStoreName}</strong>
-            </div>
-          </div>
-        )}
-
-        <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">
-            {translation('createEnvironment.suiteId')}
-          </span>
-          <strong>{environment.suiteName || translation('storeSummary.emptyValue')}</strong>
-        </div>
-
-        <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">
-            {translation('editEnvironmentModal.environmentType')}
-          </span>
-          <strong>{translateEnvironmentOption(environment.tipoAmbiente, translation)}</strong>
-        </div>
-
-        <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">
-            {translation('editEnvironmentModal.testType')}
-          </span>
-          <strong>{translateEnvironmentOption(environment.tipoTeste, translation)}</strong>
-        </div>
-      </div>
-
-      {isHomologationEnvironment && (
-        <div className="summary-card__meta-grid summary-card__meta-grid--columns">
-          <div className="summary-card__meta-item">
-            <span className="summary-card__meta-label">
-              {translation('environmentSummary.moment')}
-            </span>
-            <strong>
-              {environment.momento
-                ? translateEnvironmentOption(environment.momento, translation)
-                : translation('environmentSummary.notRecorded')}
-            </strong>
-          </div>
-          <div className="summary-card__meta-item">
-            <span className="summary-card__meta-label">
-              {translation('environmentSummary.release')}
-            </span>
-            <strong>{environment.release || translation('environmentSummary.notRecorded')}</strong>
-          </div>
-        </div>
-      )}
-
-      <div className="summary-card__meta-grid summary-card__meta-grid--stats">
-        <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">
-            {translation('environmentSummary.scenarios')}
-          </span>
-
-          <strong>{scenarioCount}</strong>
-
-          <span className="summary-card__meta-hint">
-            {scenarioCount === 0
-              ? translation('environmentSummary.noScenarios')
-              : scenarioCount === 1
-                ? translation('environmentSummary.oneScenario')
-                : translation('environmentSummary.multipleScenarios', {
-                    count: scenarioCount,
-                  })}
-          </span>
-        </div>
-
-        <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">{bugLabel}</span>
-          <strong>{bugsCount}</strong>
-        </div>
-        <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">
-            {translation('environmentSummary.participants')}
-          </span>
-
-          <strong>{participants.length}</strong>
-
-          <span className="summary-card__meta-hint">
-            {participants.length === 0 && translation('environmentSummary.noParticipants')}
-            {participants.length === 1 && translation('environmentSummary.oneParticipant')}
-            {participants.length > 1 &&
-              translation('environmentSummary.multipleParticipants', {
-                count: participants.length,
-              })}
-          </span>
-        </div>
-      </div>
-
       <div className="summary-card__chips-group">
-        <span className="summary-card__meta-label">{translation('environmentSummary.jira')}</span>
+        <span className="summary-card__meta-label">{t('environmentSummary.jira')}</span>
         {jiraLinks.length === 0 ? (
-          <p className="summary-card__empty">{translation('environmentSummary.notInformed')}</p>
+          <p className="summary-card__empty">{t('environmentSummary.notInformed')}</p>
         ) : (
           <div className="summary-card__chip-row">
             {jiraLinks.map((jira) => {
-              const href = buildJiraLink(jira);
+              const { href, label } = buildExternalLink(jira);
               return href ? (
                 <a
                   key={jira}
@@ -210,7 +64,7 @@ export const EnvironmentSummaryCard = ({
                   target="_blank"
                   rel="noreferrer noopener"
                 >
-                  {jira}
+                  {label}
                 </a>
               ) : (
                 <span key={jira} className="summary-card__chip">
@@ -223,10 +77,9 @@ export const EnvironmentSummaryCard = ({
       </div>
 
       <div className="summary-card__chips-group">
-        <span className="summary-card__meta-label">{translation('environmentSummary.urls')}</span>
-
+        <span className="summary-card__meta-label">{t('environmentSummary.urls')}</span>
         {visibleUrls.length === 0 ? (
-          <p className="summary-card__empty">{translation('environmentSummary.noUrls')}</p>
+          <p className="summary-card__empty">{t('environmentSummary.noUrls')}</p>
         ) : (
           <div className="summary-card__chip-row">
             {visibleUrls.map((url) => {
@@ -256,18 +109,18 @@ export const EnvironmentSummaryCard = ({
 
       <div className="summary-card__participants">
         <span className="summary-card__meta-label">
-          {translation('environmentSummary.whoIsParticipating')}
+          {t('environmentSummary.whoIsParticipating')}
         </span>
 
         {visibleParticipants.length === 0 ? (
-          <p className="summary-card__empty">{translation('environmentSummary.noParticipants')}</p>
+          <p className="summary-card__empty">{t('environmentSummary.noParticipants')}</p>
         ) : (
           <ul className="summary-card__avatar-list">
             {visibleParticipants.map((participant) => {
               const readableName = getReadableUserName(participant);
               const initials = getUserInitials(readableName);
               const participantPhotoUrl = participant.photoURL?.trim() || null;
-              const isPending = !environment.presentUsersIds.includes(participant.id);
+              const isPending = !environment.presentUsersIds?.includes(participant.id);
               return (
                 <li key={participant.id} className="summary-card__avatar-item">
                   {participantPhotoUrl ? (
@@ -282,7 +135,7 @@ export const EnvironmentSummaryCard = ({
                   {isPending && (
                     <ClockIcon aria-hidden className="summary-card__avatar-pending-icon" />
                   )}
-                  <span>{readableName}</span>
+                  <span className="summary-card__participant-name">{readableName}</span>
                 </li>
               );
             })}

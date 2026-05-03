@@ -8,6 +8,8 @@ import {
   useState,
 } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { FaChartLine, FaGithub } from 'react-icons/fa';
+import { SiVtex } from 'react-icons/si';
 
 import type { Organization } from '../../domain/entities/organization';
 import type {
@@ -110,7 +112,7 @@ interface StoreHighlight {
   onClick?: () => void;
 }
 
-type ExportFormat = 'pdf' | 'xlsx';
+type ExportFormat = 'pdf' | 'xlsx' | 'json';
 type StoreViewMode = 'scenarios' | 'suites' | 'environments';
 
 const emptyScenarioFilters: ScenarioFilters = {
@@ -250,12 +252,28 @@ export const StoreSummaryPage = () => {
       href: link.href,
     };
   }, [store?.adminUrl, t]);
+  const storeAutomationRepoInfo = useMemo(() => {
+    const link = buildExternalLink(store?.automationRepoUrl ?? null);
+    return {
+      label: link.label || t('storeSummary.notInformed'),
+      href: link.href,
+    };
+  }, [store?.automationRepoUrl, t]);
+  const storeAllureInfo = useMemo(() => {
+    const link = buildExternalLink(store?.allureUrl ?? null);
+    return {
+      label: link.label || t('storeSummary.notInformed'),
+      href: link.href,
+    };
+  }, [store?.allureUrl, t]);
   const [isStoreSettingsOpen, setIsStoreSettingsOpen] = useState(false);
   const [isStoreSlackSectionOpen, setIsStoreSlackSectionOpen] = useState(false);
   const [storeSettings, setStoreSettings] = useState({
     name: '',
     site: '',
     adminUrl: '',
+    automationRepoUrl: '',
+    allureUrl: '',
     logoUrl: '',
     slackWebhookUrl: '',
     stage: 'WS' as 'WS' | 'Preview',
@@ -263,8 +281,6 @@ export const StoreSummaryPage = () => {
   const [storeSettingsError, setStoreSettingsError] = useState<string | null>(null);
   const [isUpdatingStore, setIsUpdatingStore] = useState(false);
   const [isDeletingStore, setIsDeletingStore] = useState(false);
-  const [storeSettingsLogoFile, setStoreSettingsLogoFile] = useState<File | null>(null);
-  const [storeSettingsLogoPreview, setStoreSettingsLogoPreview] = useState<string | null>(null);
 
   const updateViewMode = useCallback(
     (nextViewMode: StoreViewMode) => {
@@ -639,33 +655,21 @@ export const StoreSummaryPage = () => {
       name: store.name,
       site: store.site,
       adminUrl: store.adminUrl ?? '',
+      automationRepoUrl: store.automationRepoUrl ?? '',
+      allureUrl: store.allureUrl ?? '',
       logoUrl: store.logoUrl ?? '',
       slackWebhookUrl: store.slackWebhookUrl ?? '',
       stage: store.stage === 'Preview' ? 'Preview' : 'WS',
     });
     setIsStoreSlackSectionOpen(Boolean(store.slackWebhookUrl?.trim()));
-    setStoreSettingsLogoFile(null);
-    setStoreSettingsLogoPreview(store.logoUrl ?? null);
     setStoreSettingsError(null);
     setIsStoreSettingsOpen(true);
   };
 
   const closeStoreSettings = () => {
     setIsStoreSettingsOpen(false);
-    setStoreSettingsLogoFile(null);
-    setStoreSettingsLogoPreview(null);
     setStoreSettingsError(null);
   };
-
-  useEffect(() => {
-    if (!storeSettingsLogoFile) {
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(storeSettingsLogoFile);
-    setStoreSettingsLogoPreview(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [storeSettingsLogoFile]);
 
   const handleStoreSettingsSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -677,6 +681,8 @@ export const StoreSummaryPage = () => {
     const trimmedName = storeSettings.name.trim();
     const trimmedSite = storeSettings.site.trim();
     const trimmedAdminUrl = storeSettings.adminUrl.trim();
+    const trimmedAutomationRepoUrl = storeSettings.automationRepoUrl.trim();
+    const trimmedAllureUrl = storeSettings.allureUrl.trim();
 
     const trimmedSlackWebhookUrl = isStoreSlackSectionOpen
       ? storeSettings.slackWebhookUrl.trim()
@@ -694,18 +700,14 @@ export const StoreSummaryPage = () => {
 
     try {
       setIsUpdatingStore(true);
-      const uploadedLogoUrl = storeSettingsLogoFile
-        ? await storeService.uploadLogo(store.id, storeSettingsLogoFile)
-        : undefined;
       const updated = await storeService.update(store.id, {
         name: trimmedName,
         site: trimmedSite,
         adminUrl: trimmedAdminUrl,
+        automationRepoUrl: trimmedAutomationRepoUrl || null,
+        allureUrl: trimmedAllureUrl || null,
         stage: storeSettings.stage,
 
-        ...(uploadedLogoUrl !== undefined
-          ? { logoUrl: uploadedLogoUrl }
-          : { logoUrl: storeSettings.logoUrl || null }),
         slackWebhookUrl: trimmedSlackWebhookUrl || null,
       });
 
@@ -714,6 +716,8 @@ export const StoreSummaryPage = () => {
         name: updated.name,
         site: updated.site,
         adminUrl: updated.adminUrl ?? '',
+        automationRepoUrl: updated.automationRepoUrl ?? '',
+        allureUrl: updated.allureUrl ?? '',
         logoUrl: updated.logoUrl ?? '',
         slackWebhookUrl: updated.slackWebhookUrl ?? '',
         stage: updated.stage === 'Preview' ? 'Preview' : 'WS',
@@ -961,6 +965,7 @@ export const StoreSummaryPage = () => {
             id: store.id,
             name: store.name,
             logoUrl: store.logoUrl,
+            site: store.site,
           }
         : null,
     );
@@ -1418,6 +1423,20 @@ export const StoreSummaryPage = () => {
         });
       }
 
+      if (format === 'json') {
+        const jsonBlob = new Blob([JSON.stringify(data, null, 2)], {
+          type: 'application/json;charset=utf-8',
+        });
+        const jsonUrl = URL.createObjectURL(jsonBlob);
+        const link = document.createElement('a');
+        link.href = jsonUrl;
+        link.download = `${baseFileName}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(jsonUrl);
+      }
+
       if (format === 'pdf') {
         openScenarioPdf(
           data,
@@ -1753,26 +1772,52 @@ export const StoreSummaryPage = () => {
               <div className="store-summary">
                 <div className="store-summary-meta">
                   <div className="store-summary-context">
-                    <span>
-                      <strong>{t('storeSummary.storeUrl')}:</strong>{' '}
-                      {storeSiteInfo.href ? (
+                    {storeSiteInfo.href && (
+                      <span className="store-summary-context-item">
                         <a href={storeSiteInfo.href} target="_blank" rel="noreferrer noopener">
-                          {storeSiteInfo.label}
+                          {t('storeSummary.openSite')}
                         </a>
-                      ) : (
-                        storeSiteInfo.label
-                      )}
-                    </span>
-                    <span>
-                      <strong>{t('storeSummary.storeAdminUrl')}:</strong>{' '}
-                      {storeAdminInfo.href ? (
-                        <a href={storeAdminInfo.href} target="_blank" rel="noreferrer noopener">
-                          {storeAdminInfo.label}
+                      </span>
+                    )}
+                    {storeAdminInfo.href && (
+                      <span className="store-summary-context-item">
+                        <a
+                          className="store-summary-context-item__title store-summary-context-item__title--link"
+                          href={storeAdminInfo.href}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                        >
+                          <SiVtex aria-hidden className="icon" />
+                          <strong>{t('storeSummary.storeAdminUrl')}</strong>
                         </a>
-                      ) : (
-                        storeAdminInfo.label
-                      )}
-                    </span>
+                      </span>
+                    )}
+                    {storeAutomationRepoInfo.href && (
+                      <span className="store-summary-context-item">
+                        <a
+                          className="store-summary-context-item__title store-summary-context-item__title--link"
+                          href={storeAutomationRepoInfo.href}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                        >
+                          <FaGithub aria-hidden className="icon" />
+                          <strong>{t('storeSummary.storeAutomationGithub')}</strong>
+                        </a>
+                      </span>
+                    )}
+                    {storeAllureInfo.href && (
+                      <span className="store-summary-context-item">
+                        <a
+                          className="store-summary-context-item__title store-summary-context-item__title--link"
+                          href={storeAllureInfo.href}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                        >
+                          <FaChartLine aria-hidden className="icon" />
+                          <strong>{t('storeSummary.storeAutomationAllure')}</strong>
+                        </a>
+                      </span>
+                    )}
                   </div>
                   <div
                     className="store-summary-highlights"
@@ -2089,6 +2134,16 @@ export const StoreSummaryPage = () => {
                             >
                               <FileTextIcon aria-hidden className="icon" />
                               {t('storeSummary.downloadJsonTemplate')}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={() => void handleScenarioExport('json')}
+                              isLoading={exportingScenarioFormat === 'json'}
+                              loadingText={t('exporting')}
+                            >
+                              <FileTextIcon aria-hidden className="icon" />
+                              Exportar JSON
                             </Button>
                             <Button
                               type="button"
@@ -2881,12 +2936,43 @@ export const StoreSummaryPage = () => {
 
           <TextInput
             id="store-settings-admin-url"
-            label={t('storeSummary.storeAdminUrl')}
+            label={
+              <span className="field-label-with-icon">
+                <SiVtex aria-hidden className="icon" /> {t('storeSummary.storeAdminUrl')}
+              </span>
+            }
             value={storeSettings.adminUrl}
             onChange={(event) =>
               setStoreSettings((previous) => ({ ...previous, adminUrl: event.target.value }))
             }
             dataTestId="store-settings-admin-url"
+          />
+          <TextInput
+            id="store-settings-automation-repo-url"
+            label={
+              <span className="field-label-with-icon">
+                <FaGithub aria-hidden className="icon" /> URL automação (GitHub)
+              </span>
+            }
+            value={storeSettings.automationRepoUrl}
+            onChange={(event) =>
+              setStoreSettings((previous) => ({
+                ...previous,
+                automationRepoUrl: event.target.value,
+              }))
+            }
+          />
+          <TextInput
+            id="store-settings-allure-url"
+            label={
+              <span className="field-label-with-icon">
+                <FaChartLine aria-hidden className="icon" /> URL automação (Allure)
+              </span>
+            }
+            value={storeSettings.allureUrl}
+            onChange={(event) =>
+              setStoreSettings((previous) => ({ ...previous, allureUrl: event.target.value }))
+            }
           />
           <SelectInput
             id="store-settings-stage"
@@ -2904,29 +2990,6 @@ export const StoreSummaryPage = () => {
             ]}
           />
 
-          <div className="organization-logo-field">
-            <div className="organization-logo-preview">
-              {storeSettingsLogoPreview ? (
-                <img src={storeSettingsLogoPreview} alt={t('storeSummary.storeLogoPreview')} />
-              ) : (
-                <span className="organization-logo-fallback">
-                  {t('storeSummary.storeLogoPlaceholder')}
-                </span>
-              )}
-            </div>
-            <div className="organization-logo-actions">
-              <label htmlFor="store-settings-logo" className="field-label">
-                {t('storeSummary.storeLogoLabel')}
-              </label>
-              <input
-                id="store-settings-logo"
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                onChange={(event) => setStoreSettingsLogoFile(event.target.files?.[0] ?? null)}
-              />
-              <p className="form-hint">{t('storeSummary.storeLogoHint')}</p>
-            </div>
-          </div>
           <div className="collapsible-section">
             <div className="collapsible-section__header">
               <div className="collapsible-section__titles">

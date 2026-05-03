@@ -119,6 +119,7 @@
       "critical": "Crítica"
     },
     "environmentOptions": {
+      "RELEASE": "Release",
       "WS": "WS",
       "Preview": "FastStore (Preview)",
       "TM": "Homologação",
@@ -140,6 +141,11 @@
       "resolved": "Resolvido",
       "mobile": "Mobile",
       "desktop": "Desktop"
+    },
+    "environmentStatus": {
+      "backlog": "Backlog",
+      "in_progress": "Em andamento",
+      "done": "Concluído"
     },
     "environmentBugModal": {
       "progress": "Em andamento",
@@ -208,6 +214,7 @@
       "participantsListLabel": "Participantes cadastrados",
       "momentLabel": "Momento/Quando",
       "bugStoryfix": "Storyfix",
+      "bugHotfix": "Hotfix",
       "bugBugs": "Bugs",
       "noParticipants": "Sem participantes",
       "clone": "Clonar"
@@ -217,11 +224,13 @@
       "suiteRequired": "Selecione ao menos uma suíte de testes.",
       "moment": "Selecione o momento do ambiente.",
       "release": "Informe a release para este ambiente.",
+      "releaseVersionLabel": "Versão Release",
+      "releaseVersionRequired": "Informe a versão da release para este ambiente.",
       "createError": "Não foi possível criar o ambiente. Tente novamente.",
       "create": "Criar ambiente",
       "description": "Preencha os campos para iniciar um novo ambiente de teste.",
       "id": "Identificador",
-      "urls": "URLs (uma por linha)",
+      "urls": "URLs",
       "example": "https://exemplo.com",
       "duplicateUrlError": "Essa URL já foi adicionada.",
       "duplicateJiraError": "Esse link do Jira já foi adicionado.",
@@ -593,6 +602,10 @@
       "confirm-remove-member-message": "Você deseja mesmo excluir {{memberName}}?",
       "confirm-remove-member-description": "O usuário será removido da organização {{organizationName}}.",
       "form-error-no-org-name": "Informe um nome para a organização.",
+      "remove-organization-button": "Remover organização",
+      "remove-organization-warning": "Esta ação não pode ser desfeita.",
+      "edit-store-button": "Editar loja",
+      "new-store-description": "Informe os dados básicos da loja para disponibilizar os cenários.",
       "form-error-no-member-email": "Informe o e-mail do usuário.",
       "org-slack-added-user": "Adicione usuários pelo e-mail cadastrado no QALite.",
       "org-vinculed-members": "Membros vinculados",
@@ -679,6 +692,7 @@
       "slack.labels.suiteCoverage": "Cobertura",
       "slack.labels.executionContext": "Contexto",
       "slack.labels.executionId": "ID da execução",
+      "slack.labels.executionDate": "Data de execução",
       "slack.labels.totalTime": "Tempo total",
       "slack.labels.participantsCount": "Participantes ativos",
       "slack.sections.executionContext": "Contexto da Execução",
@@ -733,6 +747,7 @@
       "notEnded": "Não encerrado",
       "bugs": "Bugs registrados",
       "storyfix": "Storyfix registrados",
+      "hotfix": "Hotfix registrados",
       "jira": "Jira",
       "notInformed": "Não informado",
       "moment": "Momento",
@@ -743,7 +758,8 @@
       "multipleParticipants": "{{count}} participantes ativos",
       "urls": "URLs monitoradas",
       "noUrls": "Nenhuma URL adicionada.",
-      "whoIsParticipating": "Quem está participando"
+      "whoIsParticipating": "Quem está participando",
+      "date": "Data"
     },
     "environmentBugList": {
       "bugRemovedSuccess": "Bug removido com sucesso.",
@@ -1190,7 +1206,10 @@
       "storeSettings": "Configurações da loja",
       "storeName": "Nome da loja",
       "storeUrl": "URL do site",
+      "openSite": "Abrir site",
       "storeAdminUrl": "URL do admin VTEX",
+      "storeAutomationGithub": "Automação GitHub",
+      "storeAutomationAllure": "Automação Allure",
       "storeLogoLabel": "Logo da loja",
       "storeLogoHint": "Envie a logo da loja.",
       "storeLogoPreview": "Prévia da logo da loja",

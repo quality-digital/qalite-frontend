@@ -6,13 +6,13 @@ import type { StoreScenario, StoreSuite, Store } from '../../../domain/entities/
 import { environmentService } from '../../../infrastructure/services/environmentService';
 import { Button } from '../Button';
 import { SelectInput } from '../SelectInput';
-import { TextArea } from '../TextArea';
 import { TextInput } from '../TextInput';
 import {
-  MOMENT_OPTIONS_BY_ENVIRONMENT,
-  TEST_TYPES_BY_ENVIRONMENT,
   requiresReleaseField,
+  MOMENT_OPTIONS_BY_ENVIRONMENT,
 } from '../../constants/environmentOptions';
+import { useStoresRealtime } from '../../context/StoresRealtimeContext';
+import { DEFAULT_ENVIRONMENT_COLUMNS } from '../../../infrastructure/external/environments';
 import { useToast } from '../../context/ToastContext';
 
 interface CreateEnvironmentCardProps {
@@ -72,7 +72,6 @@ export const CreateEnvironmentCard = ({
   scenarios,
   onCreated,
 }: CreateEnvironmentCardProps) => {
-  const [identificador, setIdentificador] = useState('');
   const [urlInput, setUrlInput] = useState('');
   const [jiraInput, setJiraInput] = useState('');
   const [urls, setUrls] = useState<string[]>([]);
@@ -80,23 +79,22 @@ export const CreateEnvironmentCard = ({
   const [tipoAmbiente, setTipoAmbiente] = useState(() =>
     getEnvironmentTypeByStoreStage(storeStage),
   );
-  const [tipoTeste, setTipoTeste] = useState('Smoke-test');
-  const [momento, setMomento] = useState('');
-  const [release, setRelease] = useState('');
+
   const [suiteId, setSuiteId] = useState('');
-  const [environmentColumnsInput, setEnvironmentColumnsInput] = useState('Desktop\nMobile');
+  const [momento, setMomento] = useState<string | null>(null);
+  const [releaseVersion, setReleaseVersion] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
   const { t } = useTranslation();
 
-  const environmentColumns = useMemo(
-    () =>
-      environmentColumnsInput
-        .split('\n')
-        .map((entry) => entry.trim())
-        .filter((entry, index, array) => entry.length > 0 && array.indexOf(entry) === index),
-    [environmentColumnsInput],
-  );
+  const { stores } = useStoresRealtime();
+  const currentStore = useMemo(() => stores.find((s) => s.id === storeId), [stores, storeId]);
+  const environmentColumns = useMemo(() => {
+    if (currentStore?.environmentColumns && currentStore.environmentColumns.length > 0) {
+      return currentStore.environmentColumns.map((c) => c.trim()).filter(Boolean);
+    }
+    return DEFAULT_ENVIRONMENT_COLUMNS;
+  }, [currentStore]);
   const selectedSuite = useMemo(
     () => suites.find((suite) => suite.id === suiteId),
     [suiteId, suites],
@@ -106,17 +104,6 @@ export const CreateEnvironmentCard = ({
     [environmentColumns, scenarios, selectedSuite],
   );
   const totalCenarios = Object.keys(scenarioMap).length;
-
-  const tipoTesteOptions = useMemo(
-    () => TEST_TYPES_BY_ENVIRONMENT[tipoAmbiente] ?? ['Smoke-test'],
-    [tipoAmbiente],
-  );
-
-  const momentoOptions = useMemo(
-    () => MOMENT_OPTIONS_BY_ENVIRONMENT[tipoAmbiente] ?? [],
-    [tipoAmbiente],
-  );
-
   const shouldDisplayReleaseField = requiresReleaseField(tipoAmbiente);
   const primaryEnvironmentOption = useMemo(
     () => ({
@@ -133,41 +120,17 @@ export const CreateEnvironmentCard = ({
     setTipoAmbiente(getEnvironmentTypeByStoreStage(storeStage));
   }, [storeStage]);
 
-  useEffect(() => {
-    if (!tipoTesteOptions.includes(tipoTeste)) {
-      setTipoTeste(tipoTesteOptions[0]);
-    }
-  }, [tipoTeste, tipoTesteOptions]);
-
-  useEffect(() => {
-    if (momentoOptions.length === 0 && momento) {
-      setMomento('');
-      return;
-    }
-
-    if (momentoOptions.length > 0 && !momentoOptions.includes(momento)) {
-      setMomento(momentoOptions[0]);
-    }
-  }, [momento, momentoOptions]);
-
-  useEffect(() => {
-    if (!shouldDisplayReleaseField && release) {
-      setRelease('');
-    }
-  }, [shouldDisplayReleaseField, release]);
+  // momento removed: no-op effect removed
 
   const resetForm = () => {
-    setIdentificador('');
     setUrlInput('');
     setJiraInput('');
     setUrls([]);
     setJiraLinks([]);
     setTipoAmbiente(getEnvironmentTypeByStoreStage(storeStage));
-    setTipoTeste('Smoke-test');
-    setMomento('');
-    setRelease('');
     setSuiteId('');
-    setEnvironmentColumnsInput('Desktop\nMobile');
+    setMomento(null);
+    setReleaseVersion('');
   };
 
   const addUniqueItem = (
@@ -191,30 +154,15 @@ export const CreateEnvironmentCard = ({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!identificador.trim()) {
-      showToast({ type: 'error', message: t('createEnvironment.identifier') });
-      return;
-    }
-
     if (!suiteId) {
       showToast({ type: 'error', message: t('createEnvironment.suiteRequired') });
       return;
     }
 
-    if (environmentColumns.length === 0) {
-      showToast({ type: 'error', message: t('createEnvironment.environmentColumnsRequired') });
-      return;
-    }
+    // environment columns now come from store configuration (fallback to Desktop/Mobile)
 
-    if (momentoOptions.length > 0 && !momento) {
-      showToast({ type: 'error', message: t('createEnvironment.moment') });
-      return;
-    }
-
-    if (shouldDisplayReleaseField && !release.trim()) {
-      showToast({ type: 'error', message: t('createEnvironment.release') });
-      return;
-    }
+    const isReleaseType = tipoAmbiente === 'RELEASE' || shouldDisplayReleaseField;
+    // no release version input (removed) — release not required from UI
 
     setIsSubmitting(true);
     try {
@@ -226,32 +174,80 @@ export const CreateEnvironmentCard = ({
       );
 
       const timeTracking = { start: null, end: null, totalMs: 0 };
+      const dateToken = new Date().toISOString().slice(0, 10).replaceAll('-', '');
 
-      const createdEnvironment = await environmentService.create({
-        identificador: identificador.trim(),
-        storeId,
-        suiteId: selectedSuite?.id ?? null,
-        suiteName: selectedSuite?.name ?? null,
-        urls: urlsList,
-        jiraTask: jiraList.join('\n').trim(),
-        tipoAmbiente,
-        tipoTeste,
-        momento: momentoOptions.length > 0 ? momento : null,
-        release: shouldDisplayReleaseField ? release.trim() : null,
-        status: 'backlog',
-        timeTracking,
-        presentUsersIds: [],
-        concludedBy: null,
-        scenarios: scenarioMap,
-        bugs: 0,
-        totalCenarios,
-        participants: [],
-        publicShareLanguage: null,
-        environmentColumns,
-      });
+      if (isReleaseType) {
+        const momentoToken = momento ? (momento === 'pre' ? 'PRE' : 'POS') : 'PRE';
+        const releaseToken = releaseVersion?.trim() || 'RELEASE';
+        const suiteToken = selectedSuite?.name
+          ? selectedSuite.name.replaceAll(' ', '_')
+          : 'NO_SUITE';
+        const identifier = `[${momentoToken}][${releaseToken}][${suiteToken}][${dateToken}]`;
 
-      onCreated?.(createdEnvironment);
-      resetForm();
+        const createdEnvironment = await environmentService.create({
+          identificador: identifier,
+          storeId,
+          suiteId: selectedSuite?.id ?? null,
+          suiteName: selectedSuite?.name ?? null,
+          urls: urlsList,
+          jiraTask: jiraList.join('\n').trim(),
+          tipoAmbiente,
+          tipoTeste: null,
+          release: releaseVersion?.trim() || null,
+          executionDate: null,
+          momento: momento ?? null,
+          status: 'backlog',
+          timeTracking,
+          presentUsersIds: [],
+          concludedBy: null,
+          scenarios: scenarioMap,
+          bugs: 0,
+          totalCenarios,
+          participants: [],
+          publicShareLanguage: null,
+          environmentColumns,
+        });
+
+        onCreated?.(createdEnvironment);
+        resetForm();
+      } else {
+        const typeTag =
+          tipoAmbiente === 'PROD'
+            ? 'PRODUCAO'
+            : tipoAmbiente === 'WS' || tipoAmbiente === 'Preview'
+              ? 'WS'
+              : tipoAmbiente.toUpperCase();
+        const suiteToken = selectedSuite?.name
+          ? selectedSuite.name.replaceAll(' ', '_')
+          : 'NO_SUITE';
+        const identifier = `[${typeTag}][${suiteToken}][${dateToken}]`;
+
+        const createdEnvironment = await environmentService.create({
+          identificador: identifier,
+          storeId,
+          suiteId: selectedSuite?.id ?? null,
+          suiteName: selectedSuite?.name ?? null,
+          urls: urlsList,
+          jiraTask: jiraList.join('\n').trim(),
+          tipoAmbiente,
+          tipoTeste: null,
+          release: null,
+          executionDate: null,
+          status: 'backlog',
+          timeTracking,
+          presentUsersIds: [],
+          concludedBy: null,
+          scenarios: scenarioMap,
+          bugs: 0,
+          totalCenarios,
+          participants: [],
+          publicShareLanguage: null,
+          environmentColumns,
+        });
+
+        onCreated?.(createdEnvironment);
+        resetForm();
+      }
     } catch (error) {
       console.error(error);
       showToast({ type: 'error', message: t('createEnvironment.createError') });
@@ -267,20 +263,13 @@ export const CreateEnvironmentCard = ({
         <p className="create-card__description">{t('createEnvironment.description')}</p>
       </div>
       <form className="environment-form" onSubmit={handleSubmit}>
-        <TextInput
-          id="identificador"
-          label={t('createEnvironment.id')}
-          value={identificador}
-          onChange={(event) => setIdentificador(event.target.value)}
-          required
-        />
         <div className="dynamic-links-row">
           <TextInput
             id="urls"
             label={t('createEnvironment.urls')}
             value={urlInput}
             onChange={(event) => setUrlInput(event.target.value)}
-            placeholder={t('createEnvironment.example')}
+            placeholder="Insira o link da sua url"
           />
           <Button
             type="button"
@@ -316,6 +305,7 @@ export const CreateEnvironmentCard = ({
             label={t('createEnvironment.jiraTask')}
             value={jiraInput}
             onChange={(event) => setJiraInput(event.target.value)}
+            placeholder="Insira o link da sua tarefa do jira"
           />
           <Button
             type="button"
@@ -352,17 +342,36 @@ export const CreateEnvironmentCard = ({
           onChange={(event) => setTipoAmbiente(event.target.value)}
           options={[
             primaryEnvironmentOption,
-            { value: 'TM', label: t('environmentOptions.TM') },
+            { value: 'RELEASE', label: t('environmentOptions.RELEASE') || 'Release' },
             { value: 'PROD', label: t('environmentOptions.PROD') },
           ]}
         />
-        <SelectInput
-          id="tipoTeste"
-          label={t('createEnvironment.testType')}
-          value={tipoTeste}
-          onChange={(event) => setTipoTeste(event.target.value)}
-          options={tipoTesteOptions.map((option) => ({ value: option, label: t(option) }))}
-        />
+        {(shouldDisplayReleaseField || tipoAmbiente === 'RELEASE') && (
+          <>
+            <SelectInput
+              id="momento"
+              label={t('editEnvironmentModal.moment')}
+              value={momento ?? ''}
+              onChange={(event) => setMomento(event.target.value || null)}
+              options={[
+                { value: '', label: t('createEnvironment.none') },
+                ...(
+                  MOMENT_OPTIONS_BY_ENVIRONMENT[tipoAmbiente] ?? [
+                    'environmentOptions.pre',
+                    'environmentOptions.post',
+                  ]
+                ).map((opt) => ({ value: opt.replace('environmentOptions.', ''), label: t(opt) })),
+              ]}
+            />
+            <TextInput
+              id="release"
+              label={t('editEnvironmentModal.release')}
+              value={releaseVersion}
+              onChange={(event) => setReleaseVersion(event.target.value)}
+              placeholder="Ex: 1.2.3"
+            />
+          </>
+        )}
         <SelectInput
           id="suiteId"
           label={t('createEnvironment.suiteId')}
@@ -373,30 +382,13 @@ export const CreateEnvironmentCard = ({
             ...suites.map((suite) => ({ value: suite.id, label: suite.name })),
           ]}
         />
-        <TextArea
-          id="environment-columns"
-          label={t('createEnvironment.environmentColumns')}
-          value={environmentColumnsInput}
-          onChange={(event) => setEnvironmentColumnsInput(event.target.value)}
-          placeholder={t('createEnvironment.environmentColumnsPlaceholder')}
-        />
-        {momentoOptions.length > 0 && (
-          <SelectInput
-            id="momento"
-            label={t('createEnvironment.setMoment')}
-            value={momento}
-            onChange={(event) => setMomento(event.target.value)}
-            options={momentoOptions.map((option) => ({ value: option, label: t(option) }))}
-          />
-        )}
-        {shouldDisplayReleaseField && (
-          <TextInput
-            id="release"
-            label={t('createEnvironment.releaseLabel')}
-            value={release}
-            onChange={(event) => setRelease(event.target.value)}
-          />
-        )}
+        <div className="field">
+          <span className="field-label">{t('createEnvironment.environmentColumns')}</span>
+          <div className="field-input" aria-hidden>
+            {environmentColumns.join(', ')}
+          </div>
+        </div>
+        {/* release version field removed — release not provided by UI */}
         {selectedSuite && (
           <div className="environment-suite-preview">
             <p>

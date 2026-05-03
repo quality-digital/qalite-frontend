@@ -7,11 +7,14 @@ export interface Store {
   stage: string;
   logoUrl: string | null;
   slackWebhookUrl: string | null;
+  automationRepoUrl?: string | null;
+  allureUrl?: string | null;
   scenarioCount: number;
   automatedScenarioCount: number;
   notAutomatedScenarioCount: number;
   createdAt: Date | null;
   updatedAt: Date | null;
+  environmentColumns?: string[];
 }
 
 export interface StoreScenario {
@@ -76,6 +79,9 @@ export interface CreateStorePayload {
   stage: string;
   logoUrl?: string | null;
   slackWebhookUrl?: string | null;
+  automationRepoUrl?: string | null;
+  allureUrl?: string | null;
+  environmentColumns?: string[];
 }
 
 export interface UpdateStorePayload {
@@ -85,6 +91,9 @@ export interface UpdateStorePayload {
   stage: string;
   logoUrl?: string | null;
   slackWebhookUrl?: string | null;
+  automationRepoUrl?: string | null;
+  allureUrl?: string | null;
+  environmentColumns?: string[];
 }
 
 export interface StoreExportPayload {
