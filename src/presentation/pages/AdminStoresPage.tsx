@@ -1,20 +1,15 @@
-import { ChangeEvent, FormEvent, KeyboardEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { FaChartLine, FaGithub } from 'react-icons/fa';
-import { SiVtex } from 'react-icons/si';
 
-import type { Organization, OrganizationAccessRequest } from '../../domain/entities/organization';
+import type { Organization } from '../../domain/entities/organization';
 import type { Store } from '../../domain/entities/store';
-import type { UserSummary } from '../../domain/entities/user';
 import {
   listenToOrganizationDetail,
   listenToOrganizationsSummary,
-  listenToPendingAccessRequestsForOrganization,
 } from '../../infrastructure/external/organizations';
 import { organizationService } from '../../infrastructure/services/organizationService';
 import { storeService } from '../../infrastructure/services/storeService';
-import { userService } from '../../infrastructure/services/userService';
 import { useStoresRealtime } from '../context/StoresRealtimeContext';
 import { useToast } from '../context/ToastContext';
 import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
@@ -22,9 +17,9 @@ import { Layout } from '../components/Layout';
 import { BackButton } from '../components/BackButton';
 import { Button } from '../components/Button';
 import { UserAvatar } from '../components/UserAvatar';
-import { CachedImage } from '../components/CachedImage';
 import { Modal } from '../components/Modal';
 import { TextInput } from '../components/TextInput';
+import { TextArea } from '../components/TextArea';
 import { SelectInput } from '../components/SelectInput';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import {
@@ -49,6 +44,7 @@ interface StoreFormState {
   allureUrl: string;
   logoUrl: string;
   stage: 'WS' | 'Preview';
+  environmentColumns: string;
 }
 
 const createOrganizationFormState = (organization: Organization | null): OrganizationFormState => ({
@@ -65,6 +61,7 @@ const createEmptyStoreFormState = (): StoreFormState => ({
   allureUrl: '',
   logoUrl: '',
   stage: 'WS',
+  environmentColumns: 'Desktop\nMobile',
 });
 
 const createStoreFormState = (store: Store | null): StoreFormState => ({
@@ -75,6 +72,7 @@ const createStoreFormState = (store: Store | null): StoreFormState => ({
   allureUrl: store?.allureUrl ?? '',
   logoUrl: store?.logoUrl ?? '',
   stage: (store?.stage as 'WS' | 'Preview') ?? 'WS',
+  environmentColumns: store?.environmentColumns?.join('\n') ?? 'Desktop\nMobile',
 });
 
 export const AdminStoresPage = () => {
@@ -98,24 +96,16 @@ export const AdminStoresPage = () => {
     createOrganizationFormState(null),
   );
   const [organizationLogoFile, setOrganizationLogoFile] = useState<File | null>(null);
-  const [organizationLogoPreview, setOrganizationLogoPreview] = useState<string | null>(null);
+  const [, setOrganizationLogoPreview] = useState<string | null>(null);
   const [organizationError, setOrganizationError] = useState<string | null>(null);
   const [isOrganizationSlackSectionOpen, setIsOrganizationSlackSectionOpen] = useState(false);
   const [isSavingOrganization, setIsSavingOrganization] = useState(false);
-  const [newMemberEmail, setNewMemberEmail] = useState('');
-  const [userSuggestions, setUserSuggestions] = useState<UserSummary[]>([]);
-  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
-  const [isManagingMembers, setIsManagingMembers] = useState(false);
-  const [pendingAccessRequests, setPendingAccessRequests] = useState<OrganizationAccessRequest[]>(
-    [],
-  );
-  const [approvingRequestId, setApprovingRequestId] = useState<string | null>(null);
   const [organizationDeleteModalOpen, setOrganizationDeleteModalOpen] = useState(false);
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<Store | null>(null);
   const [storeForm, setStoreForm] = useState<StoreFormState>(createEmptyStoreFormState());
   const [storeLogoFile, setStoreLogoFile] = useState<File | null>(null);
-  const [storeLogoPreview, setStoreLogoPreview] = useState<string | null>(null);
+  const [, setStoreLogoPreview] = useState<string | null>(null);
   const [storeError, setStoreError] = useState<string | null>(null);
   const [isSavingStore, setIsSavingStore] = useState(false);
   const [storeDeleteModalOpen, setStoreDeleteModalOpen] = useState(false);
@@ -188,21 +178,6 @@ export const AdminStoresPage = () => {
 
   useEffect(() => {
     if (!selectedOrganizationId) {
-      setPendingAccessRequests([]);
-      return;
-    }
-
-    return listenToPendingAccessRequestsForOrganization(
-      selectedOrganizationId,
-      setPendingAccessRequests,
-      () => {
-        setPendingAccessRequests([]);
-      },
-    );
-  }, [selectedOrganizationId, translation]);
-
-  useEffect(() => {
-    if (!selectedOrganizationId) {
       setSelectedOrganization(null);
       return;
     }
@@ -260,37 +235,6 @@ export const AdminStoresPage = () => {
     setStoreForm(createStoreFormState(editingStore));
   }, [editingStore]);
 
-  useEffect(() => {
-    const searchTerm = newMemberEmail.trim();
-
-    if (!searchTerm || !isOrganizationModalOpen) {
-      setUserSuggestions([]);
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      const fetchSuggestions = async () => {
-        try {
-          setIsSearchingUsers(true);
-          const results = await userService.searchByTerm(searchTerm);
-          const filteredResults = selectedOrganization
-            ? results.filter((user) => !selectedOrganization.memberIds.includes(user.id))
-            : results;
-
-          setUserSuggestions(filteredResults);
-        } catch {
-          setUserSuggestions([]);
-        } finally {
-          setIsSearchingUsers(false);
-        }
-      };
-
-      void fetchSuggestions();
-    }, 250);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [isOrganizationModalOpen, newMemberEmail, selectedOrganization]);
-
   const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>, callback: () => void) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
@@ -301,8 +245,6 @@ export const AdminStoresPage = () => {
   const openOrganizationModal = () => {
     setOrganizationError(null);
     setOrganizationLogoFile(null);
-    setNewMemberEmail('');
-    setUserSuggestions([]);
     setOrganizationForm(createOrganizationFormState(selectedOrganization));
     setIsOrganizationModalOpen(true);
   };
@@ -312,8 +254,6 @@ export const AdminStoresPage = () => {
     setOrganizationError(null);
     setOrganizationLogoFile(null);
     setOrganizationLogoPreview(null);
-    setNewMemberEmail('');
-    setUserSuggestions([]);
   };
 
   const openCreateStoreModal = () => {
@@ -383,106 +323,6 @@ export const AdminStoresPage = () => {
     }
   };
 
-  const handleAddMember = async () => {
-    if (!selectedOrganization) {
-      setOrganizationError(translation('AdminStoresPage.member-add-no-organization'));
-      return;
-    }
-
-    const trimmedEmail = newMemberEmail.trim();
-    if (!trimmedEmail) {
-      setOrganizationError(translation('AdminStoresPage.member-add-email-required'));
-      return;
-    }
-
-    const normalizedEmail = trimmedEmail.toLowerCase();
-    if (
-      selectedOrganization.members.some((member) => member.email.toLowerCase() === normalizedEmail)
-    ) {
-      setOrganizationError(translation('AdminStoresPage.member-add-already-linked'));
-      return;
-    }
-
-    try {
-      setIsManagingMembers(true);
-      await organizationService.addUser({
-        organizationId: selectedOrganization.id,
-        userEmail: trimmedEmail,
-      });
-      setNewMemberEmail('');
-      setUserSuggestions([]);
-      setOrganizationError(null);
-      showToast({
-        type: 'success',
-        message: translation('AdminStoresPage.toast-success-member-added'),
-      });
-    } catch (memberError) {
-      const message =
-        memberError instanceof Error
-          ? memberError.message
-          : translation('AdminStoresPage.toast-error-save-org');
-      setOrganizationError(message);
-      showToast({ type: 'error', message });
-    } finally {
-      setIsManagingMembers(false);
-    }
-  };
-
-  const handleRemoveMember = async (memberUid: string) => {
-    if (!selectedOrganization) {
-      return;
-    }
-
-    try {
-      setIsManagingMembers(true);
-      await organizationService.removeUser({
-        organizationId: selectedOrganization.id,
-        userId: memberUid,
-      });
-      showToast({
-        type: 'success',
-        message: translation('AdminStoresPage.toast-success-member-removed'),
-      });
-    } catch (memberError) {
-      const message =
-        memberError instanceof Error
-          ? memberError.message
-          : translation('AdminStoresPage.toast-error-save-org');
-      setOrganizationError(message);
-      showToast({ type: 'error', message });
-    } finally {
-      setIsManagingMembers(false);
-    }
-  };
-
-  const handleApproveAccessRequest = async (requestId: string) => {
-    if (!selectedOrganization) {
-      return;
-    }
-
-    try {
-      setApprovingRequestId(requestId);
-      await organizationService.approveAccessRequest({
-        organizationId: selectedOrganization.id,
-        requestId,
-      });
-      setOrganizationError(null);
-      showToast({
-        type: 'success',
-        message: translation('AdminStoresPage.pending-request-approved'),
-      });
-    } catch (requestError) {
-      const message =
-        requestError instanceof Error
-          ? requestError.message
-          : translation('AdminStoresPage.pending-request-error');
-      setOrganizationError(message);
-      showToast({ type: 'error', message });
-    } finally {
-      setApprovingRequestId(null);
-    }
-  };
-
   const handleDeleteOrganization = async () => {
     if (!selectedOrganization) {
       return;
@@ -548,6 +388,10 @@ export const AdminStoresPage = () => {
           allureUrl: trimmedAllureUrl || null,
           stage: storeForm.stage,
           logoUrl: null,
+          environmentColumns: storeForm.environmentColumns
+            .split('\n')
+            .map((c) => c.trim())
+            .filter(Boolean),
         });
 
         showToast({
@@ -555,7 +399,7 @@ export const AdminStoresPage = () => {
           message: translation('storeSummary.storeUpdateSuccess'),
         });
       } else {
-        const createdStore = await storeService.create({
+        await storeService.create({
           organizationId,
           name: trimmedName,
           site: trimmedSite,
@@ -564,6 +408,10 @@ export const AdminStoresPage = () => {
           allureUrl: trimmedAllureUrl || null,
           stage: storeForm.stage,
           logoUrl: null,
+          environmentColumns: storeForm.environmentColumns
+            .split('\n')
+            .map((c) => c.trim())
+            .filter(Boolean),
         });
 
         showToast({
@@ -607,9 +455,6 @@ export const AdminStoresPage = () => {
       setIsSavingStore(false);
     }
   };
-
-  const organizationLogoSource = organizationLogoPreview ?? selectedOrganization?.logoUrl ?? null;
-  const storeLogoSource = storeLogoPreview ?? storeForm.logoUrl ?? null;
 
   return (
     <Layout>
@@ -833,9 +678,119 @@ export const AdminStoresPage = () => {
           />
 
           <div className="form-actions">
+            <Button type="submit" isLoading={isSavingOrganization}>
+              {translation('saveChanges')}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={closeOrganizationModal}
+              disabled={isSavingOrganization}
+            >
+              {translation('cancel')}
+            </Button>
+          </div>
+        </form>
+        {selectedOrganization ? (
+          <div className="modal-danger-zone">
+            <div>
+              <h4>{translation('AdminStoresPage.remove-organization-button')}</h4>
+              <p>{translation('AdminStoresPage.remove-organization-warning')}</p>
+            </div>
+            <button
+              type="button"
+              className="link-danger"
+              onClick={() => setOrganizationDeleteModalOpen(true)}
+            >
+              {translation('delete')}
+            </button>
+          </div>
+        ) : null}
+      </Modal>
+
+      <Modal
+        isOpen={isStoreModalOpen}
+        onClose={closeStoreModal}
+        title={
+          editingStore
+            ? translation('AdminStoresPage.edit-store-button')
+            : translation('AdminStoresPage.new-store-button')
+        }
+        description={editingStore?.name ?? translation('AdminStoresPage.new-store-description')}
+      >
+        {storeError && <p className="form-message form-message--error">{storeError}</p>}
+        <form className="form-grid" onSubmit={handleStoreSubmit}>
+          <TextInput
+            id="store-name"
+            label={translation('storeSummary.storeName')}
+            value={storeForm.name}
+            onChange={(event) =>
+              setStoreForm((previous) => ({ ...previous, name: event.target.value }))
+            }
+            required
+          />
+          <TextInput
+            id="store-site"
+            label={translation('storeSummary.storeUrl')}
+            value={storeForm.site}
+            onChange={(event) =>
+              setStoreForm((previous) => ({ ...previous, site: event.target.value }))
+            }
+            required
+          />
+          <TextInput
+            id="store-admin-url"
+            label={translation('storeSummary.storeAdminUrl')}
+            value={storeForm.adminUrl}
+            onChange={(event) =>
+              setStoreForm((previous) => ({ ...previous, adminUrl: event.target.value }))
+            }
+          />
+          <TextInput
+            id="store-automation-repo"
+            label="Repositório de Automação"
+            value={storeForm.automationRepoUrl}
+            onChange={(event) =>
+              setStoreForm((previous) => ({ ...previous, automationRepoUrl: event.target.value }))
+            }
+          />
+          <TextInput
+            id="store-allure-url"
+            label="URL Allure"
+            value={storeForm.allureUrl}
+            onChange={(event) =>
+              setStoreForm((previous) => ({ ...previous, allureUrl: event.target.value }))
+            }
+          />
+          <TextArea
+            id="store-environment-columns"
+            label={translation('createEnvironment.environmentColumns')}
+            value={storeForm.environmentColumns}
+            onChange={(event) =>
+              setStoreForm((previous) => ({ ...previous, environmentColumns: event.target.value }))
+            }
+            placeholder={translation('createEnvironment.environmentColumnsPlaceholder')}
+          />
+          <SelectInput
+            id="store-stage"
+            label={translation('storeSummary.storeEnvironmentLabel')}
+            value={storeForm.stage}
+            onChange={(event) =>
+              setStoreForm((previous) => ({
+                ...previous,
+                stage: event.target.value as 'WS' | 'Preview',
+              }))
+            }
+            options={[
+              { value: 'WS', label: translation('storeSummary.storePlatformVtexio') },
+              { value: 'Preview', label: translation('storeSummary.storePlatformFaststore') },
+            ]}
+          />
+
+          <div className="form-actions">
             <Button type="submit" isLoading={isSavingStore}>
               {editingStore
-                ? translation('storeSummary.saveChanges')
+                ? translation('saveChanges')
                 : translation('AdminStoresPage.new-store-button')}
             </Button>
             <Button

@@ -118,6 +118,7 @@
       "critical": "Critical"
     },
     "environmentOptions": {
+      "RELEASE": "Release",
       "WS": "WS",
       "Preview": "FastStore (Preview)",
       "TM": "Homologation",
@@ -139,6 +140,11 @@
       "resolved": "Resolved",
       "mobile": "Mobile",
       "desktop": "Desktop"
+    },
+    "environmentStatus": {
+      "backlog": "Backlog",
+      "in_progress": "In progress",
+      "done": "Completed"
     },
     "environmentBugModal": {
       "progress": "In progress",
@@ -207,6 +213,7 @@
       "participantsListLabel": "Registered participants",
       "momentLabel": "Moment/When",
       "bugStoryfix": "Storyfix",
+      "bugHotfix": "Hotfix",
       "bugBugs": "Bugs",
       "noParticipants": "No participants",
       "clone": "Clone"
@@ -228,6 +235,8 @@
       "environmentType": "Environment type",
       "testType": "Test type",
       "releaseLabel": "Release",
+      "releaseVersionLabel": "Release version",
+      "releaseVersionRequired": "Enter the release version for this environment.",
       "suiteId": "Existing suite",
       "environmentColumns": "Environment columns",
       "environmentColumnsPlaceholder": "iPhone 13\nSamsung S23\nTablet",
@@ -592,6 +601,10 @@
       "confirm-remove-member-message": "Are you sure you want to remove {{memberName}}?",
       "confirm-remove-member-description": "The user will be removed from the organization {{organizationName}}.",
       "form-error-no-org-name": "Enter a name for the organization.",
+      "remove-organization-button": "Remove organization",
+      "remove-organization-warning": "This action cannot be undone.",
+      "edit-store-button": "Edit store",
+      "new-store-description": "Enter the basic store details to make the scenarios available.",
       "form-error-no-member-email": "Enter the user's email.",
       "org-slack-added-user": "Add users by the email registered in QALite.",
       "org-vinculed-members": "Linked members",
@@ -678,6 +691,7 @@
       "slack.labels.suiteCoverage": "Coverage",
       "slack.labels.executionContext": "Context",
       "slack.labels.executionId": "Execution ID",
+      "slack.labels.executionDate": "Execution date",
       "slack.labels.totalTime": "Total time",
       "slack.labels.participantsCount": "Active participants",
       "slack.sections.executionContext": "Execution Context",
@@ -732,6 +746,7 @@
       "notEnded": "Not finished",
       "bugs": "Registered bugs",
       "storyfix": "Registered storyfixes",
+      "hotfix": "Registered hotfixes",
       "jira": "Jira",
       "notInformed": "Not informed",
       "moment": "Moment",
@@ -742,7 +757,8 @@
       "multipleParticipants": "{{count}} active participants",
       "urls": "Monitored URLs",
       "noUrls": "No URL added.",
-      "whoIsParticipating": "Who is participating"
+      "whoIsParticipating": "Who is participating",
+      "date": "Date"
     },
     "environmentBugList": {
       "bugRemovedSuccess": "Bug removed successfully.",
@@ -1189,7 +1205,10 @@
       "storeSettings": "Store settings",
       "storeName": "Store name",
       "storeUrl": "Website URL",
+      "openSite": "Open site",
       "storeAdminUrl": "VTEX admin URL",
+      "storeAutomationGithub": "GitHub Automation",
+      "storeAutomationAllure": "Allure Automation",
       "storeLogoLabel": "Store logo",
       "storeLogoHint": "Upload the store logo.",
       "storeLogoPreview": "Store logo preview",

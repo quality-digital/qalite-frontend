@@ -53,7 +53,6 @@ import {
   getCriticalityClassName,
   getCriticalityLabelKey,
 } from '../constants/scenarioOptions';
-import { requiresReleaseField } from '../constants/environmentOptions';
 import {
   CopyIcon,
   FileTextIcon,
@@ -64,11 +63,7 @@ import {
   UsersGroupIcon,
 } from '../components/icons';
 import { exportEnvironmentExcel } from '../../utils/exportExcel';
-import {
-  BUG_PRIORITY_LABEL,
-  BUG_SEVERITY_LABEL,
-  ENVIRONMENT_STATUS_LABEL,
-} from '../../shared/config/environmentLabels';
+import { BUG_PRIORITY_LABEL, BUG_SEVERITY_LABEL } from '../../shared/config/environmentLabels';
 
 interface SlackSummaryBuilderOptions {
   totalTimeMs: number;
@@ -79,7 +74,6 @@ interface SlackSummaryBuilderOptions {
   urls: string[];
   bugsCount: number;
   participantProfiles: UserSummary[];
-  testTypeLabel: string;
 }
 
 const formatExecutedScenariosMessage = (
@@ -179,16 +173,10 @@ const buildSlackTaskSummaryPayload = (
   const jiraList =
     jiraLinks.length > 0 ? jiraLinks : [translation('environment.slack.emptyJiraList')];
   const validatedEnvironment = environment.tipoAmbiente?.trim() || translation('dynamic.noValue');
-  const releaseLabel = environment.release?.trim();
-  const shouldShowReleaseLabel = requiresReleaseField(environment.tipoAmbiente);
-
-  const releaseSummaryLabel =
-    shouldShowReleaseLabel && releaseLabel ? ` (Release ${releaseLabel})` : '';
-
-  const testTypeLabel =
-    options.testTypeLabel?.trim() ||
-    environment.tipoTeste?.trim() ||
-    translation('environment.slack.defaultTestType');
+  const executionDateLabel = formatDateTime(
+    environment.executionDate ?? environment.createdAt ?? null,
+  );
+  const releaseSummaryLabel = '';
 
   const executionStatus =
     options.executedScenariosCount === options.scenarioCount
@@ -216,7 +204,7 @@ const buildSlackTaskSummaryPayload = (
     '',
     `🔖 ${translation('environment.slack.sections.identification')}`,
     `• ${translation('environment.slack.labels.environment')}: ${validatedEnvironment}`,
-    `• ${translation('environment.slack.labels.testType')}: ${testTypeLabel}`,
+    `• ${translation('environment.slack.labels.executionDate')}: ${executionDateLabel}`,
     `• ${translation('environment.slack.labels.executionType')}: ${suiteName}`,
   ];
 
@@ -393,17 +381,6 @@ export const EnvironmentPage = () => {
     },
     [translation],
   );
-  const translateOptionValue = useCallback(
-    (value?: string | null) => {
-      if (!value) {
-        return translation('storeSummary.emptyValue');
-      }
-      const translated = translation(value);
-      return translated === value ? value : translated;
-    },
-    [translation],
-  );
-
   const clearInviteParam = useCallback(() => {
     if (!inviteParam) {
       return;
@@ -514,6 +491,7 @@ export const EnvironmentPage = () => {
                   id: store.id,
                   name: resolvedStoreName,
                   logoUrl: resolvedStoreLogoUrl,
+                  site: store.site,
                 }
               : null,
           );
@@ -536,7 +514,7 @@ export const EnvironmentPage = () => {
     };
   }, [environment?.storeId, setActiveStore]);
 
-  const { formattedTime, totalMs, formattedStart, formattedEnd } = useTimeTracking(
+  const { totalMs } = useTimeTracking(
     environment?.timeTracking ?? null,
     environment?.status === 'in_progress',
     {
@@ -564,7 +542,6 @@ export const EnvironmentPage = () => {
           urls,
           bugsCount: bugs.length,
           participantProfiles,
-          testTypeLabel: translateOptionValue(environment.tipoTeste),
         },
         translation,
       );
@@ -588,7 +565,6 @@ export const EnvironmentPage = () => {
     shareLinks.public,
     slackWebhookUrl,
     totalMs,
-    translateOptionValue,
     translation,
     urls,
   ]);
@@ -761,36 +737,6 @@ export const EnvironmentPage = () => {
         value: environment.identificador || translation('storeSummary.emptyValue'),
       },
       {
-        label: translation('storeSummary.storeName'),
-        value: storeName || translation('storeSummary.emptyValue'),
-      },
-      {
-        label: translation('environment.exportExcelStatusLabel'),
-        value: translation(ENVIRONMENT_STATUS_LABEL[environment.status]),
-      },
-      {
-        label: translation('createEnvironment.suiteId'),
-        value: environment.suiteName?.trim() || translation('storeSummary.emptyValue'),
-      },
-      {
-        label: translation('editEnvironmentModal.environmentType'),
-        value: translateOptionValue(environment.tipoAmbiente),
-      },
-      {
-        label: translation('editEnvironmentModal.testType'),
-        value: translateOptionValue(environment.tipoTeste),
-      },
-      {
-        label: translation('editEnvironmentModal.moment'),
-        value: environment.momento
-          ? translateOptionValue(environment.momento)
-          : translation('environmentSummary.notRecorded'),
-      },
-      {
-        label: translation('editEnvironmentModal.release'),
-        value: environment.release?.trim() || translation('environmentSummary.notRecorded'),
-      },
-      {
         label: translation('editEnvironmentModal.jiraTask'),
         value: environment.jiraTask?.trim() || translation('environmentSummary.notInformed'),
       },
@@ -799,7 +745,7 @@ export const EnvironmentPage = () => {
         value: urls.length > 0 ? urls.join('\n') : translation('environmentSummary.noUrls'),
       },
       {
-        label: translation('environmentSummary.participants'),
+        label: translation('environmentSummary.whoIsParticipating'),
         value:
           participantProfiles.length > 0
             ? participantProfiles
@@ -807,26 +753,6 @@ export const EnvironmentPage = () => {
                 .filter(Boolean)
                 .join(', ')
             : translation('environmentSummary.noParticipants'),
-      },
-      {
-        label: translation('environmentSummary.scenarios'),
-        value: `${executedScenariosCount}/${scenarioCount}`,
-      },
-      {
-        label: translation('environmentSummary.bugs'),
-        value: String(bugs.length),
-      },
-      {
-        label: translation('environmentSummary.start'),
-        value: formattedStart,
-      },
-      {
-        label: translation('environmentSummary.end'),
-        value: formattedEnd,
-      },
-      {
-        label: translation('environmentSummary.totalTime'),
-        value: formattedTime || '00:00:00',
       },
     ];
     const bugRows = bugs.map((bug) => {
@@ -874,16 +800,10 @@ export const EnvironmentPage = () => {
   }, [
     bugs,
     environment,
-    executedScenariosCount,
     formatCriticalityLabel,
     formatScenarioStatusLabel,
-    formattedEnd,
-    formattedStart,
-    formattedTime,
     participantProfiles,
-    scenarioCount,
     storeName,
-    translateOptionValue,
     translation,
     urls,
   ]);

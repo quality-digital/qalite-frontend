@@ -2336,6 +2336,19 @@ a.text-link:hover {
   text-transform: none;
 }
 
+.app-brand-logo-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-brand-favicon-only {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  padding: 0.5rem;
+}
+
 .app-brand-logo {
   width: 52px;
   height: 52px;
@@ -6661,6 +6674,151 @@ button.store-summary-highlight:focus-visible {
   transform: none;
   box-shadow: var(--shadow-sm);
   border-color: var(--color-border-strong);
+}
+
+/* New header/body layout for simplified Kanban card */
+.environment-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.environment-card__header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.environment-card__header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.environment-card__meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.environment-card__meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(15, 23, 42, 0.03);
+  padding: 0.15rem 0.4rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.environment-card__meta-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.environment-card__meta-text {
+  max-width: 10rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.environment-card__body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: nowrap;
+}
+
+/* Title style */
+.environment-card__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+  line-height: 1.15;
+  max-width: 18rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Tighter header spacing and responsive adjustments */
+.environment-card__header {
+  align-items: flex-start;
+}
+
+.environment-card__header-right .environment-card__status-badge {
+  font-size: 0.65rem;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Make avatars slightly larger and overlap a bit for compactness */
+.environment-card__avatar-image {
+  width: 32px;
+  height: 32px;
+}
+
+.environment-card__participant-avatar:not(:first-child) {
+  margin-left: -10px;
+}
+
+/* Slimmer progress bar for modern feel */
+.environment-card__progress {
+  height: 0.45rem;
+}
+
+/* Responsive: stack meta items on very small screens */
+@media (max-width: 420px) {
+  .environment-card__meta-text {
+    max-width: 8rem;
+  }
+
+  .environment-card__body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .environment-card__stats {
+    width: 100%;
+  }
+
+  .environment-card__participant-avatars {
+    gap: -0.6rem;
+  }
+}
+
+/* Larger displays: expand available space for title and meta */
+@media (min-width: 900px) {
+  .environment-card {
+    padding: 1rem;
+    min-height: 110px;
+  }
+
+  .environment-card__title {
+    font-size: 1.05rem;
+  }
+
+  .environment-card__meta-text {
+    max-width: 12rem;
+  }
+}
+
+.environment-card__participants {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
 }
 
 /* Top section: Title and status badge */

@@ -671,7 +671,6 @@ export const StoreSummaryPage = () => {
     setStoreSettingsError(null);
   };
 
-
   const handleStoreSettingsSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -966,6 +965,7 @@ export const StoreSummaryPage = () => {
             id: store.id,
             name: store.name,
             logoUrl: store.logoUrl,
+            site: store.site,
           }
         : null,
     );
@@ -1774,18 +1774,8 @@ export const StoreSummaryPage = () => {
                   <div className="store-summary-context">
                     {storeSiteInfo.href && (
                       <span className="store-summary-context-item">
-                        <a
-                          className="store-summary-context-item__title store-summary-context-item__title--link"
-                          href={storeSiteInfo.href}
-                          target="_blank"
-                          rel="noreferrer noopener"
-                        >
-                          <img
-                            src={`https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(storeSiteInfo.href)}`}
-                            alt=""
-                            className="store-site-favicon"
-                          />
-                          <strong>{t('storeSummary.storeUrl')}</strong>
+                        <a href={storeSiteInfo.href} target="_blank" rel="noreferrer noopener">
+                          {t('storeSummary.openSite')}
                         </a>
                       </span>
                     )}
@@ -1811,7 +1801,7 @@ export const StoreSummaryPage = () => {
                           rel="noreferrer noopener"
                         >
                           <FaGithub aria-hidden className="icon" />
-                          <strong>Automação GitHub</strong>
+                          <strong>{t('storeSummary.storeAutomationGithub')}</strong>
                         </a>
                       </span>
                     )}
@@ -1824,7 +1814,7 @@ export const StoreSummaryPage = () => {
                           rel="noreferrer noopener"
                         >
                           <FaChartLine aria-hidden className="icon" />
-                          <strong>Automação Allure</strong>
+                          <strong>{t('storeSummary.storeAutomationAllure')}</strong>
                         </a>
                       </span>
                     )}
@@ -2959,7 +2949,11 @@ export const StoreSummaryPage = () => {
           />
           <TextInput
             id="store-settings-automation-repo-url"
-            label={<span className="field-label-with-icon"><FaGithub aria-hidden className="icon" /> URL automação (GitHub)</span>}
+            label={
+              <span className="field-label-with-icon">
+                <FaGithub aria-hidden className="icon" /> URL automação (GitHub)
+              </span>
+            }
             value={storeSettings.automationRepoUrl}
             onChange={(event) =>
               setStoreSettings((previous) => ({
@@ -2970,7 +2964,11 @@ export const StoreSummaryPage = () => {
           />
           <TextInput
             id="store-settings-allure-url"
-            label={<span className="field-label-with-icon"><FaChartLine aria-hidden className="icon" /> URL automação (Allure)</span>}
+            label={
+              <span className="field-label-with-icon">
+                <FaChartLine aria-hidden className="icon" /> URL automação (Allure)
+              </span>
+            }
             value={storeSettings.allureUrl}
             onChange={(event) =>
               setStoreSettings((previous) => ({ ...previous, allureUrl: event.target.value }))
@@ -2992,20 +2990,6 @@ export const StoreSummaryPage = () => {
             ]}
           />
 
-          <div className="organization-logo-field">
-            <div className="organization-logo-preview">
-              {storeSettings.site ? (
-                <img
-                  src={`https://www.google.com/s2/favicons?sz=128&domain_url=${encodeURIComponent(storeSettings.site)}`}
-                  alt={t('storeSummary.storeLogoPreview')}
-                />
-              ) : (
-                <span className="organization-logo-fallback">
-                  {t('storeSummary.storeLogoPlaceholder')}
-                </span>
-              )}
-            </div>
-          </div>
           <div className="collapsible-section">
             <div className="collapsible-section__header">
               <div className="collapsible-section__titles">

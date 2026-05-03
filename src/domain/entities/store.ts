@@ -14,6 +14,7 @@ export interface Store {
   notAutomatedScenarioCount: number;
   createdAt: Date | null;
   updatedAt: Date | null;
+  environmentColumns?: string[];
 }
 
 export interface StoreScenario {
@@ -80,6 +81,7 @@ export interface CreateStorePayload {
   slackWebhookUrl?: string | null;
   automationRepoUrl?: string | null;
   allureUrl?: string | null;
+  environmentColumns?: string[];
 }
 
 export interface UpdateStorePayload {
@@ -91,6 +93,7 @@ export interface UpdateStorePayload {
   slackWebhookUrl?: string | null;
   automationRepoUrl?: string | null;
   allureUrl?: string | null;
+  environmentColumns?: string[];
 }
 
 export interface StoreExportPayload {

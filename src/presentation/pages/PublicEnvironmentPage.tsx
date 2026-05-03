@@ -77,6 +77,7 @@ export const PublicEnvironmentPage = () => {
                   id: store.id,
                   name: store.name.trim(),
                   logoUrl: store.logoUrl ?? null,
+                  site: store.site,
                 }
               : null,
           );

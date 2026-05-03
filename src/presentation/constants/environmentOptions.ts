@@ -15,6 +15,7 @@ export const TEST_TYPES_BY_ENVIRONMENT: Record<string, string[]> = {
 export const MOMENT_OPTIONS_BY_ENVIRONMENT: Record<string, string[]> = {
   TM: ['environmentOptions.pre', 'environmentOptions.post'],
   PROD: ['environmentOptions.post', 'environmentOptions.prod'],
+  RELEASE: ['environmentOptions.pre', 'environmentOptions.post'],
 };
 
 export {

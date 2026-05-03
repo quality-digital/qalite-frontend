@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
@@ -21,7 +21,21 @@ export const Layout = ({ children, showHeader = true }: LayoutProps) => {
   const displayName = user?.displayName || user?.email || '';
   const { t } = useTranslation();
   const brandName = activeStore?.name || activeOrganization?.name || t('app.brandName');
-  const brandLogo = activeStore?.logoUrl || activeOrganization?.logoUrl || qliteLogo;
+
+  const storeFaviconUrl = useMemo(() => {
+    if (activeStore?.site) {
+      return `https://www.google.com/s2/favicons?sz=32&domain_url=${encodeURIComponent(activeStore.site)}`;
+    }
+    return null;
+  }, [activeStore?.site]);
+
+  const brandLogo = useMemo(() => {
+    if (!storeFaviconUrl) {
+      return activeStore?.logoUrl || activeOrganization?.logoUrl || qliteLogo;
+    }
+    return null;
+  }, [storeFaviconUrl, activeStore?.logoUrl, activeOrganization?.logoUrl]);
+
   const [brandLogoSrc, setBrandLogoSrc] = useState(brandLogo);
 
   useEffect(() => {
@@ -33,17 +47,28 @@ export const Layout = ({ children, showHeader = true }: LayoutProps) => {
       {showHeader && (
         <header className="app-header">
           <Link to="/" className="app-brand" aria-label={t('layout.homeAriaLabel', { brandName })}>
-            <CachedImage
-              src={brandLogoSrc}
-              alt={t('layout.brandLogoAlt', { brandName })}
-              className="app-brand-logo"
-              loading="eager"
-              onError={() => {
-                if (brandLogoSrc !== qliteLogo) {
-                  setBrandLogoSrc(qliteLogo);
-                }
-              }}
-            />
+            <div className="app-brand-logo-container">
+              {storeFaviconUrl ? (
+                <img
+                  src={storeFaviconUrl}
+                  alt={t('layout.brandLogoAlt', { brandName })}
+                  className="app-brand-favicon-only"
+                  loading="eager"
+                />
+              ) : brandLogoSrc ? (
+                <CachedImage
+                  src={brandLogoSrc}
+                  alt={t('layout.brandLogoAlt', { brandName })}
+                  className="app-brand-logo"
+                  loading="eager"
+                  onError={() => {
+                    if (brandLogoSrc !== qliteLogo) {
+                      setBrandLogoSrc(qliteLogo);
+                    }
+                  }}
+                />
+              ) : null}
+            </div>
             <span className="app-brand-name">{brandName}</span>
           </Link>
           <nav className="header-actions">

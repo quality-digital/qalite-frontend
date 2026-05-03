@@ -105,6 +105,9 @@ const mapStore = (id: string, data: Record<string, unknown>): Store => {
     notAutomatedScenarioCount,
     createdAt: timestampToDate(data.createdAt),
     updatedAt: timestampToDate(data.updatedAt),
+    environmentColumns: Array.isArray(data.environmentColumns)
+      ? (data.environmentColumns as string[]).map((c) => (c as string).trim()).filter(Boolean)
+      : undefined,
   };
 };
 
@@ -301,6 +304,9 @@ export const createStore = async (payload: CreateStorePayload): Promise<Store> =
     slackWebhookUrl: payload.slackWebhookUrl?.trim() || null,
     automationRepoUrl: payload.automationRepoUrl?.trim() || null,
     allureUrl: payload.allureUrl?.trim() || null,
+    environmentColumns: Array.isArray(payload.environmentColumns)
+      ? payload.environmentColumns.map((c) => c.trim()).filter(Boolean)
+      : [],
     scenarioCount: 0,
     automatedScenarioCount: 0,
     notAutomatedScenarioCount: 0,
@@ -324,6 +330,9 @@ export const createStore = async (payload: CreateStorePayload): Promise<Store> =
     notAutomatedScenarioCount: 0,
     createdAt: now,
     updatedAt: now,
+    environmentColumns: Array.isArray(payload.environmentColumns)
+      ? payload.environmentColumns.map((c) => c.trim()).filter(Boolean)
+      : undefined,
   };
 
   STORE_CACHE.set(`${STORE_DETAIL_CACHE_PREFIX}${store.id}`, store);
@@ -344,6 +353,13 @@ export const updateStore = async (storeId: string, payload: UpdateStorePayload):
     ...(payload.logoUrl !== undefined ? { logoUrl: payload.logoUrl?.trim() || null } : {}),
     ...(payload.slackWebhookUrl !== undefined
       ? { slackWebhookUrl: payload.slackWebhookUrl?.trim() || null }
+      : {}),
+    ...(payload.environmentColumns !== undefined
+      ? {
+          environmentColumns: Array.isArray(payload.environmentColumns)
+            ? payload.environmentColumns.map((c) => c.trim()).filter(Boolean)
+            : [],
+        }
       : {}),
     updatedAt: serverTimestamp(),
   });

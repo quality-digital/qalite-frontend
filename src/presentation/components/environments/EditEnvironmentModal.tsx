@@ -14,10 +14,11 @@ import { SelectInput } from '../SelectInput';
 import { TextInput } from '../TextInput';
 import { TrashIcon } from '../icons';
 import {
-  MOMENT_OPTIONS_BY_ENVIRONMENT,
-  TEST_TYPES_BY_ENVIRONMENT,
   requiresReleaseField,
+  MOMENT_OPTIONS_BY_ENVIRONMENT,
 } from '../../constants/environmentOptions';
+import { useStoresRealtime } from '../../context/StoresRealtimeContext';
+import { DEFAULT_ENVIRONMENT_COLUMNS } from '../../../infrastructure/external/environments';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../../context/ToastContext';
 
@@ -78,16 +79,14 @@ export const EditEnvironmentModal = ({
   onDeleteRequest,
 }: EditEnvironmentModalProps) => {
   const { t: translation } = useTranslation();
-
-  const [executionDate, setExecutionDate] = useState('');
   const [urlInput, setUrlInput] = useState('');
   const [jiraInput, setJiraInput] = useState('');
   const [urls, setUrls] = useState<string[]>([]);
   const [jiraLinks, setJiraLinks] = useState<string[]>([]);
   const [tipoAmbiente, setTipoAmbiente] = useState('WS');
-  const [tipoTeste, setTipoTeste] = useState('Smoke-test');
-  const [momento, setMomento] = useState('');
-  const [release, setRelease] = useState('');
+  const [momento, setMomento] = useState<string | null>(null);
+  const [releaseVersion, setReleaseVersion] = useState<string>('');
+
   const [suiteId, setSuiteId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingUpdate, setPendingUpdate] = useState<UpdateEnvironmentInput | null>(null);
@@ -99,7 +98,6 @@ export const EditEnvironmentModal = ({
       return;
     }
 
-    setExecutionDate(environment.executionDate ?? '');
     setUrls(environment.urls ?? []);
     setJiraLinks(
       environment.jiraTask
@@ -110,15 +108,21 @@ export const EditEnvironmentModal = ({
     setUrlInput('');
     setJiraInput('');
     setTipoAmbiente(environment.tipoAmbiente);
-    setTipoTeste(environment.tipoTeste);
-    setMomento(environment.momento ?? '');
-    setRelease(environment.release ?? '');
+    setMomento(environment.momento ?? null);
+    setReleaseVersion(environment.release ?? '');
     setSuiteId(environment.suiteId ?? '');
   }, [environment]);
-  const environmentColumns = useMemo(
-    () => environment?.environmentColumns ?? ['Desktop', 'Mobile'],
-    [environment?.environmentColumns],
+  const { stores } = useStoresRealtime();
+  const currentStore = useMemo(
+    () => stores.find((s) => s.id === environment?.storeId),
+    [stores, environment?.storeId],
   );
+  const environmentColumns = useMemo(() => {
+    if (currentStore?.environmentColumns && currentStore.environmentColumns.length > 0) {
+      return currentStore.environmentColumns.map((c) => c.trim()).filter(Boolean);
+    }
+    return DEFAULT_ENVIRONMENT_COLUMNS;
+  }, [currentStore]);
 
   const isLocked = environment?.status === 'done';
   const canDelete = Boolean(onDeleteRequest) && !isLocked;
@@ -131,48 +135,7 @@ export const EditEnvironmentModal = ({
     [environmentColumns, scenarios, selectedSuite],
   );
   const totalCenarios = Object.keys(scenarioMap).length;
-
-  const tipoTesteOptions = useMemo(
-    () => TEST_TYPES_BY_ENVIRONMENT[tipoAmbiente] ?? ['Smoke-test'],
-    [tipoAmbiente],
-  );
-
-  const momentoOptions = useMemo(
-    () => MOMENT_OPTIONS_BY_ENVIRONMENT[tipoAmbiente] ?? [],
-    [tipoAmbiente],
-  );
-
   const shouldDisplayReleaseField = requiresReleaseField(tipoAmbiente);
-  const autoIdentifier = useMemo(() => {
-    const dateToken = executionDate ? executionDate.replaceAll('-', '') : 'DATA';
-    if (tipoAmbiente === 'Release')
-      return `[WS/PREVIEW][${tipoTeste.toUpperCase()}][RELEASE${(release || 'XXX').toUpperCase()}][${dateToken}]`;
-    if (tipoAmbiente === 'Produção') return `[PROD][${tipoTeste.toUpperCase()}][${dateToken}]`;
-    return `[${tipoAmbiente.toUpperCase()}][${tipoTeste.toUpperCase()}][${dateToken}]`;
-  }, [executionDate, release, tipoAmbiente, tipoTeste]);
-
-  useEffect(() => {
-    if (!tipoTesteOptions.includes(tipoTeste)) {
-      setTipoTeste(tipoTesteOptions[0]);
-    }
-  }, [tipoTeste, tipoTesteOptions]);
-
-  useEffect(() => {
-    if (momentoOptions.length === 0 && momento) {
-      setMomento('');
-      return;
-    }
-
-    if (momentoOptions.length > 0 && !momentoOptions.includes(momento)) {
-      setMomento(momentoOptions[0]);
-    }
-  }, [momento, momentoOptions]);
-
-  useEffect(() => {
-    if (!shouldDisplayReleaseField && release) {
-      setRelease('');
-    }
-  }, [release, shouldDisplayReleaseField]);
 
   const hasStartedScenarios = useMemo(() => {
     const scenarioEntries = Object.values(environment?.scenarios ?? {});
@@ -221,35 +184,21 @@ export const EditEnvironmentModal = ({
       return;
     }
 
-    if (momentoOptions.length > 0 && !momento) {
-      showToast({
-        type: 'error',
-        message: translation('editEnvironmentModal.selectMomentError'),
-      });
-      return;
-    }
-
-    if (shouldDisplayReleaseField && !release.trim()) {
-      showToast({
-        type: 'error',
-        message: translation('editEnvironmentModal.missingReleaseError'),
-      });
-      return;
-    }
+    const isReleaseType = tipoAmbiente === 'RELEASE' || shouldDisplayReleaseField;
 
     const urlsList = [...urls, ...(urlInput.trim() ? [urlInput.trim()] : [])];
     const jiraList = [...jiraLinks, ...(jiraInput.trim() ? [jiraInput.trim()] : [])];
 
     const payload: UpdateEnvironmentInput = {
-      identificador: autoIdentifier,
       urls: urlsList,
       jiraTask: jiraList.join('\n').trim(),
       tipoAmbiente,
-      tipoTeste,
-      momento: momentoOptions.length > 0 ? momento : null,
-      release: shouldDisplayReleaseField ? release.trim() : null,
-      executionDate: executionDate || null,
     };
+
+    if (isReleaseType) {
+      payload.momento = momento ?? null;
+      payload.release = releaseVersion?.trim() || null;
+    }
 
     if (suiteHasChanged) {
       payload.suiteId = normalizedSuiteId;
@@ -310,27 +259,13 @@ export const EditEnvironmentModal = ({
         description={translation('editEnvironmentModal.updateInfo')}
       >
         <form className="environment-form" onSubmit={handleSubmit}>
-          <TextInput
-            id="identificadorEditar"
-            label={translation('editEnvironmentModal.identifier')}
-            value={autoIdentifier}
-            disabled
-          />
-          <TextInput
-            id="executionDateEditar"
-            label="Data de execução"
-            value={executionDate}
-            type="date"
-            onChange={(event) => setExecutionDate(event.target.value)}
-            required
-            disabled={isLocked}
-          />
           <div className="dynamic-links-row">
             <TextInput
               id="urlsEditar"
               label={translation('editEnvironmentModal.urls')}
               value={urlInput}
               onChange={(event) => setUrlInput(event.target.value)}
+              placeholder="Insira o link da sua url"
               disabled={isLocked}
             />
             {!isLocked && (
@@ -379,6 +314,7 @@ export const EditEnvironmentModal = ({
               label={translation('editEnvironmentModal.jiraTask')}
               value={jiraInput}
               onChange={(event) => setJiraInput(event.target.value)}
+              placeholder="Insira o link da sua tarefa do jira"
               disabled={isLocked}
             />
             {!isLocked && (
@@ -431,20 +367,11 @@ export const EditEnvironmentModal = ({
             disabled={isLocked}
             options={[
               { value: 'WS', label: 'WS' },
+              { value: 'Preview', label: translation('environmentOptions.Preview') },
               { value: 'TM', label: translation('environmentOptions.TM') },
+              { value: 'RELEASE', label: translation('environmentOptions.RELEASE') },
               { value: 'PROD', label: translation('environmentOptions.PROD') },
             ]}
-          />
-          <SelectInput
-            id="tipoTesteEditar"
-            label={translation('editEnvironmentModal.testType')}
-            value={tipoTeste}
-            onChange={(event) => setTipoTeste(event.target.value)}
-            disabled={isLocked}
-            options={tipoTesteOptions.map((option) => ({
-              value: option,
-              label: translation(option),
-            }))}
           />
           <SelectInput
             id="suiteIdEditar"
@@ -465,28 +392,38 @@ export const EditEnvironmentModal = ({
               </p>
             </div>
           )}
-          {momentoOptions.length > 0 && (
-            <SelectInput
-              id="momentoEditar"
-              label={translation('editEnvironmentModal.moment')}
-              value={momento}
-              onChange={(event) => setMomento(event.target.value)}
-              disabled={isLocked}
-              options={momentoOptions.map((option) => ({
-                value: option,
-                label: translation(option),
-              }))}
-            />
+          {(shouldDisplayReleaseField || tipoAmbiente === 'RELEASE') && (
+            <>
+              <SelectInput
+                id="momentoEditar"
+                label={translation('editEnvironmentModal.moment')}
+                value={momento ?? ''}
+                onChange={(event) => setMomento(event.target.value || null)}
+                disabled={isLocked}
+                options={[
+                  { value: '', label: translation('createEnvironment.none') },
+                  ...(
+                    MOMENT_OPTIONS_BY_ENVIRONMENT[tipoAmbiente] ?? [
+                      'environmentOptions.pre',
+                      'environmentOptions.post',
+                    ]
+                  ).map((opt) => ({
+                    value: opt.replace('environmentOptions.', ''),
+                    label: translation(opt),
+                  })),
+                ]}
+              />
+              <TextInput
+                id="releaseEditar"
+                label={translation('editEnvironmentModal.release')}
+                value={releaseVersion}
+                onChange={(event) => setReleaseVersion(event.target.value)}
+                placeholder="Ex: 1.2.3"
+                disabled={isLocked}
+              />
+            </>
           )}
-          {shouldDisplayReleaseField && (
-            <TextInput
-              id="releaseEditar"
-              label={translation('editEnvironmentModal.release')}
-              value={release}
-              onChange={(event) => setRelease(event.target.value)}
-              disabled={isLocked}
-            />
-          )}
+          {/* release version input removed — release handled at store level or not provided */}
 
           <div className="environment-form-actions">
             <Button
