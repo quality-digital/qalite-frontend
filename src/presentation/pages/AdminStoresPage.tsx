@@ -592,7 +592,7 @@ export const AdminStoresPage = () => {
             </p>
           </div>
           <div className="page-actions">
-            {selectedOrganization && (
+            {selectedOrganization && selectedOrganization.members.length > 0 && (
               <Button
                 type="button"
                 variant="secondary"
@@ -699,7 +699,7 @@ export const AdminStoresPage = () => {
             </div>
 
             <div className="organization-extra">
-              {selectedOrganization && (
+              {selectedOrganization && selectedOrganization.members.length > 0 && (
                 <section className="organization-collaborators-card">
                   <div className="organization-collaborators-card__header">
                     <div className="section-heading">
