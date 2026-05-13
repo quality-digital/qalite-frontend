@@ -22,6 +22,7 @@ import { ArchiveIcon, CheckCircleIcon, InboxIcon, ProgressIcon } from '../icons'
 interface EnvironmentKanbanProps {
   storeId: string;
   storeStage?: Store['stage'] | null;
+  storeEnvironmentColumns?: string[] | null;
   suites: StoreSuite[];
   scenarios: StoreScenario[];
   environments: Environment[];
@@ -61,6 +62,7 @@ const cloneScenarioMap = (
 export const EnvironmentKanban = ({
   storeId,
   storeStage,
+  storeEnvironmentColumns,
   suites,
   scenarios,
   environments,
@@ -215,7 +217,6 @@ export const EnvironmentKanban = ({
         presentUsersIds: [],
         concludedBy: null,
         scenarios: clonedScenarios,
-        bugs: 0,
         totalCenarios: Object.keys(clonedScenarios).length,
         participants: [],
         publicShareLanguage: environment.publicShareLanguage ?? null,
@@ -260,6 +261,7 @@ export const EnvironmentKanban = ({
         <CreateEnvironmentCard
           storeId={storeId}
           storeStage={storeStage}
+          storeEnvironmentColumns={storeEnvironmentColumns}
           suites={suites}
           scenarios={scenarios}
           onCreated={handleEnvironmentCreated}

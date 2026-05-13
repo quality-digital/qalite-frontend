@@ -7,7 +7,7 @@ import { Button } from '../components/Button';
 import { EmptyState } from '../components/EmptyState';
 import { useOrganizationStores } from '../hooks/useOrganizationStores';
 import { UserAvatar } from '../components/UserAvatar';
-import { CachedImage } from '../components/CachedImage';
+import { StoreFavicon } from '../components/StoreFavicon';
 import {
   ActivityIcon,
   InboxIcon,
@@ -170,11 +170,7 @@ export const UserDashboardPage = () => {
                   <div className="card-header">
                     <div className="card-title-group">
                       <span className="card-title-icon" aria-hidden>
-                        {store.logoUrl ? (
-                          <CachedImage src={store.logoUrl} alt="" className="store-card-logo" />
-                        ) : (
-                          <StorefrontIcon className="icon icon--lg" />
-                        )}
+                        <StoreFavicon site={store.site} alt="" className="store-card-logo" />
                       </span>
                       <div>
                         <h2 className="card-title">{store.name}</h2>

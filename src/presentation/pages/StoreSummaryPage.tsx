@@ -243,28 +243,18 @@ export const StoreSummaryPage = () => {
       href: link.href,
     };
   }, [store?.site, t]);
-  const storeAdminInfo = useMemo(() => {
-    const link = buildExternalLink(store?.adminUrl);
-    return {
-      label: link.label || t('storeSummary.notInformed'),
-      href: link.href,
-    };
-  }, [store?.adminUrl, t]);
   const [isStoreSettingsOpen, setIsStoreSettingsOpen] = useState(false);
   const [isStoreSlackSectionOpen, setIsStoreSlackSectionOpen] = useState(false);
   const [storeSettings, setStoreSettings] = useState({
     name: '',
     site: '',
-    adminUrl: '',
-    logoUrl: '',
+    environmentColumns: 'Desktop\nMobile',
     slackWebhookUrl: '',
     stage: 'WS' as 'WS' | 'Preview',
   });
   const [storeSettingsError, setStoreSettingsError] = useState<string | null>(null);
   const [isUpdatingStore, setIsUpdatingStore] = useState(false);
   const [isDeletingStore, setIsDeletingStore] = useState(false);
-  const [storeSettingsLogoFile, setStoreSettingsLogoFile] = useState<File | null>(null);
-  const [storeSettingsLogoPreview, setStoreSettingsLogoPreview] = useState<string | null>(null);
 
   const updateViewMode = useCallback(
     (nextViewMode: StoreViewMode) => {
@@ -638,34 +628,19 @@ export const StoreSummaryPage = () => {
     setStoreSettings({
       name: store.name,
       site: store.site,
-      adminUrl: store.adminUrl ?? '',
-      logoUrl: store.logoUrl ?? '',
+      environmentColumns: (store.environmentColumns ?? ['Desktop', 'Mobile']).join('\n'),
       slackWebhookUrl: store.slackWebhookUrl ?? '',
       stage: store.stage === 'Preview' ? 'Preview' : 'WS',
     });
     setIsStoreSlackSectionOpen(Boolean(store.slackWebhookUrl?.trim()));
-    setStoreSettingsLogoFile(null);
-    setStoreSettingsLogoPreview(store.logoUrl ?? null);
     setStoreSettingsError(null);
     setIsStoreSettingsOpen(true);
   };
 
   const closeStoreSettings = () => {
     setIsStoreSettingsOpen(false);
-    setStoreSettingsLogoFile(null);
-    setStoreSettingsLogoPreview(null);
     setStoreSettingsError(null);
   };
-
-  useEffect(() => {
-    if (!storeSettingsLogoFile) {
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(storeSettingsLogoFile);
-    setStoreSettingsLogoPreview(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [storeSettingsLogoFile]);
 
   const handleStoreSettingsSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -676,7 +651,10 @@ export const StoreSummaryPage = () => {
 
     const trimmedName = storeSettings.name.trim();
     const trimmedSite = storeSettings.site.trim();
-    const trimmedAdminUrl = storeSettings.adminUrl.trim();
+    const environmentColumns = storeSettings.environmentColumns
+      .split('\n')
+      .map((column) => column.trim())
+      .filter((column, index, array) => column.length > 0 && array.indexOf(column) === index);
 
     const trimmedSlackWebhookUrl = isStoreSlackSectionOpen
       ? storeSettings.slackWebhookUrl.trim()
@@ -694,18 +672,12 @@ export const StoreSummaryPage = () => {
 
     try {
       setIsUpdatingStore(true);
-      const uploadedLogoUrl = storeSettingsLogoFile
-        ? await storeService.uploadLogo(store.id, storeSettingsLogoFile)
-        : undefined;
       const updated = await storeService.update(store.id, {
         name: trimmedName,
         site: trimmedSite,
-        adminUrl: trimmedAdminUrl,
         stage: storeSettings.stage,
-
-        ...(uploadedLogoUrl !== undefined
-          ? { logoUrl: uploadedLogoUrl }
-          : { logoUrl: storeSettings.logoUrl || null }),
+        environmentColumns,
+        logoUrl: null,
         slackWebhookUrl: trimmedSlackWebhookUrl || null,
       });
 
@@ -713,8 +685,7 @@ export const StoreSummaryPage = () => {
       setStoreSettings({
         name: updated.name,
         site: updated.site,
-        adminUrl: updated.adminUrl ?? '',
-        logoUrl: updated.logoUrl ?? '',
+        environmentColumns: (updated.environmentColumns ?? ['Desktop', 'Mobile']).join('\n'),
         slackWebhookUrl: updated.slackWebhookUrl ?? '',
         stage: updated.stage === 'Preview' ? 'Preview' : 'WS',
       });
@@ -960,7 +931,7 @@ export const StoreSummaryPage = () => {
         ? {
             id: store.id,
             name: store.name,
-            logoUrl: store.logoUrl,
+            site: store.site,
           }
         : null,
     );
@@ -1761,16 +1732,6 @@ export const StoreSummaryPage = () => {
                         </a>
                       ) : (
                         storeSiteInfo.label
-                      )}
-                    </span>
-                    <span>
-                      <strong>{t('storeSummary.storeAdminUrl')}:</strong>{' '}
-                      {storeAdminInfo.href ? (
-                        <a href={storeAdminInfo.href} target="_blank" rel="noreferrer noopener">
-                          {storeAdminInfo.label}
-                        </a>
-                      ) : (
-                        storeAdminInfo.label
                       )}
                     </span>
                   </div>
@@ -2746,6 +2707,7 @@ export const StoreSummaryPage = () => {
                     <EnvironmentKanban
                       storeId={storeId ?? ''}
                       storeStage={store?.stage ?? null}
+                      storeEnvironmentColumns={store?.environmentColumns ?? null}
                       suites={suites}
                       scenarios={scenarios}
                       environments={environments}
@@ -2879,15 +2841,6 @@ export const StoreSummaryPage = () => {
             dataTestId="store-settings-site"
           />
 
-          <TextInput
-            id="store-settings-admin-url"
-            label={t('storeSummary.storeAdminUrl')}
-            value={storeSettings.adminUrl}
-            onChange={(event) =>
-              setStoreSettings((previous) => ({ ...previous, adminUrl: event.target.value }))
-            }
-            dataTestId="store-settings-admin-url"
-          />
           <SelectInput
             id="store-settings-stage"
             label={t('storeSummary.storeEnvironmentLabel')}
@@ -2904,29 +2857,18 @@ export const StoreSummaryPage = () => {
             ]}
           />
 
-          <div className="organization-logo-field">
-            <div className="organization-logo-preview">
-              {storeSettingsLogoPreview ? (
-                <img src={storeSettingsLogoPreview} alt={t('storeSummary.storeLogoPreview')} />
-              ) : (
-                <span className="organization-logo-fallback">
-                  {t('storeSummary.storeLogoPlaceholder')}
-                </span>
-              )}
-            </div>
-            <div className="organization-logo-actions">
-              <label htmlFor="store-settings-logo" className="field-label">
-                {t('storeSummary.storeLogoLabel')}
-              </label>
-              <input
-                id="store-settings-logo"
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                onChange={(event) => setStoreSettingsLogoFile(event.target.files?.[0] ?? null)}
-              />
-              <p className="form-hint">{t('storeSummary.storeLogoHint')}</p>
-            </div>
-          </div>
+          <TextArea
+            id="store-settings-environment-columns"
+            label={t('createEnvironment.environmentColumns')}
+            value={storeSettings.environmentColumns}
+            onChange={(event) =>
+              setStoreSettings((previous) => ({
+                ...previous,
+                environmentColumns: event.target.value,
+              }))
+            }
+            placeholder={t('createEnvironment.environmentColumnsPlaceholder')}
+          />
           <div className="collapsible-section">
             <div className="collapsible-section__header">
               <div className="collapsible-section__titles">

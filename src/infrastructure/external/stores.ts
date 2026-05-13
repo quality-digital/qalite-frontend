@@ -4,7 +4,6 @@ import {
   collection,
   deleteDoc,
   doc,
-  getDoc,
   limit,
   onSnapshot,
   orderBy,
@@ -21,7 +20,6 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore';
-import { buildStorageFileName, uploadFileAndGetUrl } from './storage';
 
 import type {
   CreateStoreScenarioPayload,
@@ -56,6 +54,7 @@ const STORE_DETAIL_CACHE_PREFIX = 'detail:';
 const SCENARIO_LIST_CACHE_PREFIX = 'scenarios:';
 const SUITE_LIST_CACHE_PREFIX = 'suites:';
 const STORE_PAGE_SIZE = 50;
+const DEFAULT_STORE_ENVIRONMENT_COLUMNS = ['Desktop', 'Mobile'];
 const SCENARIOS_PAGE_SIZE = 50;
 const SUITES_PAGE_SIZE = 50;
 
@@ -94,8 +93,8 @@ const mapStore = (id: string, data: Record<string, unknown>): Store => {
     organizationId: ((data.organizationId as string) ?? '').trim(),
     name: ((data.name as string) ?? '').trim(),
     site: ((data.site as string) ?? '').trim(),
-    adminUrl: ((data.adminUrl as string) ?? '').trim(),
     stage: ((data.stage as string) ?? '').trim(),
+    environmentColumns: normalizeEnvironmentColumns(data.environmentColumns),
     logoUrl: ((data.logoUrl as string) ?? '').trim() || null,
     slackWebhookUrl: ((data.slackWebhookUrl as string) ?? '').trim() || null,
     scenarioCount,
@@ -104,6 +103,19 @@ const mapStore = (id: string, data: Record<string, unknown>): Store => {
     createdAt: timestampToDate(data.createdAt),
     updatedAt: timestampToDate(data.updatedAt),
   };
+};
+
+const getStringArray = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0)
+    : [];
+
+const normalizeEnvironmentColumns = (columns: unknown): string[] => {
+  const normalized = getStringArray(columns)
+    .map((column) => column.trim())
+    .filter((column, index, array) => column.length > 0 && array.indexOf(column) === index);
+
+  return normalized.length > 0 ? normalized : DEFAULT_STORE_ENVIRONMENT_COLUMNS;
 };
 
 const getScenarioAutomationValue = (data: Record<string, unknown>) =>
@@ -293,9 +305,9 @@ export const createStore = async (payload: CreateStorePayload): Promise<Store> =
     organizationId: payload.organizationId,
     name: payload.name.trim(),
     site: payload.site.trim(),
-    adminUrl: payload.adminUrl?.trim() || '',
     stage: payload.stage.trim(),
-    logoUrl: payload.logoUrl?.trim() || null,
+    environmentColumns: normalizeEnvironmentColumns(payload.environmentColumns),
+    logoUrl: null,
     slackWebhookUrl: payload.slackWebhookUrl?.trim() || null,
     scenarioCount: 0,
     automatedScenarioCount: 0,
@@ -309,9 +321,9 @@ export const createStore = async (payload: CreateStorePayload): Promise<Store> =
     organizationId: payload.organizationId,
     name: payload.name.trim(),
     site: payload.site.trim(),
-    adminUrl: payload.adminUrl?.trim() || '',
     stage: payload.stage.trim(),
-    logoUrl: payload.logoUrl?.trim() || null,
+    environmentColumns: normalizeEnvironmentColumns(payload.environmentColumns),
+    logoUrl: null,
     slackWebhookUrl: payload.slackWebhookUrl?.trim() || null,
     scenarioCount: 0,
     automatedScenarioCount: 0,
@@ -331,9 +343,8 @@ export const updateStore = async (storeId: string, payload: UpdateStorePayload):
   await updateDoc(storeRef, {
     name: payload.name.trim(),
     site: payload.site.trim(),
-    adminUrl: payload.adminUrl?.trim() || '',
     stage: payload.stage.trim(),
-    ...(payload.logoUrl !== undefined ? { logoUrl: payload.logoUrl?.trim() || null } : {}),
+    environmentColumns: normalizeEnvironmentColumns(payload.environmentColumns),
     ...(payload.slackWebhookUrl !== undefined
       ? { slackWebhookUrl: payload.slackWebhookUrl?.trim() || null }
       : {}),
@@ -349,34 +360,12 @@ export const updateStore = async (storeId: string, payload: UpdateStorePayload):
   return updated;
 };
 
-export const uploadStoreLogo = async (storeId: string, file: File): Promise<string> => {
-  const fileName = buildStorageFileName(file);
-  return uploadFileAndGetUrl(`stores/${storeId}/logo/${fileName}`, file);
-};
-
 export const deleteStore = async (storeId: string): Promise<void> => {
-  const storeRef = doc(firebaseFirestore, STORES_COLLECTION, storeId);
-  const snapshot = await getDoc(storeRef);
-
-  if (!snapshot.exists()) {
-    throw new Error('Loja não encontrada.');
+  if (!storeId) {
+    return;
   }
 
-  const scenariosCollection = collection(storeRef, SCENARIOS_SUBCOLLECTION);
-  const scenariosSnapshot = await getDocsCacheFirst(scenariosCollection);
-  const categoriesCollection = collection(storeRef, CATEGORIES_SUBCOLLECTION);
-  const categoriesSnapshot = await getDocsCacheFirst(categoriesCollection);
-
-  const batch = writeBatch(firebaseFirestore);
-  scenariosSnapshot.forEach((scenarioDoc) => {
-    batch.delete(scenarioDoc.ref);
-  });
-  categoriesSnapshot.forEach((categoryDoc) => {
-    batch.delete(categoryDoc.ref);
-  });
-
-  batch.delete(storeRef);
-  await batch.commit();
+  await deleteDoc(doc(firebaseFirestore, STORES_COLLECTION, storeId));
   STORE_CACHE.remove(`${STORE_DETAIL_CACHE_PREFIX}${storeId}`);
   STORE_CACHE.invalidatePrefix(`${STORE_LIST_CACHE_KEY}:`);
 };
@@ -956,9 +945,9 @@ export const exportStoreData = async (storeId: string): Promise<StoreExportPaylo
       id: store.id,
       name: store.name,
       site: store.site,
-      adminUrl: store.adminUrl,
       stage: store.stage,
-      logoUrl: store.logoUrl,
+      environmentColumns: store.environmentColumns,
+      logoUrl: null,
       slackWebhookUrl: store.slackWebhookUrl,
       scenarioCount: scenarios.length,
     },
