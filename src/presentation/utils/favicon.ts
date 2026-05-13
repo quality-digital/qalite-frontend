@@ -15,14 +15,18 @@ const normalizeStoreUrl = (site: string | null | undefined): URL | null => {
   }
 };
 
-export const getStoreFaviconUrl = (site: string | null | undefined): string => {
+export const getStoreFaviconCandidates = (site: string | null | undefined): string[] => {
   const url = normalizeStoreUrl(site);
   if (!url) {
-    return SYSTEM_FAVICON_FALLBACK;
+    return [SYSTEM_FAVICON_FALLBACK];
   }
 
-  const faviconUrl = `${url.origin}/favicon.ico`;
-  return faviconFailureCache.has(faviconUrl) ? SYSTEM_FAVICON_FALLBACK : faviconUrl;
+  const candidates = [
+    `${url.origin}/favicon.ico`,
+    `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(url.href)}&sz=64`,
+  ].filter((src) => !faviconFailureCache.has(src));
+
+  return candidates.length > 0 ? [...candidates, SYSTEM_FAVICON_FALLBACK] : [SYSTEM_FAVICON_FALLBACK];
 };
 
 export const markStoreFaviconFailed = (src: string) => {

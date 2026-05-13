@@ -1,7 +1,7 @@
 import { ImgHTMLAttributes, memo, useEffect, useMemo, useState } from 'react';
 
 import {
-  getStoreFaviconUrl,
+  getStoreFaviconCandidates,
   markStoreFaviconFailed,
   SYSTEM_FAVICON_FALLBACK,
 } from '../utils/favicon';
@@ -11,12 +11,14 @@ interface StoreFaviconProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 's
 }
 
 export const StoreFavicon = memo(({ site, alt = '', ...props }: StoreFaviconProps) => {
-  const faviconSrc = useMemo(() => getStoreFaviconUrl(site), [site]);
-  const [src, setSrc] = useState(faviconSrc);
+  const candidates = useMemo(() => getStoreFaviconCandidates(site), [site]);
+  const [candidateIndex, setCandidateIndex] = useState(0);
 
   useEffect(() => {
-    setSrc(faviconSrc);
-  }, [faviconSrc]);
+    setCandidateIndex(0);
+  }, [candidates]);
+
+  const src = candidates[candidateIndex] ?? SYSTEM_FAVICON_FALLBACK;
 
   return (
     <img
@@ -29,9 +31,9 @@ export const StoreFavicon = memo(({ site, alt = '', ...props }: StoreFaviconProp
       height={props.height ?? 32}
       onError={(event) => {
         markStoreFaviconFailed(src);
-        if (src !== SYSTEM_FAVICON_FALLBACK) {
-          setSrc(SYSTEM_FAVICON_FALLBACK);
-        }
+        setCandidateIndex((currentIndex) =>
+          currentIndex < candidates.length - 1 ? currentIndex + 1 : currentIndex,
+        );
         props.onError?.(event);
       }}
     />
