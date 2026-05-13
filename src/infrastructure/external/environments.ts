@@ -35,12 +35,6 @@ import type { UserSummary } from '../../domain/entities/user';
 import { firebaseFirestore } from '../database/firebase';
 import { EnvironmentStatusError } from '../../shared/errors/firebaseErrors';
 import { ENVIRONMENT_STATUS_LABEL } from '../../shared/config/environmentLabels';
-import {
-  formatDateTime,
-  formatDurationFromMs,
-  formatEndDateTime,
-  getElapsedMilliseconds,
-} from '../../shared/utils/time';
 import { translateEnvironmentOption } from '../../shared/utils/environmentOptions';
 import i18n from '../../lib/i18n';
 import { normalizeCriticalityEnum } from '../../shared/utils/scenarioEnums';
@@ -712,28 +706,6 @@ const normalizeParticipants = (
   });
 };
 
-const buildTimeTrackingSummary = (environment: Environment) => {
-  const isRunning = environment.status === 'in_progress';
-  const totalMs = getElapsedMilliseconds(environment.timeTracking, isRunning, Date.now());
-  const t = i18n.t.bind(i18n);
-  const locale = i18n.language;
-  const emptyLabel = t('environmentSummary.notRecorded');
-
-  return {
-    start: formatDateTime(environment.timeTracking?.start ?? null, {
-      locale,
-      emptyLabel,
-    }),
-    end: formatEndDateTime(environment.timeTracking ?? null, isRunning, {
-      locale,
-      emptyLabel,
-      inProgressLabel: t('environmentSummary.inProgress'),
-      notEndedLabel: t('environmentSummary.notEnded'),
-    }),
-    total: formatDurationFromMs(totalMs),
-  };
-};
-
 const translateScenarioStatus = (value: EnvironmentScenarioStatus, t: (key: string) => string) => {
   const key = `environmentEvidenceTable.status_${value}`;
   const translated = t(key);
@@ -875,7 +847,6 @@ export const exportEnvironmentAsPDF = (
 
   const t = i18n.t.bind(i18n);
   const normalizedParticipants = normalizeParticipants(environment, participantProfiles, t);
-  const timeSummary = buildTimeTrackingSummary(environment);
   const environmentColumns = getEnvironmentColumns(environment);
   const scenarioCount = Object.values(environment.scenarios ?? {}).length;
   const statusLabel = t(ENVIRONMENT_STATUS_LABEL[environment.status]);
@@ -1044,6 +1015,7 @@ export const exportEnvironmentAsPDF = (
       <body>
         ${organizationHeader}
         <h1>${escapeHtml(exportTitleWithStore)}</h1>
+        <p>${escapeHtml(t('editEnvironmentModal.identifier'))}: ${escapeHtml(environment.identificador)}</p>
         <p>${escapeHtml(t('environmentExport.statusLabel'))}: ${escapeHtml(statusLabel)}</p>
         <p>${escapeHtml(t('environmentExport.typeLabel'))}: ${escapeHtml(
           translateEnvironmentOption(environment.tipoAmbiente, t),
@@ -1060,21 +1032,9 @@ export const exportEnvironmentAsPDF = (
               )}</p>`
             : ''
         }
-        <p>${t('environmentExport.jiraLabel')}: ${jiraValue}</p>
+        ${jiraTask ? `<p>${t('environmentExport.jiraLabel')}: ${jiraValue}</p>` : ''}
         <h2>${t('environmentExport.summaryTitle')}</h2>
         <div class="summary-grid">
-          <div>
-            <span>${t('environmentExport.startLabel')}</span>
-            <strong>${escapeHtml(timeSummary.start)}</strong>
-          </div>
-          <div>
-            <span>${t('environmentExport.endLabel')}</span>
-            <strong>${escapeHtml(timeSummary.end)}</strong>
-          </div>
-          <div>
-            <span>${t('environmentExport.totalLabel')}</span>
-            <strong>${escapeHtml(timeSummary.total)}</strong>
-          </div>
           <div>
             <span>${t('environmentExport.suiteLabel')}</span>
             <strong>${escapeHtml(environment.suiteName ?? t('dynamic.suiteNameFallback'))}</strong>
@@ -1140,7 +1100,6 @@ export const copyEnvironmentAsMarkdown = async (
 
   const t = i18n.t.bind(i18n);
   const normalizedParticipants = normalizeParticipants(environment, participantProfiles, t);
-  const timeSummary = buildTimeTrackingSummary(environment);
   const environmentColumns = getEnvironmentColumns(environment);
   const scenarioCount =
     Object.values(environment.scenarios ?? {}).length * environmentColumns.length;
@@ -1185,19 +1144,15 @@ export const copyEnvironmentAsMarkdown = async (
 
   const markdown = `# ${markdownTitle}
 
+- ${t('editEnvironmentModal.identifier')}: ${environment.identificador}
 - ${t('environmentExport.statusLabel')}: ${statusLabel}
 - ${t('environmentExport.typeLabel')}: ${translateEnvironmentOption(
     environment.tipoAmbiente,
     t,
   )} · ${testTypeLabel}
 ${environment.momento ? `- ${t('environmentExport.momentLabel')}: ${momentLabel}\n` : ''}${
-    environment.release ? `- ${t('environmentExport.releaseLabel')}: ${environment.release}\n` : ''
-  }- ${t('environmentExport.jiraLabel')}: ${environment.jiraTask || t('dynamic.identifierFallback')}
-- ${t('environmentExport.startLabel')}: ${timeSummary.start}
-- ${t('environmentExport.endLabel')}: ${timeSummary.end}
-- ${t('environmentExport.totalLabel')}: ${timeSummary.total}
-- ${t('environmentExport.suiteLabel')}: ${environment.suiteName ?? t('dynamic.suiteNameFallback')}
-- ${t('environmentExport.totalScenariosLabel')}: ${scenarioCount}
+    environment.jiraTask ? `- ${t('environmentExport.jiraLabel')}: ${environment.jiraTask}\n` : ''
+  }${environment.suiteName ? `- ${t('environmentExport.suiteLabel')}: ${environment.suiteName}\n` : ''}- ${t('environmentExport.totalScenariosLabel')}: ${scenarioCount}
 - ${t('environmentExport.participantsLabel')}: ${normalizedParticipants.length}
 - ${t('environmentExport.urlsLabel')}:\n${urls || `  - ${t('environmentExport.noUrls')}`}
 

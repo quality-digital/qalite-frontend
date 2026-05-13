@@ -494,7 +494,7 @@ export const EnvironmentPage = () => {
     };
   }, [environment?.storeId, setActiveStore]);
 
-  const { formattedTime, totalMs, formattedStart, formattedEnd } = useTimeTracking(
+  const { totalMs } = useTimeTracking(
     environment?.timeTracking ?? null,
     environment?.status === 'in_progress',
     {
@@ -714,19 +714,15 @@ export const EnvironmentPage = () => {
     const infoRows = [
       {
         label: translation('editEnvironmentModal.identifier'),
-        value: environment.identificador || translation('storeSummary.emptyValue'),
+        value: environment.identificador,
       },
       {
         label: translation('storeSummary.storeName'),
-        value: storeName || translation('storeSummary.emptyValue'),
+        value: storeName,
       },
       {
         label: translation('environment.exportExcelStatusLabel'),
         value: translation(ENVIRONMENT_STATUS_LABEL[environment.status]),
-      },
-      {
-        label: translation('createEnvironment.suiteId'),
-        value: environment.suiteName?.trim() || translation('storeSummary.emptyValue'),
       },
       {
         label: translation('editEnvironmentModal.environmentType'),
@@ -737,50 +733,33 @@ export const EnvironmentPage = () => {
         value: translateOptionValue(environment.tipoTeste),
       },
       {
-        label: translation('editEnvironmentModal.moment'),
-        value: environment.momento
-          ? translateOptionValue(environment.momento)
-          : translation('environmentSummary.notRecorded'),
-      },
-      {
-        label: translation('editEnvironmentModal.release'),
-        value: environment.release?.trim() || translation('environmentSummary.notRecorded'),
+        label: translation('editEnvironmentModal.urls'),
+        value: urls.length > 0 ? urls.join('\n') : '',
       },
       {
         label: translation('editEnvironmentModal.jiraTask'),
-        value: environment.jiraTask?.trim() || translation('environmentSummary.notInformed'),
+        value: environment.jiraTask?.trim() ?? '',
       },
       {
-        label: translation('editEnvironmentModal.urls'),
-        value: urls.length > 0 ? urls.join('\n') : translation('environmentSummary.noUrls'),
+        label: translation('createEnvironment.suiteId'),
+        value: environment.suiteName?.trim() ?? '',
       },
       {
-        label: translation('environmentSummary.participants'),
-        value:
-          participantProfiles.length > 0
-            ? participantProfiles
-                .map((profile) => profile.displayName?.trim() || profile.email)
-                .filter(Boolean)
-                .join(', ')
-            : translation('environmentSummary.noParticipants'),
+        label: translation('editEnvironmentModal.moment'),
+        value: environment.momento ? translateOptionValue(environment.momento) : '',
       },
       {
         label: translation('environmentSummary.scenarios'),
         value: `${executedScenariosCount}/${scenarioCount}`,
       },
       {
-        label: translation('environmentSummary.start'),
-        value: formattedStart,
+        label: translation('environmentSummary.participants'),
+        value: participantProfiles
+          .map((profile) => profile.displayName?.trim() || profile.email)
+          .filter(Boolean)
+          .join(', '),
       },
-      {
-        label: translation('environmentSummary.end'),
-        value: formattedEnd,
-      },
-      {
-        label: translation('environmentSummary.totalTime'),
-        value: formattedTime || '00:00:00',
-      },
-    ];
+    ].filter((row) => row.value && row.value.toString().trim().length > 0);
 
     exportEnvironmentExcel({
       fileName,
@@ -802,9 +781,6 @@ export const EnvironmentPage = () => {
     executedScenariosCount,
     formatCriticalityLabel,
     formatScenarioStatusLabel,
-    formattedEnd,
-    formattedStart,
-    formattedTime,
     participantProfiles,
     scenarioCount,
     storeName,

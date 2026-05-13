@@ -194,7 +194,7 @@ export const UserDashboardPage = () => {
 
         {stores.length > 0 && (
           <div className="organization-extra">
-            {organization && (
+            {organization && organization.members.length > 0 && (
               <section className="organization-collaborators-card">
                 <div className="organization-collaborators-card__header">
                   <div className="section-heading">

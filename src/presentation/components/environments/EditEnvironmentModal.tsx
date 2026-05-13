@@ -13,7 +13,10 @@ import { Modal } from '../Modal';
 import { SelectInput } from '../SelectInput';
 import { TextInput } from '../TextInput';
 import { TrashIcon } from '../icons';
-import { MOMENT_OPTIONS_BY_ENVIRONMENT, TEST_TYPES_BY_ENVIRONMENT } from '../../constants/environmentOptions';
+import {
+  MOMENT_OPTIONS_BY_ENVIRONMENT,
+  TEST_TYPES_BY_ENVIRONMENT,
+} from '../../constants/environmentOptions';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../../context/ToastContext';
 
@@ -135,7 +138,6 @@ export const EditEnvironmentModal = ({
     () => MOMENT_OPTIONS_BY_ENVIRONMENT[tipoAmbiente] ?? [],
     [tipoAmbiente],
   );
-
 
   useEffect(() => {
     if (!tipoTesteOptions.includes(tipoTeste)) {

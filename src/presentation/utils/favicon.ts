@@ -26,7 +26,9 @@ export const getStoreFaviconCandidates = (site: string | null | undefined): stri
     `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(url.href)}&sz=64`,
   ].filter((src) => !faviconFailureCache.has(src));
 
-  return candidates.length > 0 ? [...candidates, SYSTEM_FAVICON_FALLBACK] : [SYSTEM_FAVICON_FALLBACK];
+  return candidates.length > 0
+    ? [...candidates, SYSTEM_FAVICON_FALLBACK]
+    : [SYSTEM_FAVICON_FALLBACK];
 };
 
 export const markStoreFaviconFailed = (src: string) => {

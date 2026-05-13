@@ -7,7 +7,10 @@ import { environmentService } from '../../../infrastructure/services/environment
 import { Button } from '../Button';
 import { SelectInput } from '../SelectInput';
 import { TextInput } from '../TextInput';
-import { MOMENT_OPTIONS_BY_ENVIRONMENT, TEST_TYPES_BY_ENVIRONMENT } from '../../constants/environmentOptions';
+import {
+  MOMENT_OPTIONS_BY_ENVIRONMENT,
+  TEST_TYPES_BY_ENVIRONMENT,
+} from '../../constants/environmentOptions';
 import { useToast } from '../../context/ToastContext';
 
 interface CreateEnvironmentCardProps {
@@ -200,7 +203,9 @@ export const CreateEnvironmentCard = ({
 
     setIsSubmitting(true);
     try {
-      const urlsList = Array.from(new Set([...urls, ...(urlInput.trim() ? [urlInput.trim()] : [])]));
+      const urlsList = Array.from(
+        new Set([...urls, ...(urlInput.trim() ? [urlInput.trim()] : [])]),
+      );
       const jiraList = Array.from(
         new Set([...jiraLinks, ...(jiraInput.trim() ? [jiraInput.trim()] : [])]),
       );
