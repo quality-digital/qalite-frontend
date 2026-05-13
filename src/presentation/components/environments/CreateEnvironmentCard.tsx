@@ -18,6 +18,7 @@ import { useToast } from '../../context/ToastContext';
 interface CreateEnvironmentCardProps {
   storeId: string;
   storeStage?: Store['stage'] | null;
+  storeEnvironmentColumns?: string[] | null;
   suites: StoreSuite[];
   scenarios: StoreScenario[];
   onCreated?: (environment: Environment | null) => void;
@@ -68,6 +69,7 @@ const buildScenarioMap = (
 export const CreateEnvironmentCard = ({
   storeId,
   storeStage,
+  storeEnvironmentColumns,
   suites,
   scenarios,
   onCreated,
@@ -84,7 +86,16 @@ export const CreateEnvironmentCard = ({
   const [momento, setMomento] = useState('');
   const [release, setRelease] = useState('');
   const [suiteId, setSuiteId] = useState('');
-  const [environmentColumnsInput, setEnvironmentColumnsInput] = useState('Desktop\nMobile');
+  const defaultEnvironmentColumnsInput = useMemo(
+    () =>
+      (storeEnvironmentColumns?.length ? storeEnvironmentColumns : ['Desktop', 'Mobile']).join(
+        '\n',
+      ),
+    [storeEnvironmentColumns],
+  );
+  const [environmentColumnsInput, setEnvironmentColumnsInput] = useState(
+    defaultEnvironmentColumnsInput,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
   const { t } = useTranslation();
@@ -167,8 +178,12 @@ export const CreateEnvironmentCard = ({
     setMomento('');
     setRelease('');
     setSuiteId('');
-    setEnvironmentColumnsInput('Desktop\nMobile');
+    setEnvironmentColumnsInput(defaultEnvironmentColumnsInput);
   };
+
+  useEffect(() => {
+    setEnvironmentColumnsInput(defaultEnvironmentColumnsInput);
+  }, [defaultEnvironmentColumnsInput]);
 
   const addUniqueItem = (
     currentValue: string,
@@ -243,7 +258,6 @@ export const CreateEnvironmentCard = ({
         presentUsersIds: [],
         concludedBy: null,
         scenarios: scenarioMap,
-        bugs: 0,
         totalCenarios,
         participants: [],
         publicShareLanguage: null,

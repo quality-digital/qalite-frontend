@@ -19,7 +19,6 @@ export interface StoreRepository {
   getDetail: (id: string) => Promise<Store | null>;
   create: (store: CreateStorePayload) => Promise<Store>;
   update: (id: string, store: UpdateStorePayload) => Promise<Store>;
-  uploadLogo: (storeId: string, file: File) => Promise<string>;
   delete: (id: string) => Promise<void>;
   listScenarios: (storeId: string) => Promise<StoreScenario[]>;
   listenToScenarios: (

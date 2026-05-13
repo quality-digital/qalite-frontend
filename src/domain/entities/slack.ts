@@ -10,10 +10,6 @@ export interface EnvironmentSummaryPayload {
   scenariosCount?: number;
   executedScenariosCount?: number;
   executedScenariosMessage?: string;
-  fix?: {
-    type?: 'bug' | 'storyfixes';
-    value?: number;
-  };
   jira?: string;
   suiteName?: string;
   suiteDetails?: string;

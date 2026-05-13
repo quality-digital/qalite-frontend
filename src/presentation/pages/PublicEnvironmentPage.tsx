@@ -4,13 +4,11 @@ import { useSearchParams } from 'react-router-dom';
 import { storeService } from '../../infrastructure/services/storeService';
 import { Layout } from '../components/Layout';
 import { EnvironmentEvidenceTable } from '../components/environments/EnvironmentEvidenceTable';
-import { EnvironmentBugList } from '../components/environments/EnvironmentBugList';
 import { EnvironmentSummaryCard } from '../components/environments/EnvironmentSummaryCard';
 import { useEnvironmentRealtime } from '../hooks/useEnvironmentRealtime';
 import { useUserProfiles } from '../hooks/useUserProfiles';
 import { useStoreOrganizationBranding } from '../hooks/useStoreOrganizationBranding';
 import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
-import { useEnvironmentBugs } from '../hooks/useEnvironmentBugs';
 import { useEnvironmentDetails } from '../hooks/useEnvironmentDetails';
 import { useTranslation } from 'react-i18next';
 
@@ -27,8 +25,7 @@ export const PublicEnvironmentPage = () => {
   );
   const { activeStore, setActiveOrganization, setActiveStore } = useOrganizationBranding();
   const { t, i18n } = useTranslation();
-  const { bugs, isLoading: isLoadingBugs } = useEnvironmentBugs(environment?.id ?? null);
-  const { scenarioCount, urls } = useEnvironmentDetails(environment, bugs);
+  const { scenarioCount, urls } = useEnvironmentDetails(environment);
 
   useEffect(() => {
     setActiveOrganization(environmentOrganization ?? null);
@@ -76,7 +73,7 @@ export const PublicEnvironmentPage = () => {
               ? {
                   id: store.id,
                   name: store.name.trim(),
-                  logoUrl: store.logoUrl ?? null,
+                  site: store.site,
                 }
               : null,
           );
@@ -125,25 +122,14 @@ export const PublicEnvironmentPage = () => {
             scenarioCount={scenarioCount}
             urls={urls}
             participants={participants}
-            bugsCount={bugs.length}
             storeName={activeStore?.name ?? ''}
-            storeLogoUrl={activeStore?.logoUrl ?? null}
+            storeLogoUrl={null}
           />
         </div>
 
         <div className="environment-evidence">
           <EnvironmentEvidenceTable environment={environment} isLocked readOnly />
         </div>
-        <EnvironmentBugList
-          environment={environment}
-          bugs={bugs}
-          participants={participants}
-          isLocked
-          isLoading={isLoadingBugs}
-          onEdit={() => {}}
-          showActions={false}
-          showHeader={false}
-        />
       </section>
     </Layout>
   );

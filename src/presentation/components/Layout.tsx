@@ -1,10 +1,11 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
 import { Button } from './Button';
 import { UserAvatar } from './UserAvatar';
 import { CachedImage } from './CachedImage';
+import { StoreFavicon } from './StoreFavicon';
 import { LogoutIcon } from './icons';
 import qliteLogo from '../assets/logo.png';
 import { useTranslation } from 'react-i18next';
@@ -21,29 +22,33 @@ export const Layout = ({ children, showHeader = true }: LayoutProps) => {
   const displayName = user?.displayName || user?.email || '';
   const { t } = useTranslation();
   const brandName = activeStore?.name || activeOrganization?.name || t('app.brandName');
-  const brandLogo = activeStore?.logoUrl || activeOrganization?.logoUrl || qliteLogo;
-  const [brandLogoSrc, setBrandLogoSrc] = useState(brandLogo);
-
-  useEffect(() => {
-    setBrandLogoSrc(brandLogo);
-  }, [brandLogo]);
+  const brandLogo = activeOrganization?.logoUrl || qliteLogo;
 
   return (
     <div className="app-shell">
       {showHeader && (
         <header className="app-header">
           <Link to="/" className="app-brand" aria-label={t('layout.homeAriaLabel', { brandName })}>
-            <CachedImage
-              src={brandLogoSrc}
-              alt={t('layout.brandLogoAlt', { brandName })}
-              className="app-brand-logo"
-              loading="eager"
-              onError={() => {
-                if (brandLogoSrc !== qliteLogo) {
-                  setBrandLogoSrc(qliteLogo);
-                }
-              }}
-            />
+            {activeStore ? (
+              <StoreFavicon
+                site={activeStore.site}
+                alt={t('layout.brandLogoAlt', { brandName })}
+                className="app-brand-logo"
+                loading="eager"
+                width={40}
+                height={40}
+              />
+            ) : (
+              <CachedImage
+                src={brandLogo}
+                alt={t('layout.brandLogoAlt', { brandName })}
+                className="app-brand-logo"
+                loading="eager"
+                onError={(event) => {
+                  event.currentTarget.src = qliteLogo;
+                }}
+              />
+            )}
             <span className="app-brand-name">{brandName}</span>
           </Link>
           <nav className="header-actions">

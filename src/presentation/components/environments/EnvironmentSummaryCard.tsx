@@ -35,7 +35,6 @@ interface EnvironmentSummaryCardProps {
   scenarioCount: number;
   urls: string[];
   participants: UserSummary[];
-  bugsCount: number;
   storeName?: string;
   storeLogoUrl?: string | null;
   showStoreBranding?: boolean;
@@ -46,7 +45,6 @@ export const EnvironmentSummaryCard = ({
   scenarioCount,
   urls,
   participants,
-  bugsCount,
   storeName,
   storeLogoUrl,
   showStoreBranding = false,
@@ -59,23 +57,13 @@ export const EnvironmentSummaryCard = ({
   const visibleUrls = urls.slice(0, 3);
   const remainingUrls = urls.length - visibleUrls.length;
 
-  const normalizedEnvironmentType =
-    typeof environment.tipoAmbiente === 'string'
-      ? environment.tipoAmbiente.trim().toUpperCase()
-      : '';
-  const isWsEnvironment = normalizedEnvironmentType === 'WS';
-  const isHomologationEnvironment = requiresReleaseField(environment.tipoAmbiente);
-
-  const bugLabel = isWsEnvironment
-    ? translation('environmentSummary.storyfix')
-    : translation('environmentSummary.bugs');
-
-  const jiraLinks = (environment.jiraTask ?? '')
-    .split('\n')
-    .map((entry) => entry.trim())
-    .filter(Boolean);
   const resolvedStoreName = storeName?.trim() || translation('storeSummary.emptyValue');
   const resolvedStoreLogo = storeLogoUrl?.trim() || null;
+  const isHomologationEnvironment = requiresReleaseField(environment.tipoAmbiente);
+  const jiraLinks = (environment.jiraTask ?? '')
+    .split('\n')
+    .map((jira) => jira.trim())
+    .filter(Boolean);
 
   return (
     <div className="summary-card summary-card--environment summary-card--compact">
@@ -172,10 +160,6 @@ export const EnvironmentSummaryCard = ({
           </span>
         </div>
 
-        <div className="summary-card__meta-item">
-          <span className="summary-card__meta-label">{bugLabel}</span>
-          <strong>{bugsCount}</strong>
-        </div>
         <div className="summary-card__meta-item">
           <span className="summary-card__meta-label">
             {translation('environmentSummary.participants')}

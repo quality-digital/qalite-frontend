@@ -1,13 +1,10 @@
 import type {
-  CreateEnvironmentBugInput,
   CreateEnvironmentInput,
   Environment,
-  EnvironmentBug,
   EnvironmentRealtimeFilters,
   EnvironmentScenarioPlatform,
   EnvironmentScenarioStatus,
   TransitionEnvironmentStatusParams,
-  UpdateEnvironmentBugInput,
   UpdateEnvironmentInput,
 } from '../entities/environment';
 import type { UserSummary } from '../entities/user';
@@ -38,25 +35,15 @@ export interface EnvironmentRepository {
     scenarioId: string,
     evidenceLink: string | File,
   ) => Promise<string>;
-  listBugs: (environmentId: string) => Promise<EnvironmentBug[]>;
-  createBug: (environmentId: string, bug: CreateEnvironmentBugInput) => Promise<EnvironmentBug>;
-  updateBug: (
-    environmentId: string,
-    bugId: string,
-    input: UpdateEnvironmentBugInput,
-  ) => Promise<void>;
-  deleteBug: (environmentId: string, bugId: string) => Promise<void>;
   transitionStatus: (params: TransitionEnvironmentStatusParams) => Promise<void>;
   exportAsPDF: (
     environment: Environment,
-    bugs?: EnvironmentBug[],
     participantProfiles?: UserSummary[],
-    store?: { name?: string | null; logoUrl?: string | null } | null,
+    store?: { name?: string | null } | null,
     organization?: { name?: string | null; logoUrl?: string | null } | null,
   ) => void;
   copyAsMarkdown: (
     environment: Environment,
-    bugs?: EnvironmentBug[],
     participantProfiles?: UserSummary[],
     storeName?: string,
   ) => Promise<void>;

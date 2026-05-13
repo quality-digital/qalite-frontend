@@ -48,7 +48,6 @@ export interface Environment {
   presentUsersIds: string[];
   concludedBy: string | null;
   scenarios: Record<string, EnvironmentScenario>;
-  bugs: number;
   totalCenarios: number;
   participants: string[];
   publicShareLanguage: string | null;
@@ -71,7 +70,6 @@ export interface CreateEnvironmentInput {
   presentUsersIds: string[];
   concludedBy: string | null;
   scenarios: Record<string, EnvironmentScenario>;
-  bugs: number;
   totalCenarios: number;
   participants: string[];
   publicShareLanguage: string | null;
@@ -84,41 +82,6 @@ export interface EnvironmentScenarioUpdate {
   status?: EnvironmentScenarioStatus;
   evidenciaArquivoUrl?: string | null;
 }
-
-export type EnvironmentBugStatus = 'aberto' | 'em_andamento' | 'resolvido';
-export type EnvironmentBugSeverity = 'baixa' | 'media' | 'alta' | 'critica';
-export type EnvironmentBugPriority = 'baixa' | 'media' | 'alta' | 'urgente';
-
-export interface EnvironmentBug {
-  id: string;
-  scenarioId: string | null;
-  title: string;
-  description: string | null;
-  status: EnvironmentBugStatus;
-  severity: EnvironmentBugSeverity | null;
-  priority: EnvironmentBugPriority | null;
-  reportedBy: string | null;
-  stepsToReproduce: string | null;
-  expectedResult: string | null;
-  actualResult: string | null;
-  createdAt: string | null;
-  updatedAt: string | null;
-}
-
-export interface CreateEnvironmentBugInput {
-  scenarioId: string | null;
-  title: string;
-  description: string | null;
-  status: EnvironmentBugStatus;
-  severity: EnvironmentBugSeverity | null;
-  priority: EnvironmentBugPriority | null;
-  reportedBy: string | null;
-  stepsToReproduce: string | null;
-  expectedResult: string | null;
-  actualResult: string | null;
-}
-
-export type UpdateEnvironmentBugInput = Partial<Omit<EnvironmentBug, 'id'>>;
 
 export interface EnvironmentRealtimeFilters {
   storeId?: string;

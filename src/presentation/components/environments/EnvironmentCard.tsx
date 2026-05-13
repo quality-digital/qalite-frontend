@@ -6,14 +6,13 @@ import type { UserSummary } from '../../../domain/entities/user';
 import { getReadableUserName, getUserInitials } from '../../utils/userDisplay';
 import { ENVIRONMENT_STATUS_LABEL } from '../../../shared/config/environmentLabels';
 import { translateEnvironmentOption } from '../../constants/environmentOptions';
-import { BugIcon, ClockIcon, CopyIcon, ListIcon, LayersIcon, UsersIcon } from '../icons';
+import { ClockIcon, CopyIcon, ListIcon, LayersIcon, UsersIcon } from '../icons';
 import { CachedImage } from '../CachedImage';
 
 interface EnvironmentCardProps {
   environment: Environment;
   participants: UserSummary[];
   suiteName?: string | null;
-  bugCount?: number;
   onOpen: (environment: Environment) => void;
   onClone?: (environment: Environment) => void;
   pendingParticipantIds?: string[];
@@ -23,7 +22,6 @@ export const EnvironmentCard = ({
   environment,
   participants,
   suiteName,
-  bugCount,
   onOpen,
   onClone,
   pendingParticipantIds = [],
@@ -34,14 +32,6 @@ export const EnvironmentCard = ({
   const hasParticipants = participants.length > 0;
   const visibleParticipants = participants.slice(0, 3);
   const hiddenParticipantsCount = Math.max(participants.length - visibleParticipants.length, 0);
-  const normalizedEnvironmentType =
-    typeof environment.tipoAmbiente === 'string'
-      ? environment.tipoAmbiente.trim().toUpperCase()
-      : '';
-  const bugLabel =
-    normalizedEnvironmentType === 'WS'
-      ? t('environmentCard.bugStoryfix')
-      : t('environmentCard.bugBugs');
   const scenarioEntries = Object.values(environment.scenarios ?? {});
   const completedStatuses = new Set(['concluido', 'concluido_automatizado', 'nao_se_aplica']);
   const completedScenariosCount = scenarioEntries.filter((scenario) => {
@@ -56,7 +46,6 @@ export const EnvironmentCard = ({
       ? Math.round((completedScenariosCount / scenarioEntries.length) * 100)
       : 0;
   const momentLabel = translateEnvironmentOption(environment.momento, t);
-  const displayBugCount = bugCount ?? environment.bugs ?? 0;
 
   const handleOpen = () => onOpen(environment);
   const handleClone = (event: MouseEvent<HTMLButtonElement>) => {
@@ -125,13 +114,6 @@ export const EnvironmentCard = ({
             <div className="environment-card__stat-content">
               <span className="environment-card__stat-value">{environment.totalCenarios}</span>
               <span className="environment-card__stat-label">{t('scenarios')}</span>
-            </div>
-          </div>
-          <div className="environment-card__stat-item">
-            <BugIcon aria-hidden className="environment-card__stat-icon" />
-            <div className="environment-card__stat-content">
-              <span className="environment-card__stat-value">{displayBugCount}</span>
-              <span className="environment-card__stat-label">{bugLabel}</span>
             </div>
           </div>
         </div>
