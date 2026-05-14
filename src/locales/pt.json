@@ -663,7 +663,6 @@
       "slack.bugsStatus": "{{count}}",
       "slack.sections.identification": "Identificação",
       "slack.sections.execution": "Execução de Cenários",
-      "slack.sections.result": "Resultado da Execução",
       "slack.sections.preview": "Preview do Ambiente",
       "slack.sections.responsible": "Responsável",
       "slack.sections.suite": "Suíte",

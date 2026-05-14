@@ -208,8 +208,6 @@ const buildSlackTaskSummaryPayload = (
     translation('environment.slack.sections.identification'),
     ...identificationLines,
     '',
-    `:white_check_mark: ${translation('environment.slack.sections.result')}`,
-    `• ${translation('environment.slack.labels.executedScenarios')}: ${options.executedScenariosCount}/${options.scenarioCount}`,
     `• ${translation('environment.slack.labels.status')}: ${executionStatus}`,
     `• ${translation('environment.slack.labels.coverage')}: ${options.progressLabel}`,
     '',

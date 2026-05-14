@@ -662,7 +662,6 @@
       "slack.bugsStatus": "{{count}}",
       "slack.sections.identification": "Identification",
       "slack.sections.execution": "Scenario Execution",
-      "slack.sections.result": "Execution Result",
       "slack.sections.preview": "Environment Preview",
       "slack.sections.responsible": "Owner",
       "slack.sections.suite": "Suite",
