@@ -8520,3 +8520,20 @@ textarea:focus-visible {
 .support-center-card--credits {
   border-color: color-mix(in srgb, var(--color-success) 42%, var(--color-border));
 }
+
+
+.organization-access-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.organization-access-card__actions .button {
+  min-width: 180px;
+  justify-content: center;
+}

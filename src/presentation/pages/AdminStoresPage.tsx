@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import type { Organization, OrganizationAccessRequest } from '../../domain/entities/organization';
+import type { Environment } from '../../domain/entities/environment';
 import type { Store } from '../../domain/entities/store';
 import type { UserSummary } from '../../domain/entities/user';
 import {
@@ -12,6 +13,7 @@ import {
 } from '../../infrastructure/external/organizations';
 import { organizationService } from '../../infrastructure/services/organizationService';
 import { storeService } from '../../infrastructure/services/storeService';
+import { environmentService } from '../../infrastructure/services/environmentService';
 import { userService } from '../../infrastructure/services/userService';
 import { useStoresRealtime } from '../context/StoresRealtimeContext';
 import { useToast } from '../context/ToastContext';
@@ -101,6 +103,7 @@ export const AdminStoresPage = () => {
   const [isSavingStore, setIsSavingStore] = useState(false);
   const [storeDeleteModalOpen, setStoreDeleteModalOpen] = useState(false);
   const { t: translation } = useTranslation();
+  const [organizationEnvironments, setOrganizationEnvironments] = useState<Environment[]>([]);
 
   const totalScenarios = useMemo(
     () => storesForOrganization.reduce((sum, store) => sum + (store.scenarioCount ?? 0), 0),
@@ -114,6 +117,25 @@ export const AdminStoresPage = () => {
   const totalManual = Math.max(totalScenarios - totalAutomated, 0);
   const automationRate =
     totalScenarios > 0 ? Math.round((totalAutomated / totalScenarios) * 100) : 0;
+
+  const usageRanking = useMemo(() => {
+    if (!selectedOrganization || selectedOrganization.members.length === 0) {
+      return [];
+    }
+
+    const counts = new Map<string, number>();
+
+    organizationEnvironments.forEach((environment) => {
+      const uniqueParticipants = new Set(environment.participants ?? []);
+      uniqueParticipants.forEach((participantId) => {
+        counts.set(participantId, (counts.get(participantId) ?? 0) + 1);
+      });
+    });
+
+    return selectedOrganization.members
+      .map((member) => ({ member, count: counts.get(member.uid) ?? 0 }))
+      .sort((a, b) => b.count - a.count || a.member.displayName.localeCompare(b.member.displayName));
+  }, [organizationEnvironments, selectedOrganization]);
 
   useEffect(() => {
     const organizationFromParam = searchParams.get('id') ?? searchParams.get('Id');
@@ -645,6 +667,32 @@ export const AdminStoresPage = () => {
           </article>
         </section>
 
+        {selectedOrganization && usageRanking.length > 0 && (
+          <section className="card" style={{ marginBottom: '1.25rem' }}>
+            <div className="section-heading">
+              <span className="section-heading__icon">
+                <UsersGroupIcon className="icon icon--lg" />
+              </span>
+              <div>
+                <h3 className="section-title">Ranking de participação em ambientes</h3>
+                <p className="section-subtitle">Usuários que mais participaram dos ambientes desta organização.</p>
+              </div>
+            </div>
+            <ul className="collaborator-list organization-members-list">
+              {usageRanking.map(({ member, count }, index) => (
+                <li key={member.uid} className="collaborator-card">
+                  <UserAvatar name={member.displayName} photoUrl={member.photoURL} size="sm" />
+                  <div className="collaborator-card__details">
+                    <strong>{index + 1}. {member.displayName}</strong>
+                    <span className="collaborator-card__email">{member.email}</span>
+                  </div>
+                  <span className="badge">{count} ambientes</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {isLoadingStores ? (
           <p className="section-subtitle">
             {translation('AdminStoresPage.loading-stores-message')}
@@ -699,7 +747,7 @@ export const AdminStoresPage = () => {
             </div>
 
             <div className="organization-extra">
-              {selectedOrganization && (
+              {selectedOrganization && selectedOrganization.members.length > 0 && (
                 <section className="organization-collaborators-card">
                   <div className="organization-collaborators-card__header">
                     <div className="section-heading">
@@ -721,14 +769,9 @@ export const AdminStoresPage = () => {
                           })}
                     </span>
                   </div>
-                  {selectedOrganization.members.length === 0 ? (
-                    <p className="section-subtitle">
-                      {translation('AdminStoresPage.no-collaborators-message')}
-                    </p>
-                  ) : (
-                    <ul className="collaborator-list">
-                      {selectedOrganization.members.map((member) => (
-                        <li key={member.uid} className="collaborator-card">
+                  <ul className="collaborator-list">
+                    {selectedOrganization.members.map((member) => (
+                      <li key={member.uid} className="collaborator-card">
                           <UserAvatar
                             name={member.displayName || member.email}
                             size="sm"
@@ -737,10 +780,9 @@ export const AdminStoresPage = () => {
                           <div className="collaborator-card__details">
                             <strong>{member.displayName || member.email}</strong>
                           </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                      </li>
+                    ))}
+                  </ul>
                 </section>
               )}
             </div>
