@@ -8,7 +8,7 @@ interface SupportCenterProps {
 
 const SUPPORT_SLACK_URL = 'https://qualitydigitalsa.slack.com/archives/C0B3U4CP5L2';
 const CREDITS_GITHUB_URL = 'https://github.com/sntooosk';
-const SLACK_PNG_URL = 'https://cdn.simpleicons.org/slack/4A154B';
+const SLACK_PNG_URL = 'https://img.icons8.com/external-tal-revivo-color-tal-revivo/24/external-slack-replace-email-text-messaging-and-instant-messaging-for-your-team-logo-color-tal-revivo.png';
 const GITHUB_PNG_URL = 'https://cdn.simpleicons.org/github/111111';
 
 export const SupportCenter = ({ compact = false }: SupportCenterProps) => {
