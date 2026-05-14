@@ -856,12 +856,11 @@ export const exportEnvironmentAsPDF = (
   const storeLabel = store?.name?.trim();
   const exportTitleWithStore = storeLabel ? `${exportTitle} · ${storeLabel}` : exportTitle;
   const organizationName = organization?.name?.trim() || '';
-  const organizationLogo = organization?.logoUrl?.trim() || '';
   const organizationHeader =
-    organizationName || organizationLogo
+    organizationName || storeLabel
       ? `<div class="org-header">
-          ${organizationLogo ? `<img src="${escapeHtml(organizationLogo)}" alt="${escapeHtml(organizationName || 'Organization logo')}" class="org-logo" />` : ''}
           ${organizationName ? `<span class="org-name">${escapeHtml(organizationName)}</span>` : ''}
+          ${storeLabel ? `<span class="org-name">${escapeHtml(storeLabel)}</span>` : ''}
         </div>`
       : '';
   const jiraTask = environment.jiraTask?.trim() || '';
@@ -982,7 +981,6 @@ export const exportEnvironmentAsPDF = (
           h1 { margin-bottom: 0; }
           h2 { margin-top: 24px; }
           .org-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-          .org-logo { width: 48px; height: 48px; border-radius: 10px; object-fit: contain; border: 1px solid var(--color-border); background: #fff; }
           .org-name { font-size: 16px; font-weight: 600; color: #111827; }
           .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; padding: 12px; background: var(--color-surface-muted); border: 1px solid var(--color-border); border-radius: 12px; }
           .summary-grid strong { display: block; margin-top: 4px; }
@@ -1093,6 +1091,7 @@ export const copyEnvironmentAsMarkdown = async (
   environment: Environment,
   participantProfiles: UserSummary[] = [],
   storeName?: string,
+  organizationName?: string,
 ): Promise<void> => {
   if (typeof navigator === 'undefined' && typeof document === 'undefined') {
     return;
@@ -1144,17 +1143,14 @@ export const copyEnvironmentAsMarkdown = async (
 
   const markdown = `# ${markdownTitle}
 
-- ${t('editEnvironmentModal.identifier')}: ${environment.identificador}
+${organizationName ? `- Organização: ${organizationName}\n` : ''}${storeLabel ? `- Loja: ${storeLabel}\n` : ''}- ${t('editEnvironmentModal.identifier')}: ${environment.identificador}
+- ${t('editEnvironmentModal.environmentType')}: ${translateEnvironmentOption(environment.tipoAmbiente, t)}
+${environment.momento ? `- ${t('environmentExport.momentLabel')}: ${momentLabel}\n` : ''}- ${t('editEnvironmentModal.urls')}:\n${urls || `  - ${t('environmentExport.noUrls')}`}
+${environment.jiraTask ? `- ${t('environmentExport.jiraLabel')}: ${environment.jiraTask}\n` : ''}- ${t('editEnvironmentModal.testType')}: ${testTypeLabel}
+- ${t('environmentExport.suiteLabel')}: ${environment.suiteName || t('dynamic.suiteNameFallback')}
 - ${t('environmentExport.statusLabel')}: ${statusLabel}
-- ${t('environmentExport.typeLabel')}: ${translateEnvironmentOption(
-    environment.tipoAmbiente,
-    t,
-  )} · ${testTypeLabel}
-${environment.momento ? `- ${t('environmentExport.momentLabel')}: ${momentLabel}\n` : ''}${
-    environment.jiraTask ? `- ${t('environmentExport.jiraLabel')}: ${environment.jiraTask}\n` : ''
-  }${environment.suiteName ? `- ${t('environmentExport.suiteLabel')}: ${environment.suiteName}\n` : ''}- ${t('environmentExport.totalScenariosLabel')}: ${scenarioCount}
+- ${t('environmentExport.totalScenariosLabel')}: ${scenarioCount}
 - ${t('environmentExport.participantsLabel')}: ${normalizedParticipants.length}
-- ${t('environmentExport.urlsLabel')}:\n${urls || `  - ${t('environmentExport.noUrls')}`}
 
 ## ${t('environmentExport.scenariosTitle')}
 ${scenarioTable}
