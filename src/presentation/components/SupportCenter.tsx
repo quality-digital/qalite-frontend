@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SiSlack, SiGithub } from 'react-icons/si';
 import { Modal } from './Modal';
 
 interface SupportCenterProps {
@@ -20,44 +21,38 @@ export const SupportCenter = ({ compact = false }: SupportCenterProps) => {
           .join(' ')}
         onClick={() => setIsOpen(true)}
       >
+        <span className="support-center-trigger__dot" aria-hidden />
         Suporte
       </button>
 
       <Modal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        title="Central de Suporte"
-        description="Ajuda rápida, canais de contato e créditos do software."
+        title="Central de suporte"
+        description="Atalhos rápidos para suporte técnico e créditos do software."
         bodyClassName="support-center-modal"
       >
-        <section className="support-center-card">
-          <h3>Canal oficial no Slack</h3>
-          <p>
-            Abra um chamado, tire dúvidas técnicas e acompanhe os comunicados da equipe diretamente
-            no canal oficial.
-          </p>
-          <a
-            href={SUPPORT_SLACK_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="support-center-link"
-          >
-            Acessar canal de suporte no Slack
+        <section className="support-center-card support-center-card--slack">
+          <div className="support-center-card__head">
+            <SiSlack aria-hidden className="support-center-brand-icon" />
+            <h3>Suporte no Slack</h3>
+          </div>
+          <p>Tire dúvidas técnicas e acompanhe os comunicados da equipe no canal oficial.</p>
+          <a href={SUPPORT_SLACK_URL} target="_blank" rel="noreferrer" className="support-center-link">
+            Abrir canal no Slack
           </a>
         </section>
 
         <section className="support-center-card support-center-card--credits">
-          <h3>Créditos do software</h3>
+          <div className="support-center-card__head">
+            <SiGithub aria-hidden className="support-center-brand-icon" />
+            <h3>Créditos do software</h3>
+          </div>
           <p>
             Projeto e desenvolvimento por <strong>Juliano Cassimiro</strong>.
           </p>
-          <a
-            href={CREDITS_GITHUB_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="support-center-link"
-          >
-            Ver GitHub de Juliano Cassimiro
+          <a href={CREDITS_GITHUB_URL} target="_blank" rel="noreferrer" className="support-center-link">
+            Ver perfil no GitHub
           </a>
         </section>
       </Modal>
