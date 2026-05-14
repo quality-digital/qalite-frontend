@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import appLogo from '../assets/logo.png';
+import { SupportCenter } from './SupportCenter';
 
 interface AuthLayoutProps {
   title: string;
@@ -27,6 +28,8 @@ export const AuthLayout = ({ title, subtitle, children, footer, pageLabel }: Aut
           </div>
         </div>
       </div>
+
+      <SupportCenter />
 
       <div className="auth-page__body">
         <section className="auth-page__panel">
