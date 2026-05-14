@@ -115,7 +115,6 @@ export const AdminStoresPage = () => {
   const automationRate =
     totalScenarios > 0 ? Math.round((totalAutomated / totalScenarios) * 100) : 0;
 
-
   useEffect(() => {
     const organizationFromParam = searchParams.get('id') ?? searchParams.get('Id');
     const unsubscribe = listenToOrganizationsSummary(
@@ -725,14 +724,14 @@ export const AdminStoresPage = () => {
                   <ul className="collaborator-list">
                     {selectedOrganization.members.map((member) => (
                       <li key={member.uid} className="collaborator-card">
-                          <UserAvatar
-                            name={member.displayName || member.email}
-                            size="sm"
-                            photoUrl={member.photoURL ?? null}
-                          />
-                          <div className="collaborator-card__details">
-                            <strong>{member.displayName || member.email}</strong>
-                          </div>
+                        <UserAvatar
+                          name={member.displayName || member.email}
+                          size="sm"
+                          photoUrl={member.photoURL ?? null}
+                        />
+                        <div className="collaborator-card__details">
+                          <strong>{member.displayName || member.email}</strong>
+                        </div>
                       </li>
                     ))}
                   </ul>

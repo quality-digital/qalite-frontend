@@ -49,7 +49,7 @@ import {
   getCriticalityClassName,
   getCriticalityLabelKey,
 } from '../constants/scenarioOptions';
-import { requiresReleaseField } from '../constants/environmentOptions';
+import { requiresReleaseField, translateEnvironmentOption } from '../constants/environmentOptions';
 import {
   CopyIcon,
   FileTextIcon,
