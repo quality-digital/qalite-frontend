@@ -16,7 +16,6 @@ import { TrashIcon } from '../icons';
 import {
   MOMENT_OPTIONS_BY_ENVIRONMENT,
   TEST_TYPES_BY_ENVIRONMENT,
-  requiresReleaseField,
 } from '../../constants/environmentOptions';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../../context/ToastContext';
@@ -87,7 +86,6 @@ export const EditEnvironmentModal = ({
   const [tipoAmbiente, setTipoAmbiente] = useState('WS');
   const [tipoTeste, setTipoTeste] = useState('Smoke-test');
   const [momento, setMomento] = useState('');
-  const [release, setRelease] = useState('');
   const [suiteId, setSuiteId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingUpdate, setPendingUpdate] = useState<UpdateEnvironmentInput | null>(null);
@@ -112,7 +110,6 @@ export const EditEnvironmentModal = ({
     setTipoAmbiente(environment.tipoAmbiente);
     setTipoTeste(environment.tipoTeste);
     setMomento(environment.momento ?? '');
-    setRelease(environment.release ?? '');
     setSuiteId(environment.suiteId ?? '');
   }, [environment]);
   const environmentColumns = useMemo(
@@ -142,8 +139,6 @@ export const EditEnvironmentModal = ({
     [tipoAmbiente],
   );
 
-  const shouldDisplayReleaseField = requiresReleaseField(tipoAmbiente);
-
   useEffect(() => {
     if (!tipoTesteOptions.includes(tipoTeste)) {
       setTipoTeste(tipoTesteOptions[0]);
@@ -160,12 +155,6 @@ export const EditEnvironmentModal = ({
       setMomento(momentoOptions[0]);
     }
   }, [momento, momentoOptions]);
-
-  useEffect(() => {
-    if (!shouldDisplayReleaseField && release) {
-      setRelease('');
-    }
-  }, [release, shouldDisplayReleaseField]);
 
   const hasStartedScenarios = useMemo(() => {
     const scenarioEntries = Object.values(environment?.scenarios ?? {});
@@ -222,14 +211,6 @@ export const EditEnvironmentModal = ({
       return;
     }
 
-    if (shouldDisplayReleaseField && !release.trim()) {
-      showToast({
-        type: 'error',
-        message: translation('editEnvironmentModal.missingReleaseError'),
-      });
-      return;
-    }
-
     const urlsList = [...urls, ...(urlInput.trim() ? [urlInput.trim()] : [])];
     const jiraList = [...jiraLinks, ...(jiraInput.trim() ? [jiraInput.trim()] : [])];
 
@@ -240,7 +221,7 @@ export const EditEnvironmentModal = ({
       tipoAmbiente,
       tipoTeste,
       momento: momentoOptions.length > 0 ? momento : null,
-      release: shouldDisplayReleaseField ? release.trim() : null,
+      release: null,
     };
 
     if (suiteHasChanged) {
@@ -310,6 +291,18 @@ export const EditEnvironmentModal = ({
             required
             disabled={isLocked}
           />
+          <SelectInput
+            id="tipoAmbienteEditar"
+            label={translation('editEnvironmentModal.environmentType')}
+            value={tipoAmbiente}
+            onChange={(event) => setTipoAmbiente(event.target.value)}
+            disabled={isLocked}
+            options={[
+              { value: 'WS', label: 'WS' },
+              { value: 'TM', label: translation('environmentOptions.TM') },
+              { value: 'PROD', label: translation('environmentOptions.PROD') },
+            ]}
+          />
           <div className="dynamic-links-row">
             <TextInput
               id="urlsEditar"
@@ -356,6 +349,49 @@ export const EditEnvironmentModal = ({
                   )}
                 </span>
               ))}
+            </div>
+          )}
+          <SelectInput
+            id="tipoTesteEditar"
+            label={translation('editEnvironmentModal.testType')}
+            value={tipoTeste}
+            onChange={(event) => setTipoTeste(event.target.value)}
+            disabled={isLocked}
+            options={tipoTesteOptions.map((option) => ({
+              value: option,
+              label: translation(option),
+            }))}
+          />
+          {momentoOptions.length > 0 && (
+            <SelectInput
+              id="momentoEditar"
+              label={translation('editEnvironmentModal.moment')}
+              value={momento}
+              onChange={(event) => setMomento(event.target.value)}
+              disabled={isLocked}
+              options={momentoOptions.map((option) => ({
+                value: option,
+                label: translation(option),
+              }))}
+            />
+          )}
+          <SelectInput
+            id="suiteIdEditar"
+            label={translation('createEnvironment.suiteId')}
+            value={suiteId}
+            onChange={(event) => setSuiteId(event.target.value)}
+            disabled={isLocked}
+            options={[
+              { value: '', label: translation('createEnvironment.none') },
+              ...suites.map((suite) => ({ value: suite.id, label: suite.name })),
+            ]}
+          />
+          {selectedSuite && (
+            <div className="environment-suite-preview">
+              <p>
+                {translation('createEnvironment.scenariosLoaded')}{' '}
+                <strong>{selectedSuite.name}</strong>: {totalCenarios}
+              </p>
             </div>
           )}
           <div className="dynamic-links-row">
@@ -408,71 +444,6 @@ export const EditEnvironmentModal = ({
               ))}
             </div>
           )}
-          <SelectInput
-            id="tipoAmbienteEditar"
-            label={translation('editEnvironmentModal.environmentType')}
-            value={tipoAmbiente}
-            onChange={(event) => setTipoAmbiente(event.target.value)}
-            disabled={isLocked}
-            options={[
-              { value: 'WS', label: 'WS' },
-              { value: 'TM', label: translation('environmentOptions.TM') },
-              { value: 'PROD', label: translation('environmentOptions.PROD') },
-            ]}
-          />
-          <SelectInput
-            id="tipoTesteEditar"
-            label={translation('editEnvironmentModal.testType')}
-            value={tipoTeste}
-            onChange={(event) => setTipoTeste(event.target.value)}
-            disabled={isLocked}
-            options={tipoTesteOptions.map((option) => ({
-              value: option,
-              label: translation(option),
-            }))}
-          />
-          <SelectInput
-            id="suiteIdEditar"
-            label={translation('createEnvironment.suiteId')}
-            value={suiteId}
-            onChange={(event) => setSuiteId(event.target.value)}
-            disabled={isLocked}
-            options={[
-              { value: '', label: translation('createEnvironment.none') },
-              ...suites.map((suite) => ({ value: suite.id, label: suite.name })),
-            ]}
-          />
-          {selectedSuite && (
-            <div className="environment-suite-preview">
-              <p>
-                {translation('createEnvironment.scenariosLoaded')}{' '}
-                <strong>{selectedSuite.name}</strong>: {totalCenarios}
-              </p>
-            </div>
-          )}
-          {momentoOptions.length > 0 && (
-            <SelectInput
-              id="momentoEditar"
-              label={translation('editEnvironmentModal.moment')}
-              value={momento}
-              onChange={(event) => setMomento(event.target.value)}
-              disabled={isLocked}
-              options={momentoOptions.map((option) => ({
-                value: option,
-                label: translation(option),
-              }))}
-            />
-          )}
-          {shouldDisplayReleaseField && (
-            <TextInput
-              id="releaseEditar"
-              label={translation('editEnvironmentModal.release')}
-              value={release}
-              onChange={(event) => setRelease(event.target.value)}
-              disabled={isLocked}
-            />
-          )}
-
           <div className="environment-form-actions">
             <Button
               type="submit"

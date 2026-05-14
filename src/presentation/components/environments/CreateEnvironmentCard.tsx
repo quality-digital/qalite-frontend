@@ -2,29 +2,38 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { Environment, EnvironmentScenario } from '../../../domain/entities/environment';
-import type { StoreScenario, StoreSuite, Store } from '../../../domain/entities/store';
+import type { Store, StoreScenario, StoreSuite } from '../../../domain/entities/store';
 import { environmentService } from '../../../infrastructure/services/environmentService';
 import { Button } from '../Button';
 import { SelectInput } from '../SelectInput';
-import { TextArea } from '../TextArea';
 import { TextInput } from '../TextInput';
 import {
   MOMENT_OPTIONS_BY_ENVIRONMENT,
   TEST_TYPES_BY_ENVIRONMENT,
-  requiresReleaseField,
 } from '../../constants/environmentOptions';
 import { useToast } from '../../context/ToastContext';
 
 interface CreateEnvironmentCardProps {
   storeId: string;
   storeStage?: Store['stage'] | null;
+  storeEnvironmentColumns?: string[] | null;
   suites: StoreSuite[];
   scenarios: StoreScenario[];
   onCreated?: (environment: Environment | null) => void;
 }
 
+const DEFAULT_ENVIRONMENT_COLUMNS = ['Desktop', 'Mobile'];
+
 const getEnvironmentTypeByStoreStage = (storeStage?: Store['stage'] | null) =>
   storeStage === 'Preview' ? 'Preview' : 'WS';
+
+const normalizeEnvironmentColumns = (columns?: string[] | null) => {
+  const normalized = (columns ?? [])
+    .map((column) => column.trim())
+    .filter((column, index, array) => column.length > 0 && array.indexOf(column) === index);
+
+  return normalized.length > 0 ? normalized : DEFAULT_ENVIRONMENT_COLUMNS;
+};
 
 const buildScenarioMap = (
   suite: StoreSuite | undefined,
@@ -68,6 +77,7 @@ const buildScenarioMap = (
 export const CreateEnvironmentCard = ({
   storeId,
   storeStage,
+  storeEnvironmentColumns,
   suites,
   scenarios,
   onCreated,
@@ -82,20 +92,14 @@ export const CreateEnvironmentCard = ({
   );
   const [tipoTeste, setTipoTeste] = useState('Smoke-test');
   const [momento, setMomento] = useState('');
-  const [release, setRelease] = useState('');
   const [suiteId, setSuiteId] = useState('');
-  const [environmentColumnsInput, setEnvironmentColumnsInput] = useState('Desktop\nMobile');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
   const { t } = useTranslation();
 
   const environmentColumns = useMemo(
-    () =>
-      environmentColumnsInput
-        .split('\n')
-        .map((entry) => entry.trim())
-        .filter((entry, index, array) => entry.length > 0 && array.indexOf(entry) === index),
-    [environmentColumnsInput],
+    () => normalizeEnvironmentColumns(storeEnvironmentColumns),
+    [storeEnvironmentColumns],
   );
   const selectedSuite = useMemo(
     () => suites.find((suite) => suite.id === suiteId),
@@ -117,7 +121,6 @@ export const CreateEnvironmentCard = ({
     [tipoAmbiente],
   );
 
-  const shouldDisplayReleaseField = requiresReleaseField(tipoAmbiente);
   const primaryEnvironmentOption = useMemo(
     () => ({
       value: getEnvironmentTypeByStoreStage(storeStage),
@@ -150,12 +153,6 @@ export const CreateEnvironmentCard = ({
     }
   }, [momento, momentoOptions]);
 
-  useEffect(() => {
-    if (!shouldDisplayReleaseField && release) {
-      setRelease('');
-    }
-  }, [shouldDisplayReleaseField, release]);
-
   const resetForm = () => {
     setIdentificador('');
     setUrlInput('');
@@ -165,9 +162,7 @@ export const CreateEnvironmentCard = ({
     setTipoAmbiente(getEnvironmentTypeByStoreStage(storeStage));
     setTipoTeste('Smoke-test');
     setMomento('');
-    setRelease('');
     setSuiteId('');
-    setEnvironmentColumnsInput('Desktop\nMobile');
   };
 
   const addUniqueItem = (
@@ -201,18 +196,8 @@ export const CreateEnvironmentCard = ({
       return;
     }
 
-    if (environmentColumns.length === 0) {
-      showToast({ type: 'error', message: t('createEnvironment.environmentColumnsRequired') });
-      return;
-    }
-
     if (momentoOptions.length > 0 && !momento) {
       showToast({ type: 'error', message: t('createEnvironment.moment') });
-      return;
-    }
-
-    if (shouldDisplayReleaseField && !release.trim()) {
-      showToast({ type: 'error', message: t('createEnvironment.release') });
       return;
     }
 
@@ -237,13 +222,12 @@ export const CreateEnvironmentCard = ({
         tipoAmbiente,
         tipoTeste,
         momento: momentoOptions.length > 0 ? momento : null,
-        release: shouldDisplayReleaseField ? release.trim() : null,
+        release: null,
         status: 'backlog',
         timeTracking,
         presentUsersIds: [],
         concludedBy: null,
         scenarios: scenarioMap,
-        bugs: 0,
         totalCenarios,
         participants: [],
         publicShareLanguage: null,
@@ -273,6 +257,17 @@ export const CreateEnvironmentCard = ({
           value={identificador}
           onChange={(event) => setIdentificador(event.target.value)}
           required
+        />
+        <SelectInput
+          id="tipoAmbiente"
+          label={t('createEnvironment.environmentType')}
+          value={tipoAmbiente}
+          onChange={(event) => setTipoAmbiente(event.target.value)}
+          options={[
+            primaryEnvironmentOption,
+            { value: 'TM', label: t('environmentOptions.TM') },
+            { value: 'PROD', label: t('environmentOptions.PROD') },
+          ]}
         />
         <div className="dynamic-links-row">
           <TextInput
@@ -310,6 +305,40 @@ export const CreateEnvironmentCard = ({
             ))}
           </div>
         )}
+        <SelectInput
+          id="tipoTeste"
+          label={t('createEnvironment.testType')}
+          value={tipoTeste}
+          onChange={(event) => setTipoTeste(event.target.value)}
+          options={tipoTesteOptions.map((option) => ({ value: option, label: t(option) }))}
+        />
+        {momentoOptions.length > 0 && (
+          <SelectInput
+            id="momento"
+            label={t('createEnvironment.setMoment')}
+            value={momento}
+            onChange={(event) => setMomento(event.target.value)}
+            options={momentoOptions.map((option) => ({ value: option, label: t(option) }))}
+          />
+        )}
+        <SelectInput
+          id="suiteId"
+          label={t('createEnvironment.suiteId')}
+          value={suiteId}
+          onChange={(event) => setSuiteId(event.target.value)}
+          options={[
+            { value: '', label: t('createEnvironment.none') },
+            ...suites.map((suite) => ({ value: suite.id, label: suite.name })),
+          ]}
+        />
+        {selectedSuite && (
+          <div className="environment-suite-preview">
+            <p>
+              {t('createEnvironment.scenariosLoaded')} <strong>{selectedSuite.name}</strong>:{' '}
+              {totalCenarios}
+            </p>
+          </div>
+        )}
         <div className="dynamic-links-row">
           <TextInput
             id="jiraTask"
@@ -343,66 +372,6 @@ export const CreateEnvironmentCard = ({
                 <span>{link}</span>
               </span>
             ))}
-          </div>
-        )}
-        <SelectInput
-          id="tipoAmbiente"
-          label={t('createEnvironment.environmentType')}
-          value={tipoAmbiente}
-          onChange={(event) => setTipoAmbiente(event.target.value)}
-          options={[
-            primaryEnvironmentOption,
-            { value: 'TM', label: t('environmentOptions.TM') },
-            { value: 'PROD', label: t('environmentOptions.PROD') },
-          ]}
-        />
-        <SelectInput
-          id="tipoTeste"
-          label={t('createEnvironment.testType')}
-          value={tipoTeste}
-          onChange={(event) => setTipoTeste(event.target.value)}
-          options={tipoTesteOptions.map((option) => ({ value: option, label: t(option) }))}
-        />
-        <SelectInput
-          id="suiteId"
-          label={t('createEnvironment.suiteId')}
-          value={suiteId}
-          onChange={(event) => setSuiteId(event.target.value)}
-          options={[
-            { value: '', label: t('createEnvironment.none') },
-            ...suites.map((suite) => ({ value: suite.id, label: suite.name })),
-          ]}
-        />
-        <TextArea
-          id="environment-columns"
-          label={t('createEnvironment.environmentColumns')}
-          value={environmentColumnsInput}
-          onChange={(event) => setEnvironmentColumnsInput(event.target.value)}
-          placeholder={t('createEnvironment.environmentColumnsPlaceholder')}
-        />
-        {momentoOptions.length > 0 && (
-          <SelectInput
-            id="momento"
-            label={t('createEnvironment.setMoment')}
-            value={momento}
-            onChange={(event) => setMomento(event.target.value)}
-            options={momentoOptions.map((option) => ({ value: option, label: t(option) }))}
-          />
-        )}
-        {shouldDisplayReleaseField && (
-          <TextInput
-            id="release"
-            label={t('createEnvironment.releaseLabel')}
-            value={release}
-            onChange={(event) => setRelease(event.target.value)}
-          />
-        )}
-        {selectedSuite && (
-          <div className="environment-suite-preview">
-            <p>
-              {t('createEnvironment.scenariosLoaded')} <strong>{selectedSuite.name}</strong>:{' '}
-              {totalCenarios}
-            </p>
           </div>
         )}
 

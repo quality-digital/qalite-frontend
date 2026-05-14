@@ -1,60 +1,20 @@
-import { ImgHTMLAttributes, useEffect, useState } from 'react';
+import { ImgHTMLAttributes, memo } from 'react';
 
-const loadedImages = new Set<string>();
-
-export const CachedImage = ({
-  src,
-  fetchPriority,
-  ...props
-}: ImgHTMLAttributes<HTMLImageElement>) => {
-  const [displaySrc, setDisplaySrc] = useState(src);
-
-  useEffect(() => {
-    if (!src) {
-      setDisplaySrc(src);
-      return;
+export const CachedImage = memo(
+  ({ fetchPriority, ...props }: ImgHTMLAttributes<HTMLImageElement>) => {
+    if (!props.src) {
+      return null;
     }
 
-    if (loadedImages.has(src)) {
-      setDisplaySrc(src);
-      return;
-    }
+    const imageProps = {
+      ...props,
+      fetchpriority: fetchPriority ?? 'auto',
+    } as ImgHTMLAttributes<HTMLImageElement> & { fetchpriority: string };
 
-    let isMounted = true;
-    const image = new Image();
-    image.src = src;
-    image.onload = () => {
-      loadedImages.add(src);
-      if (isMounted) {
-        setDisplaySrc(src);
-      }
-    };
-    image.onerror = () => {
-      if (isMounted) {
-        setDisplaySrc(src);
-      }
-    };
+    return (
+      <img decoding={props.decoding ?? 'async'} loading={props.loading ?? 'lazy'} {...imageProps} />
+    );
+  },
+);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [src]);
-
-  if (!displaySrc) {
-    return null;
-  }
-
-  const imageProps = {
-    ...props,
-    fetchpriority: fetchPriority ?? 'auto',
-  } as ImgHTMLAttributes<HTMLImageElement> & { fetchpriority: string };
-
-  return (
-    <img
-      src={displaySrc}
-      decoding={props.decoding ?? 'async'}
-      loading={props.loading ?? 'lazy'}
-      {...imageProps}
-    />
-  );
-};
+CachedImage.displayName = 'CachedImage';

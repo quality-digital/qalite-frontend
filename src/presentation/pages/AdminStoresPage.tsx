@@ -21,6 +21,7 @@ import { BackButton } from '../components/BackButton';
 import { Button } from '../components/Button';
 import { UserAvatar } from '../components/UserAvatar';
 import { CachedImage } from '../components/CachedImage';
+import { StoreFavicon } from '../components/StoreFavicon';
 import { Modal } from '../components/Modal';
 import { TextInput } from '../components/TextInput';
 import { SelectInput } from '../components/SelectInput';
@@ -42,8 +43,7 @@ interface OrganizationFormState {
 interface StoreFormState {
   name: string;
   site: string;
-  adminUrl: string;
-  logoUrl: string;
+  environmentColumns: string;
   stage: 'WS' | 'Preview';
 }
 
@@ -56,8 +56,7 @@ const createOrganizationFormState = (organization: Organization | null): Organiz
 const createEmptyStoreFormState = (): StoreFormState => ({
   name: '',
   site: '',
-  adminUrl: '',
-  logoUrl: '',
+  environmentColumns: 'Desktop\nMobile',
   stage: 'WS',
 });
 
@@ -98,8 +97,6 @@ export const AdminStoresPage = () => {
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<Store | null>(null);
   const [storeForm, setStoreForm] = useState<StoreFormState>(createEmptyStoreFormState());
-  const [storeLogoFile, setStoreLogoFile] = useState<File | null>(null);
-  const [storeLogoPreview, setStoreLogoPreview] = useState<string | null>(null);
   const [storeError, setStoreError] = useState<string | null>(null);
   const [isSavingStore, setIsSavingStore] = useState(false);
   const [storeDeleteModalOpen, setStoreDeleteModalOpen] = useState(false);
@@ -117,6 +114,7 @@ export const AdminStoresPage = () => {
   const totalManual = Math.max(totalScenarios - totalAutomated, 0);
   const automationRate =
     totalScenarios > 0 ? Math.round((totalAutomated / totalScenarios) * 100) : 0;
+
 
   useEffect(() => {
     const organizationFromParam = searchParams.get('id') ?? searchParams.get('Id');
@@ -227,17 +225,6 @@ export const AdminStoresPage = () => {
   }, [organizationLogoFile]);
 
   useEffect(() => {
-    if (!storeLogoFile) {
-      setStoreLogoPreview(null);
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(storeLogoFile);
-    setStoreLogoPreview(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [storeLogoFile]);
-
-  useEffect(() => {
     const searchTerm = newMemberEmail.trim();
 
     if (!searchTerm || !isOrganizationModalOpen) {
@@ -296,8 +283,6 @@ export const AdminStoresPage = () => {
   const openCreateStoreModal = () => {
     setEditingStore(null);
     setStoreForm(createEmptyStoreFormState());
-    setStoreLogoFile(null);
-    setStoreLogoPreview(null);
     setStoreError(null);
     setIsStoreModalOpen(true);
   };
@@ -306,8 +291,6 @@ export const AdminStoresPage = () => {
     setIsStoreModalOpen(false);
     setEditingStore(null);
     setStoreForm(createEmptyStoreFormState());
-    setStoreLogoFile(null);
-    setStoreLogoPreview(null);
     setStoreError(null);
   };
 
@@ -494,7 +477,10 @@ export const AdminStoresPage = () => {
     const organizationId = selectedOrganization?.id ?? selectedOrganizationId;
     const trimmedName = storeForm.name.trim();
     const trimmedSite = storeForm.site.trim();
-    const trimmedAdminUrl = storeForm.adminUrl.trim();
+    const environmentColumns = storeForm.environmentColumns
+      .split('\n')
+      .map((column) => column.trim())
+      .filter((column, index, array) => column.length > 0 && array.indexOf(column) === index);
 
     if (!organizationId) {
       setStoreError(translation('AdminStoresPage.form-error-no-org-selected'));
@@ -515,16 +501,11 @@ export const AdminStoresPage = () => {
       setIsSavingStore(true);
 
       if (editingStore) {
-        const logoUrl = storeLogoFile
-          ? await storeService.uploadLogo(editingStore.id, storeLogoFile)
-          : storeForm.logoUrl || null;
-
         await storeService.update(editingStore.id, {
           name: trimmedName,
           site: trimmedSite,
-          adminUrl: trimmedAdminUrl,
           stage: storeForm.stage,
-          logoUrl,
+          environmentColumns,
         });
 
         showToast({
@@ -532,25 +513,14 @@ export const AdminStoresPage = () => {
           message: translation('storeSummary.storeUpdateSuccess'),
         });
       } else {
-        const createdStore = await storeService.create({
+        await storeService.create({
           organizationId,
           name: trimmedName,
           site: trimmedSite,
-          adminUrl: trimmedAdminUrl,
           stage: storeForm.stage,
+          environmentColumns,
           logoUrl: null,
         });
-
-        if (storeLogoFile) {
-          const logoUrl = await storeService.uploadLogo(createdStore.id, storeLogoFile);
-          await storeService.update(createdStore.id, {
-            name: trimmedName,
-            site: trimmedSite,
-            adminUrl: trimmedAdminUrl,
-            stage: storeForm.stage,
-            logoUrl,
-          });
-        }
 
         showToast({
           type: 'success',
@@ -595,7 +565,6 @@ export const AdminStoresPage = () => {
   };
 
   const organizationLogoSource = organizationLogoPreview ?? selectedOrganization?.logoUrl ?? null;
-  const storeLogoSource = storeLogoPreview ?? storeForm.logoUrl ?? null;
 
   return (
     <Layout>
@@ -709,11 +678,7 @@ export const AdminStoresPage = () => {
                     <div className="card-header">
                       <div className="card-title-group">
                         <span className="card-title-icon" aria-hidden>
-                          {store.logoUrl ? (
-                            <CachedImage src={store.logoUrl} alt="" className="store-card-logo" />
-                          ) : (
-                            <StorefrontIcon className="icon icon--lg" />
-                          )}
+                          <StoreFavicon site={store.site} alt="" className="store-card-logo" />
                         </span>
                         <div>
                           <h2 className="card-title">{store.name}</h2>
@@ -735,7 +700,7 @@ export const AdminStoresPage = () => {
             </div>
 
             <div className="organization-extra">
-              {selectedOrganization && (
+              {selectedOrganization && selectedOrganization.members.length > 0 && (
                 <section className="organization-collaborators-card">
                   <div className="organization-collaborators-card__header">
                     <div className="section-heading">
@@ -757,14 +722,9 @@ export const AdminStoresPage = () => {
                           })}
                     </span>
                   </div>
-                  {selectedOrganization.members.length === 0 ? (
-                    <p className="section-subtitle">
-                      {translation('AdminStoresPage.no-collaborators-message')}
-                    </p>
-                  ) : (
-                    <ul className="collaborator-list">
-                      {selectedOrganization.members.map((member) => (
-                        <li key={member.uid} className="collaborator-card">
+                  <ul className="collaborator-list">
+                    {selectedOrganization.members.map((member) => (
+                      <li key={member.uid} className="collaborator-card">
                           <UserAvatar
                             name={member.displayName || member.email}
                             size="sm"
@@ -773,10 +733,9 @@ export const AdminStoresPage = () => {
                           <div className="collaborator-card__details">
                             <strong>{member.displayName || member.email}</strong>
                           </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                      </li>
+                    ))}
+                  </ul>
                 </section>
               )}
             </div>
@@ -1052,14 +1011,6 @@ export const AdminStoresPage = () => {
             }
             required
           />
-          <TextInput
-            id="store-admin-url"
-            label={translation('storeManagement.storeAdminUrlLabel')}
-            value={storeForm.adminUrl}
-            onChange={(event) =>
-              setStoreForm((previous) => ({ ...previous, adminUrl: event.target.value }))
-            }
-          />
           <SelectInput
             id="store-stage"
             label={translation('storeManagement.storeEnvironmentLabel')}
@@ -1076,29 +1027,14 @@ export const AdminStoresPage = () => {
             ]}
           />
 
-          <div className="organization-logo-field">
-            <div className="organization-logo-preview">
-              {storeLogoSource ? (
-                <CachedImage src={storeLogoSource} alt={storeForm.name || 'Logo da loja'} />
-              ) : (
-                <span className="organization-logo-fallback">Logo</span>
-              )}
-            </div>
-            <div className="organization-logo-actions">
-              <label htmlFor="store-logo-upload" className="field-label">
-                {translation('AdminStoresPage.store-logo-label')}
-              </label>
-              <input
-                id="store-logo-upload"
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                  setStoreLogoFile(event.target.files?.[0] ?? null)
-                }
-              />
-              <p className="form-hint">{translation('AdminStoresPage.store-logo-hint')}</p>
-            </div>
-          </div>
+          <TextInput
+            id="store-environment-columns"
+            label={translation('createEnvironment.environmentColumns')}
+            value={storeForm.environmentColumns}
+            onChange={(event) =>
+              setStoreForm((previous) => ({ ...previous, environmentColumns: event.target.value }))
+            }
+          />
           <div className="form-actions">
             <Button type="submit" isLoading={isSavingStore}>
               {editingStore

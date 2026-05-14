@@ -1,11 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import type {
-  Environment,
-  EnvironmentScenarioPlatform,
-  EnvironmentBug,
-} from '../../domain/entities/environment';
+import type { Environment, EnvironmentScenarioPlatform } from '../../domain/entities/environment';
 import {
   SCENARIO_COMPLETED_STATUSES,
   getEnvironmentColumns,
@@ -21,7 +17,6 @@ interface ScenarioStats {
 }
 
 interface UseEnvironmentDetailsResult {
-  bugCountByScenario: Record<string, number>;
   platformScenarioStats: Record<EnvironmentScenarioPlatform, ScenarioStats>;
   combinedScenarioStats: ScenarioStats;
   progressPercentage: number;
@@ -74,18 +69,10 @@ const buildShareLinks = (environment: Environment | null | undefined) => {
 
 export const useEnvironmentDetails = (
   environment: Environment | null | undefined,
-  bugs: EnvironmentBug[],
 ): UseEnvironmentDetailsResult => {
   const { t } = useTranslation();
 
   return useMemo(() => {
-    const bugCountByScenario = bugs.reduce<Record<string, number>>((acc, bug) => {
-      if (bug.scenarioId) {
-        acc[bug.scenarioId] = (acc[bug.scenarioId] ?? 0) + 1;
-      }
-      return acc;
-    }, {});
-
     const environmentColumns = getEnvironmentColumns(environment);
     const platformScenarioStats = environmentColumns.reduce<
       Record<EnvironmentScenarioPlatform, ScenarioStats>
@@ -132,7 +119,6 @@ export const useEnvironmentDetails = (
         : Math.round((combinedScenarioStats.concluded / combinedScenarioStats.total) * 100);
 
     return {
-      bugCountByScenario,
       platformScenarioStats,
       combinedScenarioStats,
       progressPercentage,
@@ -159,5 +145,5 @@ export const useEnvironmentDetails = (
       urls: environment?.urls ?? [],
       shareLinks: buildShareLinks(environment),
     };
-  }, [bugs, environment, t]);
+  }, [environment, t]);
 };

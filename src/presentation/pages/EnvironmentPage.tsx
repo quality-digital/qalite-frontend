@@ -23,7 +23,6 @@ import { useEnvironmentRealtime } from '../hooks/useEnvironmentRealtime';
 import { useTimeTracking } from '../hooks/useTimeTracking';
 import { useAuth } from '../hooks/useAuth';
 import { EnvironmentEvidenceTable } from '../components/environments/EnvironmentEvidenceTable';
-import { EnvironmentBugList } from '../components/environments/EnvironmentBugList';
 import { EditEnvironmentModal } from '../components/environments/EditEnvironmentModal';
 import { DeleteEnvironmentModal } from '../components/environments/DeleteEnvironmentModal';
 import { copyToClipboard } from '../utils/clipboard';
@@ -33,9 +32,6 @@ import { PageLoader } from '../components/PageLoader';
 import { Modal } from '../components/Modal';
 import { LinkifiedText } from '../components/LinkifiedText';
 import { useUserProfiles } from '../hooks/useUserProfiles';
-import { useEnvironmentBugs } from '../hooks/useEnvironmentBugs';
-import { EnvironmentBugModal } from '../components/environments/EnvironmentBugModal';
-import type { EnvironmentBug } from '../../domain/entities/environment';
 import type { StoreScenario, StoreSuite } from '../../domain/entities/store';
 import { useEnvironmentDetails } from '../hooks/useEnvironmentDetails';
 import { useEnvironmentEngagement } from '../hooks/useEnvironmentEngagement';
@@ -64,11 +60,7 @@ import {
   UsersGroupIcon,
 } from '../components/icons';
 import { exportEnvironmentExcel } from '../../utils/exportExcel';
-import {
-  BUG_PRIORITY_LABEL,
-  BUG_SEVERITY_LABEL,
-  ENVIRONMENT_STATUS_LABEL,
-} from '../../shared/config/environmentLabels';
+import { ENVIRONMENT_STATUS_LABEL } from '../../shared/config/environmentLabels';
 
 interface SlackSummaryBuilderOptions {
   totalTimeMs: number;
@@ -77,9 +69,10 @@ interface SlackSummaryBuilderOptions {
   progressLabel: string;
   publicLink: string;
   urls: string[];
-  bugsCount: number;
   participantProfiles: UserSummary[];
   testTypeLabel: string;
+  storeName?: string;
+  organizationName?: string;
 }
 
 const formatExecutedScenariosMessage = (
@@ -167,11 +160,6 @@ const buildSlackTaskSummaryPayload = (
     typeof environment.tipoAmbiente === 'string'
       ? environment.tipoAmbiente.trim().toUpperCase()
       : '';
-  const isWorkspaceEnvironment = normalizedEnvironmentType === 'WS';
-  const fix = {
-    type: isWorkspaceEnvironment ? 'storyfixes' : 'bug',
-    value: options.bugsCount,
-  } as const;
   const jiraLinks = (environment.jiraTask ?? '')
     .split('\n')
     .map((entry) => entry.trim())
@@ -198,12 +186,6 @@ const buildSlackTaskSummaryPayload = (
           total: options.scenarioCount,
         });
 
-  const bugStatus =
-    options.bugsCount === 0
-      ? translation('environment.slack.noBugsStatus')
-      : translation('environment.slack.bugsStatus', {
-          count: options.bugsCount,
-        });
   const monitoredUrlLabel = monitoredUrls[0]?.trim() || translation('environment.slack.emptyList');
   const platformLabel = normalizedEnvironmentType === 'WS' ? 'VTEX IO' : normalizedEnvironmentType;
   const responsible = attendeeList[0];
@@ -215,7 +197,15 @@ const buildSlackTaskSummaryPayload = (
     `📊 ${translation('environment.slack.summaryHeader')}${releaseSummaryLabel}`,
     '',
     `🔖 ${translation('environment.slack.sections.identification')}`,
+    options.organizationName ? `• Organização: ${options.organizationName}` : '',
+    options.storeName ? `• Loja: ${options.storeName}` : '',
+    `• ${translation('editEnvironmentModal.identifier')}: ${taskIdentifier}`,
     `• ${translation('environment.slack.labels.environment')}: ${validatedEnvironment}`,
+    environment.momento
+      ? `• ${translation('environmentExport.momentLabel')}: ${translateEnvironmentOption(environment.momento, translation)}`
+      : '',
+    `• ${translation('editEnvironmentModal.urls')}: ${monitoredUrlLabel}`,
+    `• ${translation('environmentExport.jiraLabel')}: ${jiraList.join(', ')}`,
     `• ${translation('environment.slack.labels.testType')}: ${testTypeLabel}`,
     `• ${translation('environment.slack.labels.executionType')}: ${suiteName}`,
   ];
@@ -231,7 +221,6 @@ const buildSlackTaskSummaryPayload = (
     `• ${translation('environment.slack.labels.totalScenarios')}: ${options.scenarioCount}`,
     `• ${translation('environment.slack.labels.executedScenarios')}: ${options.executedScenariosCount}`,
     `• ${translation('environment.slack.labels.status')}: ${executionStatus}`,
-    `• ${translation('environment.slack.labels.bugs')}: ${bugStatus}`,
     '',
     `📦 ${translation('environment.slack.sections.suite')}`,
     `• ${translation('environment.slack.labels.suiteName')}: ${suiteName}`,
@@ -247,7 +236,7 @@ const buildSlackTaskSummaryPayload = (
     ...jiraList.map((jira) => `• ${jira}`),
   );
 
-  const summaryMessage = summaryLines.join('\n');
+  const summaryMessage = summaryLines.filter(Boolean).join('\n');
 
   return {
     environmentSummary: {
@@ -260,7 +249,6 @@ const buildSlackTaskSummaryPayload = (
         options.executedScenariosCount,
         translation,
       ),
-      fix,
       jira: environment.jiraTask?.trim() || translation('dynamic.identifierFallback'),
       suiteName,
       suiteDetails: buildSuiteDetails(options.scenarioCount, translation),
@@ -288,30 +276,20 @@ export const EnvironmentPage = () => {
   const [isInvitingUserId, setIsInvitingUserId] = useState<string | null>(null);
   const [inviteSearch, setInviteSearch] = useState('');
   const [invitePage, setInvitePage] = useState(1);
-  const [isBugModalOpen, setIsBugModalOpen] = useState(false);
   const [isFinishWithoutCompletedModalOpen, setIsFinishWithoutCompletedModalOpen] = useState(false);
-  const [editingBug, setEditingBug] = useState<EnvironmentBug | null>(null);
-  const [defaultBugScenarioId, setDefaultBugScenarioId] = useState<string | null>(null);
   const [scenarioDetailsId, setScenarioDetailsId] = useState<string | null>(null);
   const [isSendingSlackSummary, setIsSendingSlackSummary] = useState(false);
   const [suites, setSuites] = useState<StoreSuite[]>([]);
   const [scenarios, setScenarios] = useState<StoreScenario[]>([]);
   const [storeName, setStoreName] = useState<string>('');
-  const [storeLogoUrl, setStoreLogoUrl] = useState<string | null>(null);
   const [storeSlackWebhookUrl, setStoreSlackWebhookUrl] = useState<string | null>(null);
   const { setActiveOrganization, setActiveStore } = useOrganizationBranding();
   const participantProfiles = useUserProfiles(environment?.participants ?? []);
   const activeOrganizationIdRef = useRef<string | null>(null);
   const {
-    bugs,
-    isLoading: isLoadingBugs,
-    refetch: refetchBugs,
-  } = useEnvironmentBugs(environment?.id ?? null);
-  const {
     hasEnteredEnvironment,
     isLocked,
     isScenarioLocked,
-    isInteractionLocked,
     canCopyPublicLink,
     isShareDisabled,
     isJoiningEnvironment,
@@ -320,14 +298,8 @@ export const EnvironmentPage = () => {
     leaveEnvironment,
   } = useEnvironmentEngagement(environment);
   const { t: translation, i18n } = useTranslation();
-  const {
-    bugCountByScenario,
-    progressLabel,
-    scenarioCount,
-    executedScenariosCount,
-    urls,
-    shareLinks,
-  } = useEnvironmentDetails(environment, bugs);
+  const { progressLabel, scenarioCount, executedScenariosCount, urls, shareLinks } =
+    useEnvironmentDetails(environment);
   const slackWebhookUrl =
     storeSlackWebhookUrl?.trim() || environmentOrganization?.slackWebhookUrl?.trim() || null;
   const inviteParam = searchParams.get('invite');
@@ -491,7 +463,6 @@ export const EnvironmentPage = () => {
   useEffect(() => {
     if (!environment?.storeId) {
       setStoreName('');
-      setStoreLogoUrl(null);
       setStoreSlackWebhookUrl(null);
       setActiveStore(null);
       return;
@@ -504,16 +475,14 @@ export const EnvironmentPage = () => {
         const store = await storeService.getDetail(environment.storeId);
         if (isMounted) {
           const resolvedStoreName = store?.name?.trim() || '';
-          const resolvedStoreLogoUrl = store?.logoUrl ?? null;
           setStoreName(resolvedStoreName);
-          setStoreLogoUrl(resolvedStoreLogoUrl);
           setStoreSlackWebhookUrl(store?.slackWebhookUrl ?? null);
           setActiveStore(
             store
               ? {
                   id: store.id,
                   name: resolvedStoreName,
-                  logoUrl: resolvedStoreLogoUrl,
+                  site: store.site,
                 }
               : null,
           );
@@ -522,7 +491,6 @@ export const EnvironmentPage = () => {
         console.error(error);
         if (isMounted) {
           setStoreName('');
-          setStoreLogoUrl(null);
           setStoreSlackWebhookUrl(null);
           setActiveStore(null);
         }
@@ -536,7 +504,7 @@ export const EnvironmentPage = () => {
     };
   }, [environment?.storeId, setActiveStore]);
 
-  const { formattedTime, totalMs, formattedStart, formattedEnd } = useTimeTracking(
+  const { totalMs } = useTimeTracking(
     environment?.timeTracking ?? null,
     environment?.status === 'in_progress',
     {
@@ -562,9 +530,10 @@ export const EnvironmentPage = () => {
           progressLabel,
           publicLink: shareLinks.public,
           urls,
-          bugsCount: bugs.length,
           participantProfiles,
           testTypeLabel: translateOptionValue(environment.tipoTeste),
+          storeName,
+          organizationName: environmentOrganization?.name ?? '',
         },
         translation,
       );
@@ -578,7 +547,6 @@ export const EnvironmentPage = () => {
       setIsSendingSlackSummary(false);
     }
   }, [
-    bugs,
     environment,
     executedScenariosCount,
     isSendingSlackSummary,
@@ -587,10 +555,12 @@ export const EnvironmentPage = () => {
     scenarioCount,
     shareLinks.public,
     slackWebhookUrl,
+    storeName,
     totalMs,
     translateOptionValue,
     translation,
     urls,
+    environmentOrganization?.name,
   ]);
 
   const handleStatusTransition = useCallback(
@@ -757,102 +727,66 @@ export const EnvironmentPage = () => {
     const fileName = `${storePrefix}${translation('environment.exportExcelFileName')}-${environment.identificador}-${new Date().toISOString().slice(0, 10)}.xlsx`;
     const infoRows = [
       {
+        label: 'Organização',
+        value: environmentOrganization?.name?.trim() ?? '',
+      },
+      {
+        label: 'Loja',
+        value: storeName,
+      },
+      {
         label: translation('editEnvironmentModal.identifier'),
-        value: environment.identificador || translation('storeSummary.emptyValue'),
-      },
-      {
-        label: translation('storeSummary.storeName'),
-        value: storeName || translation('storeSummary.emptyValue'),
-      },
-      {
-        label: translation('environment.exportExcelStatusLabel'),
-        value: translation(ENVIRONMENT_STATUS_LABEL[environment.status]),
-      },
-      {
-        label: translation('createEnvironment.suiteId'),
-        value: environment.suiteName?.trim() || translation('storeSummary.emptyValue'),
+        value: environment.identificador,
       },
       {
         label: translation('editEnvironmentModal.environmentType'),
         value: translateOptionValue(environment.tipoAmbiente),
+      },
+      ...(environment.momento
+        ? [
+            {
+              label: translation('editEnvironmentModal.moment'),
+              value: translateOptionValue(environment.momento),
+            },
+          ]
+        : []),
+      {
+        label: translation('editEnvironmentModal.urls'),
+        value: urls.length > 0 ? urls.join('\n') : '',
+      },
+      {
+        label: translation('editEnvironmentModal.jiraTask'),
+        value: environment.jiraTask?.trim() ?? '',
       },
       {
         label: translation('editEnvironmentModal.testType'),
         value: translateOptionValue(environment.tipoTeste),
       },
       {
-        label: translation('editEnvironmentModal.moment'),
-        value: environment.momento
-          ? translateOptionValue(environment.momento)
-          : translation('environmentSummary.notRecorded'),
+        label: translation('createEnvironment.suiteId'),
+        value: environment.suiteName?.trim() ?? '',
       },
       {
-        label: translation('editEnvironmentModal.release'),
-        value: environment.release?.trim() || translation('environmentSummary.notRecorded'),
-      },
-      {
-        label: translation('editEnvironmentModal.jiraTask'),
-        value: environment.jiraTask?.trim() || translation('environmentSummary.notInformed'),
-      },
-      {
-        label: translation('editEnvironmentModal.urls'),
-        value: urls.length > 0 ? urls.join('\n') : translation('environmentSummary.noUrls'),
-      },
-      {
-        label: translation('environmentSummary.participants'),
-        value:
-          participantProfiles.length > 0
-            ? participantProfiles
-                .map((profile) => profile.displayName?.trim() || profile.email)
-                .filter(Boolean)
-                .join(', ')
-            : translation('environmentSummary.noParticipants'),
+        label: translation('environment.exportExcelStatusLabel'),
+        value: translation(ENVIRONMENT_STATUS_LABEL[environment.status]),
       },
       {
         label: translation('environmentSummary.scenarios'),
         value: `${executedScenariosCount}/${scenarioCount}`,
       },
       {
-        label: translation('environmentSummary.bugs'),
-        value: String(bugs.length),
+        label: translation('environmentSummary.participants'),
+        value: participantProfiles
+          .map((profile) => profile.displayName?.trim() || profile.email)
+          .filter(Boolean)
+          .join(', '),
       },
-      {
-        label: translation('environmentSummary.start'),
-        value: formattedStart,
-      },
-      {
-        label: translation('environmentSummary.end'),
-        value: formattedEnd,
-      },
-      {
-        label: translation('environmentSummary.totalTime'),
-        value: formattedTime || '00:00:00',
-      },
-    ];
-    const bugRows = bugs.map((bug) => {
-      const scenarioName = bug.scenarioId
-        ? environment.scenarios?.[bug.scenarioId]?.titulo ||
-          translation('environmentBugList.scenarioRemoved')
-        : translation('environmentBugList.notLinked');
-
-      return {
-        cenario: scenarioName,
-        severidade: bug.severity
-          ? translation(BUG_SEVERITY_LABEL[bug.severity])
-          : translation('environmentBugList.noSeverity'),
-        prioridade: bug.priority
-          ? translation(BUG_PRIORITY_LABEL[bug.priority])
-          : translation('environmentBugList.noPriority'),
-        resultadoAtual:
-          bug.actualResult?.trim() || translation('environmentBugList.noActualResult'),
-      };
-    });
+    ].filter((row) => row.value && row.value.toString().trim().length > 0);
 
     exportEnvironmentExcel({
       fileName,
       scenarioSheetName: translation('environment.exportExcelSheetName'),
       environmentSheetName: translation('environment.exportExcelEnvironmentSheetName'),
-      bugSheetName: translation('environment.exportExcelBugsSheetName'),
       infoHeaderLabels: [translation('exportExcel.field'), translation('exportExcel.value')],
       infoRows,
       scenarioRows: rows,
@@ -863,26 +797,16 @@ export const EnvironmentPage = () => {
         translation('environmentEvidenceTable.table_observacao'),
         ...environmentColumns,
       ],
-      bugRows,
-      bugHeaderLabels: [
-        translation('environmentBugList.scenario'),
-        translation('environmentBugList.severity'),
-        translation('environmentBugList.priority'),
-        translation('environmentBugList.actualResult'),
-      ],
     });
   }, [
-    bugs,
     environment,
     executedScenariosCount,
     formatCriticalityLabel,
     formatScenarioStatusLabel,
-    formattedEnd,
-    formattedStart,
-    formattedTime,
     participantProfiles,
     scenarioCount,
     storeName,
+    environmentOrganization?.name,
     translateOptionValue,
     translation,
     urls,
@@ -894,13 +818,25 @@ export const EnvironmentPage = () => {
     }
 
     try {
-      await copyEnvironmentAsMarkdown(environment, bugs, participantProfiles, storeName);
+      await copyEnvironmentAsMarkdown(
+        environment,
+        participantProfiles,
+        storeName,
+        environmentOrganization?.name,
+      );
       showToast({ type: 'success', message: translation('environment.copyMarkdownSuccess') });
     } catch (error) {
       console.error(error);
       showToast({ type: 'error', message: translation('environment.copyMarkdownError') });
     }
-  }, [bugs, environment, participantProfiles, showToast, storeName, translation]);
+  }, [
+    environment,
+    participantProfiles,
+    showToast,
+    storeName,
+    translation,
+    environmentOrganization?.name,
+  ]);
 
   const handleExportPdf = useCallback(() => {
     if (!environment) {
@@ -910,9 +846,8 @@ export const EnvironmentPage = () => {
     try {
       exportEnvironmentAsPDF(
         environment,
-        bugs,
         participantProfiles,
-        { name: storeName, logoUrl: storeLogoUrl },
+        { name: storeName },
         environmentOrganization,
       );
     } catch (error) {
@@ -920,40 +855,13 @@ export const EnvironmentPage = () => {
       showToast({ type: 'error', message: translation('storeSummary.pdfOpenError') });
     }
   }, [
-    bugs,
     environment,
     environmentOrganization,
     participantProfiles,
     showToast,
-    storeLogoUrl,
     storeName,
     translation,
   ]);
-
-  const openCreateBugModal = useCallback((scenarioId: string) => {
-    setEditingBug(null);
-    setDefaultBugScenarioId(scenarioId);
-    setIsBugModalOpen(true);
-  }, []);
-
-  const handleEditBug = useCallback((bug: EnvironmentBug) => {
-    setEditingBug(bug);
-    setDefaultBugScenarioId(bug.scenarioId ?? null);
-    setIsBugModalOpen(true);
-  }, []);
-
-  const closeBugModal = useCallback(() => {
-    setIsBugModalOpen(false);
-    setEditingBug(null);
-    setDefaultBugScenarioId(null);
-  }, []);
-
-  const handleScenarioBugRequest = useCallback(
-    (scenarioId: string) => {
-      openCreateBugModal(scenarioId);
-    },
-    [openCreateBugModal],
-  );
 
   const handleEnterEnvironment = useCallback(async () => {
     try {
@@ -1102,9 +1010,7 @@ export const EnvironmentPage = () => {
             scenarioCount={scenarioCount}
             urls={urls}
             participants={participantProfiles}
-            bugsCount={bugs.length}
             storeName={storeName}
-            storeLogoUrl={storeLogoUrl}
           />
           <div className="summary-card">
             <h3>{translation('environment.actions.shareExport')}</h3>
@@ -1177,16 +1083,6 @@ export const EnvironmentPage = () => {
             onViewDetails={handleOpenScenarioDetails}
           />
         </div>
-
-        <EnvironmentBugList
-          environment={environment}
-          bugs={bugs}
-          participants={participantProfiles}
-          isLocked={Boolean(isInteractionLocked)}
-          isLoading={isLoadingBugs}
-          onEdit={handleEditBug}
-          onRefresh={refetchBugs}
-        />
       </section>
 
       <EditEnvironmentModal
@@ -1209,14 +1105,6 @@ export const EnvironmentPage = () => {
       />
       {environment && (
         <>
-          <EnvironmentBugModal
-            environment={environment}
-            isOpen={isBugModalOpen}
-            bug={editingBug}
-            onClose={closeBugModal}
-            initialScenarioId={editingBug ? (editingBug.scenarioId ?? null) : defaultBugScenarioId}
-            onSaved={refetchBugs}
-          />
           <Modal
             isOpen={isFinishWithoutCompletedModalOpen}
             title={translation('environment.confirmFinishWithoutConcludedScenariosTitle')}
@@ -1392,34 +1280,6 @@ export const EnvironmentPage = () => {
                 className="scenario-details-text"
                 as="p"
               />
-            </div>
-            <div className="scenario-details-section">
-              <span className="scenario-details-label">
-                {translation('environmentEvidenceTable.table_bug')}
-              </span>
-              <div className="scenario-bug-cell">
-                <span className="scenario-bug-cell__label">
-                  {(() => {
-                    const count = bugCountByScenario?.[scenarioDetailsId as string] ?? 0;
-                    if (count === 0) {
-                      return translation('environmentEvidenceTable.bug_nenhum');
-                    }
-                    if (count === 1) {
-                      return translation('environmentEvidenceTable.bug_um');
-                    }
-                    return translation('environmentEvidenceTable.bug_varios', { count });
-                  })()}
-                </span>
-                {!isInteractionLocked && (
-                  <button
-                    type="button"
-                    className="scenario-bug-cell__action"
-                    onClick={() => handleScenarioBugRequest(scenarioDetailsId as string)}
-                  >
-                    {translation('environmentEvidenceTable.bug_registrar')}
-                  </button>
-                )}
-              </div>
             </div>
           </>
         ) : (

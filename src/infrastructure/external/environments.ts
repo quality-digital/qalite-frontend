@@ -4,7 +4,6 @@ import {
   collection,
   deleteDoc,
   doc,
-  increment,
   onSnapshot,
   query,
   runTransaction,
@@ -22,34 +21,20 @@ import {
 } from 'firebase/firestore';
 
 import type {
-  CreateEnvironmentBugInput,
   CreateEnvironmentInput,
   Environment,
-  EnvironmentBug,
-  EnvironmentBugStatus,
   EnvironmentRealtimeFilters,
   EnvironmentScenario,
   EnvironmentScenarioPlatform,
   EnvironmentScenarioStatus,
   EnvironmentStatus,
   EnvironmentTimeTracking,
-  UpdateEnvironmentBugInput,
   UpdateEnvironmentInput,
 } from '../../domain/entities/environment';
 import type { UserSummary } from '../../domain/entities/user';
 import { firebaseFirestore } from '../database/firebase';
 import { EnvironmentStatusError } from '../../shared/errors/firebaseErrors';
-import {
-  BUG_PRIORITY_LABEL,
-  BUG_SEVERITY_LABEL,
-  ENVIRONMENT_STATUS_LABEL,
-} from '../../shared/config/environmentLabels';
-import {
-  formatDateTime,
-  formatDurationFromMs,
-  formatEndDateTime,
-  getElapsedMilliseconds,
-} from '../../shared/utils/time';
+import { ENVIRONMENT_STATUS_LABEL } from '../../shared/config/environmentLabels';
 import { translateEnvironmentOption } from '../../shared/utils/environmentOptions';
 import i18n from '../../lib/i18n';
 import { normalizeCriticalityEnum } from '../../shared/utils/scenarioEnums';
@@ -59,7 +44,6 @@ import { fetchWithCache } from '../cache/cacheFetch';
 import { buildStorageFileName, uploadFileAndGetUrl } from './storage';
 
 const ENVIRONMENTS_COLLECTION = 'environments';
-const BUGS_SUBCOLLECTION = 'bugs';
 const environmentsCollection = collection(firebaseFirestore, ENVIRONMENTS_COLLECTION);
 const ENVIRONMENT_CACHE = new CacheStore({
   namespace: 'environments',
@@ -189,25 +173,6 @@ const parseScenarioMap = (
   }, {});
 };
 
-const getBugCollection = (environmentId: string) =>
-  collection(firebaseFirestore, ENVIRONMENTS_COLLECTION, environmentId, BUGS_SUBCOLLECTION);
-
-const normalizeBug = (id: string, data: Record<string, unknown>): EnvironmentBug => ({
-  id,
-  scenarioId: getStringOrNull(data.scenarioId ?? data.scenario),
-  title: getString(data.title ?? data.titulo),
-  description: getStringOrNull(data.description ?? data.descricao),
-  status: (data.status ?? 'aberto') as EnvironmentBugStatus,
-  severity: getStringOrNull(data.severity ?? data.severidade) as EnvironmentBug['severity'],
-  priority: getStringOrNull(data.priority ?? data.prioridade) as EnvironmentBug['priority'],
-  reportedBy: getStringOrNull(data.reportedBy ?? data.reportadoPor),
-  stepsToReproduce: getStringOrNull(data.stepsToReproduce ?? data.passosParaReproduzir),
-  expectedResult: getStringOrNull(data.expectedResult ?? data.resultadoEsperado),
-  actualResult: getStringOrNull(data.actualResult ?? data.resultadoAtual),
-  createdAt: parseTimestamp(data.createdAt as Timestamp | string | null | undefined),
-  updatedAt: parseTimestamp(data.updatedAt as Timestamp | string | null | undefined),
-});
-
 const normalizeEnvironment = (id: string, data: Record<string, unknown>): Environment => ({
   id,
   identificador: getString(data.identificador),
@@ -247,7 +212,6 @@ const normalizeEnvironment = (id: string, data: Record<string, unknown>): Enviro
   presentUsersIds: getStringArray(data.presentUsersIds),
   concludedBy: getStringOrNull(data.concludedBy),
   scenarios: parseScenarioMap(data.scenarios as Record<string, unknown> | undefined),
-  bugs: Number(data.bugs ?? 0),
   totalCenarios: Number(data.totalCenarios ?? 0),
   participants: getStringArray(data.participants),
   publicShareLanguage: getStringOrNull(data.publicShareLanguage),
@@ -284,7 +248,6 @@ export const createEnvironment = async (payload: CreateEnvironmentInput): Promis
     presentUsersIds: payload.presentUsersIds,
     concludedBy: payload.concludedBy,
     scenarios: payload.scenarios,
-    bugs: payload.bugs,
     totalCenarios: payload.totalCenarios,
     participants: payload.participants,
     publicShareLanguage: payload.publicShareLanguage,
@@ -615,105 +578,6 @@ export const uploadScenarioEvidence = async (
   return resolvedLink;
 };
 
-export const listEnvironmentBugs = async (environmentId: string): Promise<EnvironmentBug[]> => {
-  const bugsCollectionRef = getBugCollection(environmentId);
-  try {
-    const snapshot = await getDocsCacheThenServer(bugsCollectionRef);
-    return snapshot.docs
-      .map((docSnapshot) =>
-        normalizeBug(
-          docSnapshot.id,
-          (docSnapshot.data({ serverTimestamps: 'estimate' }) ?? {}) as Record<string, unknown>,
-        ),
-      )
-      .sort((first, second) => {
-        const firstDate = first.createdAt ? new Date(first.createdAt).getTime() : 0;
-        const secondDate = second.createdAt ? new Date(second.createdAt).getTime() : 0;
-        return secondDate - firstDate;
-      });
-  } catch (error) {
-    console.error(error);
-    return [];
-  }
-};
-
-export const createEnvironmentBug = async (
-  environmentId: string,
-  payload: CreateEnvironmentBugInput,
-): Promise<EnvironmentBug> => {
-  const bugsCollectionRef = getBugCollection(environmentId);
-  const now = new Date().toISOString();
-  const docRef = await addDoc(bugsCollectionRef, {
-    ...payload,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  });
-  const environmentRef = doc(firebaseFirestore, ENVIRONMENTS_COLLECTION, environmentId);
-  await updateDoc(environmentRef, {
-    bugs: increment(1),
-    updatedAt: serverTimestamp(),
-  });
-
-  return {
-    id: docRef.id,
-    scenarioId: payload.scenarioId,
-    title: payload.title,
-    description: payload.description ?? null,
-    status: payload.status,
-    severity: payload.severity ?? null,
-    priority: payload.priority ?? null,
-    reportedBy: payload.reportedBy ?? null,
-    stepsToReproduce: payload.stepsToReproduce ?? null,
-    expectedResult: payload.expectedResult ?? null,
-    actualResult: payload.actualResult ?? null,
-    createdAt: now,
-    updatedAt: now,
-  };
-};
-
-export const updateEnvironmentBug = async (
-  environmentId: string,
-  bugId: string,
-  payload: UpdateEnvironmentBugInput,
-): Promise<void> => {
-  const bugRef = doc(
-    firebaseFirestore,
-    ENVIRONMENTS_COLLECTION,
-    environmentId,
-    BUGS_SUBCOLLECTION,
-    bugId,
-  );
-  await updateDoc(bugRef, {
-    ...payload,
-    updatedAt: serverTimestamp(),
-  });
-};
-
-export const deleteEnvironmentBug = async (environmentId: string, bugId: string): Promise<void> => {
-  const bugRef = doc(
-    firebaseFirestore,
-    ENVIRONMENTS_COLLECTION,
-    environmentId,
-    BUGS_SUBCOLLECTION,
-    bugId,
-  );
-  await deleteDoc(bugRef);
-
-  const environmentRef = doc(firebaseFirestore, ENVIRONMENTS_COLLECTION, environmentId);
-  await runTransaction(firebaseFirestore, async (transaction) => {
-    const snapshot = await transaction.get(environmentRef);
-    if (!snapshot.exists()) {
-      return;
-    }
-    const data = snapshot.data({ serverTimestamps: 'estimate' }) ?? {};
-    const currentBugs = Number(data?.bugs ?? 0);
-    transaction.update(environmentRef, {
-      bugs: Math.max(0, currentBugs - 1),
-      updatedAt: serverTimestamp(),
-    });
-  });
-};
-
 interface TransitionEnvironmentStatusParams {
   environment: Environment;
   targetStatus: EnvironmentStatus;
@@ -820,14 +684,6 @@ const computeNextTimeTracking = (
 const isIncompleteStatus = (status: EnvironmentScenarioStatus): boolean =>
   !SCENARIO_COMPLETED_STATUSES.includes(status);
 
-const getScenarioLabel = (environment: Environment, scenarioId: string | null) => {
-  if (!scenarioId) {
-    return 'Não vinculado';
-  }
-
-  return environment.scenarios?.[scenarioId]?.titulo ?? 'Cenário removido';
-};
-
 const normalizeParticipants = (
   environment: Environment,
   participantProfiles: UserSummary[] = [],
@@ -848,28 +704,6 @@ const normalizeParticipants = (
       photoURL: profile?.photoURL ?? null,
     };
   });
-};
-
-const buildTimeTrackingSummary = (environment: Environment) => {
-  const isRunning = environment.status === 'in_progress';
-  const totalMs = getElapsedMilliseconds(environment.timeTracking, isRunning, Date.now());
-  const t = i18n.t.bind(i18n);
-  const locale = i18n.language;
-  const emptyLabel = t('environmentSummary.notRecorded');
-
-  return {
-    start: formatDateTime(environment.timeTracking?.start ?? null, {
-      locale,
-      emptyLabel,
-    }),
-    end: formatEndDateTime(environment.timeTracking ?? null, isRunning, {
-      locale,
-      emptyLabel,
-      inProgressLabel: t('environmentSummary.inProgress'),
-      notEndedLabel: t('environmentSummary.notEnded'),
-    }),
-    total: formatDurationFromMs(totalMs),
-  };
 };
 
 const translateScenarioStatus = (value: EnvironmentScenarioStatus, t: (key: string) => string) => {
@@ -1001,49 +835,10 @@ const getStatusClassName = (status: string) => {
   return 'status-pill status-pill--neutral';
 };
 
-const getSeverityClassName = (severity: string) => {
-  const normalized = normalizeLabel(severity);
-  if (normalized.includes('crit') || normalized.includes('critical')) {
-    return 'severity-pill severity-pill--critical';
-  }
-  if (normalized.includes('alta') || normalized.includes('high')) {
-    return 'severity-pill severity-pill--high';
-  }
-  if (normalized.includes('media') || normalized.includes('medium')) {
-    return 'severity-pill severity-pill--medium';
-  }
-  if (normalized.includes('baixa') || normalized.includes('low')) {
-    return 'severity-pill severity-pill--low';
-  }
-  return 'severity-pill severity-pill--unknown';
-};
-
-const getPriorityClassName = (priority: string) => {
-  const normalized = normalizeLabel(priority);
-  if (
-    normalized.includes('urgente') ||
-    normalized.includes('crit') ||
-    normalized.includes('critical')
-  ) {
-    return 'priority-pill priority-pill--critical';
-  }
-  if (normalized.includes('alta') || normalized.includes('high')) {
-    return 'priority-pill priority-pill--high';
-  }
-  if (normalized.includes('media') || normalized.includes('medium')) {
-    return 'priority-pill priority-pill--medium';
-  }
-  if (normalized.includes('baixa') || normalized.includes('low')) {
-    return 'priority-pill priority-pill--low';
-  }
-  return 'priority-pill priority-pill--unknown';
-};
-
 export const exportEnvironmentAsPDF = (
   environment: Environment,
-  bugs: EnvironmentBug[] = [],
   participantProfiles: UserSummary[] = [],
-  store?: { name?: string | null; logoUrl?: string | null } | null,
+  store?: { name?: string | null } | null,
   organization?: { name?: string | null; logoUrl?: string | null } | null,
 ): void => {
   if (typeof window === 'undefined') {
@@ -1052,7 +847,6 @@ export const exportEnvironmentAsPDF = (
 
   const t = i18n.t.bind(i18n);
   const normalizedParticipants = normalizeParticipants(environment, participantProfiles, t);
-  const timeSummary = buildTimeTrackingSummary(environment);
   const environmentColumns = getEnvironmentColumns(environment);
   const scenarioCount = Object.values(environment.scenarios ?? {}).length;
   const statusLabel = t(ENVIRONMENT_STATUS_LABEL[environment.status]);
@@ -1062,14 +856,11 @@ export const exportEnvironmentAsPDF = (
   const storeLabel = store?.name?.trim();
   const exportTitleWithStore = storeLabel ? `${exportTitle} · ${storeLabel}` : exportTitle;
   const organizationName = organization?.name?.trim() || '';
-  const organizationLogo = organization?.logoUrl?.trim() || '';
-  const storeLogo = store?.logoUrl?.trim() || '';
   const organizationHeader =
-    organizationName || organizationLogo || storeLogo
+    organizationName || storeLabel
       ? `<div class="org-header">
-          ${organizationLogo ? `<img src="${escapeHtml(organizationLogo)}" alt="${escapeHtml(organizationName || 'Organization logo')}" class="org-logo" />` : ''}
           ${organizationName ? `<span class="org-name">${escapeHtml(organizationName)}</span>` : ''}
-          ${storeLogo ? `<img src="${escapeHtml(storeLogo)}" alt="${escapeHtml(storeLabel || 'Store logo')}" class="org-logo" />` : ''}
+          ${storeLabel ? `<span class="org-name">${escapeHtml(storeLabel)}</span>` : ''}
         </div>`
       : '';
   const jiraTask = environment.jiraTask?.trim() || '';
@@ -1144,35 +935,6 @@ export const exportEnvironmentAsPDF = (
         </tr>
       `;
 
-  const bugRows =
-    bugs.length > 0
-      ? bugs
-          .map((bug) => {
-            const severityLabel = bug.severity
-              ? t(BUG_SEVERITY_LABEL[bug.severity])
-              : t('environmentExport.noSeverity');
-            const priorityLabel = bug.priority
-              ? t(BUG_PRIORITY_LABEL[bug.priority])
-              : t('environmentExport.noPriority');
-            const actualResult = bug.actualResult?.trim() || t('environmentExport.noActualResult');
-            const severityClass = getSeverityClassName(severityLabel);
-            const priorityClass = getPriorityClassName(priorityLabel);
-            return `
-        <tr>
-          <td>${escapeHtml(getScenarioLabel(environment, bug.scenarioId))}</td>
-          <td><span class="${severityClass}">${escapeHtml(severityLabel)}</span></td>
-          <td><span class="${priorityClass}">${escapeHtml(priorityLabel)}</span></td>
-          <td>${linkifyHtml(actualResult)}</td>
-        </tr>
-      `;
-          })
-          .join('')
-      : `
-        <tr>
-          <td colspan="4">${t('environmentExport.noBugs')}</td>
-        </tr>
-      `;
-
   const documentContent = `
     <html>
       <head>
@@ -1219,7 +981,6 @@ export const exportEnvironmentAsPDF = (
           h1 { margin-bottom: 0; }
           h2 { margin-top: 24px; }
           .org-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-          .org-logo { width: 48px; height: 48px; border-radius: 10px; object-fit: contain; border: 1px solid var(--color-border); background: #fff; }
           .org-name { font-size: 16px; font-weight: 600; color: #111827; }
           .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; padding: 12px; background: var(--color-surface-muted); border: 1px solid var(--color-border); border-radius: 12px; }
           .summary-grid strong { display: block; margin-top: 4px; }
@@ -1252,6 +1013,7 @@ export const exportEnvironmentAsPDF = (
       <body>
         ${organizationHeader}
         <h1>${escapeHtml(exportTitleWithStore)}</h1>
+        <p>${escapeHtml(t('editEnvironmentModal.identifier'))}: ${escapeHtml(environment.identificador)}</p>
         <p>${escapeHtml(t('environmentExport.statusLabel'))}: ${escapeHtml(statusLabel)}</p>
         <p>${escapeHtml(t('environmentExport.typeLabel'))}: ${escapeHtml(
           translateEnvironmentOption(environment.tipoAmbiente, t),
@@ -1268,21 +1030,9 @@ export const exportEnvironmentAsPDF = (
               )}</p>`
             : ''
         }
-        <p>${t('environmentExport.jiraLabel')}: ${jiraValue}</p>
+        ${jiraTask ? `<p>${t('environmentExport.jiraLabel')}: ${jiraValue}</p>` : ''}
         <h2>${t('environmentExport.summaryTitle')}</h2>
         <div class="summary-grid">
-          <div>
-            <span>${t('environmentExport.startLabel')}</span>
-            <strong>${escapeHtml(timeSummary.start)}</strong>
-          </div>
-          <div>
-            <span>${t('environmentExport.endLabel')}</span>
-            <strong>${escapeHtml(timeSummary.end)}</strong>
-          </div>
-          <div>
-            <span>${t('environmentExport.totalLabel')}</span>
-            <strong>${escapeHtml(timeSummary.total)}</strong>
-          </div>
           <div>
             <span>${t('environmentExport.suiteLabel')}</span>
             <strong>${escapeHtml(environment.suiteName ?? t('dynamic.suiteNameFallback'))}</strong>
@@ -1290,10 +1040,6 @@ export const exportEnvironmentAsPDF = (
           <div>
             <span>${t('environmentExport.totalScenariosLabel')}</span>
             <strong>${scenarioCount}</strong>
-          </div>
-          <div>
-            <span>${t('environmentExport.bugsLabel')}</span>
-            <strong>${bugs.length}</strong>
           </div>
           <div>
             <span>${t('environmentExport.participantsLabel')}</span>
@@ -1326,18 +1072,6 @@ export const exportEnvironmentAsPDF = (
           </thead>
           <tbody>${scenarioRows}</tbody>
         </table>
-        <h2>${t('environmentExport.bugsTitle')}</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>${t('environmentExport.bugScenario')}</th>
-              <th>${t('environmentExport.bugSeverity')}</th>
-              <th>${t('environmentExport.bugPriority')}</th>
-              <th>${t('environmentExport.bugActualResult')}</th>
-            </tr>
-          </thead>
-          <tbody>${bugRows}</tbody>
-        </table>
       </body>
     </html>
   `;
@@ -1355,9 +1089,9 @@ export const exportEnvironmentAsPDF = (
 
 export const copyEnvironmentAsMarkdown = async (
   environment: Environment,
-  bugs: EnvironmentBug[] = [],
   participantProfiles: UserSummary[] = [],
   storeName?: string,
+  organizationName?: string,
 ): Promise<void> => {
   if (typeof navigator === 'undefined' && typeof document === 'undefined') {
     return;
@@ -1365,7 +1099,6 @@ export const copyEnvironmentAsMarkdown = async (
 
   const t = i18n.t.bind(i18n);
   const normalizedParticipants = normalizeParticipants(environment, participantProfiles, t);
-  const timeSummary = buildTimeTrackingSummary(environment);
   const environmentColumns = getEnvironmentColumns(environment);
   const scenarioCount =
     Object.values(environment.scenarios ?? {}).length * environmentColumns.length;
@@ -1396,25 +1129,6 @@ export const copyEnvironmentAsMarkdown = async (
         .join(' | ')} |\n${scenarioTableRows}`
     : `- ${t('environmentExport.noScenarios')}`;
 
-  const bugTableRows = bugs
-    .map((bug) => {
-      const scenarioLabel = getScenarioLabel(environment, bug.scenarioId);
-      const severityLabel = bug.severity
-        ? t(BUG_SEVERITY_LABEL[bug.severity])
-        : t('environmentExport.noSeverity');
-      const priorityLabel = bug.priority
-        ? t(BUG_PRIORITY_LABEL[bug.priority])
-        : t('environmentExport.noPriority');
-      const actualResult = bug.actualResult?.trim() || t('environmentExport.noActualResult');
-      return `| ${normalizeMarkdownCell(scenarioLabel)} | ${normalizeMarkdownCell(
-        severityLabel,
-      )} | ${normalizeMarkdownCell(priorityLabel)} | ${normalizeMarkdownCell(actualResult)} |`;
-    })
-    .join('\n');
-  const bugTable = bugTableRows
-    ? `| ${t('environmentExport.bugScenario')} | ${t('environmentExport.bugSeverity')} | ${t('environmentExport.bugPriority')} | ${t('environmentExport.bugActualResult')} |\n| --- | --- | --- | --- |\n${bugTableRows}`
-    : `- ${t('environmentExport.noBugs')}`;
-
   const urls = (environment.urls ?? []).map((url) => `  - ${url}`).join('\n');
   const participants = normalizedParticipants
     .map((participant) => {
@@ -1429,28 +1143,17 @@ export const copyEnvironmentAsMarkdown = async (
 
   const markdown = `# ${markdownTitle}
 
+${organizationName ? `- Organização: ${organizationName}\n` : ''}${storeLabel ? `- Loja: ${storeLabel}\n` : ''}- ${t('editEnvironmentModal.identifier')}: ${environment.identificador}
+- ${t('editEnvironmentModal.environmentType')}: ${translateEnvironmentOption(environment.tipoAmbiente, t)}
+${environment.momento ? `- ${t('environmentExport.momentLabel')}: ${momentLabel}\n` : ''}- ${t('editEnvironmentModal.urls')}:\n${urls || `  - ${t('environmentExport.noUrls')}`}
+${environment.jiraTask ? `- ${t('environmentExport.jiraLabel')}: ${environment.jiraTask}\n` : ''}- ${t('editEnvironmentModal.testType')}: ${testTypeLabel}
+- ${t('environmentExport.suiteLabel')}: ${environment.suiteName || t('dynamic.suiteNameFallback')}
 - ${t('environmentExport.statusLabel')}: ${statusLabel}
-- ${t('environmentExport.typeLabel')}: ${translateEnvironmentOption(
-    environment.tipoAmbiente,
-    t,
-  )} · ${testTypeLabel}
-${environment.momento ? `- ${t('environmentExport.momentLabel')}: ${momentLabel}\n` : ''}${
-    environment.release ? `- ${t('environmentExport.releaseLabel')}: ${environment.release}\n` : ''
-  }- ${t('environmentExport.jiraLabel')}: ${environment.jiraTask || t('dynamic.identifierFallback')}
-- ${t('environmentExport.startLabel')}: ${timeSummary.start}
-- ${t('environmentExport.endLabel')}: ${timeSummary.end}
-- ${t('environmentExport.totalLabel')}: ${timeSummary.total}
-- ${t('environmentExport.suiteLabel')}: ${environment.suiteName ?? t('dynamic.suiteNameFallback')}
 - ${t('environmentExport.totalScenariosLabel')}: ${scenarioCount}
-- ${t('environmentExport.bugsLabel')}: ${bugs.length}
 - ${t('environmentExport.participantsLabel')}: ${normalizedParticipants.length}
-- ${t('environmentExport.urlsLabel')}:\n${urls || `  - ${t('environmentExport.noUrls')}`}
 
 ## ${t('environmentExport.scenariosTitle')}
 ${scenarioTable}
-
-## ${t('environmentExport.bugsTitle')}
-${bugTable}
 
 ## ${t('environmentExport.participantsTitle')}
 ${participants || `- ${t('environmentExport.noParticipants')}`}
