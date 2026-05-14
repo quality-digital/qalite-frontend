@@ -209,7 +209,7 @@ export const NoOrganizationPage = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="organization-access-card__actions">
                     <span className="badge">
                       {hasPendingRequest
                         ? t('organizationAccessRequests.pendingBadge')

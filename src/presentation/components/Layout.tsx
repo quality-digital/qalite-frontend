@@ -9,6 +9,7 @@ import { StoreFavicon } from './StoreFavicon';
 import { LogoutIcon } from './icons';
 import qliteLogo from '../assets/logo.png';
 import { useTranslation } from 'react-i18next';
+import { SupportCenter } from './SupportCenter';
 
 interface LayoutProps {
   children: ReactNode;
@@ -56,6 +57,7 @@ export const Layout = ({ children, showHeader = true }: LayoutProps) => {
             </span>
           </Link>
           <nav className="header-actions">
+            <SupportCenter compact />
             {user ? (
               <div className="header-user">
                 <div className="header-user-actions">

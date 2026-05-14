@@ -115,6 +115,7 @@ export const AdminStoresPage = () => {
   const automationRate =
     totalScenarios > 0 ? Math.round((totalAutomated / totalScenarios) * 100) : 0;
 
+
   useEffect(() => {
     const organizationFromParam = searchParams.get('id') ?? searchParams.get('Id');
     const unsubscribe = listenToOrganizationsSummary(
@@ -592,7 +593,7 @@ export const AdminStoresPage = () => {
             </p>
           </div>
           <div className="page-actions">
-            {selectedOrganization && selectedOrganization.members.length > 0 && (
+            {selectedOrganization && (
               <Button
                 type="button"
                 variant="secondary"
@@ -721,14 +722,9 @@ export const AdminStoresPage = () => {
                           })}
                     </span>
                   </div>
-                  {selectedOrganization.members.length === 0 ? (
-                    <p className="section-subtitle">
-                      {translation('AdminStoresPage.no-collaborators-message')}
-                    </p>
-                  ) : (
-                    <ul className="collaborator-list">
-                      {selectedOrganization.members.map((member) => (
-                        <li key={member.uid} className="collaborator-card">
+                  <ul className="collaborator-list">
+                    {selectedOrganization.members.map((member) => (
+                      <li key={member.uid} className="collaborator-card">
                           <UserAvatar
                             name={member.displayName || member.email}
                             size="sm"
@@ -737,10 +733,9 @@ export const AdminStoresPage = () => {
                           <div className="collaborator-card__details">
                             <strong>{member.displayName || member.email}</strong>
                           </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                      </li>
+                    ))}
+                  </ul>
                 </section>
               )}
             </div>

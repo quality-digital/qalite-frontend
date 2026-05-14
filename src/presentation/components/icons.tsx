@@ -19,6 +19,7 @@ import {
   FiList,
   FiLink,
   FiLock,
+  FiMessageCircle,
   FiLogOut,
   FiPieChart,
   FiPlusCircle,
@@ -60,3 +61,5 @@ export const LockIcon = (props: IconBaseProps) => <FiLock {...props} />;
 export const PieChartIcon = (props: IconBaseProps) => <FiPieChart {...props} />;
 export const TrendIcon = (props: IconBaseProps) => <FiTrendingUp {...props} />;
 export const XCircleIcon = (props: IconBaseProps) => <FiAlertCircle {...props} />;
+
+export const MessageCircleIcon = (props: IconBaseProps) => <FiMessageCircle {...props} />;
