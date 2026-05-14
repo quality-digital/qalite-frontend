@@ -8436,12 +8436,10 @@ textarea:focus-visible {
   gap: 0.55rem;
 }
 
-.support-center-trigger__dot {
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 999px;
-  background: linear-gradient(140deg, #14b8a6, #1a5cff);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 20%, transparent);
+.support-center-trigger__icon {
+  width: 1rem;
+  height: 1rem;
+  color: var(--color-primary);
 }
 
 .auth-page > .support-center-trigger {

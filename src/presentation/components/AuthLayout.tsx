@@ -29,7 +29,7 @@ export const AuthLayout = ({ title, subtitle, children, footer, pageLabel }: Aut
         </div>
       </div>
 
-      <SupportCenter />
+      <SupportCenter context="login" />
 
       <div className="auth-page__body">
         <section className="auth-page__panel">
