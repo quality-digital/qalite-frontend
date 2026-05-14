@@ -71,6 +71,8 @@ interface SlackSummaryBuilderOptions {
   urls: string[];
   participantProfiles: UserSummary[];
   testTypeLabel: string;
+  storeName?: string;
+  organizationName?: string;
 }
 
 const formatExecutedScenariosMessage = (
@@ -195,7 +197,15 @@ const buildSlackTaskSummaryPayload = (
     `📊 ${translation('environment.slack.summaryHeader')}${releaseSummaryLabel}`,
     '',
     `🔖 ${translation('environment.slack.sections.identification')}`,
+    options.organizationName ? `• Organização: ${options.organizationName}` : '',
+    options.storeName ? `• Loja: ${options.storeName}` : '',
+    `• ${translation('editEnvironmentModal.identifier')}: ${taskIdentifier}`,
     `• ${translation('environment.slack.labels.environment')}: ${validatedEnvironment}`,
+    environment.momento
+      ? `• ${translation('environmentExport.momentLabel')}: ${translateEnvironmentOption(environment.momento, translation)}`
+      : '',
+    `• ${translation('editEnvironmentModal.urls')}: ${monitoredUrlLabel}`,
+    `• ${translation('environmentExport.jiraLabel')}: ${jiraList.join(', ')}`,
     `• ${translation('environment.slack.labels.testType')}: ${testTypeLabel}`,
     `• ${translation('environment.slack.labels.executionType')}: ${suiteName}`,
   ];
@@ -226,7 +236,7 @@ const buildSlackTaskSummaryPayload = (
     ...jiraList.map((jira) => `• ${jira}`),
   );
 
-  const summaryMessage = summaryLines.join('\n');
+  const summaryMessage = summaryLines.filter(Boolean).join('\n');
 
   return {
     environmentSummary: {
@@ -522,6 +532,8 @@ export const EnvironmentPage = () => {
           urls,
           participantProfiles,
           testTypeLabel: translateOptionValue(environment.tipoTeste),
+          storeName,
+          organizationName: environmentOrganization?.name ?? '',
         },
         translation,
       );
@@ -543,10 +555,12 @@ export const EnvironmentPage = () => {
     scenarioCount,
     shareLinks.public,
     slackWebhookUrl,
+    storeName,
     totalMs,
     translateOptionValue,
     translation,
     urls,
+    environmentOrganization?.name,
   ]);
 
   const handleStatusTransition = useCallback(
@@ -713,25 +727,29 @@ export const EnvironmentPage = () => {
     const fileName = `${storePrefix}${translation('environment.exportExcelFileName')}-${environment.identificador}-${new Date().toISOString().slice(0, 10)}.xlsx`;
     const infoRows = [
       {
-        label: translation('editEnvironmentModal.identifier'),
-        value: environment.identificador,
+        label: 'Organização',
+        value: environmentOrganization?.name?.trim() ?? '',
       },
       {
-        label: translation('storeSummary.storeName'),
+        label: 'Loja',
         value: storeName,
       },
       {
-        label: translation('environment.exportExcelStatusLabel'),
-        value: translation(ENVIRONMENT_STATUS_LABEL[environment.status]),
+        label: translation('editEnvironmentModal.identifier'),
+        value: environment.identificador,
       },
       {
         label: translation('editEnvironmentModal.environmentType'),
         value: translateOptionValue(environment.tipoAmbiente),
       },
-      {
-        label: translation('editEnvironmentModal.testType'),
-        value: translateOptionValue(environment.tipoTeste),
-      },
+      ...(environment.momento
+        ? [
+            {
+              label: translation('editEnvironmentModal.moment'),
+              value: translateOptionValue(environment.momento),
+            },
+          ]
+        : []),
       {
         label: translation('editEnvironmentModal.urls'),
         value: urls.length > 0 ? urls.join('\n') : '',
@@ -741,12 +759,16 @@ export const EnvironmentPage = () => {
         value: environment.jiraTask?.trim() ?? '',
       },
       {
+        label: translation('editEnvironmentModal.testType'),
+        value: translateOptionValue(environment.tipoTeste),
+      },
+      {
         label: translation('createEnvironment.suiteId'),
         value: environment.suiteName?.trim() ?? '',
       },
       {
-        label: translation('editEnvironmentModal.moment'),
-        value: environment.momento ? translateOptionValue(environment.momento) : '',
+        label: translation('environment.exportExcelStatusLabel'),
+        value: translation(ENVIRONMENT_STATUS_LABEL[environment.status]),
       },
       {
         label: translation('environmentSummary.scenarios'),
@@ -784,6 +806,7 @@ export const EnvironmentPage = () => {
     participantProfiles,
     scenarioCount,
     storeName,
+    environmentOrganization?.name,
     translateOptionValue,
     translation,
     urls,
@@ -795,13 +818,25 @@ export const EnvironmentPage = () => {
     }
 
     try {
-      await copyEnvironmentAsMarkdown(environment, participantProfiles, storeName);
+      await copyEnvironmentAsMarkdown(
+        environment,
+        participantProfiles,
+        storeName,
+        environmentOrganization?.name,
+      );
       showToast({ type: 'success', message: translation('environment.copyMarkdownSuccess') });
     } catch (error) {
       console.error(error);
       showToast({ type: 'error', message: translation('environment.copyMarkdownError') });
     }
-  }, [environment, participantProfiles, showToast, storeName, translation]);
+  }, [
+    environment,
+    participantProfiles,
+    showToast,
+    storeName,
+    translation,
+    environmentOrganization?.name,
+  ]);
 
   const handleExportPdf = useCallback(() => {
     if (!environment) {

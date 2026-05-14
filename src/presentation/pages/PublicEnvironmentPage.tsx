@@ -94,7 +94,7 @@ export const PublicEnvironmentPage = () => {
 
   if (isLoading) {
     return (
-      <Layout showHeader={false}>
+      <Layout>
         <section className="page-container">
           <p className="section-subtitle">{t('publicEnvironment.loading')}</p>
         </section>
@@ -104,7 +104,7 @@ export const PublicEnvironmentPage = () => {
 
   if (!environment) {
     return (
-      <Layout showHeader={false}>
+      <Layout>
         <section className="page-container">
           <h1 className="section-title">{t('publicEnvironment.notFound')}</h1>
           <p className="section-subtitle">{t('publicEnvironment.tryAgain')}</p>
@@ -114,8 +114,11 @@ export const PublicEnvironmentPage = () => {
   }
 
   return (
-    <Layout showHeader={false}>
+    <Layout>
       <section className="page-container environment-page environment-page--public">
+        <p className="section-subtitle">
+          {t('editEnvironmentModal.identifier')}: {environment.identificador}
+        </p>
         <div className="environment-summary-grid">
           <EnvironmentSummaryCard
             environment={environment}
