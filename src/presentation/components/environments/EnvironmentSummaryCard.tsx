@@ -68,7 +68,12 @@ export const EnvironmentSummaryCard = ({
   return (
     <div className="summary-card summary-card--environment summary-card--compact">
       <div className="summary-card__minimal-header">
-        <h3 className="section-title">{environment.identificador}</h3>
+        <div>
+          <span className="summary-card__meta-label">
+            {translation('editEnvironmentModal.identifier')}
+          </span>
+          <h3 className="section-title">{environment.identificador}</h3>
+        </div>
         <span className={`status-pill status-pill--${environment.status}`}>
           {translation(ENVIRONMENT_STATUS_LABEL[environment.status])}
         </span>

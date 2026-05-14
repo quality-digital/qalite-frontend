@@ -22,6 +22,7 @@ export const Layout = ({ children, showHeader = true }: LayoutProps) => {
   const displayName = user?.displayName || user?.email || '';
   const { t } = useTranslation();
   const brandName = activeStore?.name || activeOrganization?.name || t('app.brandName');
+  const organizationName = activeOrganization?.name?.trim() || '';
   const brandLogo = activeOrganization?.logoUrl || qliteLogo;
 
   return (
@@ -49,7 +50,10 @@ export const Layout = ({ children, showHeader = true }: LayoutProps) => {
                 }}
               />
             )}
-            <span className="app-brand-name">{brandName}</span>
+            <span className="app-brand-name">
+              {brandName}
+              {activeStore && organizationName ? ` · ${organizationName}` : ''}
+            </span>
           </Link>
           <nav className="header-actions">
             {user ? (

@@ -11,7 +11,6 @@ import { useStoreOrganizationBranding } from '../hooks/useStoreOrganizationBrand
 import { useOrganizationBranding } from '../context/OrganizationBrandingContext';
 import { useEnvironmentDetails } from '../hooks/useEnvironmentDetails';
 import { useTranslation } from 'react-i18next';
-import { StoreFavicon } from '../components/StoreFavicon';
 
 import { normalizeLanguagePreference } from '../../shared/config/userPreferences';
 
@@ -95,7 +94,7 @@ export const PublicEnvironmentPage = () => {
 
   if (isLoading) {
     return (
-      <Layout showHeader={false}>
+      <Layout>
         <section className="page-container">
           <p className="section-subtitle">{t('publicEnvironment.loading')}</p>
         </section>
@@ -105,7 +104,7 @@ export const PublicEnvironmentPage = () => {
 
   if (!environment) {
     return (
-      <Layout showHeader={false}>
+      <Layout>
         <section className="page-container">
           <h1 className="section-title">{t('publicEnvironment.notFound')}</h1>
           <p className="section-subtitle">{t('publicEnvironment.tryAgain')}</p>
@@ -115,17 +114,11 @@ export const PublicEnvironmentPage = () => {
   }
 
   return (
-    <Layout showHeader={false}>
+    <Layout>
       <section className="page-container environment-page environment-page--public">
-        <header className="public-environment-store-header">
-          <StoreFavicon
-            site={activeStore?.site}
-            alt={activeStore?.name ?? 'Store'}
-            className="public-environment-store-header__favicon"
-            loading="eager"
-          />
-          <h1 className="public-environment-store-header__name">{activeStore?.name ?? 'Store'}</h1>
-        </header>
+        <p className="section-subtitle">
+          {t('editEnvironmentModal.identifier')}: {environment.identificador}
+        </p>
         <div className="environment-summary-grid">
           <EnvironmentSummaryCard
             environment={environment}
