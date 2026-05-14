@@ -1,19 +1,18 @@
 import { useState } from 'react';
-import { SiGithub } from 'react-icons/si';
-import { StorefrontIcon, MessageCircleIcon } from './icons';
+import { MessageCircleIcon } from './icons';
 import { Modal } from './Modal';
 
 interface SupportCenterProps {
   compact?: boolean;
-  context?: 'default' | 'login';
 }
 
 const SUPPORT_SLACK_URL = 'https://qualitydigitalsa.slack.com/archives/C0B3U4CP5L2';
 const CREDITS_GITHUB_URL = 'https://github.com/sntooosk';
+const SLACK_PNG_URL = 'https://cdn.simpleicons.org/slack/4A154B';
+const GITHUB_PNG_URL = 'https://cdn.simpleicons.org/github/111111';
 
-export const SupportCenter = ({ compact = false, context = 'default' }: SupportCenterProps) => {
+export const SupportCenter = ({ compact = false }: SupportCenterProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const isLogin = context === 'login';
 
   return (
     <>
@@ -24,7 +23,7 @@ export const SupportCenter = ({ compact = false, context = 'default' }: SupportC
           .join(' ')}
         onClick={() => setIsOpen(true)}
       >
-        {isLogin ? <SiGithub aria-hidden className="support-center-trigger__icon" /> : <StorefrontIcon aria-hidden className="support-center-trigger__icon" />}
+        <MessageCircleIcon aria-hidden className="support-center-trigger__icon" />
         Suporte
       </button>
 
@@ -37,7 +36,7 @@ export const SupportCenter = ({ compact = false, context = 'default' }: SupportC
       >
         <section className="support-center-card support-center-card--slack">
           <div className="support-center-card__head">
-            <MessageCircleIcon aria-hidden className="support-center-brand-icon" />
+            <img src={SLACK_PNG_URL} alt="Slack" className="support-center-brand-png" loading="lazy" />
             <h3>Suporte no Slack</h3>
           </div>
           <p>Tire dúvidas técnicas e acompanhe os comunicados da equipe no canal oficial.</p>
@@ -48,7 +47,7 @@ export const SupportCenter = ({ compact = false, context = 'default' }: SupportC
 
         <section className="support-center-card support-center-card--credits">
           <div className="support-center-card__head">
-            <SiGithub aria-hidden className="support-center-brand-icon" />
+            <img src={GITHUB_PNG_URL} alt="GitHub" className="support-center-brand-png" loading="lazy" />
             <h3>Créditos do software</h3>
           </div>
           <p>

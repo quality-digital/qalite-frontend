@@ -8482,10 +8482,11 @@ textarea:focus-visible {
   margin-bottom: 0.45rem;
 }
 
-.support-center-brand-icon {
+.support-center-brand-png {
   width: 1.1rem;
   height: 1.1rem;
-  color: var(--color-primary);
+  object-fit: contain;
+  border-radius: 0.2rem;
 }
 
 .support-center-card h3 {
