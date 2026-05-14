@@ -8,7 +8,8 @@ interface SupportCenterProps {
 
 const SUPPORT_SLACK_URL = 'https://qualitydigitalsa.slack.com/archives/C0B3U4CP5L2';
 const CREDITS_GITHUB_URL = 'https://github.com/sntooosk';
-const SLACK_PNG_URL = 'https://img.icons8.com/external-tal-revivo-color-tal-revivo/24/external-slack-replace-email-text-messaging-and-instant-messaging-for-your-team-logo-color-tal-revivo.png';
+const SLACK_PNG_URL =
+  'https://img.icons8.com/external-tal-revivo-color-tal-revivo/24/external-slack-replace-email-text-messaging-and-instant-messaging-for-your-team-logo-color-tal-revivo.png';
 const GITHUB_PNG_URL = 'https://cdn.simpleicons.org/github/111111';
 
 export const SupportCenter = ({ compact = false }: SupportCenterProps) => {
@@ -36,24 +37,44 @@ export const SupportCenter = ({ compact = false }: SupportCenterProps) => {
       >
         <section className="support-center-card support-center-card--slack">
           <div className="support-center-card__head">
-            <img src={SLACK_PNG_URL} alt="Slack" className="support-center-brand-png" loading="lazy" />
+            <img
+              src={SLACK_PNG_URL}
+              alt="Slack"
+              className="support-center-brand-png"
+              loading="lazy"
+            />
             <h3>Suporte no Slack</h3>
           </div>
           <p>Tire dúvidas técnicas e acompanhe os comunicados da equipe no canal oficial.</p>
-          <a href={SUPPORT_SLACK_URL} target="_blank" rel="noreferrer" className="support-center-link">
+          <a
+            href={SUPPORT_SLACK_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="support-center-link"
+          >
             Abrir canal no Slack
           </a>
         </section>
 
         <section className="support-center-card support-center-card--credits">
           <div className="support-center-card__head">
-            <img src={GITHUB_PNG_URL} alt="GitHub" className="support-center-brand-png" loading="lazy" />
+            <img
+              src={GITHUB_PNG_URL}
+              alt="GitHub"
+              className="support-center-brand-png"
+              loading="lazy"
+            />
             <h3>Créditos do software</h3>
           </div>
           <p>
             Projeto e desenvolvimento por <strong>Juliano Cassimiro</strong>.
           </p>
-          <a href={CREDITS_GITHUB_URL} target="_blank" rel="noreferrer" className="support-center-link">
+          <a
+            href={CREDITS_GITHUB_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="support-center-link"
+          >
             Ver perfil no GitHub
           </a>
         </section>

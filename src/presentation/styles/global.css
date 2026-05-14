@@ -8420,7 +8420,7 @@ textarea:focus-visible {
   }
 }
 
- .support-center-trigger {
+.support-center-trigger {
   border: 1px solid color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
   background: linear-gradient(140deg, var(--color-surface-alt), var(--color-surface));
   color: var(--color-text-primary);
@@ -8429,7 +8429,10 @@ textarea:focus-visible {
   font-weight: 700;
   letter-spacing: 0.01em;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
   box-shadow: var(--shadow-sm);
   display: inline-flex;
   align-items: center;
@@ -8520,7 +8523,6 @@ textarea:focus-visible {
 .support-center-card--credits {
   border-color: color-mix(in srgb, var(--color-success) 42%, var(--color-border));
 }
-
 
 .organization-access-card__actions {
   display: flex;
