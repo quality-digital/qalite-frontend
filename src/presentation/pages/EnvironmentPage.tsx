@@ -49,7 +49,7 @@ import {
   getCriticalityClassName,
   getCriticalityLabelKey,
 } from '../constants/scenarioOptions';
-import { requiresReleaseField, translateEnvironmentOption } from '../constants/environmentOptions';
+import { translateEnvironmentOption } from '../constants/environmentOptions';
 import {
   CopyIcon,
   FileTextIcon,
@@ -147,6 +147,7 @@ const buildSlackTaskSummaryPayload = (
   translation: (key: string, opts?: TOptions) => string,
 ): SlackTaskSummaryPayload => {
   const suiteName = environment.suiteName?.trim() || translation('dynamic.suiteNameFallback');
+  const executionName = environment.suiteName?.trim();
   const attendees = buildAttendeesList(environment, options.participantProfiles, translation);
   const attendeeList = attendees ?? [];
   const uniqueParticipantsCount = new Set(environment.participants ?? []).size;
@@ -156,27 +157,18 @@ const buildSlackTaskSummaryPayload = (
   );
   const taskIdentifier =
     environment.identificador?.trim() || translation('dynamic.identifierFallback');
-  const normalizedEnvironmentType =
-    typeof environment.tipoAmbiente === 'string'
-      ? environment.tipoAmbiente.trim().toUpperCase()
-      : '';
-  const jiraLinks = (environment.jiraTask ?? '')
-    .split('\n')
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-  const jiraList =
-    jiraLinks.length > 0 ? jiraLinks : [translation('environment.slack.emptyJiraList')];
-  const validatedEnvironment = environment.tipoAmbiente?.trim() || translation('dynamic.noValue');
-  const releaseLabel = environment.release?.trim();
-  const shouldShowReleaseLabel = requiresReleaseField(environment.tipoAmbiente);
-
-  const releaseSummaryLabel =
-    shouldShowReleaseLabel && releaseLabel ? ` (Release ${releaseLabel})` : '';
-
+  const environmentTypeLabel = environment.tipoAmbiente
+    ? translateEnvironmentOption(environment.tipoAmbiente, translation)
+    : '';
+  const momentLabel = environment.momento
+    ? translateEnvironmentOption(environment.momento, translation)
+    : '';
   const testTypeLabel =
     options.testTypeLabel?.trim() ||
-    environment.tipoTeste?.trim() ||
-    translation('environment.slack.defaultTestType');
+    (environment.tipoTeste ? translateEnvironmentOption(environment.tipoTeste, translation) : '');
+  const responsible = attendeeList[0];
+  const responsibleName =
+    typeof responsible === 'string' ? responsible.trim() : (responsible?.name?.trim() ?? '');
 
   const executionStatus =
     options.executedScenariosCount === options.scenarioCount
@@ -186,55 +178,50 @@ const buildSlackTaskSummaryPayload = (
           total: options.scenarioCount,
         });
 
-  const monitoredUrlLabel = monitoredUrls[0]?.trim() || translation('environment.slack.emptyList');
-  const platformLabel = normalizedEnvironmentType === 'WS' ? 'VTEX IO' : normalizedEnvironmentType;
-  const responsible = attendeeList[0];
-  const responsibleName =
-    typeof responsible === 'string'
-      ? responsible
-      : (responsible?.name ?? translation('environment.slack.emptyParticipants'));
-  const summaryLines: string[] = [
-    `📊 ${translation('environment.slack.summaryHeader')}${releaseSummaryLabel}`,
-    '',
-    `🔖 ${translation('environment.slack.sections.identification')}`,
-    options.organizationName ? `• Organização: ${options.organizationName}` : '',
-    options.storeName ? `• Loja: ${options.storeName}` : '',
-    `• ${translation('editEnvironmentModal.identifier')}: ${taskIdentifier}`,
-    `• ${translation('environment.slack.labels.environment')}: ${validatedEnvironment}`,
-    environment.momento
-      ? `• ${translation('environmentExport.momentLabel')}: ${translateEnvironmentOption(environment.momento, translation)}`
+  const reportTitle = momentLabel
+    ? translation('environment.slack.titleWithMoment', {
+        moment: momentLabel,
+        report: translation('environment.slack.summaryHeader'),
+      })
+    : translation('environment.slack.summaryHeader');
+
+  const identificationLines = [
+    options.organizationName?.trim()
+      ? `• ${translation('environment.slack.labels.organization')}: ${options.organizationName.trim()}`
       : '',
-    `• ${translation('editEnvironmentModal.urls')}: ${monitoredUrlLabel}`,
-    `• ${translation('environmentExport.jiraLabel')}: ${jiraList.join(', ')}`,
-    `• ${translation('environment.slack.labels.testType')}: ${testTypeLabel}`,
-    `• ${translation('environment.slack.labels.executionType')}: ${suiteName}`,
+    options.storeName?.trim()
+      ? `• ${translation('environment.slack.labels.store')}: ${options.storeName.trim()}`
+      : '',
+    `• ${translation('environment.slack.labels.identifier')}: ${taskIdentifier}`,
+    environmentTypeLabel
+      ? `• ${translation('environment.slack.labels.environment')}: ${environmentTypeLabel}`
+      : '',
+    testTypeLabel ? `• ${translation('environment.slack.labels.testType')}: ${testTypeLabel}` : '',
+    executionName
+      ? `• ${translation('environment.slack.labels.executionType')}: ${executionName}`
+      : '',
+  ].filter(Boolean);
+
+  const summaryLines: string[] = [
+    `:bar_chart: ${reportTitle}`,
+    '',
+    translation('environment.slack.sections.identification'),
+    ...identificationLines,
+    '',
+    `• ${translation('environment.slack.labels.status')}: ${executionStatus}`,
+    `• ${translation('environment.slack.labels.coverage')}: ${options.progressLabel}`,
+    '',
+    `:link: ${translation('environment.slack.sections.preview')}`,
+    options.publicLink,
   ];
 
-  if (shouldShowReleaseLabel && releaseLabel) {
-    summaryLines.push(`• ${translation('environment.slack.labels.release')}: ${releaseLabel}`);
+  if (responsibleName) {
+    summaryLines.push(
+      '',
+      translation('environment.slack.sections.responsible'),
+      `• ${responsibleName}`,
+    );
   }
-
-  summaryLines.push(
-    `• ${translation('environment.slack.labels.previewLink')}: ${options.publicLink}`,
-    '',
-    `🧪 ${translation('environment.slack.sections.execution')}`,
-    `• ${translation('environment.slack.labels.totalScenarios')}: ${options.scenarioCount}`,
-    `• ${translation('environment.slack.labels.executedScenarios')}: ${options.executedScenariosCount}`,
-    `• ${translation('environment.slack.labels.status')}: ${executionStatus}`,
-    '',
-    `📦 ${translation('environment.slack.sections.suite')}`,
-    `• ${translation('environment.slack.labels.suiteName')}: ${suiteName}`,
-    `• ${translation('environment.slack.labels.suiteCoverage')}: ${options.progressLabel}`,
-    '',
-    `🌐 ${translation('environment.slack.sections.monitoredUrls')}`,
-    `• ${monitoredUrlLabel} (${platformLabel})`,
-    '',
-    `👥 ${translation('environment.slack.sections.participants')}`,
-    `• ${responsibleName}`,
-    '',
-    `🔗 ${translation('environment.slack.sections.jira')}`,
-    ...jiraList.map((jira) => `• ${jira}`),
-  );
 
   const summaryMessage = summaryLines.filter(Boolean).join('\n');
 
