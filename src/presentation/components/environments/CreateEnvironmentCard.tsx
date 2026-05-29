@@ -5,6 +5,7 @@ import type { Environment, EnvironmentScenario } from '../../../domain/entities/
 import type { Store, StoreScenario, StoreSuite } from '../../../domain/entities/store';
 import { environmentService } from '../../../infrastructure/services/environmentService';
 import { Button } from '../Button';
+import { SaveIcon } from '../icons';
 import { SelectInput } from '../SelectInput';
 import { TextInput } from '../TextInput';
 import {
@@ -376,7 +377,13 @@ export const CreateEnvironmentCard = ({
         )}
 
         <div className="environment-form-actions">
-          <Button type="submit" isLoading={isSubmitting} loadingText={t('saving')}>
+          <Button
+            type="submit"
+            isLoading={isSubmitting}
+            loadingText={t('saving')}
+            className="button-save"
+          >
+            <SaveIcon aria-hidden className="icon" />
             {t('createEnvironment.create')}
           </Button>
         </div>

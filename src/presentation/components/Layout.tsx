@@ -57,7 +57,7 @@ export const Layout = ({ children, showHeader = true }: LayoutProps) => {
             </span>
           </Link>
           <nav className="header-actions">
-            <SupportCenter compact />
+            <SupportCenter />
             {user ? (
               <div className="header-user">
                 <div className="header-user-actions">

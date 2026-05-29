@@ -4,6 +4,7 @@ import { saveAs } from 'file-saver';
 export type EnvironmentExportRow = {
   titulo: string;
   categoria: string;
+  automacao: string;
   criticidade: string;
   observacao?: string;
   statuses: string[];
@@ -60,6 +61,10 @@ const COLORS = {
   criticalityHighText: 'FFFFFF',
   criticalityCriticalBg: '8B5CF6',
   criticalityCriticalText: 'FFFFFF',
+  automationBg: '2563EB',
+  automationText: 'FFFFFF',
+  notAutomationBg: 'DC2626',
+  notAutomationText: 'FFFFFF',
 };
 
 const normalize = (value: string) =>
@@ -124,6 +129,14 @@ const statusStyle = (status: string) => {
     return { bg: COLORS.blockedBg, fg: COLORS.blockedText };
   }
   return { bg: COLORS.grayBg, fg: COLORS.grayText };
+};
+
+const automationStyle = (automation: string) => {
+  const normalized = normalize(automation);
+  if (normalized.includes('nao') || normalized.includes('not')) {
+    return { bg: COLORS.notAutomationBg, fg: COLORS.notAutomationText };
+  }
+  return { bg: COLORS.automationBg, fg: COLORS.automationText };
 };
 
 const criticidadeStyle = (criticality: string) => {
@@ -245,7 +258,7 @@ export const exportEnvironmentExcel = async ({
 }) => {
   const workbook = new ExcelJS.Workbook();
   const statusColumnCount = Math.max(0, scenarioRows[0]?.statuses.length ?? 0);
-  const hasEvidenceColumn = scenarioHeaderLabels.length > 4 + statusColumnCount;
+  const hasEvidenceColumn = scenarioHeaderLabels.length > 5 + statusColumnCount;
 
   buildInfoSheet(workbook, environmentSheetName, infoHeaderLabels, infoRows);
 
@@ -256,9 +269,10 @@ export const exportEnvironmentExcel = async ({
   worksheet.columns = [
     { header: scenarioHeaderLabels[0], key: 'titulo' },
     { header: scenarioHeaderLabels[1], key: 'categoria' },
-    { header: scenarioHeaderLabels[2], key: 'criticidade' },
-    { header: scenarioHeaderLabels[3], key: 'observacao' },
-    ...scenarioHeaderLabels.slice(4, 4 + statusColumnCount).map((header, index) => ({
+    { header: scenarioHeaderLabels[2], key: 'automacao' },
+    { header: scenarioHeaderLabels[3], key: 'criticidade' },
+    { header: scenarioHeaderLabels[4], key: 'observacao' },
+    ...scenarioHeaderLabels.slice(5, 5 + statusColumnCount).map((header, index) => ({
       header,
       key: `status_${index}`,
     })),
@@ -275,6 +289,7 @@ export const exportEnvironmentExcel = async ({
     worksheet.addRow({
       titulo: row.titulo,
       categoria: row.categoria,
+      automacao: row.automacao,
       criticidade: row.criticidade,
       observacao: row.observacao ?? '',
       ...row.statuses.reduce<Record<string, string>>((acc, status, index) => {
@@ -289,11 +304,15 @@ export const exportEnvironmentExcel = async ({
     const row = worksheet.getRow(rowIndex);
     row.eachCell((cell) => applyBaseCellStyle(cell));
 
-    const criticalityCell = row.getCell(3);
+    const automationCell = row.getCell(3);
+    const automation = automationStyle(String(automationCell.value ?? ''));
+    stylePill(automationCell, automation.bg, automation.fg);
+
+    const criticalityCell = row.getCell(4);
     const criticality = criticidadeStyle(String(criticalityCell.value ?? ''));
     stylePill(criticalityCell, criticality.bg, criticality.fg);
 
-    for (let columnIndex = 5; columnIndex < 5 + statusColumnCount; columnIndex += 1) {
+    for (let columnIndex = 6; columnIndex < 6 + statusColumnCount; columnIndex += 1) {
       const statusCell = row.getCell(columnIndex);
       const status = statusStyle(String(statusCell.value ?? ''));
       stylePill(statusCell, status.bg, status.fg);
@@ -303,18 +322,19 @@ export const exportEnvironmentExcel = async ({
   const columnValues = [
     [worksheet.getColumn(1).header as string, ...scenarioRows.map((row) => row.titulo)],
     [worksheet.getColumn(2).header as string, ...scenarioRows.map((row) => row.categoria)],
-    [worksheet.getColumn(3).header as string, ...scenarioRows.map((row) => row.criticidade)],
-    [worksheet.getColumn(4).header as string, ...scenarioRows.map((row) => row.observacao ?? '')],
+    [worksheet.getColumn(3).header as string, ...scenarioRows.map((row) => row.automacao)],
+    [worksheet.getColumn(4).header as string, ...scenarioRows.map((row) => row.criticidade)],
+    [worksheet.getColumn(5).header as string, ...scenarioRows.map((row) => row.observacao ?? '')],
     ...scenarioHeaderLabels
-      .slice(4, 4 + statusColumnCount)
+      .slice(5, 5 + statusColumnCount)
       .map((_, index) => [
-        worksheet.getColumn(5 + index).header as string,
+        worksheet.getColumn(6 + index).header as string,
         ...scenarioRows.map((row) => row.statuses[index] ?? ''),
       ]),
     ...(hasEvidenceColumn
       ? [
           [
-            worksheet.getColumn(5 + statusColumnCount).header as string,
+            worksheet.getColumn(6 + statusColumnCount).header as string,
             ...scenarioRows.map((row) => row.evidencia ?? ''),
           ],
         ]

@@ -15,8 +15,15 @@ import {
 } from '../ScenarioColumnSortControl';
 import { isAutomatedScenario } from '../../../shared/utils/automation';
 import { getEnvironmentColumns } from '../../../infrastructure/external/environments';
-import { getCriticalityClassName, getCriticalityLabelKey } from '../../constants/scenarioOptions';
-import { normalizeCriticalityEnum } from '../../../shared/utils/scenarioEnums';
+import {
+  getAutomationLabelKey,
+  getCriticalityClassName,
+  getCriticalityLabelKey,
+} from '../../constants/scenarioOptions';
+import {
+  normalizeAutomationEnum,
+  normalizeCriticalityEnum,
+} from '../../../shared/utils/scenarioEnums';
 import { useToast } from '../../context/ToastContext';
 import { PaginationControls } from '../PaginationControls';
 import { EyeIcon } from '../icons';
@@ -40,6 +47,7 @@ export const EnvironmentEvidenceTable = ({
   const [scenarioSort, setScenarioSort] = useState<ScenarioSortConfig | null>(null);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [criticalityFilter, setCriticalityFilter] = useState('');
+  const [automationFilter, setAutomationFilter] = useState('');
   const [visibleCount, setVisibleCount] = useState(20);
   const canViewDetails = Boolean(onViewDetails);
   const environmentColumns = useMemo(() => getEnvironmentColumns(environment), [environment]);
@@ -92,6 +100,18 @@ export const EnvironmentEvidenceTable = ({
       first.localeCompare(second, 'pt-BR', { sensitivity: 'base' }),
     );
   }, [scenarioEntries]);
+  const automationOptions = useMemo(() => {
+    const automations = new Set<string>();
+    scenarioEntries.forEach(([, data]) => {
+      const normalized = normalizeAutomationEnum(data.automatizado);
+      if (normalized) {
+        automations.add(normalized);
+      }
+    });
+    return Array.from(automations).sort((first, second) =>
+      first.localeCompare(second, 'pt-BR', { sensitivity: 'base' }),
+    );
+  }, [scenarioEntries]);
   const criticalityOptions = useMemo(() => {
     const criticalities = new Set<string>();
     scenarioEntries.forEach(([, data]) => {
@@ -111,9 +131,12 @@ export const EnvironmentEvidenceTable = ({
         const matchesCriticality = criticalityFilter
           ? normalizeCriticalityEnum(data.criticidade) === criticalityFilter
           : true;
-        return matchesCategory && matchesCriticality;
+        const matchesAutomation = automationFilter
+          ? normalizeAutomationEnum(data.automatizado) === automationFilter
+          : true;
+        return matchesCategory && matchesAutomation && matchesCriticality;
       }),
-    [categoryFilter, criticalityFilter, scenarioEntries],
+    [automationFilter, categoryFilter, criticalityFilter, scenarioEntries],
   );
   const orderedScenarioEntries = useMemo(() => {
     if (!scenarioSort) {
@@ -145,7 +168,7 @@ export const EnvironmentEvidenceTable = ({
   const isReadOnly = Boolean(isLocked || readOnly);
   useEffect(() => {
     setVisibleCount(20);
-  }, [categoryFilter, criticalityFilter, scenarioSort, scenarioEntries.length]);
+  }, [automationFilter, categoryFilter, criticalityFilter, scenarioSort, scenarioEntries.length]);
 
   const formatCriticalityLabel = (value?: string | null) => {
     const labelKey = getCriticalityLabelKey(value);
@@ -154,6 +177,17 @@ export const EnvironmentEvidenceTable = ({
     }
     return value?.trim() || translation('storeSummary.emptyValue');
   };
+  const formatAutomationLabel = (value?: string | null) => {
+    const labelKey = getAutomationLabelKey(value);
+    if (labelKey) {
+      return translation(labelKey);
+    }
+    return value?.trim() || translation('storeSummary.emptyValue');
+  };
+
+  const getAutomationClassName = (value?: string | null) =>
+    isAutomatedScenario(value) ? 'automation-badge--automated' : 'automation-badge--not-automated';
+
   const handleStatusChange = async (
     scenarioId: string,
     platform: EnvironmentScenarioPlatform,
@@ -210,6 +244,29 @@ export const EnvironmentEvidenceTable = ({
             ))}
           </select>
         </label>
+
+        <label className="environment-table__filter">
+          <span className="environment-table__filter-label">
+            {translation('storeSummary.automation')}
+          </span>
+          <select
+            className="environment-table__filter-select"
+            value={automationFilter}
+            onChange={(event) => setAutomationFilter(event.target.value)}
+            aria-label={translation('storeSummary.automation')}
+          >
+            <option value="">{translation('environmentEvidenceTable.filters_todas')}</option>
+            {automationOptions.map((option) => {
+              const labelKey = getAutomationLabelKey(option);
+              const label = labelKey ? translation(labelKey) : option;
+              return (
+                <option key={option} value={option}>
+                  {label}
+                </option>
+              );
+            })}
+          </select>
+        </label>
         <label className="environment-table__filter">
           <span className="environment-table__filter-label">
             {translation('environmentEvidenceTable.filters_criticidade')}
@@ -250,6 +307,14 @@ export const EnvironmentEvidenceTable = ({
               </th>
               <th className="environment-table__cell-nowrap">
                 <ScenarioColumnSortControl
+                  label={translation('storeSummary.automation')}
+                  field="automation"
+                  sort={scenarioSort}
+                  onChange={setScenarioSort}
+                />
+              </th>
+              <th className="environment-table__cell-nowrap">
+                <ScenarioColumnSortControl
                   label={translation('environmentEvidenceTable.table_criticidade')}
                   field="criticality"
                   sort={scenarioSort}
@@ -280,6 +345,13 @@ export const EnvironmentEvidenceTable = ({
                     </span>
                   </td>
                   <td className="environment-table__cell-nowrap">{data.categoria}</td>
+                  <td className="environment-table__cell-nowrap">
+                    <span
+                      className={`automation-badge ${getAutomationClassName(data.automatizado)}`}
+                    >
+                      {formatAutomationLabel(data.automatizado)}
+                    </span>
+                  </td>
                   <td className="environment-table__cell-nowrap">
                     <span
                       className={`criticality-badge ${getCriticalityClassName(data.criticidade)}`}

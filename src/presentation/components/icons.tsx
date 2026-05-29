@@ -24,6 +24,8 @@ import {
   FiPieChart,
   FiPlusCircle,
   FiShield,
+  FiRefreshCw,
+  FiSave,
   FiSettings,
   FiShoppingBag,
   FiTrendingUp,
@@ -41,6 +43,8 @@ export const EyeIcon = (props: IconBaseProps) => <FiEye {...props} />;
 export const EyeSlashIcon = (props: IconBaseProps) => <FiEyeOff {...props} />;
 export const ActivityIcon = (props: IconBaseProps) => <FiActivity {...props} />;
 export const SettingsIcon = (props: IconBaseProps) => <FiSettings {...props} />;
+export const SaveIcon = (props: IconBaseProps) => <FiSave {...props} />;
+export const UpdateIcon = (props: IconBaseProps) => <FiRefreshCw {...props} />;
 export const LinkIcon = (props: IconBaseProps) => <FiLink {...props} />;
 export const CopyIcon = (props: IconBaseProps) => <FiCopy {...props} />;
 export const FileTextIcon = (props: IconBaseProps) => <FiFileText {...props} />;
