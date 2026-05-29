@@ -15,9 +15,15 @@ import { useToast } from '../../context/ToastContext';
 import { PaginationControls } from '../PaginationControls';
 import { Modal } from '../Modal';
 import { Button } from '../Button';
+import { TextInput } from '../TextInput';
+import { SelectInput } from '../SelectInput';
 import { EnvironmentCard } from './EnvironmentCard';
+import {
+  MOMENT_OPTIONS_BY_ENVIRONMENT,
+  TEST_TYPES_BY_ENVIRONMENT,
+} from '../../constants/environmentOptions';
 import { CreateEnvironmentCard } from './CreateEnvironmentCard';
-import { ArchiveIcon, CheckCircleIcon, InboxIcon, ProgressIcon } from '../icons';
+import { ArchiveIcon, CheckCircleIcon, InboxIcon, ProgressIcon, SaveIcon } from '../icons';
 
 interface EnvironmentKanbanProps {
   storeId: string;
@@ -76,7 +82,25 @@ export const EnvironmentKanban = ({
   const [archivedVisibleCount, setArchivedVisibleCount] = useState(5);
   const [environmentToClone, setEnvironmentToClone] = useState<Environment | null>(null);
   const [isCloning, setIsCloning] = useState(false);
+  const [cloneIdentifier, setCloneIdentifier] = useState('');
+  const [cloneUrl, setCloneUrl] = useState('');
+  const [cloneTipoAmbiente, setCloneTipoAmbiente] = useState('WS');
+  const [cloneTipoTeste, setCloneTipoTeste] = useState('Smoke-test');
+  const [cloneMomento, setCloneMomento] = useState('');
+  const [cloneSuiteId, setCloneSuiteId] = useState('');
   const { t } = useTranslation();
+  const cloneTipoTesteOptions = useMemo(
+    () => TEST_TYPES_BY_ENVIRONMENT[cloneTipoAmbiente] ?? ['Smoke-test'],
+    [cloneTipoAmbiente],
+  );
+  const cloneMomentoOptions = useMemo(
+    () => MOMENT_OPTIONS_BY_ENVIRONMENT[cloneTipoAmbiente] ?? [],
+    [cloneTipoAmbiente],
+  );
+  const selectedCloneSuite = useMemo(
+    () => suites.find((suite) => suite.id === cloneSuiteId),
+    [cloneSuiteId, suites],
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -175,6 +199,14 @@ export const EnvironmentKanban = ({
   }, [environments, suites]);
 
   const requestCloneEnvironment = (environment: Environment) => {
+    const suffix = t('environmentKanban.cloneIdentifierSuffix').trim().replace(/\s+/g, '-');
+    const stamp = Date.now().toString(36).slice(-4);
+    setCloneIdentifier(`${environment.identificador}-${suffix}-${stamp}`);
+    setCloneUrl((environment.urls ?? [])[0] ?? '');
+    setCloneTipoAmbiente(environment.tipoAmbiente);
+    setCloneTipoTeste(environment.tipoTeste);
+    setCloneMomento(environment.momento ?? '');
+    setCloneSuiteId(environment.suiteId ?? '');
     setEnvironmentToClone(environment);
   };
 
@@ -193,25 +225,33 @@ export const EnvironmentKanban = ({
     const environment = environmentToClone;
     setIsCloning(true);
     try {
-      const suffix = t('environmentKanban.cloneIdentifierSuffix').trim().replace(/\s+/g, '-');
-      const stamp = Date.now().toString(36).slice(-4);
-      const identifier = `${environment.identificador}-${suffix}-${stamp}`;
+      const identifier = cloneIdentifier.trim() || environment.identificador;
+      const urls = cloneUrl.trim() ? [cloneUrl.trim()] : [];
       const environmentColumns =
         environment.environmentColumns && environment.environmentColumns.length > 0
           ? environment.environmentColumns
           : ['Desktop', 'Mobile'];
-      const clonedScenarios = cloneScenarioMap(environment.scenarios ?? {}, environmentColumns);
+      const sourceScenarios = selectedCloneSuite
+        ? Object.fromEntries(
+            selectedCloneSuite.scenarioIds
+              .map((scenarioId) => [scenarioId, environment.scenarios?.[scenarioId]] as const)
+              .filter((entry): entry is readonly [string, EnvironmentScenario] =>
+                Boolean(entry[1]),
+              ),
+          )
+        : (environment.scenarios ?? {});
+      const clonedScenarios = cloneScenarioMap(sourceScenarios, environmentColumns);
       const createdEnvironment = await environmentService.create({
         identificador: identifier,
         storeId: environment.storeId,
-        suiteId: environment.suiteId,
-        suiteName: environment.suiteName,
-        urls: environment.urls ?? [],
+        suiteId: selectedCloneSuite?.id ?? environment.suiteId,
+        suiteName: selectedCloneSuite?.name ?? environment.suiteName,
+        urls,
         jiraTask: environment.jiraTask ?? '',
-        tipoAmbiente: environment.tipoAmbiente,
-        tipoTeste: environment.tipoTeste,
-        momento: environment.momento,
-        release: environment.release,
+        tipoAmbiente: cloneTipoAmbiente,
+        tipoTeste: cloneTipoTeste,
+        momento: cloneMomentoOptions.length > 0 ? cloneMomento : null,
+        release: null,
         status: 'backlog',
         timeTracking: { start: null, end: null, totalMs: 0 },
         presentUsersIds: [],
@@ -400,11 +440,69 @@ export const EnvironmentKanban = ({
         title={t('environmentKanban.cloneConfirmTitle')}
         description={t('environmentKanban.cloneConfirmDescription')}
       >
-        <p>
-          {t('environmentKanban.cloneConfirmMessage', {
-            identifier: environmentToClone?.identificador ?? '',
-          })}
-        </p>
+        <div className="form-grid">
+          <p className="form-hint">
+            {t('environmentKanban.cloneConfirmMessage', {
+              identifier: environmentToClone?.identificador ?? '',
+            })}
+          </p>
+          <TextInput
+            id="clone-environment-identifier"
+            label={t('editEnvironmentModal.identifier')}
+            value={cloneIdentifier}
+            onChange={(event) => setCloneIdentifier(event.target.value)}
+            required
+          />
+          <TextInput
+            id="clone-environment-url"
+            label={t('editEnvironmentModal.urls')}
+            value={cloneUrl}
+            onChange={(event) => setCloneUrl(event.target.value)}
+          />
+          <SelectInput
+            id="clone-environment-type"
+            label={t('editEnvironmentModal.environmentType')}
+            value={cloneTipoAmbiente}
+            onChange={(event) => setCloneTipoAmbiente(event.target.value)}
+            options={[
+              {
+                value: storeStage === 'Preview' ? 'Preview' : 'WS',
+                label:
+                  storeStage === 'Preview'
+                    ? t('storeSummary.storePlatformFaststore')
+                    : t('storeSummary.storePlatformVtexio'),
+              },
+              { value: 'TM', label: t('environmentOptions.TM') },
+              { value: 'PROD', label: t('environmentOptions.PROD') },
+            ]}
+          />
+          <SelectInput
+            id="clone-environment-test-type"
+            label={t('editEnvironmentModal.testType')}
+            value={cloneTipoTeste}
+            onChange={(event) => setCloneTipoTeste(event.target.value)}
+            options={cloneTipoTesteOptions.map((option) => ({ value: option, label: t(option) }))}
+          />
+          {cloneMomentoOptions.length > 0 && (
+            <SelectInput
+              id="clone-environment-moment"
+              label={t('editEnvironmentModal.moment')}
+              value={cloneMomento}
+              onChange={(event) => setCloneMomento(event.target.value)}
+              options={cloneMomentoOptions.map((option) => ({ value: option, label: t(option) }))}
+            />
+          )}
+          <SelectInput
+            id="clone-environment-suite"
+            label={t('createEnvironment.suiteId')}
+            value={cloneSuiteId}
+            onChange={(event) => setCloneSuiteId(event.target.value)}
+            options={[
+              { value: '', label: t('createEnvironment.none') },
+              ...suites.map((suite) => ({ value: suite.id, label: suite.name })),
+            ]}
+          />
+        </div>
         <div className="modal-actions">
           <Button
             type="button"
@@ -420,6 +518,7 @@ export const EnvironmentKanban = ({
             isLoading={isCloning}
             loadingText={t('environmentKanban.cloneLoading')}
           >
+            <SaveIcon aria-hidden className="icon" />
             {t('environmentKanban.cloneConfirmAction')}
           </Button>
         </div>

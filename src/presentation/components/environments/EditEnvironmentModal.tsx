@@ -12,7 +12,7 @@ import { Button } from '../Button';
 import { Modal } from '../Modal';
 import { SelectInput } from '../SelectInput';
 import { TextInput } from '../TextInput';
-import { TrashIcon } from '../icons';
+import { SaveIcon, TrashIcon } from '../icons';
 import {
   MOMENT_OPTIONS_BY_ENVIRONMENT,
   TEST_TYPES_BY_ENVIRONMENT,
@@ -450,7 +450,9 @@ export const EditEnvironmentModal = ({
               disabled={isLocked}
               isLoading={isSubmitting}
               loadingText={translation('editEnvironmentModal.saving')}
+              className="button-save"
             >
+              <SaveIcon aria-hidden className="icon" />
               {translation('editEnvironmentModal.saveChanges')}
             </Button>
           </div>

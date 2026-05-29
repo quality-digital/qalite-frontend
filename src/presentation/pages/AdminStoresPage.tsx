@@ -29,7 +29,9 @@ import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import {
   ActivityIcon,
   PieChartIcon,
+  SaveIcon,
   SettingsIcon,
+  TrashIcon,
   StorefrontIcon,
   UsersGroupIcon,
 } from '../components/icons';
@@ -885,16 +887,12 @@ export const AdminStoresPage = () => {
             ) : null}
             <div className="organization-pending-requests">
               <div className="organization-pending-requests__header">
-                <strong>{translation('AdminStoresPage.pending-requests-title')}</strong>
-                <span className="form-hint">
-                  {translation('AdminStoresPage.pending-requests-count', {
-                    count: pendingAccessRequests.length,
-                  })}
-                </span>
+                <strong>Solicitações pendentes para entrar na organização</strong>
+                <span className="form-hint">{pendingAccessRequests.length} solicitação(ões)</span>
               </div>
 
               {pendingAccessRequests.length === 0 ? (
-                <p className="form-hint">{translation('AdminStoresPage.pending-requests-empty')}</p>
+                <p className="form-hint">Nenhuma solicitação pendente para esta organização.</p>
               ) : (
                 <ul className="collaborator-list organization-members-list">
                   {pendingAccessRequests.map((request) => (
@@ -949,7 +947,8 @@ export const AdminStoresPage = () => {
           </div>
 
           <div className="form-actions">
-            <Button type="submit" isLoading={isSavingOrganization}>
+            <Button type="submit" isLoading={isSavingOrganization} className="button-save">
+              <SaveIcon aria-hidden className="icon" />
               {translation('storeSummary.saveChanges')}
             </Button>
             <Button
@@ -973,6 +972,7 @@ export const AdminStoresPage = () => {
             className="link-danger"
             onClick={() => setOrganizationDeleteModalOpen(true)}
           >
+            <TrashIcon aria-hidden className="icon" />
             {translation('delete')}
           </button>
         </div>
@@ -1035,7 +1035,8 @@ export const AdminStoresPage = () => {
             }
           />
           <div className="form-actions">
-            <Button type="submit" isLoading={isSavingStore}>
+            <Button type="submit" isLoading={isSavingStore} className="button-save">
+              <SaveIcon aria-hidden className="icon" />
               {editingStore
                 ? translation('storeSummary.saveChanges')
                 : translation('AdminStoresPage.new-store-button')}
@@ -1061,6 +1062,7 @@ export const AdminStoresPage = () => {
               className="link-danger"
               onClick={() => setStoreDeleteModalOpen(true)}
             >
+              <TrashIcon aria-hidden className="icon" />
               {translation('delete')}
             </button>
           </div>

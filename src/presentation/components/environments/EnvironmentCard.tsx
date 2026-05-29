@@ -5,6 +5,10 @@ import type { Environment } from '../../../domain/entities/environment';
 import type { UserSummary } from '../../../domain/entities/user';
 import { getReadableUserName, getUserInitials } from '../../utils/userDisplay';
 import { ENVIRONMENT_STATUS_LABEL } from '../../../shared/config/environmentLabels';
+import {
+  getEnvironmentColumns,
+  getScenarioPlatformStatuses,
+} from '../../../infrastructure/external/environments';
 import { translateEnvironmentOption } from '../../constants/environmentOptions';
 import { ClockIcon, CopyIcon, ListIcon, LayersIcon, UsersIcon } from '../icons';
 import { CachedImage } from '../CachedImage';
@@ -45,6 +49,14 @@ export const EnvironmentCard = ({
     scenarioEntries.length > 0
       ? Math.round((completedScenariosCount / scenarioEntries.length) * 100)
       : 0;
+  const environmentColumns = getEnvironmentColumns(environment);
+  const columnScenarioCounts = environmentColumns.map((column) => {
+    const total = scenarioEntries.length;
+    const completed = scenarioEntries.filter((scenario) =>
+      completedStatuses.has(getScenarioPlatformStatuses(scenario, environmentColumns)[column]),
+    ).length;
+    return { column, completed, total };
+  });
   const momentLabel = translateEnvironmentOption(environment.momento, t);
 
   const handleOpen = () => onOpen(environment);
@@ -109,13 +121,17 @@ export const EnvironmentCard = ({
       {/* Stats and Participants row */}
       <div className="environment-card__footer">
         <div className="environment-card__stats">
-          <div className="environment-card__stat-item">
-            <ListIcon aria-hidden className="environment-card__stat-icon" />
-            <div className="environment-card__stat-content">
-              <span className="environment-card__stat-value">{environment.totalCenarios}</span>
-              <span className="environment-card__stat-label">{t('scenarios')}</span>
+          {columnScenarioCounts.map((item) => (
+            <div key={item.column} className="environment-card__stat-item">
+              <ListIcon aria-hidden className="environment-card__stat-icon" />
+              <div className="environment-card__stat-content">
+                <span className="environment-card__stat-value">
+                  {item.completed}/{item.total}
+                </span>
+                <span className="environment-card__stat-label">{item.column}</span>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
 
         {/* Participants and Clone action */}

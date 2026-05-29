@@ -44,11 +44,7 @@ import {
   getEnvironmentColumns,
   getScenarioPlatformStatuses,
 } from '../../infrastructure/external/environments';
-import {
-  getAutomationLabelKey,
-  getCriticalityClassName,
-  getCriticalityLabelKey,
-} from '../constants/scenarioOptions';
+import { getAutomationLabelKey, getCriticalityLabelKey } from '../constants/scenarioOptions';
 import { translateEnvironmentOption } from '../constants/environmentOptions';
 import {
   CopyIcon,
@@ -308,10 +304,6 @@ export const EnvironmentPage = () => {
     (invitePage - 1) * invitePageSize,
     invitePage * invitePageSize,
   );
-  const detailScenarioStatus =
-    detailScenario && environment
-      ? getScenarioPlatformStatuses(detailScenario, getEnvironmentColumns(environment))
-      : null;
   const hasIncompleteScenarios = useMemo(() => {
     if (!environment) {
       return false;
@@ -324,13 +316,16 @@ export const EnvironmentPage = () => {
       return statuses.some((status) => !SCENARIO_COMPLETED_STATUSES.includes(status));
     });
   }, [environment]);
-  const formatAutomationLabel = (value?: string | null) => {
-    const labelKey = getAutomationLabelKey(value);
-    if (labelKey) {
-      return translation(labelKey);
-    }
-    return value?.trim() || translation('storeSummary.emptyValue');
-  };
+  const formatAutomationLabel = useCallback(
+    (value?: string | null) => {
+      const labelKey = getAutomationLabelKey(value);
+      if (labelKey) {
+        return translation(labelKey);
+      }
+      return value?.trim() || translation('storeSummary.emptyValue');
+    },
+    [translation],
+  );
   const formatCriticalityLabel = useCallback(
     (value?: string | null) => {
       const labelKey = getCriticalityLabelKey(value);
@@ -703,6 +698,7 @@ export const EnvironmentPage = () => {
       return {
         titulo: scenario.titulo || translation('storeSummary.emptyValue'),
         categoria: scenario.categoria || translation('storeSummary.emptyValue'),
+        automacao: formatAutomationLabel(scenario.automatizado),
         criticidade: formatCriticalityLabel(scenario.criticidade),
         observacao: observation,
         statuses: environmentColumns.map((column) => formatScenarioStatusLabel(statuses[column])),
@@ -780,6 +776,7 @@ export const EnvironmentPage = () => {
       scenarioHeaderLabels: [
         translation('environmentEvidenceTable.table_titulo'),
         translation('environmentEvidenceTable.table_categoria'),
+        translation('storeSummary.automation'),
         translation('environmentEvidenceTable.table_criticidade'),
         translation('environmentEvidenceTable.table_observacao'),
         ...environmentColumns,
@@ -788,6 +785,7 @@ export const EnvironmentPage = () => {
   }, [
     environment,
     executedScenariosCount,
+    formatAutomationLabel,
     formatCriticalityLabel,
     formatScenarioStatusLabel,
     participantProfiles,
@@ -1209,44 +1207,6 @@ export const EnvironmentPage = () => {
         {detailScenario ? (
           <>
             <p className="scenario-details-title">{detailScenario.titulo}</p>
-            <div className="scenario-details-items">
-              <div className="scenario-details-item">
-                <span className="scenario-details-label">
-                  {translation('environmentEvidenceTable.table_categoria')}
-                </span>
-                <span className="scenario-details-value">
-                  {detailScenario.categoria || translation('storeSummary.emptyValue')}
-                </span>
-              </div>
-              <div className="scenario-details-item">
-                <span className="scenario-details-label">
-                  {translation('storeSummary.automation')}
-                </span>
-                <span className="scenario-details-value">
-                  {formatAutomationLabel(detailScenario.automatizado)}
-                </span>
-              </div>
-              <div className="scenario-details-item">
-                <span className="scenario-details-label">
-                  {translation('environmentEvidenceTable.table_criticidade')}
-                </span>
-                <span
-                  className={`criticality-badge scenario-details-criticality ${getCriticalityClassName(
-                    detailScenario.criticidade,
-                  )}`}
-                >
-                  {formatCriticalityLabel(detailScenario.criticidade)}
-                </span>
-              </div>
-              {Object.entries(detailScenarioStatus ?? {}).map(([column, status]) => (
-                <div className="scenario-details-item" key={column}>
-                  <span className="scenario-details-label">{column}</span>
-                  <span className="scenario-details-value">
-                    {formatScenarioStatusLabel(status)}
-                  </span>
-                </div>
-              ))}
-            </div>
             <div className="scenario-details-section">
               <span className="scenario-details-label">
                 {translation('environmentEvidenceTable.table_observacao')}
