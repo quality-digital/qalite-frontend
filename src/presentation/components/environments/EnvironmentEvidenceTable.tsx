@@ -16,6 +16,7 @@ import {
 import { isAutomatedScenario } from '../../../shared/utils/automation';
 import { getEnvironmentColumns } from '../../../infrastructure/external/environments';
 import {
+  getAutomationClassName,
   getAutomationLabelKey,
   getCriticalityClassName,
   getCriticalityLabelKey,
@@ -184,9 +185,6 @@ export const EnvironmentEvidenceTable = ({
     }
     return value?.trim() || translation('storeSummary.emptyValue');
   };
-
-  const getAutomationClassName = (value?: string | null) =>
-    isAutomatedScenario(value) ? 'automation-badge--automated' : 'automation-badge--not-automated';
 
   const handleStatusChange = async (
     scenarioId: string,

@@ -57,7 +57,6 @@ export const Layout = ({ children, showHeader = true }: LayoutProps) => {
             </span>
           </Link>
           <nav className="header-actions">
-            <SupportCenter />
             {user ? (
               <div className="header-user">
                 <div className="header-user-actions">
@@ -89,6 +88,7 @@ export const Layout = ({ children, showHeader = true }: LayoutProps) => {
         </header>
       )}
       <main className="app-main">{children}</main>
+      <SupportCenter />
     </div>
   );
 };

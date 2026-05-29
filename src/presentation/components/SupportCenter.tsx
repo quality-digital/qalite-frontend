@@ -16,7 +16,8 @@ export const SupportCenter = () => {
         onClick={() => setIsOpen(true)}
         aria-label="Abrir central de suporte"
       >
-        ?
+        <span aria-hidden>?</span>
+        <span>Ajuda</span>
       </button>
 
       <Modal

@@ -8425,13 +8425,14 @@ textarea:focus-visible {
   right: clamp(1rem, 2.4vw, 1.75rem);
   bottom: clamp(1rem, 2.4vw, 1.75rem);
   z-index: 80;
-  width: 3.25rem;
+  min-width: 3.25rem;
   height: 3.25rem;
+  padding: 0 1rem;
   border: 0;
   border-radius: 999px;
   background: linear-gradient(140deg, var(--color-primary), var(--color-primary-strong));
   color: #fff;
-  font-size: 1.55rem;
+  font-size: 0.95rem;
   font-weight: 900;
   cursor: pointer;
   transition:
@@ -8441,6 +8442,12 @@ textarea:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.45rem;
+}
+
+.support-center-trigger span[aria-hidden] {
+  font-size: 1.35rem;
+  line-height: 1;
 }
 
 .support-center-trigger:hover,
