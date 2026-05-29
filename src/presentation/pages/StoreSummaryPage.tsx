@@ -36,6 +36,7 @@ import { LinkifiedText } from '../components/LinkifiedText';
 import {
   AUTOMATION_OPTIONS,
   CRITICALITY_OPTIONS,
+  getAutomationClassName,
   getAutomationLabelKey,
   getCriticalityClassName,
   getCriticalityLabelKey,
@@ -460,6 +461,17 @@ export const StoreSummaryPage = () => {
       return t(labelKey);
     }
     return value?.trim() || t('storeSummary.emptyValue');
+  };
+
+  const renderAutomationBadge = (value?: string | null) => {
+    const normalized = normalizeAutomationEnum(value);
+    const label = formatAutomationLabel(value);
+
+    if (!normalized) {
+      return label;
+    }
+
+    return <span className={`automation-badge ${getAutomationClassName(value)}`}>{label}</span>;
   };
 
   const formatCriticalityLabel = (value?: string | null) => {
@@ -2307,7 +2319,7 @@ export const StoreSummaryPage = () => {
                                         </td>
                                         <td>{scenario.category}</td>
                                         {viewMode === 'scenarios' && (
-                                          <td>{formatAutomationLabel(scenario.automation)}</td>
+                                          <td>{renderAutomationBadge(scenario.automation)}</td>
                                         )}
                                         <td className="scenario-actions">
                                           <button
@@ -2480,7 +2492,7 @@ export const StoreSummaryPage = () => {
                                             </td>
                                             <td data-label={t('storeSummary.automation')}>
                                               {scenario
-                                                ? formatAutomationLabel(scenario.automation)
+                                                ? renderAutomationBadge(scenario.automation)
                                                 : t('storeSummary.emptyValue')}
                                             </td>
                                             <td className="scenario-actions">
@@ -2795,7 +2807,7 @@ export const StoreSummaryPage = () => {
                                                       {scenario.category}
                                                     </td>
                                                     <td data-label={t('storeSummary.automation')}>
-                                                      {formatAutomationLabel(scenario.automation)}
+                                                      {renderAutomationBadge(scenario.automation)}
                                                     </td>
                                                   </tr>
                                                 );
@@ -2858,9 +2870,6 @@ export const StoreSummaryPage = () => {
           const detailCriticality = detailScenario
             ? formatCriticalityLabel(detailScenario.criticality)
             : t('storeSummary.emptyValue');
-          const detailAutomation = detailScenario
-            ? formatAutomationLabel(detailScenario.automation)
-            : t('storeSummary.emptyValue');
           const detailObservationValue = detailScenario?.observation?.trim() ?? '';
           const hasDetailObservation = Boolean(detailObservationValue);
           const detailBddValue = detailScenario?.bdd?.trim() ?? '';
@@ -2880,7 +2889,9 @@ export const StoreSummaryPage = () => {
                 </div>
                 <div className="scenario-details-item">
                   <span className="scenario-details-label">{t('storeSummary.automation')}</span>
-                  <span className="scenario-details-value">{detailAutomation}</span>
+                  <span className="scenario-details-value">
+                    {renderAutomationBadge(detailScenario?.automation)}
+                  </span>
                 </div>
                 <div className="scenario-details-item">
                   <span className="scenario-details-label">{t('storeSummary.criticality')}</span>

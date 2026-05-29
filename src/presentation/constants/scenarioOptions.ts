@@ -28,6 +28,11 @@ const AUTOMATION_LABEL_MAP: Record<AutomationValue, string> = {
   NOT_AUTOMATED: 'scenarioOptions.notAutomated',
 };
 
+const AUTOMATION_CLASS_MAP: Record<AutomationValue, string> = {
+  AUTOMATED: 'automation-badge--automated',
+  NOT_AUTOMATED: 'automation-badge--not-automated',
+};
+
 const CRITICALITY_LABEL_MAP: Record<CriticalityValue, string> = {
   LOW: 'scenarioOptions.low',
   MEDIUM: 'scenarioOptions.medium',
@@ -48,4 +53,9 @@ export const getCriticalityLabelKey = (value: string | null | undefined) => {
 export const getCriticalityClassName = (value: string) => {
   const normalized = normalizeCriticalityEnum(value);
   return normalized ? CRITICALITY_CLASS_MAP[normalized] : 'criticality-badge--low';
+};
+
+export const getAutomationClassName = (value: string | null | undefined) => {
+  const normalized = normalizeAutomationEnum(value);
+  return normalized ? AUTOMATION_CLASS_MAP[normalized] : 'automation-badge--not-automated';
 };
