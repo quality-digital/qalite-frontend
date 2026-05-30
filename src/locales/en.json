@@ -965,6 +965,20 @@
       "loadingText": "Saving...",
       "saveButton": "Save changes"
     },
+    "supportCenter": {
+      "openButtonAriaLabel": "Open support center",
+      "title": "Support",
+      "description": "A fast channel for technical questions and updates.",
+      "slackLogoAlt": "Slack logo",
+      "slackTitle": "Slack",
+      "lead": "Open the official channel to talk with support and follow updates.",
+      "points": {
+        "technicalIssues": "Technical questions and incidents",
+        "officialUpdates": "Alignment and official updates",
+        "centralizedSupport": "Centralized support from the team"
+      },
+      "openSupport": "Open support"
+    },
     "publicEnvironment": {
       "loading": "Loading public environment…",
       "notFound": "Environment not found.",

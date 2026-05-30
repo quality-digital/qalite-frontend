@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from './Modal';
 
 const SUPPORT_SLACK_URL = 'https://qualitydigitalsa.slack.com/archives/C0B3U4CP5L2';
@@ -7,6 +8,7 @@ const SLACK_PNG_URL =
 
 export const SupportCenter = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { t } = useTranslation();
 
   return (
     <>
@@ -14,7 +16,7 @@ export const SupportCenter = () => {
         type="button"
         className="support-center-trigger"
         onClick={() => setIsOpen(true)}
-        aria-label="Abrir central de suporte"
+        aria-label={t('supportCenter.openButtonAriaLabel')}
       >
         <span aria-hidden>?</span>
       </button>
@@ -22,35 +24,29 @@ export const SupportCenter = () => {
       <Modal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        title="Suporte"
-        description="Canal rápido para dúvidas técnicas e acompanhamento de comunicados."
+        title={t('supportCenter.title')}
+        description={t('supportCenter.description')}
         bodyClassName="support-center-modal"
       >
         <section className="support-center-card support-center-card--slack">
           <div className="support-center-card__head">
             <img
               src={SLACK_PNG_URL}
-              alt="Slack"
+              alt={t('supportCenter.slackLogoAlt')}
               className="support-center-brand-png"
               loading="lazy"
             />
-            <h3>Slack</h3>
+            <h3>{t('supportCenter.slackTitle')}</h3>
           </div>
-          <p className="support-center-card__lead">
-            Abra o canal oficial para falar com o suporte e acompanhar atualizações.
-          </p>
-          <ul className="support-center-card__points">
-            <li>Dúvidas técnicas e incidentes</li>
-            <li>Alinhamentos e comunicados oficiais</li>
-            <li>Atendimento centralizado no time</li>
-          </ul>
+          <p className="support-center-card__lead">{t('supportCenter.lead')}</p>
+
           <a
             href={SUPPORT_SLACK_URL}
             target="_blank"
             rel="noreferrer"
             className="button button-primary support-center-link"
           >
-            Abrir suporte
+            {t('supportCenter.openSupport')}
           </a>
         </section>
       </Modal>
