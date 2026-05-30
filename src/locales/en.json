@@ -279,6 +279,7 @@
       "submit": "Sign in",
       "loading": "Authenticating...",
       "forgotPassword": "Forgot my password",
+      "orContinueWith": "Or continue with",
       "noAccount": "Don't have an account?",
       "createNow": "Create now",
       "fieldRequired": "Enter email and password to continue.",
@@ -959,8 +960,25 @@
       "formats": "Supported formats: JPG, PNG, or WEBP (up to 5MB).",
       "enabled": "Enabled",
       "disabled": "Disabled",
+      "roleAdmin": "Administrator",
+      "emailVerified": "Email verified",
+      "organizationLinked": "Organization linked",
       "loadingText": "Saving...",
       "saveButton": "Save changes"
+    },
+    "supportCenter": {
+      "openButtonAriaLabel": "Open support center",
+      "title": "Support",
+      "description": "A fast channel for technical questions and updates.",
+      "slackLogoAlt": "Slack logo",
+      "slackTitle": "Slack",
+      "lead": "Open the official channel to talk with support and follow updates.",
+      "points": {
+        "technicalIssues": "Technical questions and incidents",
+        "officialUpdates": "Alignment and official updates",
+        "centralizedSupport": "Centralized support from the team"
+      },
+      "openSupport": "Open support"
     },
     "publicEnvironment": {
       "loading": "Loading public environment…",
@@ -1299,7 +1317,6 @@
     }
   },
   "profilePage.overviewBadge": "Overview",
-  "profilePage.personalBadge": "Personal details",
   "profilePage.personalTitle": "Personal details",
   "profilePage.personalSubtitle": "Update your name, avatar, and displayed email without leaving the page.",
   "profilePage.personalAction": "Save details",

@@ -3154,7 +3154,7 @@ export const StoreSummaryPage = () => {
               <div className="clone-progress__bar">
                 <span style={{ width: `${cloneProgress}%` }} />
               </div>
-              <p className="form-hint">
+              <p className="form-hint clone-progress__text">
                 {cloneProgress}% · {cloneProgressLabel}
               </p>
             </div>

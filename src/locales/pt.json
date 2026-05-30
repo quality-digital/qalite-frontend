@@ -280,6 +280,7 @@
       "submit": "Entrar",
       "loading": "Autenticando...",
       "forgotPassword": "Esqueci minha senha",
+      "orContinueWith": "Ou continuar com",
       "noAccount": "Ainda não tem conta?",
       "createNow": "Crie agora",
       "fieldRequired": "Informe e-mail e senha para continuar.",
@@ -960,8 +961,25 @@
       "formats": "Formatos suportados: JPG, PNG ou WEBP (até 5MB).",
       "enabled": "Ativado",
       "disabled": "Desativado",
+      "roleAdmin": "Administrador",
+      "emailVerified": "E-mail verificado",
+      "organizationLinked": "Organização vinculada",
       "loadingText": "Salvando...",
       "saveButton": "Salvar alterações"
+    },
+    "supportCenter": {
+      "openButtonAriaLabel": "Abrir central de suporte",
+      "title": "Suporte",
+      "description": "Canal rápido para dúvidas técnicas e acompanhamento de comunicados.",
+      "slackLogoAlt": "Logo do Slack",
+      "slackTitle": "Slack",
+      "lead": "Abra o canal oficial para falar com o suporte e acompanhar atualizações.",
+      "points": {
+        "technicalIssues": "Dúvidas técnicas e incidentes",
+        "officialUpdates": "Alinhamentos e comunicados oficiais",
+        "centralizedSupport": "Atendimento centralizado no time"
+      },
+      "openSupport": "Abrir suporte"
     },
     "publicEnvironment": {
       "loading": "Carregando ambiente público...",
@@ -1301,7 +1319,6 @@
     }
   },
   "profilePage.overviewBadge": "Visão geral",
-  "profilePage.personalBadge": "Dados pessoais",
   "profilePage.personalTitle": "Dados pessoais",
   "profilePage.personalSubtitle": "Atualize nome, avatar e e-mail exibido sem sair da página.",
   "profilePage.personalAction": "Salvar dados",
