@@ -279,6 +279,7 @@
       "submit": "Sign in",
       "loading": "Authenticating...",
       "forgotPassword": "Forgot my password",
+      "orContinueWith": "Or continue with",
       "noAccount": "Don't have an account?",
       "createNow": "Create now",
       "fieldRequired": "Enter email and password to continue.",

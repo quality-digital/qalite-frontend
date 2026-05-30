@@ -280,6 +280,7 @@
       "submit": "Entrar",
       "loading": "Autenticando...",
       "forgotPassword": "Esqueci minha senha",
+      "orContinueWith": "Ou continuar com",
       "noAccount": "Ainda não tem conta?",
       "createNow": "Crie agora",
       "fieldRequired": "Informe e-mail e senha para continuar.",
