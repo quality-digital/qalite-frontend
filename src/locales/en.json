@@ -959,6 +959,9 @@
       "formats": "Supported formats: JPG, PNG, or WEBP (up to 5MB).",
       "enabled": "Enabled",
       "disabled": "Disabled",
+      "roleAdmin": "Administrator",
+      "emailVerified": "Email verified",
+      "organizationLinked": "Organization linked",
       "loadingText": "Saving...",
       "saveButton": "Save changes"
     },
@@ -1299,7 +1302,6 @@
     }
   },
   "profilePage.overviewBadge": "Overview",
-  "profilePage.personalBadge": "Personal details",
   "profilePage.personalTitle": "Personal details",
   "profilePage.personalSubtitle": "Update your name, avatar, and displayed email without leaving the page.",
   "profilePage.personalAction": "Save details",

@@ -960,6 +960,9 @@
       "formats": "Formatos suportados: JPG, PNG ou WEBP (até 5MB).",
       "enabled": "Ativado",
       "disabled": "Desativado",
+      "roleAdmin": "Administrador",
+      "emailVerified": "E-mail verificado",
+      "organizationLinked": "Organização vinculada",
       "loadingText": "Salvando...",
       "saveButton": "Salvar alterações"
     },
@@ -1301,7 +1304,6 @@
     }
   },
   "profilePage.overviewBadge": "Visão geral",
-  "profilePage.personalBadge": "Dados pessoais",
   "profilePage.personalTitle": "Dados pessoais",
   "profilePage.personalSubtitle": "Atualize nome, avatar e e-mail exibido sem sair da página.",
   "profilePage.personalAction": "Salvar dados",

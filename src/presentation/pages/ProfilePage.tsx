@@ -22,6 +22,9 @@ export const ProfilePage = () => {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const { t } = useTranslation();
+  const showRoleLabel = user?.role === 'admin';
+  const showVerificationLabel = Boolean(user?.isEmailVerified);
+  const showOrganizationLabel = Boolean(user?.organizationId);
 
   useEffect(() => {
     setFirstName(user?.firstName ?? '');
@@ -83,7 +86,6 @@ export const ProfilePage = () => {
         <section className="card profile-card profile-card--hero">
           <div className="profile-toolbar">
             <BackButton label={t('back')} />
-            <span className="badge">{t('profilePage.badge')}</span>
           </div>
 
           <div className="profile-hero">
@@ -91,10 +93,25 @@ export const ProfilePage = () => {
               name={user?.displayName || user?.email || ''}
               photoUrl={photoPreview ?? user?.photoURL ?? null}
             />
-            <div>
+            <div className="profile-hero__content">
               <h1 className="section-title">{t('profilePage.title')}</h1>
               <p className="section-subtitle">{t('profilePage.subtitle')}</p>
               <span className="profile-hero__email">{user?.email ?? ''}</span>
+              <div className="profile-hero__meta">
+                {showRoleLabel && (
+                  <span className="profile-hero__chip">{t('profilePage.roleAdmin')}</span>
+                )}
+                {showVerificationLabel && (
+                  <span className="profile-hero__chip profile-hero__chip--soft">
+                    {t('profilePage.emailVerified')}
+                  </span>
+                )}
+                {showOrganizationLabel && (
+                  <span className="profile-hero__chip profile-hero__chip--ghost">
+                    {t('profilePage.organizationLinked')}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -129,21 +146,23 @@ export const ProfilePage = () => {
                 <span className="form-hint">{t('profilePage.formats')}</span>
               </div>
             </div>
-            <TextInput
-              id="firstName"
-              label={t('name')}
-              value={firstName}
-              onChange={(event) => setFirstName(event.target.value)}
-              required
-            />
+            <div className="profile-editor__grid">
+              <TextInput
+                id="firstName"
+                label={t('name')}
+                value={firstName}
+                onChange={(event) => setFirstName(event.target.value)}
+                required
+              />
 
-            <TextInput
-              id="lastName"
-              label={t('lastname')}
-              value={lastName}
-              onChange={(event) => setLastName(event.target.value)}
-              required
-            />
+              <TextInput
+                id="lastName"
+                label={t('lastname')}
+                value={lastName}
+                onChange={(event) => setLastName(event.target.value)}
+                required
+              />
+            </div>
 
             <TextInput
               id="email"

@@ -17,7 +17,6 @@ export const SupportCenter = () => {
         aria-label="Abrir central de suporte"
       >
         <span aria-hidden>?</span>
-        <span>Ajuda</span>
       </button>
 
       <Modal
@@ -37,12 +36,19 @@ export const SupportCenter = () => {
             />
             <h3>Slack</h3>
           </div>
-          <p>Abra o canal oficial para falar com o suporte e acompanhar atualizações.</p>
+          <p className="support-center-card__lead">
+            Abra o canal oficial para falar com o suporte e acompanhar atualizações.
+          </p>
+          <ul className="support-center-card__points">
+            <li>Dúvidas técnicas e incidentes</li>
+            <li>Alinhamentos e comunicados oficiais</li>
+            <li>Atendimento centralizado no time</li>
+          </ul>
           <a
             href={SUPPORT_SLACK_URL}
             target="_blank"
             rel="noreferrer"
-            className="support-center-link"
+            className="button button-primary support-center-link"
           >
             Abrir suporte
           </a>
