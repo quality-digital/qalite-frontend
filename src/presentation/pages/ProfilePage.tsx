@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { Alert } from '../components/Alert';
 import { BackButton } from '../components/BackButton';
 import { Button } from '../components/Button';
+import { SaveIcon } from '../components/icons';
 import { Layout } from '../components/Layout';
 import { TextInput } from '../components/TextInput';
 import { UserAvatar } from '../components/UserAvatar';
@@ -21,6 +22,9 @@ export const ProfilePage = () => {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const { t } = useTranslation();
+  const showRoleLabel = user?.role === 'admin';
+  const showVerificationLabel = Boolean(user?.isEmailVerified);
+  const showOrganizationLabel = Boolean(user?.organizationId);
 
   useEffect(() => {
     setFirstName(user?.firstName ?? '');
@@ -78,15 +82,38 @@ export const ProfilePage = () => {
 
   return (
     <Layout>
-      <div className="profile-layout">
-        <section className="card profile-card">
+      <div className="profile-layout profile-layout--refined">
+        <section className="card profile-card profile-card--hero">
           <div className="profile-toolbar">
             <BackButton label={t('back')} />
           </div>
 
-          <span className="badge">{t('profilePage.badge')}</span>
-          <h1 className="section-title">{t('profilePage.title')}</h1>
-          <p className="section-subtitle">{t('profilePage.subtitle')}</p>
+          <div className="profile-hero">
+            <UserAvatar
+              name={user?.displayName || user?.email || ''}
+              photoUrl={photoPreview ?? user?.photoURL ?? null}
+            />
+            <div className="profile-hero__content">
+              <h1 className="section-title">{t('profilePage.title')}</h1>
+              <p className="section-subtitle">{t('profilePage.subtitle')}</p>
+              <span className="profile-hero__email">{user?.email ?? ''}</span>
+              <div className="profile-hero__meta">
+                {showRoleLabel && (
+                  <span className="profile-hero__chip">{t('profilePage.roleAdmin')}</span>
+                )}
+                {showVerificationLabel && (
+                  <span className="profile-hero__chip profile-hero__chip--soft">
+                    {t('profilePage.emailVerified')}
+                  </span>
+                )}
+                {showOrganizationLabel && (
+                  <span className="profile-hero__chip profile-hero__chip--ghost">
+                    {t('profilePage.organizationLinked')}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
 
           {localError && <Alert type="error" message={localError} />}
 
@@ -119,21 +146,23 @@ export const ProfilePage = () => {
                 <span className="form-hint">{t('profilePage.formats')}</span>
               </div>
             </div>
-            <TextInput
-              id="firstName"
-              label={t('name')}
-              value={firstName}
-              onChange={(event) => setFirstName(event.target.value)}
-              required
-            />
+            <div className="profile-editor__grid">
+              <TextInput
+                id="firstName"
+                label={t('name')}
+                value={firstName}
+                onChange={(event) => setFirstName(event.target.value)}
+                required
+              />
 
-            <TextInput
-              id="lastName"
-              label={t('lastname')}
-              value={lastName}
-              onChange={(event) => setLastName(event.target.value)}
-              required
-            />
+              <TextInput
+                id="lastName"
+                label={t('lastname')}
+                value={lastName}
+                onChange={(event) => setLastName(event.target.value)}
+                required
+              />
+            </div>
 
             <TextInput
               id="email"
@@ -149,7 +178,9 @@ export const ProfilePage = () => {
               type="submit"
               isLoading={isLoading || isSaving}
               loadingText={t('profilePage.loadingText')}
+              className="button-save"
             >
+              <SaveIcon aria-hidden className="icon" />
               {t('profilePage.saveButton')}
             </Button>
           </form>

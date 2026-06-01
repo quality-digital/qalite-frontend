@@ -138,9 +138,6 @@ export const useEnvironmentDetails = (
               )}`,
             ]
           : []),
-        ...(environment?.release
-          ? [`${t('environmentSummary.release')}: ${environment.release}`]
-          : []),
       ],
       urls: environment?.urls ?? [],
       shareLinks: buildShareLinks(environment),

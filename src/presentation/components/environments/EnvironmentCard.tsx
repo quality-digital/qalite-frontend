@@ -6,7 +6,7 @@ import type { UserSummary } from '../../../domain/entities/user';
 import { getReadableUserName, getUserInitials } from '../../utils/userDisplay';
 import { ENVIRONMENT_STATUS_LABEL } from '../../../shared/config/environmentLabels';
 import { translateEnvironmentOption } from '../../constants/environmentOptions';
-import { ClockIcon, CopyIcon, ListIcon, LayersIcon, UsersIcon } from '../icons';
+import { ClockIcon, CopyIcon, LayersIcon, UsersIcon } from '../icons';
 import { CachedImage } from '../CachedImage';
 
 interface EnvironmentCardProps {
@@ -33,17 +33,13 @@ export const EnvironmentCard = ({
   const visibleParticipants = participants.slice(0, 3);
   const hiddenParticipantsCount = Math.max(participants.length - visibleParticipants.length, 0);
   const scenarioEntries = Object.values(environment.scenarios ?? {});
-  const completedStatuses = new Set(['concluido', 'concluido_automatizado', 'nao_se_aplica']);
-  const completedScenariosCount = scenarioEntries.filter((scenario) => {
-    const perColumnStatuses = Object.values(scenario.statusByEnvironment ?? {});
-    if (perColumnStatuses.length > 0) {
-      return perColumnStatuses.every((status) => completedStatuses.has(status));
-    }
-    return completedStatuses.has(scenario.status);
-  }).length;
   const progressPercentage =
     scenarioEntries.length > 0
-      ? Math.round((completedScenariosCount / scenarioEntries.length) * 100)
+      ? Math.round(
+          (scenarioEntries.filter((scenario) => scenario.status === 'concluido').length /
+            scenarioEntries.length) *
+            100,
+        )
       : 0;
   const momentLabel = translateEnvironmentOption(environment.momento, t);
 
@@ -106,19 +102,8 @@ export const EnvironmentCard = ({
         )}
       </div>
 
-      {/* Stats and Participants row */}
+      {/* Participants and Clone action row */}
       <div className="environment-card__footer">
-        <div className="environment-card__stats">
-          <div className="environment-card__stat-item">
-            <ListIcon aria-hidden className="environment-card__stat-icon" />
-            <div className="environment-card__stat-content">
-              <span className="environment-card__stat-value">{environment.totalCenarios}</span>
-              <span className="environment-card__stat-label">{t('scenarios')}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Participants and Clone action */}
         <div className="environment-card__side-actions">
           <div
             className="environment-card__participants-group"

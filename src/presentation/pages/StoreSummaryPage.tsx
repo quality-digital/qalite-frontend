@@ -36,6 +36,7 @@ import { LinkifiedText } from '../components/LinkifiedText';
 import {
   AUTOMATION_OPTIONS,
   CRITICALITY_OPTIONS,
+  getAutomationClassName,
   getAutomationLabelKey,
   getCriticalityClassName,
   getCriticalityLabelKey,
@@ -48,6 +49,8 @@ import {
   PlusCircleIcon,
   SettingsIcon,
   TrashIcon,
+  SaveIcon,
+  UpdateIcon,
 } from '../components/icons';
 import {
   normalizeAutomationEnum,
@@ -277,6 +280,14 @@ export const StoreSummaryPage = () => {
     onConfirm: () => Promise<void> | void;
   } | null>(null);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isCloneStoreModalOpen, setIsCloneStoreModalOpen] = useState(false);
+  const [cloneStoreName, setCloneStoreName] = useState('');
+  const [cloneStoreUrl, setCloneStoreUrl] = useState('');
+  const [cloneStoreSuiteIds, setCloneStoreSuiteIds] = useState<string[]>([]);
+  const [isCloningStore, setIsCloningStore] = useState(false);
+  const [cloneProgress, setCloneProgress] = useState(0);
+  const [cloneProgressLabel, setCloneProgressLabel] = useState('');
+  const [cloneStoreError, setCloneStoreError] = useState<string | null>(null);
   const {
     environments,
     isLoading: isLoadingEnvironments,
@@ -450,6 +461,17 @@ export const StoreSummaryPage = () => {
       return t(labelKey);
     }
     return value?.trim() || t('storeSummary.emptyValue');
+  };
+
+  const renderAutomationBadge = (value?: string | null) => {
+    const normalized = normalizeAutomationEnum(value);
+    const label = formatAutomationLabel(value);
+
+    if (!normalized) {
+      return label;
+    }
+
+    return <span className={`automation-badge ${getAutomationClassName(value)}`}>{label}</span>;
   };
 
   const formatCriticalityLabel = (value?: string | null) => {
@@ -1580,6 +1602,111 @@ export const StoreSummaryPage = () => {
     }
   };
 
+  const openCloneStoreModal = () => {
+    if (!store || !canManageStoreSettings) {
+      return;
+    }
+
+    setCloneStoreName(`${store.name} - clone`);
+    setCloneStoreUrl(store.site);
+    setCloneStoreSuiteIds(suites.map((suite) => suite.id));
+    setCloneProgress(0);
+    setCloneProgressLabel('');
+    setCloneStoreError(null);
+    setIsCloneStoreModalOpen(true);
+  };
+
+  const closeCloneStoreModal = () => {
+    if (isCloningStore) {
+      return;
+    }
+    setIsCloneStoreModalOpen(false);
+    setCloneStoreError(null);
+  };
+
+  const handleCloneStore = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!store || !canManageStoreSettings) {
+      return;
+    }
+
+    const name = cloneStoreName.trim();
+    const site = cloneStoreUrl.trim();
+    if (!name || !site) {
+      setCloneStoreError(t('storeSummary.cloneRequiredFields'));
+      return;
+    }
+
+    setIsCloningStore(true);
+    setCloneStoreError(null);
+    setCloneProgress(8);
+    setCloneProgressLabel(t('storeSummary.cloneCreatingStore'));
+
+    try {
+      const selectedSuites = suites.filter((suite) => cloneStoreSuiteIds.includes(suite.id));
+      const selectedScenarioIds = new Set(selectedSuites.flatMap((suite) => suite.scenarioIds));
+      const scenariosToClone = scenarios.filter((scenario) => selectedScenarioIds.has(scenario.id));
+      const totalSteps = Math.max(1, 1 + scenariosToClone.length + selectedSuites.length);
+      let completedSteps = 0;
+      const updateProgress = (label: string) => {
+        completedSteps += 1;
+        setCloneProgress(Math.min(100, Math.round((completedSteps / totalSteps) * 100)));
+        setCloneProgressLabel(label);
+      };
+
+      const clonedStore = await storeService.create({
+        organizationId: store.organizationId,
+        name,
+        site,
+        stage: store.stage,
+        environmentColumns: store.environmentColumns,
+        logoUrl: store.logoUrl,
+        slackWebhookUrl: store.slackWebhookUrl,
+      });
+      updateProgress(t('storeSummary.cloneStoreCreated'));
+
+      const scenarioIdMap = new Map<string, string>();
+      for (const scenario of scenariosToClone) {
+        const clonedScenario = await storeService.createScenario({
+          storeId: clonedStore.id,
+          title: scenario.title,
+          category: scenario.category,
+          automation: scenario.automation,
+          criticality: scenario.criticality,
+          observation: scenario.observation,
+          bdd: scenario.bdd,
+        });
+        scenarioIdMap.set(scenario.id, clonedScenario.id);
+        updateProgress(t('storeSummary.cloneScenarioProgress', { title: scenario.title }));
+      }
+
+      for (const suite of selectedSuites) {
+        await storeService.createSuite({
+          storeId: clonedStore.id,
+          name: suite.name,
+          description: suite.description,
+          scenarioIds: suite.scenarioIds
+            .map((scenarioId) => scenarioIdMap.get(scenarioId))
+            .filter((scenarioId): scenarioId is string => Boolean(scenarioId)),
+        });
+        updateProgress(t('storeSummary.cloneSuiteProgress', { name: suite.name }));
+      }
+
+      setCloneProgress(100);
+      setCloneProgressLabel(t('storeSummary.cloneFinished'));
+      showToast({ type: 'success', message: t('storeSummary.cloneStoreSuccess') });
+      setIsCloneStoreModalOpen(false);
+      navigate(`/stores?id=${clonedStore.id}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t('storeSummary.cloneStoreError');
+      setCloneStoreError(message);
+      showToast({ type: 'error', message });
+    } finally {
+      setIsCloningStore(false);
+    }
+  };
+
   const openDeleteStoreModal = () => {
     if (!store || !canManageStoreSettings) {
       return;
@@ -1707,6 +1834,10 @@ export const StoreSummaryPage = () => {
             </div>
             {store && canManageStoreSettings && (
               <div className="store-summary__actions">
+                <Button type="button" variant="secondary" onClick={openCloneStoreModal}>
+                  <CopyIcon aria-hidden className="icon" />
+                  {t('storeSummary.cloneStore')}
+                </Button>
                 <Button type="button" variant="secondary" onClick={openStoreSettings}>
                   <SettingsIcon aria-hidden className="icon" />
                   {t('storeSummary.storeConfigurations')}
@@ -1921,7 +2052,9 @@ export const StoreSummaryPage = () => {
                                         onClick={handleUpdateCategory}
                                         isLoading={updatingCategoryId === category.id}
                                         loadingText={t('storeSummary.saving')}
+                                        className="button-save"
                                       >
+                                        <SaveIcon aria-hidden className="icon" />
                                         Salvar
                                       </Button>
                                       <Button
@@ -1952,6 +2085,7 @@ export const StoreSummaryPage = () => {
                                       <Button
                                         type="button"
                                         variant="secondary"
+                                        className="button-danger"
                                         onClick={() => openDeleteCategoryModal(category)}
                                         disabled={
                                           deletingCategoryId === category.id || isCategoryUsed
@@ -1996,10 +2130,11 @@ export const StoreSummaryPage = () => {
                         isLoading={isSavingScenario}
                         loadingText={t('storeSummary.saving')}
                         data-testid="save-scenario-button"
+                        className={editingScenarioId ? 'button-update' : 'button-save'}
                       >
                         {editingScenarioId ? (
                           <>
-                            <PencilIcon aria-hidden className="icon" />
+                            <UpdateIcon aria-hidden className="icon" />
                             {t('storeSummary.updateScenario')}
                           </>
                         ) : (
@@ -2184,7 +2319,7 @@ export const StoreSummaryPage = () => {
                                         </td>
                                         <td>{scenario.category}</td>
                                         {viewMode === 'scenarios' && (
-                                          <td>{formatAutomationLabel(scenario.automation)}</td>
+                                          <td>{renderAutomationBadge(scenario.automation)}</td>
                                         )}
                                         <td className="scenario-actions">
                                           <button
@@ -2357,7 +2492,7 @@ export const StoreSummaryPage = () => {
                                             </td>
                                             <td data-label={t('storeSummary.automation')}>
                                               {scenario
-                                                ? formatAutomationLabel(scenario.automation)
+                                                ? renderAutomationBadge(scenario.automation)
                                                 : t('storeSummary.emptyValue')}
                                             </td>
                                             <td className="scenario-actions">
@@ -2419,7 +2554,7 @@ export const StoreSummaryPage = () => {
                                 variant="ghost"
                                 onClick={() => openDeleteSuiteModal(selectedSuitePreview)}
                                 disabled={isSavingSuite}
-                                className="suite-delete"
+                                className="suite-delete button-danger"
                               >
                                 <TrashIcon aria-hidden className="icon" />
                                 {t('storeSummary.deleteSuite')}
@@ -2465,15 +2600,16 @@ export const StoreSummaryPage = () => {
                                     isLoading={isSavingSuite}
                                     loadingText={t('storeSummary.saving')}
                                     data-testid="save-suite-button"
+                                    className={editingSuiteId ? 'button-update' : 'button-save'}
                                   >
                                     {editingSuiteId ? (
                                       <>
-                                        <PencilIcon aria-hidden className="icon" />
+                                        <UpdateIcon aria-hidden className="icon" />
                                         {t('storeSummary.updateSuite')}
                                       </>
                                     ) : (
                                       <>
-                                        <PlusCircleIcon aria-hidden className="icon" />
+                                        <SaveIcon aria-hidden className="icon" />
                                         {t('storeSummary.saveSuite')}
                                       </>
                                     )}
@@ -2671,7 +2807,7 @@ export const StoreSummaryPage = () => {
                                                       {scenario.category}
                                                     </td>
                                                     <td data-label={t('storeSummary.automation')}>
-                                                      {formatAutomationLabel(scenario.automation)}
+                                                      {renderAutomationBadge(scenario.automation)}
                                                     </td>
                                                   </tr>
                                                 );
@@ -2734,9 +2870,6 @@ export const StoreSummaryPage = () => {
           const detailCriticality = detailScenario
             ? formatCriticalityLabel(detailScenario.criticality)
             : t('storeSummary.emptyValue');
-          const detailAutomation = detailScenario
-            ? formatAutomationLabel(detailScenario.automation)
-            : t('storeSummary.emptyValue');
           const detailObservationValue = detailScenario?.observation?.trim() ?? '';
           const hasDetailObservation = Boolean(detailObservationValue);
           const detailBddValue = detailScenario?.bdd?.trim() ?? '';
@@ -2756,7 +2889,9 @@ export const StoreSummaryPage = () => {
                 </div>
                 <div className="scenario-details-item">
                   <span className="scenario-details-label">{t('storeSummary.automation')}</span>
-                  <span className="scenario-details-value">{detailAutomation}</span>
+                  <span className="scenario-details-value">
+                    {renderAutomationBadge(detailScenario?.automation)}
+                  </span>
                 </div>
                 <div className="scenario-details-item">
                   <span className="scenario-details-label">{t('storeSummary.criticality')}</span>
@@ -2929,7 +3064,9 @@ export const StoreSummaryPage = () => {
               isLoading={isUpdatingStore}
               loadingText={t('storeSummary.saving')}
               data-testid="save-store-settings"
+              className="button-save"
             >
+              <SaveIcon aria-hidden className="icon" />
               {t('storeSummary.saveChanges')}
             </Button>
             <Button
@@ -2951,15 +3088,94 @@ export const StoreSummaryPage = () => {
           </div>
           <button
             type="button"
-            className="link-danger"
+            className="link-danger link-danger--with-icon"
             onClick={openDeleteStoreModal}
             disabled={isDeletingStore}
             data-testid="delete-store-button"
           >
+            <TrashIcon aria-hidden className="icon" />
             {t('storeSummary.removeStore')}
           </button>
         </div>
       </Modal>
+      <Modal
+        isOpen={isCloneStoreModalOpen}
+        onClose={closeCloneStoreModal}
+        title={t('storeSummary.cloneStore')}
+        description={t('storeSummary.cloneStoreDescription')}
+      >
+        {cloneStoreError && <p className="form-message form-message--error">{cloneStoreError}</p>}
+        <form className="form-grid" onSubmit={handleCloneStore}>
+          <TextInput
+            id="clone-store-name"
+            label={t('storeManagement.storeNameLabel')}
+            value={cloneStoreName}
+            onChange={(event) => setCloneStoreName(event.target.value)}
+            required
+          />
+          <TextInput
+            id="clone-store-url"
+            label={t('storeManagement.storeSiteLabel')}
+            value={cloneStoreUrl}
+            onChange={(event) => setCloneStoreUrl(event.target.value)}
+            required
+          />
+          <div className="card clone-suite-picker">
+            <strong>{t('storeSummary.cloneSuitesTitle')}</strong>
+            <p className="form-hint">{t('storeSummary.cloneSuitesHint')}</p>
+            {suites.length === 0 ? (
+              <p className="form-hint">{t('storeSummary.noSuites')}</p>
+            ) : (
+              <div className="clone-suite-picker__list">
+                {suites.map((suite) => (
+                  <label key={suite.id} className="clone-suite-picker__item">
+                    <input
+                      type="checkbox"
+                      checked={cloneStoreSuiteIds.includes(suite.id)}
+                      onChange={(event) =>
+                        setCloneStoreSuiteIds((current) =>
+                          event.target.checked
+                            ? [...current, suite.id]
+                            : current.filter((suiteId) => suiteId !== suite.id),
+                        )
+                      }
+                    />
+                    <span>{suite.name}</span>
+                    <small>
+                      {suite.scenarioIds.length} {t('storeSummary.scenario')}
+                    </small>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+          {isCloningStore && (
+            <div className="clone-progress" aria-live="polite">
+              <div className="clone-progress__bar">
+                <span style={{ width: `${cloneProgress}%` }} />
+              </div>
+              <p className="form-hint clone-progress__text">
+                {cloneProgress}% · {cloneProgressLabel}
+              </p>
+            </div>
+          )}
+          <div className="form-actions">
+            <Button type="submit" isLoading={isCloningStore} className="button-save">
+              <SaveIcon aria-hidden className="icon" />
+              {t('storeSummary.cloneStore')}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={closeCloneStoreModal}
+              disabled={isCloningStore}
+            >
+              {t('cancel')}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
       <ConfirmDeleteModal
         isOpen={Boolean(deleteConfirmation)}
         message={deleteConfirmation?.message}

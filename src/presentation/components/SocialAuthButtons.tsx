@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FaGithub } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '../hooks/useAuth';
 
@@ -26,6 +27,7 @@ const GoogleBrandIcon = () => (
 );
 
 export const SocialAuthButtons = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { isLoading, loginWithGithub, loginWithGoogle } = useAuth();
   const [loadingProvider, setLoadingProvider] = useState<'github' | 'google' | null>(null);
@@ -70,7 +72,7 @@ export const SocialAuthButtons = () => {
 
   return (
     <div className="social-auth">
-      <div className="social-auth-label">Ou continuar com</div>
+      <div className="social-auth-label">{t('loginPage.orContinueWith')}</div>
       <div className="social-auth-buttons">
         <button
           type="button"

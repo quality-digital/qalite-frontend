@@ -37,7 +37,10 @@ import { EnvironmentStatusError } from '../../shared/errors/firebaseErrors';
 import { ENVIRONMENT_STATUS_LABEL } from '../../shared/config/environmentLabels';
 import { translateEnvironmentOption } from '../../shared/utils/environmentOptions';
 import i18n from '../../lib/i18n';
-import { normalizeCriticalityEnum } from '../../shared/utils/scenarioEnums';
+import {
+  normalizeAutomationEnum,
+  normalizeCriticalityEnum,
+} from '../../shared/utils/scenarioEnums';
 import { getDocsCacheThenServer } from './firestoreCache';
 import { CacheStore } from '../cache/CacheStore';
 import { fetchWithCache } from '../cache/cacheFetch';
@@ -782,6 +785,22 @@ const formatCriticalityLabel = (value: string, t: (key: string) => string) => {
   return value?.trim() || t('storeSummary.emptyValue');
 };
 
+const formatAutomationLabel = (value: string | null | undefined, t: (key: string) => string) => {
+  const normalized = normalizeAutomationEnum(value);
+  if (normalized === 'AUTOMATED') {
+    return t('scenarioOptions.automated');
+  }
+  if (normalized === 'NOT_AUTOMATED') {
+    return t('scenarioOptions.notAutomated');
+  }
+  return value?.trim() || t('storeSummary.emptyValue');
+};
+
+const getAutomationClassName = (value: string | null | undefined) =>
+  normalizeAutomationEnum(value) === 'AUTOMATED'
+    ? 'automation-pill automation-pill--automated'
+    : 'automation-pill automation-pill--not-automated';
+
 const normalizeLabel = (value: string) =>
   (value ?? '')
     .normalize('NFD')
@@ -887,6 +906,8 @@ export const exportEnvironmentAsPDF = (
   const scenarioRows = Object.values(environment.scenarios ?? {})
     .map((scenario) => {
       const statuses = getScenarioPlatformStatuses(scenario, environmentColumns);
+      const automationLabel = formatAutomationLabel(scenario.automatizado, t);
+      const automationClass = getAutomationClassName(scenario.automatizado);
       const criticalityLabel = formatCriticalityLabel(scenario.criticidade, t);
       const criticalityClass = getCriticalityClassName(scenario.criticidade);
       const observation =
@@ -895,6 +916,7 @@ export const exportEnvironmentAsPDF = (
         <tr>
           <td>${linkifyHtml(scenario.titulo)}</td>
           <td>${linkifyHtml(scenario.categoria)}</td>
+          <td><span class="${automationClass}">${escapeHtml(automationLabel)}</span></td>
           <td><span class="${criticalityClass}">${escapeHtml(criticalityLabel)}</span></td>
           <td>${linkifyHtml(observation)}</td>
           ${environmentColumns
@@ -989,6 +1011,7 @@ export const exportEnvironmentAsPDF = (
           .participant-photo { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
           .participant-photo--empty { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #e5e7eb; color: #6b7280; font-size: 0.75rem; }
           .criticality-pill,
+          .automation-pill,
           .status-pill,
           .severity-pill,
           .priority-pill { display: inline-flex; align-items: center; justify-content: center; padding: 2px 10px; border-radius: 999px; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; border: 1px solid var(--table-border); }
@@ -997,6 +1020,8 @@ export const exportEnvironmentAsPDF = (
           .criticality-pill--high { background: var(--criticality-high-bg); color: var(--criticality-high-text); }
           .criticality-pill--critical { background: var(--criticality-critical-bg); color: var(--criticality-critical-text); }
           .criticality-pill--unknown { background: var(--criticality-unknown-bg); color: var(--criticality-unknown-text); }
+          .automation-pill--automated { background: var(--automation-bg); color: var(--automation-text); }
+          .automation-pill--not-automated { background: var(--not-automation-bg); color: var(--not-automation-text); }
           .status-pill--pending { background: var(--status-pending-bg); color: var(--status-pending-text); }
           .status-pill--in-progress { background: var(--status-in-progress-bg); color: var(--status-in-progress-text); }
           .status-pill--done { background: var(--status-done-bg); color: var(--status-done-text); }
@@ -1021,13 +1046,6 @@ export const exportEnvironmentAsPDF = (
         ${
           environment.momento
             ? `<p>${escapeHtml(t('environmentExport.momentLabel'))}: ${escapeHtml(momentLabel)}</p>`
-            : ''
-        }
-        ${
-          environment.release
-            ? `<p>${escapeHtml(t('environmentExport.releaseLabel'))}: ${escapeHtml(
-                environment.release,
-              )}</p>`
             : ''
         }
         ${jiraTask ? `<p>${t('environmentExport.jiraLabel')}: ${jiraValue}</p>` : ''}
@@ -1065,6 +1083,7 @@ export const exportEnvironmentAsPDF = (
             <tr>
               <th>${t('environmentEvidenceTable.table_titulo')}</th>
               <th>${t('environmentEvidenceTable.table_categoria')}</th>
+              <th>${t('storeSummary.automation')}</th>
               <th>${t('environmentEvidenceTable.table_criticidade')}</th>
               <th>${t('environmentEvidenceTable.table_observacao')}</th>
               ${environmentColumns.map((column) => `<th>${escapeHtml(column)}</th>`).join('')}
@@ -1114,7 +1133,7 @@ export const copyEnvironmentAsMarkdown = async (
         scenario.observacao?.trim() || t('environmentEvidenceTable.observacao_none');
       return `| ${normalizeMarkdownCell(scenario.titulo)} | ${normalizeMarkdownCell(
         scenario.categoria,
-      )} | ${normalizeMarkdownCell(scenario.criticidade)} | ${normalizeMarkdownCell(
+      )} | ${normalizeMarkdownCell(formatAutomationLabel(scenario.automatizado, t))} | ${normalizeMarkdownCell(scenario.criticidade)} | ${normalizeMarkdownCell(
         observation,
       )} | ${environmentColumns
         .map((column) => normalizeMarkdownCell(translateScenarioStatus(statuses[column], t)))
@@ -1122,9 +1141,9 @@ export const copyEnvironmentAsMarkdown = async (
     })
     .join('\n');
   const scenarioTable = scenarioTableRows
-    ? `| ${t('environmentEvidenceTable.table_titulo')} | ${t('environmentEvidenceTable.table_categoria')} | ${t('environmentEvidenceTable.table_criticidade')} | ${t('environmentEvidenceTable.table_observacao')} | ${environmentColumns.join(
+    ? `| ${t('environmentEvidenceTable.table_titulo')} | ${t('environmentEvidenceTable.table_categoria')} | ${t('storeSummary.automation')} | ${t('environmentEvidenceTable.table_criticidade')} | ${t('environmentEvidenceTable.table_observacao')} | ${environmentColumns.join(
         ' | ',
-      )} |\n| --- | --- | --- | --- | ${environmentColumns
+      )} |\n| --- | --- | --- | --- | --- | ${environmentColumns
         .map(() => '---')
         .join(' | ')} |\n${scenarioTableRows}`
     : `- ${t('environmentExport.noScenarios')}`;

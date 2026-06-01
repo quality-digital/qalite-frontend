@@ -279,6 +279,7 @@
       "submit": "Sign in",
       "loading": "Authenticating...",
       "forgotPassword": "Forgot my password",
+      "orContinueWith": "Or continue with",
       "noAccount": "Don't have an account?",
       "createNow": "Create now",
       "fieldRequired": "Enter email and password to continue.",
@@ -959,8 +960,25 @@
       "formats": "Supported formats: JPG, PNG, or WEBP (up to 5MB).",
       "enabled": "Enabled",
       "disabled": "Disabled",
+      "roleAdmin": "Administrator",
+      "emailVerified": "Email verified",
+      "organizationLinked": "Organization linked",
       "loadingText": "Saving...",
       "saveButton": "Save changes"
+    },
+    "supportCenter": {
+      "openButtonAriaLabel": "Open support center",
+      "title": "Support",
+      "description": "A fast channel for technical questions and updates.",
+      "slackLogoAlt": "Slack logo",
+      "slackTitle": "Slack",
+      "lead": "Open the official channel to talk with support and follow updates.",
+      "points": {
+        "technicalIssues": "Technical questions and incidents",
+        "officialUpdates": "Alignment and official updates",
+        "centralizedSupport": "Centralized support from the team"
+      },
+      "openSupport": "Open support"
     },
     "publicEnvironment": {
       "loading": "Loading public environment…",
@@ -1172,7 +1190,7 @@
       "suitesRegistered": "Registered suites",
       "backToForm": "Back to form",
       "suitesLoading": "Loading test suites...",
-      "noSuites": "No suites registered yet. Use the form to create your first one.",
+      "noSuites": "No suites registered.",
       "suiteClick": "Click a card to view the associated scenarios.",
       "suiteNoScenarios": "This suite has no scenarios or some items were removed.",
       "suiteNoDescription": "Suite has no description.",
@@ -1214,7 +1232,19 @@
       "exportScenarioSheetName": "Scenarios",
       "organizationLogoAlt": "Organization logo",
       "storeLogoAlt": "Store logo",
-      "selectScenarioAriaLabel": "Select scenario {{scenario}}"
+      "selectScenarioAriaLabel": "Select scenario {{scenario}}",
+      "cloneStore": "Clone store",
+      "cloneStoreDescription": "Create a new store by copying selected suites and scenarios. Environments will not be cloned.",
+      "cloneRequiredFields": "Enter the store name and URL.",
+      "cloneCreatingStore": "Creating destination store...",
+      "cloneStoreCreated": "Store created. Loading scenarios...",
+      "cloneScenarioProgress": "Cloning scenario: {{title}}",
+      "cloneSuiteProgress": "Cloning suite: {{name}}",
+      "cloneFinished": "Clone completed.",
+      "cloneStoreSuccess": "Store cloned successfully.",
+      "cloneStoreError": "Could not clone the store.",
+      "cloneSuitesTitle": "Test suites",
+      "cloneSuitesHint": "Select which suites and scenarios should be inherited by the cloned store."
     },
     "generic": {
       "user": "User",
@@ -1287,7 +1317,6 @@
     }
   },
   "profilePage.overviewBadge": "Overview",
-  "profilePage.personalBadge": "Personal details",
   "profilePage.personalTitle": "Personal details",
   "profilePage.personalSubtitle": "Update your name, avatar, and displayed email without leaving the page.",
   "profilePage.personalAction": "Save details",
