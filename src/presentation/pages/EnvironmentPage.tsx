@@ -9,10 +9,10 @@ import type {
   EnvironmentStatus,
 } from '../../domain/entities/environment';
 import type { UserSummary } from '../../domain/entities/user';
-import type { SlackTaskSummaryPayload } from '../../infrastructure/external/slack';
+import type { SlackTaskSummaryPayload } from '../../domain/entities/slack';
 import { environmentService } from '../../infrastructure/services/environmentService';
 import { storeService } from '../../infrastructure/services/storeService';
-import { slackService } from '../../infrastructure/services/slackService';
+import { sendEnvironmentSummaryToSlack } from '../../infrastructure/external/slack';
 import { BackButton } from '../components/BackButton';
 import { Button } from '../components/Button';
 import { TextInput } from '../components/TextInput';
@@ -522,7 +522,7 @@ export const EnvironmentPage = () => {
 
       payload.webhookUrl = slackWebhookUrl;
 
-      await slackService.sendTaskSummary(payload);
+      await sendEnvironmentSummaryToSlack(payload);
     } catch (error) {
       console.error(error);
     } finally {

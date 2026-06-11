@@ -640,7 +640,7 @@ export const StoreSummaryPage = () => {
     setScenarioSort(null);
     setSuiteScenarioSort(null);
     setSuitePreviewSort(null);
-  }, [storeId, updateViewMode]);
+  }, [storeId]);
 
   const openStoreSettings = () => {
     if (!store || !canManageStoreSettings) {
@@ -753,8 +753,7 @@ export const StoreSummaryPage = () => {
     setScenarioFilters(emptyScenarioFilters);
     setSuiteScenarioFilters(emptyScenarioFilters);
     setSelectedSuitePreviewId(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeId]);
+  }, [storeId, updateViewMode]);
 
   useEffect(() => {
     if (!store?.id) {

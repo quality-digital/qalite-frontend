@@ -6960,23 +6960,6 @@ button.store-summary-highlight:focus-visible {
   color: var(--color-text-primary);
 }
 
-.environment-card-status-dot {
-  /* Deprecated: Use .environment-card__status-badge instead */
-  display: none;
-}
-
-.environment-card-status-dot--backlog {
-  display: none;
-}
-
-.environment-card-status-dot--in_progress {
-  display: none;
-}
-
-.environment-card-status-dot--done {
-  display: none;
-}
-
 .environment-present-users {
   list-style: none;
   padding: 0;
