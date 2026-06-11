@@ -640,7 +640,7 @@ export const StoreSummaryPage = () => {
     setScenarioSort(null);
     setSuiteScenarioSort(null);
     setSuitePreviewSort(null);
-  }, [storeId]);
+  }, [storeId, updateViewMode]);
 
   const openStoreSettings = () => {
     if (!store || !canManageStoreSettings) {
@@ -749,11 +749,10 @@ export const StoreSummaryPage = () => {
     setSuiteForm(emptySuiteForm);
     setSuiteFormError(null);
     setEditingSuiteId(null);
-    updateViewMode('scenarios');
     setScenarioFilters(emptyScenarioFilters);
     setSuiteScenarioFilters(emptyScenarioFilters);
     setSelectedSuitePreviewId(null);
-  }, [storeId, updateViewMode]);
+  }, [storeId]);
 
   useEffect(() => {
     if (!store?.id) {
