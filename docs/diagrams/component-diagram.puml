@@ -1,0 +1,41 @@
+@startuml
+!theme plain
+package "presentation" {
+  [AppRoutes]
+  [Providers]
+  [Pages]
+  [Components]
+  [Hooks]
+  [Contexts]
+}
+package "domain" {
+  [Entities]
+  [Repository Contracts]
+}
+package "infrastructure" {
+  [Services]
+  [Firebase Repositories]
+  [External Firebase/Slack]
+  [Cache]
+}
+package "shared" {
+  [Config]
+  [Errors]
+  [Utils]
+}
+
+[AppRoutes] --> [Providers]
+[Providers] --> [Contexts]
+[Pages] --> [Components]
+[Pages] --> [Hooks]
+[Hooks] --> [Services]
+[Contexts] --> [Services]
+[Services] --> [Firebase Repositories]
+[Firebase Repositories] ..> [Repository Contracts]
+[Firebase Repositories] --> [External Firebase/Slack]
+[External Firebase/Slack] --> [Cache]
+[Pages] --> [Entities]
+[Hooks] --> [Entities]
+[External Firebase/Slack] --> [Entities]
+[Pages] --> [Utils]
+@enduml

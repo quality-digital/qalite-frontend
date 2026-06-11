@@ -1,0 +1,21 @@
+@startuml
+!theme plain
+actor Usuario
+participant "Login/Register Page" as Page
+participant "AuthProvider/authService" as AuthService
+participant "Firebase Auth" as Auth
+participant "Firestore users" as Users
+participant "ProtectedRoute" as Guard
+
+Usuario -> Page : envia credenciais ou social login
+Page -> AuthService : login/register/social
+AuthService -> Auth : autentica
+Auth --> AuthService : Firebase user
+AuthService -> Users : cria/atualiza perfil
+Users --> AuthService : AuthUser
+AuthService --> Page : usuário autenticado
+Auth -> AuthService : onAuthStateChanged
+AuthService -> Users : carrega perfil
+Guard -> AuthService : verifica usuário/role
+Guard --> Usuario : permite rota ou redireciona
+@enduml

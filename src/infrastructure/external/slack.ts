@@ -4,14 +4,8 @@ import type {
   SlackTaskSummaryPayload,
 } from '../../domain/entities/slack';
 import { formatExecutionReportToSlack } from './slackMessageFormatter';
-import type { ExecutionReportData } from './slackMessageFormatter';
 
-export type {
-  EnvironmentSummaryAttendee,
-  EnvironmentSummaryPayload,
-  SlackTaskSummaryPayload,
-  ExecutionReportData,
-};
+export type { EnvironmentSummaryAttendee, EnvironmentSummaryPayload, SlackTaskSummaryPayload };
 
 const buildSlackWebhookBody = (payload: SlackTaskSummaryPayload): { text: string } => {
   const message =
@@ -58,15 +52,4 @@ export const sendEnvironmentSummaryToSlack = async (
     const message = await extractSlackErrorMessage(response);
     throw new Error(message ?? 'Falha ao enviar resumo para o Slack.');
   }
-};
-
-export const sendExecutionReportToSlack = async (
-  reportData: ExecutionReportData,
-  webhookUrl?: string | null,
-): Promise<void> => {
-  await sendEnvironmentSummaryToSlack({
-    environmentSummary: reportData,
-    message: formatExecutionReportToSlack(reportData),
-    webhookUrl: webhookUrl ?? null,
-  });
 };
