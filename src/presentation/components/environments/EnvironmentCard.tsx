@@ -63,7 +63,6 @@ export const EnvironmentCard = ({
       }}
       data-status={environment.status}
     >
-      {/* Header: Main title and status */}
       <div className="environment-card__top-section">
         <div className="environment-card__title-group">
           <span className="environment-card__identifier">{environment.identificador}</span>
@@ -76,7 +75,6 @@ export const EnvironmentCard = ({
         </span>
       </div>
 
-      {/* Info row: Suite and Moment */}
       <div className="environment-card__info-row">
         <div className="environment-card__info-item">
           <LayersIcon aria-hidden className="environment-card__info-icon" />
@@ -102,7 +100,6 @@ export const EnvironmentCard = ({
         )}
       </div>
 
-      {/* Participants and Clone action row */}
       <div className="environment-card__footer">
         <div className="environment-card__side-actions">
           <div
