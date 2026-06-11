@@ -1,0 +1,19 @@
+@startuml
+!theme plain
+actor "Usuário" as User
+actor "Administrador" as Admin
+rectangle "QAlite Frontend\nReact/Vite SPA" as App
+cloud "Firebase Auth" as Auth
+database "Firestore" as DB
+cloud "Firebase Storage" as Storage
+cloud "Slack Webhook" as Slack
+cloud "BrowserStack\n(credenciais armazenadas)" as BrowserStack
+
+User --> App : usa dashboards, lojas e ambientes
+Admin --> App : administra organizações e lojas
+App --> Auth : login, sessão, reset
+App --> DB : usuários, organizações, lojas, ambientes
+App --> Storage : uploads de logos, fotos e evidências
+App --> Slack : envia resumo por webhook
+App ..> BrowserStack : não chama API; guarda credenciais
+@enduml

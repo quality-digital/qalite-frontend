@@ -1,0 +1,25 @@
+@startuml
+!theme plain
+actor User
+participant "Page/Hook" as Page
+participant "Service" as Service
+participant "Firebase Repository" as Repo
+participant "External Module" as External
+database "Firestore/Auth/Storage" as Firebase
+cloud "Slack" as Slack
+
+User -> Page : ação de UI
+Page -> Service : método de domínio
+Service -> Repo : delega
+Repo -> External : função concreta
+alt Operação Firebase
+  External -> Firebase : query/mutation/upload/auth
+  Firebase --> External : dados/URL/sessão
+else Envio Slack
+  External -> Slack : POST webhook
+  Slack --> External : resposta HTTP
+end
+External --> Repo : entity/void
+Repo --> Service : resultado
+Service --> Page : atualiza estado
+@enduml

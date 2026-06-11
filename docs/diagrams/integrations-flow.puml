@@ -1,0 +1,17 @@
+@startuml
+!theme plain
+actor User
+component "QAlite SPA" as App
+cloud "Firebase Auth" as Auth
+database "Firestore" as Firestore
+folder "Firebase Storage" as Storage
+cloud "Slack Webhook" as Slack
+
+User -> App : login, CRUD, execução
+App -> Auth : autenticar/observar sessão
+App -> Firestore : ler/gravar domínio
+App -> Storage : upload de arquivos
+Storage --> App : downloadURL
+App -> Firestore : grava URL da evidência/logo/foto
+App -> Slack : POST resumo formatado
+@enduml
