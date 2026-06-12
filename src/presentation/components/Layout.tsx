@@ -7,9 +7,11 @@ import { UserAvatar } from './UserAvatar';
 import { CachedImage } from './CachedImage';
 import { StoreFavicon } from './StoreFavicon';
 import { LogoutIcon } from './icons';
-import qliteLogo from '../assets/logo.png';
+
 import { useTranslation } from 'react-i18next';
 import { SupportCenter } from './SupportCenter';
+
+const qliteLogo = '/assets/logo.png';
 
 interface LayoutProps {
   children: ReactNode;
