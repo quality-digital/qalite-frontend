@@ -1,7 +1,9 @@
 import { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import appLogo from '../assets/logo.png';
+
 import { SupportCenter } from './SupportCenter';
+
+const appLogo = '/assets/logo.png';
 
 interface AuthLayoutProps {
   title: string;

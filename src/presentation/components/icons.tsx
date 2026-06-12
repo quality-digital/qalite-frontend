@@ -2,7 +2,6 @@ import type { IconBaseProps } from 'react-icons';
 import {
   FiActivity,
   FiAlertCircle,
-  FiAlertTriangle,
   FiArchive,
   FiArrowLeft,
   FiArrowDown,
@@ -16,10 +15,8 @@ import {
   FiFileText,
   FiInbox,
   FiLayers,
-  FiList,
   FiLink,
   FiLock,
-  FiMessageCircle,
   FiLogOut,
   FiPieChart,
   FiPlusCircle,
@@ -57,13 +54,9 @@ export const CheckCircleIcon = (props: IconBaseProps) => <FiCheckCircle {...prop
 export const LayersIcon = (props: IconBaseProps) => <FiLayers {...props} />;
 export const ClockIcon = (props: IconBaseProps) => <FiClock {...props} />;
 export const UsersIcon = (props: IconBaseProps) => <FiUsers {...props} />;
-export const BugIcon = (props: IconBaseProps) => <FiAlertTriangle {...props} />;
-export const ListIcon = (props: IconBaseProps) => <FiList {...props} />;
 export const PlusCircleIcon = (props: IconBaseProps) => <FiPlusCircle {...props} />;
 export const ShieldIcon = (props: IconBaseProps) => <FiShield {...props} />;
 export const LockIcon = (props: IconBaseProps) => <FiLock {...props} />;
 export const PieChartIcon = (props: IconBaseProps) => <FiPieChart {...props} />;
 export const TrendIcon = (props: IconBaseProps) => <FiTrendingUp {...props} />;
 export const XCircleIcon = (props: IconBaseProps) => <FiAlertCircle {...props} />;
-
-export const MessageCircleIcon = (props: IconBaseProps) => <FiMessageCircle {...props} />;

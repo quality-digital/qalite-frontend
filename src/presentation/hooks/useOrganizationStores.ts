@@ -7,7 +7,7 @@ import { organizationService } from '../../infrastructure/services/organizationS
 import { storeService } from '../../infrastructure/services/storeService';
 import { useToast } from '../context/ToastContext';
 
-export type OrganizationStoresStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';
+type OrganizationStoresStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';
 
 interface OrganizationStoresState {
   organization: Organization | null;

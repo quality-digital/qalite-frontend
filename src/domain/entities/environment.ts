@@ -78,11 +78,6 @@ export interface CreateEnvironmentInput {
 
 export type UpdateEnvironmentInput = Partial<Omit<Environment, 'id'>>;
 
-export interface EnvironmentScenarioUpdate {
-  status?: EnvironmentScenarioStatus;
-  evidenciaArquivoUrl?: string | null;
-}
-
 export interface EnvironmentRealtimeFilters {
   storeId?: string;
 }

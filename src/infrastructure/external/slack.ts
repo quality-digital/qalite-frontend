@@ -1,17 +1,6 @@
-import type {
-  EnvironmentSummaryAttendee,
-  EnvironmentSummaryPayload,
-  SlackTaskSummaryPayload,
-} from '../../domain/entities/slack';
-import { formatExecutionReportToSlack } from './slackMessageFormatter';
-import type { ExecutionReportData } from './slackMessageFormatter';
+import type { SlackTaskSummaryPayload } from '../../domain/entities/slack';
 
-export type {
-  EnvironmentSummaryAttendee,
-  EnvironmentSummaryPayload,
-  SlackTaskSummaryPayload,
-  ExecutionReportData,
-};
+export type { SlackTaskSummaryPayload };
 
 const getServiceBaseUrl = (): string => {
   const envUrl = (import.meta.env.VITE_QALITE_SERVICE_URL as string | undefined)?.trim();
@@ -57,24 +46,4 @@ const extractErrorMessage = async (response: Response): Promise<string | null> =
   }
 
   return null;
-};
-
-/**
- * Envia um relatório de execução formatado para o Slack
- * @param reportData - Dados do relatório de execução
- * @param webhookUrl - URL do webhook do Slack (opcional, usa variável de ambiente se não fornecido)
- */
-export const sendExecutionReportToSlack = async (
-  reportData: ExecutionReportData,
-  webhookUrl?: string | null,
-): Promise<void> => {
-  const formattedMessage = formatExecutionReportToSlack(reportData);
-
-  const payload: SlackTaskSummaryPayload = {
-    environmentSummary: reportData,
-    message: formattedMessage,
-    webhookUrl: webhookUrl ?? null,
-  };
-
-  await sendEnvironmentSummaryToSlack(payload);
 };

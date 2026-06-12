@@ -1,7 +1,7 @@
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
-export type EnvironmentExportRow = {
+type EnvironmentExportRow = {
   titulo: string;
   categoria: string;
   automacao: string;
@@ -11,7 +11,7 @@ export type EnvironmentExportRow = {
   evidencia?: string;
 };
 
-export type ScenarioExportRow = {
+type ScenarioExportRow = {
   titulo: string;
   categoria: string;
   automacao: string;
@@ -20,7 +20,7 @@ export type ScenarioExportRow = {
   bdd?: string;
 };
 
-export type ExportInfoRow = {
+type ExportInfoRow = {
   label: string;
   value: string;
 };
