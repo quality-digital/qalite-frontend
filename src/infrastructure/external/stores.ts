@@ -765,27 +765,6 @@ export const listCategories = async (storeId: string): Promise<StoreCategory[]> 
   }
 };
 
-export const listenToCategories = (
-  storeId: string,
-  onChange: (categories: StoreCategory[]) => void,
-  onError?: (error: Error) => void,
-): Unsubscribe => {
-  const storeRef = doc(firebaseFirestore, STORES_COLLECTION, storeId);
-  const categoriesCollection = collection(storeRef, CATEGORIES_SUBCOLLECTION);
-  const categoriesQuery = query(categoriesCollection, orderBy('searchName'));
-
-  return onSnapshot(
-    categoriesQuery,
-    (snapshot) => {
-      const categories = snapshot.docs.map((docSnapshot) =>
-        mapCategory(storeId, docSnapshot.id, docSnapshot.data({ serverTimestamps: 'estimate' })),
-      );
-      onChange(categories);
-    },
-    (error) => onError?.(error),
-  );
-};
-
 export const createCategory = async (
   payload: { storeId: string } & StoreCategoryInput,
 ): Promise<StoreCategory> => {
