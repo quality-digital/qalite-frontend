@@ -5,8 +5,8 @@ import {
   type UserPreferences,
 } from '../../domain/entities/auth';
 
-export const THEME_PREFERENCE_STORAGE_KEY = 'qalite.themePreference';
-export const LEGACY_THEME_STORAGE_KEY = 'qalite-theme';
+const THEME_PREFERENCE_STORAGE_KEY = 'qalite.themePreference';
+const LEGACY_THEME_STORAGE_KEY = 'qalite-theme';
 export const LANGUAGE_STORAGE_KEY = 'qalite.language';
 
 const isThemePreference = (value: unknown): value is ThemePreference =>

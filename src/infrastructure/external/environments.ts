@@ -68,7 +68,7 @@ export const SCENARIO_COMPLETED_STATUSES: EnvironmentScenarioStatus[] = [
   'nao_se_aplica',
 ];
 
-export const DEFAULT_ENVIRONMENT_COLUMNS = ['Desktop', 'Mobile'];
+const DEFAULT_ENVIRONMENT_COLUMNS = ['Desktop', 'Mobile'];
 
 export const getEnvironmentColumns = (
   environment: Pick<Environment, 'environmentColumns'> | null | undefined,

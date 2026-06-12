@@ -9,9 +9,9 @@ import {
 } from 'react';
 import { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
-export type ToastType = 'info' | 'success' | 'error' | 'alert';
+type ToastType = 'info' | 'success' | 'error' | 'alert';
 
-export interface ToastOptions {
+interface ToastOptions {
   message: string;
   type?: ToastType;
   duration?: number;
@@ -34,7 +34,7 @@ const DEFAULT_DURATION = 4500;
 
 const generateId = () => Math.random().toString(36).slice(2, 10);
 
-export const getToastTitles = (translation: TFunction) => ({
+const getToastTitles = (translation: TFunction) => ({
   info: translation('info'),
   success: translation('success'),
   error: translation('error'),

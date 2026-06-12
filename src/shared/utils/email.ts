@@ -3,7 +3,7 @@ export const normalizeEmailDomain = (domain: string | null | undefined): string 
   return normalized || null;
 };
 
-export const getEmailDomain = (email: string): string | null => {
+const getEmailDomain = (email: string): string | null => {
   const [, domain = ''] = email.split('@');
   return domain ? domain.trim() : null;
 };

@@ -1,7 +1,7 @@
 import { FirebaseError } from 'firebase/app';
 import { t as translation } from 'i18next';
 
-export type EnvironmentStatusErrorCode = 'PENDING_SCENARIOS' | 'INVALID_ENVIRONMENT';
+type EnvironmentStatusErrorCode = 'PENDING_SCENARIOS' | 'INVALID_ENVIRONMENT';
 
 export class EnvironmentStatusError extends Error {
   constructor(

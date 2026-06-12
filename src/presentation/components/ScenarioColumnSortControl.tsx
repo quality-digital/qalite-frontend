@@ -16,15 +16,15 @@ const AUTOMATION_PRIORITY: Record<string, number> = {
   NOT_AUTOMATED: 1,
 };
 
-export interface ScenarioSortableShape {
+interface ScenarioSortableShape {
   criticality?: string | null;
   category?: string | null;
   automation?: string | null;
   title?: string | null;
 }
 
-export type ScenarioSortField = 'criticality' | 'automation' | 'category';
-export type ScenarioSortDirection = 'asc' | 'desc';
+type ScenarioSortField = 'criticality' | 'automation' | 'category';
+type ScenarioSortDirection = 'asc' | 'desc';
 
 export interface ScenarioSortConfig {
   field: ScenarioSortField;
