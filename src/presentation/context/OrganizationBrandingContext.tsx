@@ -2,7 +2,7 @@ import { ReactNode, createContext, useCallback, useContext, useMemo, useState } 
 
 import type { Organization } from '../../domain/entities/organization';
 
-export interface BrandingStore {
+interface BrandingStore {
   id?: string | null;
   name: string;
   logoUrl?: string | null;

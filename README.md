@@ -76,6 +76,7 @@ O Vite exibirá no terminal o endereço local da aplicação.
 | `npm run format`       | Formata o repositório com Prettier.                           |
 | `npm run format:check` | Verifica formatação sem alterar arquivos.                     |
 | `npm run check`        | Executa lint, typecheck e verificação de formatação.          |
+| `npm run validate`     | Executa todas as verificações de `check` e o build.           |
 
 Não há, atualmente, uma suíte automatizada de testes unitários ou de integração configurada. Mudanças em regras críticas devem incluir validação manual e, idealmente, introduzir testes automatizados em uma contribuição separada e bem delimitada.
 
@@ -119,6 +120,15 @@ src/
 
 Ao criar funcionalidades, preserve esse sentido de dependência: domínio não deve importar apresentação nem infraestrutura.
 
+### Dependências e manutenção
+
+- Antes de adicionar um pacote, confirme se a plataforma Web ou uma dependência já instalada resolve o caso.
+- Dependências de execução pertencem a `dependencies`; ferramentas usadas apenas no desenvolvimento, build ou validação pertencem a `devDependencies`.
+- Prefira importar diretamente do pacote que fornece a API. Não dependa acidentalmente de dependências transitivas.
+- Ao remover uma funcionalidade, remova no mesmo PR seus imports, tipos, traduções, estilos, assets, variáveis de ambiente e dependências exclusivas.
+- Mantenha contratos compartilhados em `src/domain/entities` em vez de redeclarar payloads equivalentes na infraestrutura.
+- Depois de alterar dependências, use `npm install` para atualizar `package-lock.json` e valide uma instalação limpa com `npm ci`.
+
 ## Rotas e carregamento
 
 As páginas são carregadas sob demanda em `src/presentation/routes/AppRoutes.tsx`. Rotas autenticadas usam `ProtectedRoute`; rotas administrativas também passam por `RoleProtectedRoute`. Providers públicos e autenticados são separados para evitar inicializar estado privado em páginas públicas.
@@ -145,12 +155,13 @@ Módulos pesados e usados apenas após uma ação, como exportação para Excel,
 1. Atualize sua branch a partir da branch principal do projeto.
 2. Crie uma branch curta e descritiva; commits diretos em `main`, `master` e `develop` são bloqueados pelos hooks locais.
 3. Faça mudanças pequenas, coesas e sem refatorações não relacionadas.
-4. Antes do commit, execute:
+4. Antes do commit, execute a validação completa:
 
    ```bash
-   npm run check
-   npm run build
+   npm run validate
    ```
+
+   Para feedback mais rápido durante o desenvolvimento, rode `npm run lint`, `npm run typecheck` ou `npm run format:check` separadamente.
 
 5. Faça também a validação manual do fluxo afetado com `npm run dev` ou `npm run preview`.
 6. Use commits no padrão Conventional Commits, por exemplo:
@@ -177,7 +188,7 @@ Após `npm ci`, o script `prepare` instala os hooks do Husky:
 - `commit-msg`: valida Conventional Commits;
 - `pre-push`: impede push direto de branches protegidas.
 
-Os hooks ajudam no feedback rápido, mas não substituem `npm run check` e `npm run build` antes de abrir o pull request.
+Os hooks ajudam no feedback rápido, mas não substituem `npm run validate` antes de abrir o pull request.
 
 ## Checklist de revisão
 
@@ -186,8 +197,7 @@ Os hooks ajudam no feedback rápido, mas não substituem `npm run check` e `npm 
 - [ ] Novos textos existem nos dois idiomas.
 - [ ] Não foram adicionadas credenciais ou informações sensíveis.
 - [ ] Não há imports, exports, classes CSS ou dependências sem uso.
-- [ ] `npm run check` passa.
-- [ ] `npm run build` passa.
+- [ ] `npm run validate` passa.
 - [ ] O fluxo alterado foi validado manualmente.
 - [ ] Mudanças visuais possuem screenshots no PR.
 
@@ -227,6 +237,5 @@ Use a versão de Node indicada em `.nvmrc`, apague instalações locais inconsis
 ```bash
 rm -rf node_modules
 npm ci
-npm run check
-npm run build
+npm run validate
 ```

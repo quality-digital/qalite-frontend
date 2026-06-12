@@ -80,7 +80,7 @@ const useAnimationComplete = (duration: number = MOTION_DURATIONS.base): boolean
   return isComplete;
 };
 
-export interface UseSequencedAnimationOptions {
+interface UseSequencedAnimationOptions {
   pageTransitionDuration?: number;
   contentDelay?: number;
 }

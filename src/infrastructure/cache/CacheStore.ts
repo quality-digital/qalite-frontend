@@ -4,7 +4,7 @@ type CacheEntry<T> = {
   version: string;
 };
 
-export type CacheReadResult<T> = {
+type CacheReadResult<T> = {
   value: T | null;
   isExpired: boolean;
 };

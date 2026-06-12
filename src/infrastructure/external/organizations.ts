@@ -26,11 +26,15 @@ import {
 
 import type { BrowserstackCredentials } from '../../domain/entities/browserstack';
 import type {
+  AddUserToOrganizationPayload,
   CancelOrganizationAccessRequestPayload,
+  CreateOrganizationPayload,
   Organization,
   OrganizationAccessRequest,
   OrganizationMember,
+  RemoveUserFromOrganizationPayload,
   RequestOrganizationAccessPayload,
+  UpdateOrganizationPayload,
 } from '../../domain/entities/organization';
 import { getNormalizedEmailDomain, normalizeEmailDomain } from '../../shared/utils/email';
 import { firebaseFirestore } from '../database/firebase';
@@ -56,33 +60,6 @@ const ORGANIZATION_LIST_CACHE_KEY = 'listSummary';
 const ORGANIZATION_DETAIL_CACHE_PREFIX = 'detail:';
 const ORGANIZATION_PAGE_SIZE = 50;
 const PENDING_ACCESS_STATUS = 'pending';
-
-export interface CreateOrganizationPayload {
-  name: string;
-  description: string;
-  slackWebhookUrl?: string | null;
-  emailDomain?: string | null;
-  browserstackCredentials?: BrowserstackCredentials | null;
-}
-
-export interface UpdateOrganizationPayload {
-  name: string;
-  description: string;
-  logoUrl?: string | null;
-  slackWebhookUrl?: string | null;
-  emailDomain?: string | null;
-  browserstackCredentials?: BrowserstackCredentials | null;
-}
-
-export interface AddUserToOrganizationPayload {
-  organizationId: string;
-  userEmail: string;
-}
-
-export interface RemoveUserFromOrganizationPayload {
-  organizationId: string;
-  userId: string;
-}
 
 const organizationsCollection = collection(firebaseFirestore, ORGANIZATIONS_COLLECTION);
 const accessRequestsCollection = (organizationId: string) =>
@@ -788,9 +765,7 @@ export const listenToAllPendingAccessRequests = (
     (error) => onError?.(error),
   );
 
-export const findOrganizationByEmailDomain = async (
-  email: string,
-): Promise<Organization | null> => {
+const findOrganizationByEmailDomain = async (email: string): Promise<Organization | null> => {
   const normalizedDomain = getNormalizedEmailDomain(email);
 
   if (!normalizedDomain) {
