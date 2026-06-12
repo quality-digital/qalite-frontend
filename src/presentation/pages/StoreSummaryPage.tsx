@@ -69,7 +69,6 @@ import { openScenarioPdf } from '../../shared/utils/storeImportExport';
 import { isAutomatedScenario } from '../../shared/utils/automation';
 import { useTranslation } from 'react-i18next';
 import { buildExternalLink } from '../utils/externalLink';
-import { exportScenarioExcel } from '../../utils/exportExcel';
 import { formatDateTime } from '../../shared/utils/time';
 
 const emptyScenarioForm: StoreScenarioInput = {
@@ -1393,7 +1392,9 @@ export const StoreSummaryPage = () => {
             }),
           },
         ];
-        exportScenarioExcel({
+        const { exportScenarioExcel } = await import('../../utils/exportExcel');
+
+        await exportScenarioExcel({
           fileName: `${baseFileName}.xlsx`,
           scenarioSheetName: t('storeSummary.exportExcelSheetName'),
           infoSheetName: t('storeSummary.exportExcelInfoSheetName'),

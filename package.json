@@ -8,10 +8,12 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint \"src/**/*.{ts,tsx}\"",
-    "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
-    "prepare": "husky install"
+    "lint": "eslint . --ext .ts,.tsx --max-warnings=0",
+    "lint:fix": "npm run lint -- --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run lint && npm run typecheck && npm run format:check",
+    "prepare": "husky"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
@@ -50,5 +52,9 @@
     "prettier": "^3.3.2",
     "typescript": "^5.4.5",
     "vite": "^5.2.0"
+  },
+  "engines": {
+    "node": ">=22",
+    "npm": ">=10"
   }
 }

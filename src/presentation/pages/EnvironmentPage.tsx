@@ -55,7 +55,6 @@ import {
   TrashIcon,
   UsersGroupIcon,
 } from '../components/icons';
-import { exportEnvironmentExcel } from '../../utils/exportExcel';
 import { ENVIRONMENT_STATUS_LABEL } from '../../shared/config/environmentLabels';
 
 interface SlackSummaryBuilderOptions {
@@ -684,7 +683,7 @@ export const EnvironmentPage = () => {
     await handleCopyLink(shareLinks.public);
   }, [environment, handleCopyLink, i18n.language, shareLinks.public]);
 
-  const handleExportExcel = useCallback(() => {
+  const handleExportExcel = useCallback(async () => {
     if (!environment) {
       return;
     }
@@ -766,7 +765,9 @@ export const EnvironmentPage = () => {
       },
     ].filter((row) => row.value && row.value.toString().trim().length > 0);
 
-    exportEnvironmentExcel({
+    const { exportEnvironmentExcel } = await import('../../utils/exportExcel');
+
+    await exportEnvironmentExcel({
       fileName,
       scenarioSheetName: translation('environment.exportExcelSheetName'),
       environmentSheetName: translation('environment.exportExcelEnvironmentSheetName'),
