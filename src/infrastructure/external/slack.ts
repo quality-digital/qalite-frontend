@@ -1,10 +1,6 @@
-import type {
-  EnvironmentSummaryAttendee,
-  EnvironmentSummaryPayload,
-  SlackTaskSummaryPayload,
-} from '../../domain/entities/slack';
+import type { SlackTaskSummaryPayload } from '../../domain/entities/slack';
 
-export type { EnvironmentSummaryAttendee, EnvironmentSummaryPayload, SlackTaskSummaryPayload };
+export type { SlackTaskSummaryPayload };
 
 const getServiceBaseUrl = (): string => {
   const envUrl = (import.meta.env.VITE_QALITE_SERVICE_URL as string | undefined)?.trim();

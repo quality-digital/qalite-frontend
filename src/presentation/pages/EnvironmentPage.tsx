@@ -58,43 +58,15 @@ import {
 import { ENVIRONMENT_STATUS_LABEL } from '../../shared/config/environmentLabels';
 
 interface SlackSummaryBuilderOptions {
-  totalTimeMs: number;
   scenarioCount: number;
   executedScenariosCount: number;
   progressLabel: string;
   publicLink: string;
-  urls: string[];
   participantProfiles: UserSummary[];
   testTypeLabel: string;
   storeName?: string;
   organizationName?: string;
 }
-
-const formatExecutedScenariosMessage = (
-  count: number,
-  translation: (key: string, opts?: TOptions) => string,
-) => {
-  if (count === 0) {
-    return translation('dynamic.executedScenarios.none');
-  }
-
-  if (count === 1) {
-    return translation('dynamic.executedScenarios.one');
-  }
-
-  return translation('dynamic.executedScenarios.many', { count });
-};
-
-const buildSuiteDetails = (
-  count: number,
-  translation: (key: string, opts?: TOptions) => string,
-) => {
-  if (count === 0) {
-    return translation('dynamic.suite.none');
-  }
-
-  return translation('dynamic.suite.many', { count });
-};
 
 const mapProfileToAttendee = (
   profile: UserSummary | undefined,
@@ -117,7 +89,7 @@ const buildAttendeesList = (
   environment: Environment,
   participantProfiles: UserSummary[],
   translation: (key: string, opts?: TOptions) => string,
-): SlackTaskSummaryPayload['environmentSummary']['attendees'] => {
+) => {
   const participantIds = Array.from(new Set(environment.participants ?? []));
   const profileMap = new Map(participantProfiles.map((profile) => [profile.id, profile]));
   const attendees = participantIds.map((participantId, index) =>
@@ -140,16 +112,11 @@ const buildSlackTaskSummaryPayload = (
   environment: Environment,
   options: SlackSummaryBuilderOptions,
   translation: (key: string, opts?: TOptions) => string,
+  webhookUrl: string,
 ): SlackTaskSummaryPayload => {
-  const suiteName = environment.suiteName?.trim() || translation('dynamic.suiteNameFallback');
   const executionName = environment.suiteName?.trim();
   const attendees = buildAttendeesList(environment, options.participantProfiles, translation);
   const attendeeList = attendees ?? [];
-  const uniqueParticipantsCount = new Set(environment.participants ?? []).size;
-  const participantsCount = uniqueParticipantsCount || attendeeList.length;
-  const monitoredUrls = (options.urls ?? []).filter(
-    (url) => typeof url === 'string' && url.trim().length > 0,
-  );
   const taskIdentifier =
     environment.identificador?.trim() || translation('dynamic.identifierFallback');
   const environmentTypeLabel = environment.tipoAmbiente
@@ -162,8 +129,7 @@ const buildSlackTaskSummaryPayload = (
     options.testTypeLabel?.trim() ||
     (environment.tipoTeste ? translateEnvironmentOption(environment.tipoTeste, translation) : '');
   const responsible = attendeeList[0];
-  const responsibleName =
-    typeof responsible === 'string' ? responsible.trim() : (responsible?.name?.trim() ?? '');
+  const responsibleName = responsible?.name?.trim() ?? '';
 
   const executionStatus =
     options.executedScenariosCount === options.scenarioCount
@@ -221,23 +187,7 @@ const buildSlackTaskSummaryPayload = (
   const summaryMessage = summaryLines.filter(Boolean).join('\n');
 
   return {
-    environmentSummary: {
-      identifier: taskIdentifier,
-      totalTime: '00:00:00',
-      totalTimeMs: options.totalTimeMs,
-      scenariosCount: options.scenarioCount,
-      executedScenariosCount: options.executedScenariosCount,
-      executedScenariosMessage: formatExecutedScenariosMessage(
-        options.executedScenariosCount,
-        translation,
-      ),
-      jira: environment.jiraTask?.trim() || translation('dynamic.identifierFallback'),
-      suiteName,
-      suiteDetails: buildSuiteDetails(options.scenarioCount, translation),
-      participantsCount,
-      monitoredUrls,
-      attendees: attendeeList,
-    },
+    webhookUrl,
     message: summaryMessage,
   };
 };
@@ -485,14 +435,10 @@ export const EnvironmentPage = () => {
     };
   }, [environment?.storeId, setActiveStore]);
 
-  const { totalMs } = useTimeTracking(
-    environment?.timeTracking ?? null,
-    environment?.status === 'in_progress',
-    {
-      translation,
-      locale: i18n.language,
-    },
-  );
+  useTimeTracking(environment?.timeTracking ?? null, environment?.status === 'in_progress', {
+    translation,
+    locale: i18n.language,
+  });
 
   const sendSlackSummary = useCallback(async () => {
     if (!environment || !slackWebhookUrl || isSendingSlackSummary) {
@@ -505,21 +451,18 @@ export const EnvironmentPage = () => {
       const payload = buildSlackTaskSummaryPayload(
         environment,
         {
-          totalTimeMs: totalMs,
           scenarioCount,
           executedScenariosCount,
           progressLabel,
           publicLink: shareLinks.public,
-          urls,
           participantProfiles,
           testTypeLabel: translateOptionValue(environment.tipoTeste),
           storeName,
           organizationName: environmentOrganization?.name ?? '',
         },
         translation,
+        slackWebhookUrl,
       );
-
-      payload.webhookUrl = slackWebhookUrl;
 
       await slackService.sendTaskSummary(payload);
     } catch (error) {
@@ -537,10 +480,8 @@ export const EnvironmentPage = () => {
     shareLinks.public,
     slackWebhookUrl,
     storeName,
-    totalMs,
     translateOptionValue,
     translation,
-    urls,
     environmentOrganization?.name,
   ]);
 
